@@ -36,7 +36,7 @@ class levels(Enum):
 
 class Notes:
     """
-    A set of notes.
+    A list of notes.
     """
 
     def __init__(self) -> None:
