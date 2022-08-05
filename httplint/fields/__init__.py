@@ -15,7 +15,6 @@ from typing import (
 )
 import unittest
 
-from ..field_section import FieldSection
 from ..request import HttpRequest
 from ..response import HttpResponse
 from ..syntax import rfc7230, rfc7231

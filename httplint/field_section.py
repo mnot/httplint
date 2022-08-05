@@ -5,13 +5,11 @@ from typing import (
     Dict,
     Optional,
     Type,
+    TYPE_CHECKING,
 )
 
-from .message import HttpMessage
 from .fields import HttpField
 from .note import Note, categories, levels
-from .request import HttpRequest
-from .response import HttpResponse
 from .type import (
     StrFieldListType,
     RawFieldListType,
@@ -19,6 +17,9 @@ from .type import (
     AddNoteMethodType,
 )
 from .util import f_num
+
+if TYPE_CHECKING:
+    from .message import HttpMessage
 
 
 class FieldSection:
@@ -55,13 +56,6 @@ class FieldSection:
          - call msg.add_note as appropriate
         """
         offset = 0  # what number header we're on
-
-        # estimate the start-lines size
-        self.size += len(message.version)
-        if isinstance(message, HttpRequest):
-            self.size += len(message.method) + len(message.uri) + 2
-        elif isinstance(message, HttpResponse):
-            self.size += len(message.status_phrase) + 5
 
         for name, value in raw_fields:
             offset += 1
@@ -108,7 +102,7 @@ class FieldSection:
             handler.finish(message, field_add_note)
             self.parsed[handler.norm_name] = handler.value
 
-    def get_handler(self, field_name: str, message: HttpMessage) -> HttpField:
+    def get_handler(self, field_name: str, message: "HttpMessage") -> HttpField:
         """
         If a handler has already been instantiated for field_name, return it;
         otherwise, instantiate and return a new one.
