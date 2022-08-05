@@ -1,6 +1,7 @@
 import hashlib
 from typing import Any, List, Dict, Tuple
 
+from .content_encoding import ContentEncodingProcessor
 from .util import f_num
 from .field_section import FieldSection
 from .note import Notes, Note, levels, categories
@@ -27,6 +28,9 @@ class HttpMessage:
         self.content_hash: bytes = None
         self._hash_processor = hashlib.new("md5")
 
+        self.decoded = ContentEncodingProcessor(self)
+        self.content_processors = [self.decoded]
+
         self.transfer_length: int = 0
         self.complete: bool = False
 
@@ -46,7 +50,8 @@ class HttpMessage:
             self.content_sample.append((self.content_len, chunk))
         self.content_len += len(chunk)
         self._hash_processor.update(chunk)
-        ## content encoding stuff here
+        for processor in self.content_processors:
+            processor.feed_content(chunk)
 
     def finish_content(self, complete: bool, trailers: RawFieldListType = None) -> None:
         """
@@ -56,6 +61,9 @@ class HttpMessage:
         self.complete = complete
         self.content_hash = self._hash_processor.digest()
         self.trailers.process(trailers, self)
+
+        for processor in self.content_processors:
+            processor.finish_content()
 
         if self.can_have_content():
             if "content-length" in self.headers.parsed:
