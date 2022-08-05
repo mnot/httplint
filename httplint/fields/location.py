@@ -75,4 +75,4 @@ class LocationTest(FieldTest):
     expected_out = "http://other.example.com/foo"
 
     def set_context(self, message: HttpMessage) -> None:
-        message.status_code = "300"
+        message.status_code = "300"  # type: ignore
