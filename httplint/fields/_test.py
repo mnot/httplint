@@ -3,7 +3,7 @@ import unittest
 
 from ..field_section import FieldSection
 from ..note import Note
-from ..response import HttpResponse
+from ..message import HttpResponse
 from ..type import (
     AddNoteMethodType,
 )

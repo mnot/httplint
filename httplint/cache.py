@@ -4,8 +4,7 @@ Cacheability checking function.
 
 # pylint: disable=too-many-branches,too-many-statements
 
-from .request import HttpRequest
-from .response import HttpResponse
+from .message import HttpRequest, HttpResponse
 from .note import Note, categories, levels
 from .util import relative_time, f_num
 

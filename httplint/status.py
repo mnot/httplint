@@ -7,8 +7,7 @@ The Resource Expert Droid Status Code Checker.
 from functools import partial
 from typing import List
 
-from .request import HttpRequest
-from .response import HttpResponse
+from .message import HttpRequest, HttpResponse
 from .note import Note, levels, categories
 from .type import StrFieldListType
 

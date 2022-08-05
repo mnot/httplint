@@ -1,11 +1,13 @@
 import hashlib
+import re
 from typing import Any, List, Dict, Tuple
 
 from .content_encoding import ContentEncodingProcessor
-from .util import f_num
 from .field_section import FieldSection
 from .note import Notes, Note, levels, categories
+from .syntax import rfc3986
 from .type import RawFieldListType
+from .util import iri_to_uri, f_num
 
 
 class HttpMessage:
@@ -61,7 +63,8 @@ class HttpMessage:
         """
         self.complete = complete
         self.content_hash = self._hash_processor.digest()
-        self.trailers.process(trailers, self)
+        if trailers:
+            self.trailers.process(trailers, self)
 
         for processor in self.content_processors:
             processor.finish_content()
@@ -95,6 +98,76 @@ class HttpMessage:
         return state
 
 
+class HttpRequest(HttpMessage):
+    """
+    A HTTP Request message.
+    """
+
+    max_uri_chars = 8000
+
+    def __init__(
+        self,
+    ) -> None:
+        HttpMessage.__init__(self)
+        self.method = None  # type: str
+        self.iri = None  # type: str
+        self.uri = None  # type: str
+
+    def process_top_line(self, line: bytes) -> None:
+        pass
+
+    def set_iri(self, iri: str) -> None:
+        """
+        Given a unicode string (possibly an IRI), convert to a URI and make sure it's sensible.
+        """
+        self.iri = iri
+        try:
+            self.uri = iri_to_uri(iri)
+        except (ValueError, UnicodeError):
+            self.notes.add("uri", URI_BAD_SYNTAX)
+        if not re.match(rf"^\s*{rfc3986.URI}\s*$", self.uri, re.VERBOSE):
+            self.notes.add("uri", URI_BAD_SYNTAX)
+        if "#" in self.uri:
+            # chop off the fragment
+            self.uri = self.uri[: self.uri.index("#")]
+        if len(self.uri) > self.max_uri_chars:
+            self.notes.add("uri", URI_TOO_LONG, uri_len=f_num(len(self.uri)))
+
+
+class HttpResponse(HttpMessage):
+    """
+    A HTTP Response message.
+    """
+
+    def __init__(self) -> None:
+        HttpMessage.__init__(self)
+        self.status_code = None  # type: int
+        self.status_phrase = ""
+        self.is_head_response = False
+
+    def process_top_line(self, line: bytes) -> None:
+        version, status_code, status_phrase = line.split(b" ", 2)
+        self.version = version.decode("ascii", "replace")
+        try:
+            self.status_code = int(status_code.decode("ascii", "replace"))
+        except UnicodeDecodeError:
+            pass
+        except ValueError:
+            pass
+        try:
+            self.status_phrase = status_phrase.decode("ascii", "strict")
+        except UnicodeDecodeError:
+            self.status_phrase = status_phrase.decode("ascii", "replace")
+            self.notes.add("status", STATUS_PHRASE_ENCODING)
+
+    def can_have_content(self) -> bool:
+        if self.is_head_response:
+            return False
+        if self.status_code in ["304"]:
+            return False
+        return True
+
+
 class CL_CORRECT(Note):
     category = categories.GENERAL
     level = levels.GOOD
@@ -116,3 +189,30 @@ is not correct. This can cause problems not only with connection handling, but a
 an incomplete response is considered uncacheable.
 
 The actual content size sent was %(content_length)s bytes."""
+
+
+class URI_TOO_LONG(Note):
+    category = categories.GENERAL
+    level = levels.WARN
+    summary = "The URI is very long (%(uri_len)s characters)."
+    text = """\
+Long URIs aren't supported by some implementations, including proxies. A reasonable upper size
+limit is 8192 characters."""
+
+
+class URI_BAD_SYNTAX(Note):
+    category = categories.GENERAL
+    level = levels.BAD
+    summary = "The URI's syntax isn't valid."
+    text = """\
+This isn't a valid URI. Look for illegal characters and other problems; see
+[RFC3986](http://www.ietf.org/rfc/rfc3986.txt) for more information."""
+
+
+class STATUS_PHRASE_ENCODING(Note):
+    category = categories.GENERAL
+    level = levels.BAD
+    summary = "The status phrase contains non-ASCII characters."
+    text = """\
+The status phrase can only contain ASCII characters. REDbot has detected (and possibly removed)
+non-ASCII characters in it."""

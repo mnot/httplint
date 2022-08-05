@@ -1,8 +1,9 @@
 import re
 from urllib.parse import urljoin
 
-from . import HttpField, HttpMessage, HttpResponse
+from . import HttpField
 from ._test import FieldTest
+from ..message import HttpMessage, HttpResponse
 from ..note import Note, categories, levels
 from ..syntax import rfc7231, rfc3986
 from ..type import AddNoteMethodType

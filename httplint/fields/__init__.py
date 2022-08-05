@@ -15,8 +15,7 @@ from typing import (
 )
 import unittest
 
-from ..request import HttpRequest
-from ..response import HttpResponse
+# from ..message import HttpRequest
 from ..syntax import rfc7230, rfc7231
 from ..type import (
     StrFieldListType,
@@ -138,10 +137,10 @@ class HttpField:
             elif len(self.value) > 1:
                 add_note(SINGLE_HEADER_REPEAT)
                 self.value = self.value[-1]
-        if isinstance(message, HttpRequest):
-            if not self.valid_in_requests:
-                add_note(RESPONSE_HDR_IN_REQUEST)
-        else:
-            if not self.valid_in_responses:
-                add_note(REQUEST_HDR_IN_RESPONSE)
+        #        if isinstance(message, HttpRequest):
+        #            if not self.valid_in_requests:
+        #                add_note(RESPONSE_HDR_IN_REQUEST)
+        #        else:
+        #            if not self.valid_in_responses:
+        #                add_note(REQUEST_HDR_IN_RESPONSE)
         self.evaluate(add_note)

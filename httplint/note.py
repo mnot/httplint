@@ -9,7 +9,7 @@ it need to be escaped to be safe for use in HTML.
 """
 
 from enum import Enum
-from typing import Any, Union, Set, Type
+from typing import Any, Union, Type, List
 
 from markupsafe import Markup, escape
 from markdown import markdown
@@ -40,10 +40,10 @@ class Notes:
     """
 
     def __init__(self) -> None:
-        self.notes: Set[Note] = set()
+        self.notes: List[Note] = []
 
     def add(self, subject: str, note: Type["Note"], **vrs: Union[str, int]) -> None:
-        self.notes.add(note(subject, **vrs))
+        self.notes.append(note(subject, **vrs))
 
 
 class Note:
