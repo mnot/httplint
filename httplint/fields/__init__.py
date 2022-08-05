@@ -21,6 +21,7 @@ from typing import (
 )
 import unittest
 
+from ..field_section import FieldSection
 from ..request import HttpRequest
 from ..response import HttpResponse
 from ..syntax import rfc7230, rfc7231
@@ -153,166 +154,6 @@ class HttpField:
         self.evaluate(add_note)
 
 
-class UnknownHttpField(HttpField):
-    """A HTTP header that we don't recognise."""
-
-    list_header = True
-    valid_in_requests = True
-    valid_in_responses = True
-
-    def parse(self, field_value: str, add_note: AddNoteMethodType) -> Any:
-        return field_value
-
-    def evaluate(self, add_note: AddNoteMethodType) -> None:
-        return
-
-
-class FieldProcessor:
-    """
-    Parses and runs checks on a set of headers.
-    """
-
-    # map of header name aliases, lowercase-normalised
-    header_aliases = {
-        "x-pad-for-netscrape-bug": "x-pad",
-        "xx-pad": "x-pad",
-        "x-browseralignment": "x-pad",
-        "nncoection": "connectiox",
-        "cneonction": "connectiox",
-        "yyyyyyyyyy": "connectiox",
-        "xxxxxxxxxx": "connectiox",
-        "x_cnection": "connectiox",
-        "_onnection": "connectiox",
-    }
-
-    def __init__(self, message: "HttpMessage") -> None:
-        self.message = message
-        self._header_handlers: Dict[str, HttpField] = {}
-
-    def process(
-        self, headers: RawFieldListType
-    ) -> Tuple[StrFieldListType, FieldDictType]:
-        """
-        Given a list of (bytes name, bytes value) headers and:
-         - calculate the total header block size
-         - call msg.add_note as appropriate
-        Returns:
-         - a list of unicode header tuples
-         - a dict of parsed header values
-        """
-        unicode_headers = []  # unicode version of the header tuples
-        parsed_headers = {}  # dictionary of parsed header values
-        offset = 0  # what number header we're on
-
-        # estimate the start-lines size
-        header_block_size = len(self.message.version)
-        if isinstance(self.message, HttpRequest):
-            header_block_size += len(self.message.method) + len(self.message.uri) + 2
-        elif isinstance(self.message, HttpResponse):
-            header_block_size += len(self.message.status_phrase) + 5
-
-        for name, value in headers:
-            offset += 1
-            add_note = partial(self.message.notes.add, f"offset-{offset}")
-
-            # track header size
-            header_size = len(name) + len(value)
-            header_block_size += header_size
-
-            # decode the header to make it unicode clean
-            try:
-                str_name = name.decode("ascii", "strict")
-            except UnicodeError:
-                str_name = name.decode("ascii", "ignore")
-                add_note(HEADER_NAME_ENCODING, field_name=str_name)
-            try:
-                str_value = value.decode("ascii", "strict")
-            except UnicodeError:
-                str_value = value.decode("iso-8859-1", "replace")
-                add_note(HEADER_VALUE_ENCODING, field_name=str_name)
-            unicode_headers.append((str_name, str_value))
-
-            header_handler = self.get_header_handler(str_name)
-            field_add_note = partial(
-                add_note,
-                field_name=header_handler.canonical_name,
-            )
-            header_handler.handle_input(str_value, field_add_note)
-
-            if header_size > MAX_HDR_SIZE:
-                add_note(
-                    HEADER_TOO_LARGE,
-                    field_name=header_handler.canonical_name,
-                    header_size=f_num(header_size),
-                )
-
-        # check each of the complete header values and get the parsed value
-        for _, header_handler in list(self._header_handlers.items()):
-            header_add_note = partial(
-                self.message.notes.add,
-                f"header-{header_handler.canonical_name.lower()}",
-                field_name=header_handler.canonical_name,
-            )
-            header_handler.finish(self.message, header_add_note)
-            parsed_headers[header_handler.norm_name] = header_handler.value
-
-        return unicode_headers, parsed_headers
-
-    def get_header_handler(self, header_name: str) -> HttpField:
-        """
-        If a header handler has already been instantiated for header_name, return it;
-        otherwise, instantiate and return a new one.
-        """
-        norm_name = header_name.lower()
-        if norm_name in self._header_handlers:
-            return self._header_handlers[norm_name]
-        handler = self.find_header_handler(header_name)(header_name, self.message)
-        self._header_handlers[norm_name] = handler
-        return handler
-
-    @staticmethod
-    def find_header_handler(
-        header_name: str, default: bool = True
-    ) -> Optional[Type[HttpField]]:
-        """
-        Return a header handler class for the given field name.
-
-        If default is true, return a dummy if one isn't found; otherwise, None.
-        """
-
-        name_token = FieldProcessor.name_token(header_name)
-        hdr_module = FieldProcessor.find_header_module(name_token)
-        if hdr_module and hasattr(hdr_module, name_token):
-            return getattr(hdr_module, name_token)  # type: ignore
-        if default:
-            return UnknownHttpField
-        return None
-
-    @staticmethod
-    def find_header_module(header_name: str) -> Any:
-        """
-        Return a module for the given field name, or None if it can't be found.
-        """
-        name_token = FieldProcessor.name_token(header_name)
-        if name_token[0] == "_":  # these are special
-            return None
-        if name_token in FieldProcessor.header_aliases:
-            name_token = FieldProcessor.header_aliases[name_token]
-        try:
-            module_name = f"redbot.message.headers.{name_token}"
-            __import__(module_name)
-            return sys.modules[module_name]
-        except (ImportError, KeyError, TypeError):
-            return None
-
-    @staticmethod
-    def name_token(header_name: str) -> str:
-        """
-        Return a tokenised, python-friendly name for a header.
-        """
-        return header_name.replace("-", "_").lower()
-
-
 class TestMessage(HttpResponse):
     """
     A dummy HTTP message, for testing.
@@ -353,13 +194,9 @@ class FieldTest(unittest.TestCase):
         if not self.name:
             return self.skipTest("")
         name = self.name.encode("utf-8")
-        hp = FieldProcessor(self.message)
-        self.message.text_headers, self.message.parsed_headers = hp.process(
-            [(name, inp) for inp in self.inputs]
-        )
-        out = self.message.parsed_headers.get(
-            self.name.lower(), "HEADER HANDLER NOT FOUND"
-        )
+        section = FieldSection()
+        section.process([(name, inp) for inp in self.inputs], self.message)
+        out = section.parsed.get(self.name.lower(), "HEADER HANDLER NOT FOUND")
         self.assertEqual(self.expected_out, out)
         diff = {n.__name__ for n in self.expected_err}.symmetric_difference(
             set(self.message.note_classes)

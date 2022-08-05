@@ -55,12 +55,12 @@ class StatusChecker:
 
     def status100(self) -> None:  # Continue
         if self.request and not "100-continue" in get_header(
-            self.request.text_headers, "expect"
+            self.request.headers.text, "expect"
         ):
             self.add_note("status", UNEXPECTED_CONTINUE)
 
     def status101(self) -> None:  # Switching Protocols
-        if self.request and not get_header(self.request.text_headers, "upgrade"):
+        if self.request and not get_header(self.request.headers.text, "upgrade"):
             self.add_note("status", UPGRADE_NOT_REQUESTED)
 
     def status102(self) -> None:  # Processing
@@ -72,7 +72,7 @@ class StatusChecker:
     def status201(self) -> None:  # Created
         if self.request and self.request.method in safe_methods:
             self.add_note("status", CREATED_SAFE_METHOD, method=self.request.method)
-        if "location" not in self.response.parsed_headers:
+        if "location" not in self.response.headers.parsed:
             self.add_note("header-location", CREATED_WITHOUT_LOCATION)
 
     def status202(self) -> None:  # Accepted
@@ -88,9 +88,9 @@ class StatusChecker:
         pass
 
     def status206(self) -> None:  # Partial Content
-        if self.request and not get_header(self.request.text_headers, "range"):
+        if self.request and not get_header(self.request.headers.text, "range"):
             self.add_note("", PARTIAL_NOT_REQUESTED)
-        if "content-range" not in self.response.parsed_headers:
+        if "content-range" not in self.response.headers.parsed:
             self.add_note("header-location", PARTIAL_WITHOUT_RANGE)
 
     def status207(self) -> None:  # Multi-Status
@@ -103,19 +103,19 @@ class StatusChecker:
         pass
 
     def status301(self) -> None:  # Moved Permanently
-        if "location" not in self.response.parsed_headers:
+        if "location" not in self.response.headers.parsed:
             self.add_note("header-location", REDIRECT_WITHOUT_LOCATION)
 
     def status302(self) -> None:  # Found
-        if "location" not in self.response.parsed_headers:
+        if "location" not in self.response.headers.parsed:
             self.add_note("header-location", REDIRECT_WITHOUT_LOCATION)
 
     def status303(self) -> None:  # See Other
-        if "location" not in self.response.parsed_headers:
+        if "location" not in self.response.headers.parsed:
             self.add_note("header-location", REDIRECT_WITHOUT_LOCATION)
 
     def status304(self) -> None:  # Not Modified
-        if "date" not in self.response.parsed_headers:
+        if "date" not in self.response.headers.parsed:
             self.add_note("status", NO_DATE_304)
 
     def status305(self) -> None:  # Use Proxy
@@ -125,11 +125,11 @@ class StatusChecker:
         self.add_note("", STATUS_RESERVED)
 
     def status307(self) -> None:  # Temporary Redirect
-        if "location" not in self.response.parsed_headers:
+        if "location" not in self.response.headers.parsed:
             self.add_note("header-location", REDIRECT_WITHOUT_LOCATION)
 
     def status308(self) -> None:  # Permanent Redirect
-        if "location" not in self.response.parsed_headers:
+        if "location" not in self.response.headers.parsed:
             self.add_note("header-location", REDIRECT_WITHOUT_LOCATION)
 
     def status400(self) -> None:  # Bad Request

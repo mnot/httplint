@@ -2,13 +2,9 @@ import hashlib
 from typing import Any, List, Dict, Tuple
 
 from .util import f_num
-from .fields import FieldProcessor
+from .field_section import FieldSection
 from .note import Notes, Note, levels, categories
-from .type import (
-    StrFieldListType,
-    RawFieldListType,
-    FieldDictType,
-)
+from .type import RawFieldListType
 
 
 class HttpMessage:
@@ -23,11 +19,8 @@ class HttpMessage:
 
         self.version: str = ""
         self.base_uri: str = ""
-        self.text_headers: StrFieldListType = []
-        self.parsed_headers: FieldDictType = {}
-        self.header_length: int = 0
-        self.text_trailers: RawFieldListType = []
-        self.trailer_length: int = 0
+        self.headers = FieldSection()
+        self.trailers = FieldSection()
 
         self.content_sample: List[Tuple[int, bytes]] = []
         self.content_len: int = 0
@@ -41,8 +34,7 @@ class HttpMessage:
         """
         Feed a list of (bytes name, bytes value) header tuples in and process them.
         """
-        hp = FieldProcessor(self)
-        self.text_headers, self.parsed_headers = hp.process(headers)
+        self.headers.process(headers, self)
 
     def feed_content(self, chunk: bytes) -> None:
         """
@@ -62,12 +54,12 @@ class HttpMessage:
         know it's complete according to message framing.
         """
         self.complete = complete
-        self.text_trailers = trailers or []
         self.content_hash = self._hash_processor.digest()
+        self.trailers.process(trailers, self)
 
         if self.can_have_content():
-            if "content-length" in self.parsed_headers:
-                if self.content_len == self.parsed_headers["content-length"]:
+            if "content-length" in self.headers.parsed:
+                if self.content_len == self.headers.parsed["content-length"]:
                     self.notes.add("header-content-length", CL_CORRECT)
                 else:
                     self.notes.add(

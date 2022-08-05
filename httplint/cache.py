@@ -24,12 +24,12 @@ def check_response_caching(response: HttpResponse, request: HttpRequest = None) 
     store_private = None  # type: bool
 
     # get header values
-    lm_hdr = response.parsed_headers.get("last-modified", None)
-    date_hdr = response.parsed_headers.get("date", None)
-    expires_hdr = response.parsed_headers.get("expires", None)
-    etag_hdr = response.parsed_headers.get("etag", None)
-    age_hdr = response.parsed_headers.get("age", None)
-    cc_set = response.parsed_headers.get("cache-control", [])
+    lm_hdr = response.headers.parsed.get("last-modified", None)
+    date_hdr = response.headers.parsed.get("date", None)
+    expires_hdr = response.headers.parsed.get("expires", None)
+    etag_hdr = response.headers.parsed.get("etag", None)
+    age_hdr = response.headers.parsed.get("age", None)
+    cc_set = response.headers.parsed.get("cache-control", [])
     cc_list = [k for (k, v) in cc_set]
     cc_dict = dict(cc_set)
     cc_keys = list(cc_dict.keys())
@@ -84,7 +84,7 @@ def check_response_caching(response: HttpResponse, request: HttpRequest = None) 
         response.notes.add("header-cache-control", PRIVATE_CC)
     elif (
         request
-        and "authorization" in [k.lower() for k, v in request.text_headers]
+        and "authorization" in [k.lower() for k, v in request.headers.text]
         and "public" not in cc_keys
     ):
         store_shared = False
@@ -130,7 +130,7 @@ def check_response_caching(response: HttpResponse, request: HttpRequest = None) 
                     )
 
     # vary?
-    vary = response.parsed_headers.get("vary", set())
+    vary = response.headers.parsed.get("vary", set())
     if "*" in vary:
         response.notes.add("header-vary", VARY_ASTERISK)
         return  # bail; nothing else to see here
@@ -189,7 +189,7 @@ def check_response_caching(response: HttpResponse, request: HttpRequest = None) 
         freshness_hdrs.append("header-cache-control")
         has_explicit_freshness = True
         has_cc_freshness = True
-    elif "expires" in response.parsed_headers:
+    elif "expires" in response.headers.parsed:
         # An invalid Expires header means it's automatically stale
         has_explicit_freshness = True
         freshness_hdrs.append("header-expires")

@@ -145,35 +145,6 @@ specification](http://httpwg.org/specs/rfc7231.html#http.date) for more informat
 """
 
 
-class HEADER_TOO_LARGE(Note):
-    category = categories.GENERAL
-    level = levels.WARN
-    summary = "The %(field_name)s header is very large (%(header_size)s bytes)."
-    text = """\
-Some implementations limit the size of any single header line."""
-
-
-class HEADER_NAME_ENCODING(Note):
-    category = categories.GENERAL
-    level = levels.BAD
-    summary = "The %(field_name)s header's name contains non-ASCII characters."
-    text = """\
-HTTP header field-names can only contain ASCII characters. REDbot has detected (and possibly
-removed) non-ASCII characters in this header name."""
-
-
-class HEADER_VALUE_ENCODING(Note):
-    category = categories.GENERAL
-    level = levels.WARN
-    summary = "The %(field_name)s header's value contains non-ASCII characters."
-    text = """\
-HTTP headers use the ISO-8859-1 character set, but in most cases are pure ASCII (a subset of this
-encoding).
-
-This header has non-ASCII characters, which REDbot has interpreted as being encoded in
-ISO-8859-1. If another encoding is used (e.g., UTF-8), the results may be unpredictable."""
-
-
 class REQUEST_HDR_IN_RESPONSE(Note):
     category = categories.GENERAL
     level = levels.BAD

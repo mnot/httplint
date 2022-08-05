@@ -13,7 +13,7 @@ if TYPE_CHECKING:
 class ContentEncodingProcessor:
     def __init__(self, message: "HttpMessage") -> None:
         self.message = message
-        self.content_codings = self.message.parsed_headers.get("content-encoding", [])
+        self.content_codings = self.message.headers.parsed.get("content-encoding", [])
         self.content_codings.reverse()
 
         self.content_len: int = 0
