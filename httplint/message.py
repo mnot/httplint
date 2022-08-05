@@ -18,6 +18,7 @@ class HttpMessage:
     def __init__(self, notes: Notes = None) -> None:
         self.notes = notes or Notes()
 
+        self.start_time: int = None
         self.version: str = ""
         self.base_uri: str = ""
         self.headers = FieldSection()
