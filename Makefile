@@ -6,7 +6,7 @@ run: test
 
 .PHONY: test
 test: $(TESTS) venv
-	@echo "please write some tests"
+	PYTHONPATH=.:$(VENV) $(VENV)/python test/smoke.py
 
 .PHONY: typecheck
 typecheck: venv
