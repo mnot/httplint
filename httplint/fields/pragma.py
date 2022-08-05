@@ -2,7 +2,7 @@ from . import HttpField, FieldTest
 from ..note import Note, categories, levels
 from ..syntax import rfc7234
 from ..type import AddNoteMethodType
-from ._notes import HEADER_DEPRECATED
+from ._notes import FIELD_DEPRECATED
 
 
 class pragma(HttpField):
@@ -50,4 +50,4 @@ class PragmaTest(FieldTest):
     name = "Pragma"
     inputs = [b"no-cache"]
     expected_out = ["no-cache"]
-    expected_err = [PRAGMA_NO_CACHE, HEADER_DEPRECATED]
+    expected_err = [PRAGMA_NO_CACHE, FIELD_DEPRECATED]

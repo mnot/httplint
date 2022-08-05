@@ -4,7 +4,7 @@ from . import HttpField, FieldTest
 from ..syntax import rfc7230, rfc7231
 from ..type import AddNoteMethodType
 from ._utils import unquote_string
-from ._notes import HEADER_DEPRECATED
+from ._notes import FIELD_DEPRECATED
 
 
 class keep_alive(HttpField):
@@ -39,10 +39,10 @@ class KeepAliveTest(FieldTest):
     name = "Keep-Alive"
     inputs = [b"timeout=30"]
     expected_out = [("timeout", "30")]
-    expected_err = [HEADER_DEPRECATED]
+    expected_err = [FIELD_DEPRECATED]
 
 
 class EmptyKeepAliveTest(FieldTest):
     name = "Keep-Alive"
     inputs = [b""]
-    expected_err = [HEADER_DEPRECATED]
+    expected_err = [FIELD_DEPRECATED]

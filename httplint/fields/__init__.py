@@ -1,9 +1,3 @@
-"""
-The Resource Expert Droid header checks.
-
-process_headers() will process a list of (key, val) tuples.
-"""
-
 from copy import copy
 from functools import partial
 import re
@@ -52,7 +46,7 @@ MAX_TTL_HDR = 8 * 1000
 
 
 class HttpField:
-    """A HTTP Header handler."""
+    """A HTTP Field."""
 
     canonical_name: str = None
     description: str = None
@@ -82,8 +76,8 @@ class HttpField:
 
     def evaluate(self, add_note: AddNoteMethodType) -> None:
         """
-        Called once header processing is done; typically used to evaluate an entire
-        header's values.
+        Called once processing is done; typically used to evaluate an entire
+        field's values.
         """
 
     def handle_input(self, field_value: str, add_note: AddNoteMethodType) -> None:
@@ -91,9 +85,9 @@ class HttpField:
         Basic input processing on a new field value.
         """
 
-        # split before processing if a list header
+        # split before processing if a list field
         if self.list_header:
-            values = self.split_list_header(field_value)
+            values = self.split_list_field(field_value)
         else:
             values = [field_value]
         for value in values:
@@ -113,8 +107,8 @@ class HttpField:
             self.value.append(parsed_value)
 
     @staticmethod
-    def split_list_header(field_value: str) -> List[str]:
-        "Split a header field value on commas. needs to conform to the #rule."
+    def split_list_field(field_value: str) -> List[str]:
+        "Split a field field value on commas. needs to conform to the #rule."
         return [
             f.strip()
             for f in re.findall(
@@ -128,7 +122,7 @@ class HttpField:
 
     def finish(self, message: "HttpMessage", add_note: AddNoteMethodType) -> None:
         """
-        Called when all headers are available.
+        Called when all field lines in the section are available.
         """
 
         # check field name syntax
@@ -136,7 +130,7 @@ class HttpField:
             add_note(FIELD_NAME_BAD_SYNTAX)
         if self.deprecated:
             deprecation_ref = getattr(self, "deprecation_ref", self.reference)
-            add_note(HEADER_DEPRECATED, deprecation_ref=deprecation_ref)
+            add_note(FIELD_DEPRECATED, deprecation_ref=deprecation_ref)
         if not self.list_header and not self.nonstandard_syntax:
             if not self.value:
                 self.value = None

@@ -161,10 +161,10 @@ class RESPONSE_HDR_IN_REQUEST(Note):
 %(field_name)s isn't defined to have any meaning in reqeusts, so REDbot has ignored it."""
 
 
-class HEADER_DEPRECATED(Note):
+class FIELD_DEPRECATED(Note):
     category = categories.GENERAL
     level = levels.WARN
     summary = "The %(field_name)s header is deprecated."
     text = """\
-This header field is no longer recommended for use, because of interoperability problems and/or
+This field is no longer recommended for use, because of interoperability problems and/or
 lack of use. See [the deprecation notice](%(deprecation_ref)s) for more information."""
