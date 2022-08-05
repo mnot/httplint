@@ -25,14 +25,14 @@ In `201 Created` responses, it identifies a newly created resource."""
 
     def parse(self, field_value: str, add_note: AddNoteMethodType) -> str:
         if isinstance(self.message, HttpResponse) and self.message.status_code not in [
-            "201",
-            "300",
-            "301",
-            "302",
-            "303",
-            "305",
-            "307",
-            "308",
+            201,
+            300,
+            301,
+            302,
+            303,
+            305,
+            307,
+            308,
         ]:
             add_note(LOCATION_UNDEFINED)
         if not re.match(rf"^\s*{rfc3986.URI}\s*$", field_value, re.VERBOSE):
@@ -76,4 +76,4 @@ class LocationTest(FieldTest):
     expected_out = "http://other.example.com/foo"
 
     def set_context(self, message: HttpMessage) -> None:
-        message.status_code = "300"  # type: ignore
+        message.status_code = 300  # type: ignore

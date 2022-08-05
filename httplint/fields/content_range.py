@@ -21,8 +21,8 @@ partial body should be applied."""
     def parse(self, field_value: str, add_note: AddNoteMethodType) -> str:
         # #53: check syntax, values?
         if isinstance(self.message, HttpResponse) and self.message.status_code not in [
-            "206",
-            "416",
+            206,
+            416,
         ]:
             add_note(CONTENT_RANGE_MEANINGLESS)
         return field_value
@@ -45,4 +45,4 @@ class ContentRangeTest(FieldTest):
     expected_out = "bytes 1-100/200"
 
     def set_context(self, message: HttpMessage) -> None:
-        message.status_code = "206"  # type: ignore
+        message.status_code = 206  # type: ignore

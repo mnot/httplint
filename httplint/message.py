@@ -113,25 +113,29 @@ class HttpRequest(HttpMessage):
         self.iri = None  # type: str
         self.uri = None  # type: str
 
-    def process_top_line(self, line: bytes) -> None:
-        pass
+    def process_top_line(self, method: bytes, iri: bytes, version: bytes) -> None:
+        self.method = method.decode("ascii", "replace")
+        self.iri = iri.decode("utf-8", "replace")
+        self.uri = self.set_uri(self.iri)
+        self.version = version.decode("ascii", "replace")
 
-    def set_iri(self, iri: str) -> None:
+    def set_uri(self, iri: str) -> str:
         """
         Given a unicode string (possibly an IRI), convert to a URI and make sure it's sensible.
         """
-        self.iri = iri
+        uri = None
         try:
-            self.uri = iri_to_uri(iri)
+            uri = iri_to_uri(iri)
         except (ValueError, UnicodeError):
             self.notes.add("uri", URI_BAD_SYNTAX)
         if not re.match(rf"^\s*{rfc3986.URI}\s*$", self.uri, re.VERBOSE):
             self.notes.add("uri", URI_BAD_SYNTAX)
         if "#" in self.uri:
             # chop off the fragment
-            self.uri = self.uri[: self.uri.index("#")]
+            uri = self.uri[: self.uri.index("#")]
         if len(self.uri) > self.max_uri_chars:
             self.notes.add("uri", URI_TOO_LONG, uri_len=f_num(len(self.uri)))
+        return uri
 
 
 class HttpResponse(HttpMessage):
@@ -145,15 +149,16 @@ class HttpResponse(HttpMessage):
         self.status_phrase = ""
         self.is_head_response = False
 
-    def process_top_line(self, line: bytes) -> None:
-        version, status_code, status_phrase = line.split(b" ", 2)
+    def process_top_line(
+        self, version: bytes, status_code: bytes, status_phrase: bytes = None
+    ) -> None:
         self.version = version.decode("ascii", "replace")
         try:
             self.status_code = int(status_code.decode("ascii", "replace"))
         except UnicodeDecodeError:
-            pass
+            pass  # FIXME
         except ValueError:
-            pass
+            pass  # FIXME
         try:
             self.status_phrase = status_phrase.decode("ascii", "strict")
         except UnicodeDecodeError:
@@ -163,7 +168,7 @@ class HttpResponse(HttpMessage):
     def can_have_content(self) -> bool:
         if self.is_head_response:
             return False
-        if self.status_code in ["304"]:
+        if self.status_code in [304]:
             return False
         return True
 

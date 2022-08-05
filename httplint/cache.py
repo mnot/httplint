@@ -10,7 +10,7 @@ from .util import relative_time, f_num
 
 ### configuration
 CACHEABLE_METHODS = ["GET"]
-HEURISTIC_CACHEABLE_STATUS = ["200", "203", "206", "300", "301", "410"]
+HEURISTIC_CACHEABLE_STATUS = [200, 203, 206, 300, 301, 410]
 MAX_CLOCK_SKEW = 5  # seconds
 
 
