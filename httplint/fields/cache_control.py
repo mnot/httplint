@@ -1,6 +1,7 @@
 from typing import Tuple, Union
 
-from . import HttpField, FieldTest
+from . import HttpField
+from ._test import FieldTest
 from ..note import Note, categories, levels
 from ..syntax import rfc7234
 from ..type import AddNoteMethodType

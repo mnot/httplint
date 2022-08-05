@@ -1,4 +1,5 @@
-from . import HttpField, FieldTest
+from . import HttpField
+from ._test import FieldTest
 from ..syntax import rfc7231
 
 

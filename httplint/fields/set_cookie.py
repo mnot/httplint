@@ -3,7 +3,8 @@ from re import match, split
 from urllib.parse import urlsplit
 from typing import List, Tuple, Union
 
-from . import HttpField, FieldTest, RFC6265
+from . import HttpField, RFC6265
+from ._test import FieldTest
 from ..note import Note, categories, levels
 from ..type import AddNoteMethodType
 

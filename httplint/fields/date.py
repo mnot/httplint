@@ -1,4 +1,5 @@
-from . import HttpField, FieldTest
+from . import HttpField
+from ._test import FieldTest
 from ..syntax import rfc7231
 from ..type import AddNoteMethodType
 from ._notes import BAD_DATE_SYNTAX

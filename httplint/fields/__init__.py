@@ -28,7 +28,6 @@ from ..util import f_num
 
 from ._utils import RE_FLAGS, parse_date, split_string
 from ._notes import *
-from ._test import FieldTest
 
 if TYPE_CHECKING:
     from ..message import (

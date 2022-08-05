@@ -1,6 +1,7 @@
 from typing import Tuple
 
-from . import HttpField, FieldTest
+from . import HttpField
+from ._test import FieldTest
 from ..syntax import rfc7230, rfc7231
 from ..type import AddNoteMethodType
 from ._utils import unquote_string

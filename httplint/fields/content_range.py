@@ -1,4 +1,5 @@
-from . import HttpField, HttpMessage, HttpResponse, FieldTest
+from . import HttpField, HttpMessage, HttpResponse
+from ._test import FieldTest
 from ..note import Note, categories, levels
 from ..syntax import rfc7233
 from ..type import AddNoteMethodType

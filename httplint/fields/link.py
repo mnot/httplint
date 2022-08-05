@@ -1,7 +1,8 @@
 import re
 from typing import Tuple
 
-from . import HttpField, FieldTest
+from . import HttpField
+from ._test import FieldTest
 from ..note import Note, categories, levels
 from ..syntax import rfc3986, rfc5988
 from ..type import AddNoteMethodType, ParamDictType
