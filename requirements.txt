@@ -1,0 +1,10 @@
+MarkupSafe==2.1.1
+Markdown==3.3.7
+pylint
+mypy
+types-Markdown
+twine
+black
+build
+pytest
+pytest-md
