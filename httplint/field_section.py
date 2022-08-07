@@ -24,7 +24,7 @@ if TYPE_CHECKING:
 
 class FieldSection:
     """
-    A field section.
+    A field section (headers or trailers).
     """
 
     # map of field name aliases, lowercase-normalised
@@ -40,7 +40,7 @@ class FieldSection:
         "_onnection": "connectiox",
     }
 
-    max_field_size = 4 * 1024
+    max_field_size = 8 * 1024
 
     def __init__(self) -> None:
         self.text: StrFieldListType = []  # unicode version of the field tuples
