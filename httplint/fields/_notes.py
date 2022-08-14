@@ -8,22 +8,19 @@ from ..note import Note, categories, levels
 class SINGLE_HEADER_REPEAT(Note):
     category = categories.GENERAL
     level = levels.BAD
-    summary = "Only one %(field_name)s header is allowed in a response."
+    summary = "Only one %(field_name)s field is allowed in a response's headers."
     text = """\
-This header is designed to only occur once in a message. When it occurs more than once, a receiver
+This field is designed to only occur once in a message. When it occurs more than once, a receiver
 needs to choose the one to use, which can lead to interoperability problems, since different
-implementations may make different choices.
-
-For the purposes of its tests, REDbot uses the last instance of the header that is present; other
-implementations may behave differently."""
+implementations may make different choices."""
 
 
 class FIELD_NAME_BAD_SYNTAX(Note):
     category = categories.GENERAL
     level = levels.BAD
-    summary = '"%(field_name)s" is not a valid header field-name.'
+    summary = '"%(field_name)s" is not a valid field name.'
     text = """\
-Header names are limited to the TOKEN production in HTTP; i.e., they can't contain parenthesis,
+Field names are limited to the `token` production in HTTP; i.e., they can't contain parenthesis,
 angle brackes (<>), ampersands (@), commas, semicolons, colons, backslashes (\\), forward
 slashes (/), quotes, square brackets ([]), question marks, equals signs (=), curly brackets ({})
 spaces or tabs."""
@@ -32,9 +29,9 @@ spaces or tabs."""
 class BAD_SYNTAX(Note):
     category = categories.GENERAL
     level = levels.BAD
-    summary = "The %(field_name)s header's syntax isn't valid."
+    summary = "The %(field_name)s field value isn't valid."
     text = """\
-The value for this header doesn't conform to its specified syntax; see [its
+The value for this field doesn't conform to its specified syntax; see [its
 definition](%(ref_uri)s) for more information."""
 
 
@@ -46,7 +43,7 @@ class PARAM_STAR_QUOTED(Note):
 Parameter values that end in '*' have a specific format, defined in
 [RFC5987](http://tools.ietf.org/html/rfc5987), to allow non-ASCII text.
 
-The `%(param)s` parameter on the `%(field_name)s` header has double-quotes around it, which is not
+The `%(param)s` parameter on the `%(field_name)s` field has double-quotes around it, which is not
 valid."""
 
 
@@ -58,23 +55,20 @@ class PARAM_STAR_ERROR(Note):
 Parameter values that end in '*' have a specific format, defined in
 [RFC5987](http://tools.ietf.org/html/rfc5987), to allow non-ASCII text.
 
- The `%(param)s` parameter on the `%(field_name)s` header is not valid; it needs to have three
+The `%(param)s` parameter on the `%(field_name)s` field is not valid; it needs to have three
 parts, separated by single quotes (')."""
 
 
 class PARAM_STAR_BAD(Note):
     category = categories.GENERAL
     level = levels.BAD
-    summary = "The %(param)s* parameter isn't allowed on the %(field_name)s header."
+    summary = "The %(param)s* parameter isn't allowed on the %(field_name)s field."
     text = """\
 Parameter values that end in '*' are reserved for non-ascii text, as explained in
 [RFC5987](http://tools.ietf.org/html/rfc5987).
 
-The `%(param)s` parameter on the `%(field_name)s` does not allow this; you should use %(param)s
-without the "*" on the end (and without the associated encoding).
-
-REDbot ignores the content of this parameter.
-     """
+The `%(param)s` parameter on the `%(field_name)s` field does not allow this; you should use
+%(param)s without the "*" on the end (and without the associated encoding)."""
 
 
 class PARAM_STAR_NOCHARSET(Note):
@@ -98,7 +92,7 @@ Parameter values that end in '*' have a specific format, defined in
 [RFC5987](http://tools.ietf.org/html/rfc5987), to allow non-ASCII text.
 
 The `%(param)s` parameter on the `%(field_name)s` header uses the `'%(enc)s` encoding, which has
-interoperability issues on some browsers. It should be `UTF-8`."""
+interoperability issues with some browsers. It should be `UTF-8`."""
 
 
 class PARAM_REPEATS(Note):
@@ -106,7 +100,7 @@ class PARAM_REPEATS(Note):
     level = levels.WARN
     summary = "The '%(param)s' parameter repeats in the %(field_name)s header."
     text = """\
-Parameters on the %(field_name)s header should not repeat; implementations may handle them
+Parameters on the %(field_name)s field should not repeat; implementations may handle them
 differently."""
 
 
@@ -115,11 +109,11 @@ class PARAM_SINGLE_QUOTED(Note):
     level = levels.WARN
     summary = "The '%(param)s' parameter on the %(field_name)s header is single-quoted."
     text = """\
-The `%(param)s`'s value on the %(field_name)s header start and ends with a single quote (').
+The `%(param)s`'s value on the %(field_name)s field starts and ends with a single quote (').
 However, single quotes don't mean anything there.
 
 This means that the value will be interpreted as `%(param_val)s`, **not**
-`%(param_val_unquoted)s`. If you intend the latter, drop the single quotes."""
+`%(param_val_unquoted)s`. If you intend the latter, remove the single quotes."""
 
 
 class BAD_DATE_SYNTAX(Note):
@@ -127,10 +121,11 @@ class BAD_DATE_SYNTAX(Note):
     level = levels.BAD
     summary = "The %(field_name)s header's value isn't a valid date."
     text = """\
-HTTP dates have very specific syntax, and sending an invalid date can cause a number of problems,
-especially around caching. Common problems include sending "1 May" instead of "01 May" (the month
-is a fixed-width field), and sending a date in a timezone other than GMT. See [the HTTP
-specification](http://www.w3.org/Protocols/rfc2616/rfc2616-sec3.html#sec3.3) for more
+HTTP dates have specific syntax, and sending an invalid date can cause a number of problems,
+especially with caching. Common problems include sending "1 May" instead of "01 May" (the month
+is a fixed-width field), and sending a date in a timezone other than GMT.
+
+See [the HTTP specification](http://www.w3.org/Protocols/rfc2616/rfc2616-sec3.html#sec3.3) for more
 information."""
 
 
@@ -148,17 +143,17 @@ specification](http://httpwg.org/specs/rfc7231.html#http.date) for more informat
 class REQUEST_HDR_IN_RESPONSE(Note):
     category = categories.GENERAL
     level = levels.BAD
-    summary = '"%(field_name)s" is a request header.'
+    summary = '"%(field_name)s" is a request header field.'
     text = """\
-%(field_name)s isn't defined to have any meaning in responses, so REDbot has ignored it."""
+The %(field_name)s field isn't defined to have any meaning in responses."""
 
 
 class RESPONSE_HDR_IN_REQUEST(Note):
     category = categories.GENERAL
     level = levels.BAD
-    summary = '"%(field_name)s" is a request header.'
+    summary = '"%(field_name)s" is a request header field.'
     text = """\
-%(field_name)s isn't defined to have any meaning in reqeusts, so REDbot has ignored it."""
+The %(field_name)s field isn't defined to have any meaning in requests."""
 
 
 class FIELD_DEPRECATED(Note):
@@ -167,4 +162,6 @@ class FIELD_DEPRECATED(Note):
     summary = "The %(field_name)s header is deprecated."
     text = """\
 This field is no longer recommended for use, because of interoperability problems and/or
-lack of use. See [the deprecation notice](%(deprecation_ref)s) for more information."""
+lack of use.
+
+See [the deprecation notice](%(deprecation_ref)s) for more information."""
