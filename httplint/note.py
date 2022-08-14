@@ -1,8 +1,10 @@
 from enum import Enum
-from typing import Any, Union, Type, List
+from typing import Any, MutableMapping, Dict, Union, Type, List
 
 from markupsafe import Markup, escape
 from markdown import markdown
+
+from httplint.type import VariableType
 
 
 class categories(Enum):
@@ -29,15 +31,13 @@ class Notes:
     A list of notes.
     """
 
-    default_vars = {
-        "response": "This response"
-    }
+    default_vars: Dict[str, VariableType] = {"response": "This response"}
 
     def __init__(self) -> None:
         self.notes: List[Note] = []
 
-    def add(self, subject: str, note: Type["Note"], **vrs: Union[str, int]) -> None:
-        tmp_vars = self.default_vars.copy()
+    def add(self, subject: str, note: Type["Note"], **vrs: VariableType) -> None:
+        tmp_vars: MutableMapping[str, VariableType] = self.default_vars.copy()
         tmp_vars.update(vrs)
         self.notes.append(note(subject, **tmp_vars))
 
@@ -62,8 +62,8 @@ class Note:
         self.subject = subject
         self.vars = vrs or {}
 
-    def __str__(self):
-        return self.show_summary('en')
+    def __str__(self) -> str:
+        return str(self.show_summary("en"))
 
     def __eq__(self, other: Any) -> bool:
         return bool(

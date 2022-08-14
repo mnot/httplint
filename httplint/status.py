@@ -426,7 +426,9 @@ class STATUS_UNSUPPORTED_MEDIA_TYPE(Note):
 class STATUS_IM_A_TEAPOT(Note):
     category = categories.GENERAL
     level = levels.WARN
-    summary = "The server returned 418 (I'm a Teapot), an easter egg defined in RFC 2324."
+    summary = (
+        "The server returned 418 (I'm a Teapot), an easter egg defined in RFC 2324."
+    )
     text = """\
 RFC 2324 was an April 1 RFC that lampooned the various ways HTTP was abused; one such abuse
 was the definition of the application-specific `418 (I'm a Teapot)` status code. In the
