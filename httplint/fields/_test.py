@@ -9,7 +9,7 @@ from httplint.type import (
 )
 
 if TYPE_CHECKING:
-    from . import HttpMessage
+    from httplint.fields import HttpMessage
 
 
 class TestMessage(HttpResponse):

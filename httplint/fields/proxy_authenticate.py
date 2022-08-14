@@ -1,5 +1,5 @@
-from . import HttpField
-from ..syntax import rfc7235
+from httplint.fields import HttpField
+from httplint.syntax import rfc7235
 
 
 class proxy_authenticate(HttpField):

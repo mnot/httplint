@@ -1,11 +1,11 @@
 from typing import Tuple
 
-from . import HttpField
-from ._test import FieldTest
-from ..syntax import rfc7230, rfc7231
-from ..type import AddNoteMethodType
-from ._utils import unquote_string
-from ._notes import FIELD_DEPRECATED
+from httplint.fields import HttpField
+from httplint.fields._test import FieldTest
+from httplint.syntax import rfc7230, rfc7231
+from httplint.type import AddNoteMethodType
+from httplint.fields._utils import unquote_string
+from httplint.fields._notes import FIELD_DEPRECATED
 
 
 class keep_alive(HttpField):

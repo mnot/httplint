@@ -1,4 +1,4 @@
-from . import HttpField, RFC6265
+from httplint.fields import HttpField, RFC6265
 
 
 class set_cookie2(HttpField):

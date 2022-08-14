@@ -1,10 +1,10 @@
 from typing import Tuple
 
-from . import HttpField
-from ._test import FieldTest
-from ..syntax import rfc7231
-from ..type import AddNoteMethodType, ParamDictType
-from ._utils import parse_params
+from httplint.fields import HttpField
+from httplint.fields._test import FieldTest
+from httplint.syntax import rfc7231
+from httplint.type import AddNoteMethodType, ParamDictType
+from httplint.fields._utils import parse_params
 
 
 class content_type(HttpField):

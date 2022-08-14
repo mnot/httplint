@@ -1,11 +1,11 @@
 from typing import Tuple, Union
 
-from . import HttpField
-from ._test import FieldTest
-from ..note import Note, categories, levels
-from ..syntax import rfc7234
-from ..type import AddNoteMethodType
-from ._utils import unquote_string
+from httplint.fields import HttpField
+from httplint.fields._test import FieldTest
+from httplint.note import Note, categories, levels
+from httplint.syntax import rfc7234
+from httplint.type import AddNoteMethodType
+from httplint.fields._utils import unquote_string
 
 
 class cache_control(HttpField):

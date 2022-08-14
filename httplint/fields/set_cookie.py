@@ -3,10 +3,10 @@ from re import match, split
 from urllib.parse import urlsplit
 from typing import List, Tuple, Union
 
-from . import HttpField, RFC6265
-from ._test import FieldTest
-from ..note import Note, categories, levels
-from ..type import AddNoteMethodType
+from httplint.fields import HttpField, RFC6265
+from httplint.fields._test import FieldTest
+from httplint.note import Note, categories, levels
+from httplint.type import AddNoteMethodType
 
 CookieType = Tuple[str, str, List[Tuple[str, Union[str, int]]]]
 

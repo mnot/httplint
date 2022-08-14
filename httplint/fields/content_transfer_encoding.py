@@ -1,4 +1,4 @@
-from . import HttpField
+from httplint.fields import HttpField
 
 
 class content_transfer_encoding(HttpField):

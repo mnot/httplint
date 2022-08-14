@@ -1,6 +1,6 @@
-from . import HttpField
-from ._test import FieldTest
-from ._notes import FIELD_DEPRECATED
+from httplint.fields import HttpField
+from httplint.fields._test import FieldTest
+from httplint.fields._notes import FIELD_DEPRECATED
 
 
 class content_md5(HttpField):

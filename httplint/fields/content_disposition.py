@@ -1,12 +1,12 @@
 from typing import Tuple
 
-from . import HttpField
-from ._test import FieldTest
-from ..note import Note, categories, levels
-from ..syntax import rfc7231
-from ..type import AddNoteMethodType, ParamDictType
-from ._utils import parse_params
-from ._notes import SINGLE_HEADER_REPEAT, PARAM_STAR_QUOTED
+from httplint.fields import HttpField
+from httplint.fields._test import FieldTest
+from httplint.note import Note, categories, levels
+from httplint.syntax import rfc7231
+from httplint.type import AddNoteMethodType, ParamDictType
+from httplint.fields._utils import parse_params
+from httplint.fields._notes import SINGLE_HEADER_REPEAT, PARAM_STAR_QUOTED
 
 
 class content_disposition(HttpField):

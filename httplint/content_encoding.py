@@ -7,7 +7,7 @@ from httplint.note import Note, levels, categories
 from httplint.util import f_num, display_bytes
 
 if TYPE_CHECKING:
-    from .message import HttpMessage
+    from httplint.message import HttpMessage
 
 
 class ContentEncodingProcessor:

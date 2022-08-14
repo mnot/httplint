@@ -1,6 +1,6 @@
-from . import HttpField
-from ._test import FieldTest
-from ..syntax import rfc7231
+from httplint.fields import HttpField
+from httplint.fields._test import FieldTest
+from httplint.syntax import rfc7231
 
 
 class allow(HttpField):

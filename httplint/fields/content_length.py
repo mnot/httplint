@@ -1,8 +1,8 @@
-from . import HttpField
-from ._test import FieldTest
-from ..syntax import rfc7230
-from ..type import AddNoteMethodType
-from ._notes import BAD_SYNTAX
+from httplint.fields import HttpField
+from httplint.fields._test import FieldTest
+from httplint.syntax import rfc7230
+from httplint.type import AddNoteMethodType
+from httplint.fields._notes import BAD_SYNTAX
 
 
 class content_length(HttpField):

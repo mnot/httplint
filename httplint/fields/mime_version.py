@@ -1,6 +1,6 @@
-from . import HttpField
+from httplint.fields import HttpField
 
-from . import RFC2616
+from httplint.fields import RFC2616
 
 
 class mime_version(HttpField):

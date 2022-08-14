@@ -1,12 +1,12 @@
 from typing import Tuple
 
-from . import HttpField
-from ._test import FieldTest
-from ..note import Note, categories, levels
-from ..syntax import rfc7231
-from ..type import AddNoteMethodType, ParamDictType
-from ._utils import parse_params
-from ._notes import BAD_SYNTAX
+from httplint.fields import HttpField
+from httplint.fields._test import FieldTest
+from httplint.note import Note, categories, levels
+from httplint.syntax import rfc7231
+from httplint.type import AddNoteMethodType, ParamDictType
+from httplint.fields._utils import parse_params
+from httplint.fields._notes import BAD_SYNTAX
 
 
 class x_xss_protection(HttpField):

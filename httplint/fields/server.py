@@ -1,5 +1,5 @@
-from . import HttpField
-from ..syntax import rfc7231
+from httplint.fields import HttpField
+from httplint.syntax import rfc7231
 
 
 class server(HttpField):

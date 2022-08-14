@@ -1,13 +1,13 @@
 import re
 from typing import Tuple
 
-from . import HttpField
-from ._test import FieldTest
-from ..note import Note, categories, levels
-from ..syntax import rfc3986, rfc5988
-from ..type import AddNoteMethodType, ParamDictType
-from ._utils import parse_params
-from ._notes import BAD_SYNTAX, PARAM_REPEATS
+from httplint.fields import HttpField
+from httplint.fields._test import FieldTest
+from httplint.note import Note, categories, levels
+from httplint.syntax import rfc3986, rfc5988
+from httplint.type import AddNoteMethodType, ParamDictType
+from httplint.fields._utils import parse_params
+from httplint.fields._notes import BAD_SYNTAX, PARAM_REPEATS
 
 
 class link(HttpField):

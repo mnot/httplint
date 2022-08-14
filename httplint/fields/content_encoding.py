@@ -1,8 +1,8 @@
-from . import HttpField
-from ._test import FieldTest
-from ..note import Note, categories, levels
-from ..syntax import rfc7231
-from ..type import AddNoteMethodType
+from httplint.fields import HttpField
+from httplint.fields._test import FieldTest
+from httplint.note import Note, categories, levels
+from httplint.syntax import rfc7231
+from httplint.type import AddNoteMethodType
 
 
 class content_encoding(HttpField):

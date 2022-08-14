@@ -1,5 +1,5 @@
-from . import HttpField
-from ..syntax import rfc7230
+from httplint.fields import HttpField
+from httplint.syntax import rfc7230
 
 
 class upgrade(HttpField):

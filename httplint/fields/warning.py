@@ -1,5 +1,5 @@
-from . import HttpField
-from ..syntax import rfc7234
+from httplint.fields import HttpField
+from httplint.syntax import rfc7234
 
 
 class warning(HttpField):

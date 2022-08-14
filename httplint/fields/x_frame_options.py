@@ -1,9 +1,9 @@
-from . import HttpField
-from ._test import FieldTest
-from ..note import Note, categories, levels
-from ..syntax import rfc3986, rfc7230
-from ..type import AddNoteMethodType
-from ._notes import BAD_SYNTAX
+from httplint.fields import HttpField
+from httplint.fields._test import FieldTest
+from httplint.note import Note, categories, levels
+from httplint.syntax import rfc3986, rfc7230
+from httplint.type import AddNoteMethodType
+from httplint.fields._notes import BAD_SYNTAX
 
 
 # X-Frame-Options = "DENY"
