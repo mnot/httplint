@@ -61,8 +61,8 @@ class TRANSFER_CODING_UNWANTED(Note):
     level = levels.BAD
     summary = "%(response)s has unsupported transfer-coding."
     text = """\
-%(response)s's `Transfer-Encoding` header indicates it has transfer-codings applied, but REDbot didn't
-ask for it (or them) to be.
+%(response)s's `Transfer-Encoding` header indicates it has transfer-codings applied, but the
+request didn't ask for it (or them) to be.
 
 They are: `%(unwanted_codings)s`
 
