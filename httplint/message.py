@@ -179,8 +179,7 @@ class CL_CORRECT(Note):
     summary = "The Content-Length header is correct."
     text = """\
 `Content-Length` is used by HTTP to delimit messages; that is, to mark the end of one message and
-the beginning of the next. REDbot has checked the length of the content and found the `Content-Length`
-to be correct."""
+the beginning of the next."""
 
 
 class CL_INCORRECT(Note):
@@ -189,11 +188,10 @@ class CL_INCORRECT(Note):
     summary = "%(response)s's Content-Length header is incorrect."
     text = """\
 `Content-Length` is used by HTTP to delimit messages; that is, to mark the end of one message and
-the beginning of the next. REDbot has checked the length of the content and found the `Content-Length`
-is not correct. This can cause problems not only with connection handling, but also caching, since
-an incomplete response is considered uncacheable.
+the beginning of the next. An incorrect `Content-Length` can cause security and intereoperablity
+issues.
 
-The actual content size sent was %(content_length)s bytes."""
+The actual content size was %(content_length)s bytes."""
 
 
 class URI_TOO_LONG(Note):
@@ -210,7 +208,7 @@ class URI_BAD_SYNTAX(Note):
     level = levels.BAD
     summary = "The URI's syntax isn't valid."
     text = """\
-This isn't a valid URI. Look for illegal characters and other problems; see
+This isn't a valid URI. See
 [RFC3986](http://www.ietf.org/rfc/rfc3986.txt) for more information."""
 
 
@@ -219,5 +217,4 @@ class STATUS_PHRASE_ENCODING(Note):
     level = levels.BAD
     summary = "The status phrase contains non-ASCII characters."
     text = """\
-The status phrase can only contain ASCII characters. REDbot has detected (and possibly removed)
-non-ASCII characters in it."""
+The status phrase can only contain ASCII characters."""
