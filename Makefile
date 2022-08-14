@@ -7,6 +7,7 @@ run: test
 .PHONY: test
 test: $(TESTS) venv
 	PYTHONPATH=.:$(VENV) $(VENV)/python test/smoke.py
+	PYTHONPATH=.:$(VENV) $(VENV)/python test/syntax.py
 
 .PHONY: typecheck
 typecheck: venv
