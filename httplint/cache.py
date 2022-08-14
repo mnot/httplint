@@ -1,7 +1,3 @@
-"""
-Cacheability checking function.
-"""
-
 # pylint: disable=too-many-branches,too-many-statements
 
 from .message import HttpRequest, HttpResponse

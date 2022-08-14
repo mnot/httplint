@@ -1,9 +1,5 @@
 # pylint: disable=too-many-public-methods
 
-"""
-The Resource Expert Droid Status Code Checker.
-"""
-
 from functools import partial
 from typing import List
 

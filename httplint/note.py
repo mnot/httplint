@@ -1,13 +1,3 @@
-"""
-A collection of notes that the REDbot can emit.
-
-PLEASE NOTE: the summary field is automatically HTML escaped, so it can contain arbitrary text (as
-long as it's unicode).
-
-However, the longer text field IS NOT ESCAPED, and therefore all variables to be interpolated into
-it need to be escaped to be safe for use in HTML.
-"""
-
 from enum import Enum
 from typing import Any, Union, Type, List
 
@@ -56,6 +46,11 @@ class Note:
     """
     A note about an HTTP resource, representation, or other component
     related to the URI under test.
+
+    The summary field is automatically HTML escaped, so it can contain arbitrary text.
+
+    However, the longer text field IS NOT ESCAPED, and therefore all variables to be interpolated
+    into it need to be escaped to be safe for use in HTML.
     """
 
     category: categories = None
