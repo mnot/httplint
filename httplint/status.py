@@ -3,9 +3,9 @@
 from functools import partial
 from typing import List
 
-from .message import HttpRequest, HttpResponse
-from .note import Note, levels, categories
-from .type import StrFieldListType
+from httplint.message import HttpRequest, HttpResponse
+from httplint.note import Note, levels, categories
+from httplint.type import StrFieldListType
 
 safe_methods = [b"GET", b"HEAD", b"OPTIONS", b"TRACE"]
 

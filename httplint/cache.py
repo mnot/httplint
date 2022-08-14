@@ -1,8 +1,8 @@
 # pylint: disable=too-many-branches,too-many-statements
 
-from .message import HttpRequest, HttpResponse
-from .note import Note, categories, levels
-from .util import relative_time, f_num
+from httplint.message import HttpRequest, HttpResponse
+from httplint.note import Note, categories, levels
+from httplint.util import relative_time, f_num
 
 ### configuration
 CACHEABLE_METHODS = ["GET"]

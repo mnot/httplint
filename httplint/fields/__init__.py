@@ -16,20 +16,20 @@ from typing import (
 import unittest
 
 # from ..message import HttpRequest
-from ..syntax import rfc7230, rfc7231
-from ..type import (
+from httplint.syntax import rfc7230, rfc7231
+from httplint.type import (
     StrFieldListType,
     RawFieldListType,
     FieldDictType,
     AddNoteMethodType,
 )
-from ..util import f_num
+from httplint.util import f_num
 
-from ._utils import RE_FLAGS, parse_date, split_string
-from ._notes import *
+from httplint.fields._utils import RE_FLAGS, parse_date, split_string
+from httplint.fields._notes import *
 
 if TYPE_CHECKING:
-    from ..message import (
+    from httplint.message import (
         HttpMessage,
     )  # pylint: disable=cyclic-import
 

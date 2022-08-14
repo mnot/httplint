@@ -2,7 +2,7 @@
 Common header-related Notes.
 """
 
-from ..note import Note, categories, levels
+from httplint.note import Note, categories, levels
 
 
 class SINGLE_HEADER_REPEAT(Note):

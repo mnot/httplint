@@ -3,8 +3,8 @@ import hashlib
 from typing import List, Tuple, TYPE_CHECKING
 import zlib
 
-from .note import Note, levels, categories
-from .util import f_num, display_bytes
+from httplint.note import Note, levels, categories
+from httplint.util import f_num, display_bytes
 
 if TYPE_CHECKING:
     from .message import HttpMessage

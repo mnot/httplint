@@ -5,9 +5,9 @@ from typing import Dict, List, Union
 
 from urllib.parse import unquote as urlunquote
 
-from ..syntax import rfc7231
-from ..type import AddNoteMethodType
-from ._notes import (
+from httplint.syntax import rfc7231
+from httplint.type import AddNoteMethodType
+from httplint.fields._notes import (
     PARAM_REPEATS,
     PARAM_SINGLE_QUOTED,
     PARAM_STAR_BAD,

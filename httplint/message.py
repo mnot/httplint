@@ -2,12 +2,12 @@ import hashlib
 import re
 from typing import Any, List, Dict, Tuple
 
-from .content_encoding import ContentEncodingProcessor
-from .field_section import FieldSection
-from .note import Notes, Note, levels, categories
-from .syntax import rfc3986
-from .type import RawFieldListType
-from .util import iri_to_uri, f_num
+from httplint.content_encoding import ContentEncodingProcessor
+from httplint.field_section import FieldSection
+from httplint.note import Notes, Note, levels, categories
+from httplint.syntax import rfc3986
+from httplint.type import RawFieldListType
+from httplint.util import iri_to_uri, f_num
 
 
 class HttpMessage:

@@ -8,18 +8,18 @@ from typing import (
     TYPE_CHECKING,
 )
 
-from .fields import HttpField
-from .note import Note, categories, levels
-from .type import (
+from httplint.fields import HttpField
+from httplint.note import Note, categories, levels
+from httplint.type import (
     StrFieldListType,
     RawFieldListType,
     FieldDictType,
     AddNoteMethodType,
 )
-from .util import f_num
+from httplint.util import f_num
 
 if TYPE_CHECKING:
-    from .message import HttpMessage
+    from httplint.message import HttpMessage
 
 
 class FieldSection:
@@ -124,7 +124,7 @@ class FieldSection:
         If default is true, return a dummy if one isn't found; otherwise, None.
         """
 
-        name_token = FieldSection.name_token(field_name)
+        name_token = FieldSection.name_token(field_name) # FIXME: field_aliases
         module = FieldSection.find_field_module(name_token)
         if module and hasattr(module, name_token):
             return getattr(module, name_token)  # type: ignore
@@ -143,7 +143,7 @@ class FieldSection:
         if name_token in FieldSection.field_aliases:
             name_token = FieldSection.field_aliases[name_token]
         try:
-            module_name = f".fields.{name_token}"
+            module_name = f"httplint.fields.{name_token}"
             __import__(module_name)
             return sys.modules[module_name]
         except (ImportError, KeyError, TypeError):

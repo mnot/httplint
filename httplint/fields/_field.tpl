@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 
-from . import HttpField
-from ._test import HttpTest
-from ..note import Note, categories, levels
-from ..type import AddNoteMethodType
+from httplint.fields import HttpField
+from httplint.fields._test import HttpTest
+from httplint.note import Note, categories, levels
+from httplint.type import AddNoteMethodType
 
 class SHORT_NAME(HttpField):
     canonical_name = "SHORT_NAME"

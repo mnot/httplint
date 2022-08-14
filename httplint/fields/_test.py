@@ -1,10 +1,10 @@
 from typing import Any, List, Type, Union, TYPE_CHECKING
 import unittest
 
-from ..field_section import FieldSection
-from ..note import Note
-from ..message import HttpResponse
-from ..type import (
+from httplint.field_section import FieldSection
+from httplint.note import Note
+from httplint.message import HttpResponse
+from httplint.type import (
     AddNoteMethodType,
 )
 
