@@ -9,7 +9,7 @@ class content_encoding(HttpField):
     canonical_name = "Content-Encoding"
     description = """\
 The `Content-Encoding` header's value indicates what additional content codings have
-been applied to the body, and thus what decoding mechanisms must be applied in order to obtain the
+been applied, and thus what decoding mechanisms must be applied in order to obtain the
 media-type referenced by the Content-Type header field.
 
 Content-Encoding is primarily used to allow a document to be compressed without losing the identity

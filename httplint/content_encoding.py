@@ -25,7 +25,7 @@ class ContentEncodingProcessor:
         self.decode_ok: bool = True  # turn False if we have a problem
 
         self._gzip_processor = zlib.decompressobj(-zlib.MAX_WBITS)
-        self._in_gzip_body = False
+        self._in_gzip = False
         self._gzip_header_buffer = b""
 
     def feed_content(self, chunk: bytes) -> None:
@@ -47,11 +47,11 @@ class ContentEncodingProcessor:
         """
         for coding in self.content_codings:
             if coding in ["gzip", "x-gzip"]:
-                if not self._in_gzip_body:
+                if not self._in_gzip:
                     self._gzip_header_buffer += chunk
                     try:
                         chunk = self._read_gzip_header(self._gzip_header_buffer)
-                        self._in_gzip_body = True
+                        self._in_gzip = True
                     except IndexError:
                         return b""  # not a full header yet
                     except IOError as gzip_error:
@@ -75,7 +75,7 @@ class ContentEncodingProcessor:
                     self.decode_ok = False
                     return b""
             else:
-                # we can't handle other codecs, so punt on body processing.
+                # we can't handle other codecs, so punt on content processing.
                 self.decode_ok = False
                 return b""
         return chunk

@@ -10,7 +10,7 @@ from ._utils import parse_params
 class content_type(HttpField):
     canonical_name = "Content-Type"
     description = """\
-The `Content-Type` header indicates the media type of the body sent to the recipient or, in the
+The `Content-Type` header indicates the media type of the content sent to the recipient or, in the
 case of responses to the HEAD method, the media type that would have been sent had the request been
 a GET."""
     reference = f"{rfc7231.SPEC_URL}#header.content_type"
