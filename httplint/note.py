@@ -39,11 +39,17 @@ class Notes:
     A list of notes.
     """
 
+    default_vars = {
+        "response": "This response"
+    }
+
     def __init__(self) -> None:
         self.notes: List[Note] = []
 
     def add(self, subject: str, note: Type["Note"], **vrs: Union[str, int]) -> None:
-        self.notes.append(note(subject, **vrs))
+        tmp_vars = self.default_vars.copy()
+        tmp_vars.update(vrs)
+        self.notes.append(note(subject, **tmp_vars))
 
 
 class Note:
@@ -60,6 +66,9 @@ class Note:
     def __init__(self, subject: str, **vrs: Union[str, int]) -> None:
         self.subject = subject
         self.vars = vrs or {}
+
+    def __str__(self):
+        return self.show_summary('en')
 
     def __eq__(self, other: Any) -> bool:
         return bool(
