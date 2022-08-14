@@ -184,8 +184,7 @@ class FIELD_NAME_ENCODING(Note):
     level = levels.BAD
     summary = "The %(field_name)s header's name contains non-ASCII characters."
     text = """\
-HTTP header field-names can only contain ASCII characters. REDbot has detected (and possibly
-removed) non-ASCII characters in this header name."""
+HTTP field names can only contain ASCII characters."""
 
 
 class FIELD_VALUE_ENCODING(Note):
@@ -193,8 +192,8 @@ class FIELD_VALUE_ENCODING(Note):
     level = levels.WARN
     summary = "The %(field_name)s header's value contains non-ASCII characters."
     text = """\
-HTTP headers use the ISO-8859-1 character set, but in most cases are pure ASCII (a subset of this
-encoding).
+HTTP fields notionally use the ISO-8859-1 character set, but in most cases are pure ASCII
+(a subset of this encoding).
 
-This header has non-ASCII characters, which REDbot has interpreted as being encoded in
+This header has non-ASCII characters, which have been interpreted as being encoded in
 ISO-8859-1. If another encoding is used (e.g., UTF-8), the results may be unpredictable."""

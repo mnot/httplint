@@ -235,9 +235,9 @@ class StatusChecker:
 class NO_DATE_304(Note):
     category = categories.VALIDATION
     level = levels.WARN
-    summary = "304 responses need to have a Date header."
+    summary = "304 responses need to have a Date header field."
     text = """\
-HTTP requires `304 Not Modified` responses to have a `Date` header in all but the most unusual
+HTTP requires `304 (Not Modified)` responses to have a `Date` header field in all but the most unusual
 circumstances."""
 
 
@@ -250,12 +250,12 @@ HTTP allows clients to ask a server if a request containing content (e.g., uploa
 will succeed before sending it, using a mechanism called "Expect/continue".
 
 When used, the client sends an `Expect: 100-continue`, in the request headers, and if the server is
-willing to process it, it will send a `100 Continue` status code to indicate that the request
+willing to process it, it will send a `100 (Continue)` status code to indicate that the request
 should continue.
 
-This response has a `100 Continue` status code, but REDbot did not ask for it (with the `Expect`
-request header). Sending this status code without it being requested can cause interoperability
-problems."""
+This response has a `100 (Continue)` status code, but the request did not ask for it using the
+`Expect` request header field. Sending this status code without it being requested can cause
+interoperability problems."""
 
 
 class UPGRADE_NOT_REQUESTED(Note):
@@ -263,13 +263,11 @@ class UPGRADE_NOT_REQUESTED(Note):
     level = levels.BAD
     summary = "The protocol was upgraded without being requested."
     text = """\
-HTTP defines the `Upgrade` header as a means of negotiating a change of protocol; i.e., it allows
-you to switch the protocol on a given connection from HTTP to something else.
+HTTP defines the `Upgrade` header field as a means of negotiating a change of protocol; i.e., it
+allows you to switch the protocol on a given connection from HTTP to something else.
 
-However, it must be first requested by the client; this response contains an `Upgrade` header, even
-though REDbot did not ask for it.
-
-Trying to upgrade the connection without the client's participation obviously won't work."""
+This response was upgraded, but the request did not contain an `Upgrade` heade field.
+"""
 
 
 class CREATED_SAFE_METHOD(Note):
@@ -277,10 +275,9 @@ class CREATED_SAFE_METHOD(Note):
     level = levels.WARN
     summary = "A new resource was created in response to a safe request."
     text = """\
-The `201 Created` status code indicates that processing the request had the side effect of creating
-a new resource.
+The `201 (Created)` status code indicates that the request created a new resource.
 
-However, the request method that REDbot used (%(method)s) is defined as a "safe" method; that is, it
+However, the request method used (%(method)s) is defined as a "safe" method; that is, it
 should not have any side effects.
 
 Creating resources as a side effect of a safe method can have unintended consequences; for example,
@@ -293,23 +290,21 @@ class CREATED_WITHOUT_LOCATION(Note):
     level = levels.BAD
     summary = "A new resource was created without its location being sent."
     text = """\
-The `201 Created` status code indicates that processing the request had the side effect of creating
-a new resource.
+The `201 (Created)` status code indicates that the request created a new resource.
 
-HTTP specifies that the URL of the new resource is to be indicated in the `Location` header, but it
-isn't present in this response."""
+HTTP specifies that the URL of the new resource is to be indicated in the `Location` header field,
+but it isn't present in this response."""
 
 
 class PARTIAL_WITHOUT_RANGE(Note):
     category = categories.GENERAL
     level = levels.BAD
-    summary = "%(response)s doesn't have a Content-Range header."
+    summary = "%(response)s doesn't have a Content-Range header field."
     text = """\
-The `206 Partial Response` status code indicates that the response content is only partial.
+The `206 (Partial Response)` status code indicates that the response content is only partial.
 
-However, for a response to be partial, it needs to have a `Content-Range` header to indicate what
-part of the full response it carries. This response does not have one, and as a result clients
-won't be able to process it."""
+However, for a response to be partial, it needs to have a `Content-Range` header field to indicate
+what part of the full response it carries. This response does not have one."""
 
 
 class PARTIAL_NOT_REQUESTED(Note):
@@ -317,21 +312,19 @@ class PARTIAL_NOT_REQUESTED(Note):
     level = levels.BAD
     summary = "A partial response was sent when it wasn't requested."
     text = """\
-The `206 Partial Response` status code indicates that the response content is only partial.
+The `206 (Partial Response)` status code indicates that the response content is only partial.
 
-However, the client needs to ask for it with the `Range` header.
-
-REDbot did not request a partial response; sending one without the client requesting it leads to
-interoperability problems."""
+However, the client needs to ask for it with the `Range` header field, and the request did not
+include one."""
 
 
 class REDIRECT_WITHOUT_LOCATION(Note):
     category = categories.GENERAL
     level = levels.BAD
-    summary = "Redirects need to have a Location header."
+    summary = "Redirects need to have a Location header field."
     text = """\
-The %(status)s status code redirects users to another URI. The `Location` header is used to convey
-this URI, but a valid one isn't present in this response."""
+The %(status)s status code redirects users to another URI. The `Location` header field is used to
+convey this URI, but a valid one isn't present in this response."""
 
 
 class STATUS_DEPRECATED(Note):
@@ -358,8 +351,8 @@ class STATUS_NONSTANDARD(Note):
     summary = "%(status)s is not a standard HTTP status code."
     text = """\
 Non-standard status codes are not well-defined and interoperable. Instead of defining your own
-status code, you should reuse one of the more generic ones; for example, 400 for a client-side
-problem, or 500 for a server-side problem."""
+status code, you should reuse one of the more generic ones; for example, `400` for a client-side
+problem, or `500` for a server-side problem."""
 
 
 class STATUS_BAD_REQUEST(Note):
@@ -383,8 +376,7 @@ class STATUS_NOT_FOUND(Note):
     level = levels.INFO
     summary = "The resource could not be found."
     text = """\
-The server couldn't find any resource to serve for the
-     given URI."""
+The server couldn't find any resource to serve for the given URI."""
 
 
 class STATUS_NOT_ACCEPTABLE(Note):
@@ -438,11 +430,11 @@ class STATUS_UNSUPPORTED_MEDIA_TYPE(Note):
 class STATUS_IM_A_TEAPOT(Note):
     category = categories.GENERAL
     level = levels.WARN
-    summary = "The server returned 418 I'm a Teapot, an easter egg defined in RFC 2324."
+    summary = "The server returned 418 (I'm a Teapot), an easter egg defined in RFC 2324."
     text = """\
 RFC 2324 was an April 1 RFC that lampooned the various ways HTTP was abused; one such abuse
-was the definition of the application-specific 418 (I'm a Teapot) status code. In the
-intervening years, this status code has been widely implemented as an "easter egg".
+was the definition of the application-specific `418 (I'm a Teapot)` status code. In the
+intervening years, this status code has been sometimes implemented as an "easter egg".
 
 This status code is not a part of HTTP and hence it might not be supported by some strict
 standards-compliant clients.
