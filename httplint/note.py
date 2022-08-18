@@ -2,7 +2,7 @@ from enum import Enum
 from typing import Any, MutableMapping, Dict, Union, Type, List
 
 from markupsafe import Markup, escape
-from markdown import markdown
+from markdown import Markdown
 
 from httplint.type import VariableType
 
@@ -57,6 +57,7 @@ class Note:
     level: levels = None
     summary = ""
     text = ""
+    _markdown = Markdown(output_format="html")
 
     def __init__(self, subject: str, **vrs: Union[str, int]) -> None:
         self.subject = subject
@@ -88,8 +89,7 @@ class Note:
         The resulting string is already HTML-encoded.
         """
         return Markup(
-            markdown(
-                self.text % {k: escape(str(v)) for k, v in self.vars.items()},
-                output_format="html",
+            self._markdown.reset().convert(
+                self.text % {k: escape(str(v)) for k, v in self.vars.items()}
             )
         )
