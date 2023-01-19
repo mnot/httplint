@@ -8,9 +8,12 @@ It has been extracted from [REDbot](https://redbot.org/), which will eventually 
 
 ## Using httplint
 
+To use this library in your code, you need to do three things: put the HTTP message(s) in a format it can understand, check those messages, and then interpret the resulting notes it gives you about them.
+
+### Representing HTTP messages
+
 
 ### Checking messages
-
 
 
 ### Notes
