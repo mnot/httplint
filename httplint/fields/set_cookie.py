@@ -341,7 +341,7 @@ class SET_COOKIE_UNKNOWN_ATTRIBUTE_VALUE(Note):
 class BasicSCTest(FieldTest):
     name = "Set-Cookie"
     inputs = [b"SID=31d4d96e407aad42"]
-    expected_out = [("SID", "31d4d96e407aad42", [])]  # type: ignore
+    expected_out = [("SID", "31d4d96e407aad42", [])]
 
 
 class ParameterSCTest(FieldTest):
@@ -385,7 +385,7 @@ class MaxAgeScTest(FieldTest):
 class MaxAgeLeadingZeroScTest(FieldTest):
     name = "Set-Cookie"
     inputs = [b"lang=en-US; Max-Age=0123"]
-    expected_out = [("lang", "en-US", [])]  # type: ignore
+    expected_out = [("lang", "en-US", [])]
     expected_err = [SET_COOKIE_LEADING_ZERO_MAX_AGE]
 
 
