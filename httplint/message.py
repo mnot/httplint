@@ -109,9 +109,9 @@ class HttpRequest(HttpMessage):
         self,
     ) -> None:
         HttpMessage.__init__(self)
-        self.method = None  # type: str
-        self.iri = None  # type: str
-        self.uri = None  # type: str
+        self.method: str = None
+        self.iri: str = None
+        self.uri: str = None
 
     def process_top_line(self, method: bytes, iri: bytes, version: bytes) -> None:
         self.method = method.decode("ascii", "replace")
@@ -145,8 +145,8 @@ class HttpResponse(HttpMessage):
 
     def __init__(self) -> None:
         HttpMessage.__init__(self)
-        self.status_code = None  # type: int
-        self.status_phrase = ""
+        self.status_code: int = None
+        self.status_phrase: str = ""
         self.is_head_response = False
 
     def process_top_line(
@@ -156,9 +156,9 @@ class HttpResponse(HttpMessage):
         try:
             self.status_code = int(status_code.decode("ascii", "replace"))
         except UnicodeDecodeError:
-            pass  # FIXME
+            pass
         except ValueError:
-            pass  # FIXME
+            pass
         try:
             self.status_phrase = status_phrase.decode("ascii", "strict")
         except UnicodeDecodeError:

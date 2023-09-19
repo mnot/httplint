@@ -13,10 +13,10 @@ MAX_CLOCK_SKEW = 5  # seconds
 def check_response_caching(response: HttpResponse, request: HttpRequest = None) -> None:
     "Examine HTTP caching characteristics of a response."
 
-    freshness_lifetime = None  # type: int
-    age = None  # type: int
-    store_shared = None  # type: bool
-    store_private = None  # type: bool
+    freshness_lifetime: int = None
+    age: int = None
+    store_shared: bool = None  # pylint: disable=unused-variable
+    store_private: bool = None  # pylint: disable=unused-variable
 
     # get header values
     lm_hdr = response.headers.parsed.get("last-modified", None)

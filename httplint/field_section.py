@@ -124,7 +124,7 @@ class FieldSection:
         If default is true, return a dummy if one isn't found; otherwise, None.
         """
 
-        name_token = FieldSection.name_token(field_name)  # FIXME: field_aliases
+        name_token = FieldSection.name_token(field_name)
         module = FieldSection.find_field_module(name_token)
         if module and hasattr(module, name_token):
             return getattr(module, name_token)  # type: ignore
