@@ -8,4 +8,4 @@ __pycache__
 /.mypy_cache
 /.pytest_cache
 /.venv
-/httplint.egg-info
+/*.egg-info

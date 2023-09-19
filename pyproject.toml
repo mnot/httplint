@@ -1,3 +1,33 @@
+[project]
+name = "httplint"
+dynamic = ["version", "readme"]
+authors = [
+    {name="Mark Nottingham", email="mnot@mnot.net"}
+]
+description = "Lint for HTTP messages."
+requires-python = ">=3.9"
+license = {file = "LICENSE.md"}
+classifiers = [
+    "Operating System :: OS Independent",
+    "Development Status :: 4 - Beta",
+    "License :: OSI Approved :: MIT License",
+    "Intended Audience :: Developers",
+    "Intended Audience :: System Administrators",
+    "Topic :: Internet :: WWW/HTTP",
+    "Topic :: Software Development :: Testing"
+]
+dependencies = [
+]
+
+[project.urls]
+homepage = "https://github.com/mnot/httplint/"
+
+[project.optional-dependencies]
+dev = ["mypy", "black", "pylint", "pytest", "pytest-md", "validate-pyproject"]
+
+[project.scripts]
+
+
 [build-system]
 requires = [
     "setuptools>=42",
@@ -5,9 +35,17 @@ requires = [
 ]
 build-backend = "setuptools.build_meta"
 
+[tool.setuptools.dynamic]
+version = {attr = "httplint.__version__"}
+readme = {file = ["README.md"], content-type = "text/markdown"}
+
+[tool.setuptools.packages.find]
+where = ["."]
+
+[tool.setuptools]
+include-package-data = true
 
 [tool.mypy]
-python_version = 3.7
 follow_imports = "normal"
 incremental = true
 disallow_untyped_defs = true
@@ -37,7 +75,7 @@ disable = "C0114,C0115,C0116,W0613"
 reports = false
 
 [tool.pylint.variables]
-# dummy-variables-rgx = "response_start|response_body|response_done|error|formatter_done|check_done|_"
+dummy-variables-rgx = "response_start|response_body|response_done|error|formatter_done|check_done|_"
 
 [tool.pylint.design]
 max-args=10
