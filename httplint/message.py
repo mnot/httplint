@@ -15,10 +15,9 @@ class HttpMessage:
     Base class for HTTP message state.
     """
 
-    max_sample_size = 1024 * 1024  # How much of the content to keep for later
-
-    def __init__(self, notes: Notes = None) -> None:
+    def __init__(self, notes: Notes = None, max_sample_size: int = 1024) -> None:
         self.notes = notes or Notes()
+        self.max_sample_size = max_sample_size  # biggest sample, in bytes. 0 to disable
 
         self.start_time: int = None
         self.version: str = ""
