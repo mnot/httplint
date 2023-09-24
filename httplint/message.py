@@ -29,9 +29,7 @@ class HttpMessage:
         self.content_len: int = 0
         self.content_hash: bytes = None
         self._hash_processor = hashlib.new("md5")
-
-        self.decoded = ContentEncodingProcessor(self)
-        self.content_processors = [self.decoded]
+        self.content_processors = [ContentEncodingProcessor(self)]
 
         self.transfer_length: int = 0
         self.complete: bool = False
