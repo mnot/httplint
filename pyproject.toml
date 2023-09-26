@@ -23,7 +23,7 @@ dependencies = [
 homepage = "https://github.com/mnot/httplint/"
 
 [project.optional-dependencies]
-dev = ["mypy", "black", "pylint", "pytest", "pytest-md", "validate-pyproject"]
+dev = ["mypy", "black", "pylint", "pytest", "pytest-md", "validate-pyproject", "typing_extensions"]
 
 [project.scripts]
 
@@ -57,6 +57,7 @@ warn_return_any = true
 warn_unreachable = true
 strict_optional = false
 show_error_codes = true
+enable_incomplete_feature = ["Unpack"]
 
 
 [tool.pylint.basic]
