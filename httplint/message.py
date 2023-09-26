@@ -1,6 +1,7 @@
 import hashlib
 import re
-from typing import Any, List, Dict, Tuple
+from typing import Any, List, Dict, Tuple, TypedDict
+from typing_extensions import Unpack, NotRequired
 
 from httplint.content_encoding import ContentEncodingProcessor
 from httplint.field_section import FieldSection
@@ -10,16 +11,24 @@ from httplint.type import RawFieldListType
 from httplint.util import iri_to_uri, f_num
 
 
+class HttpMessageParams(TypedDict):
+    notes: NotRequired[Notes]
+    start_time: NotRequired[int]
+    max_sample_size: NotRequired[int]
+
+
 class HttpMessage:
     """
     Base class for HTTP message state.
     """
 
-    def __init__(self, notes: Notes = None, max_sample_size: int = 1024) -> None:
+    def __init__(
+        self, notes: Notes = None, start_time: int = None, max_sample_size: int = 1024
+    ) -> None:
         self.notes = notes or Notes()
+        self.start_time = start_time
         self.max_sample_size = max_sample_size  # biggest sample, in bytes. 0 to disable
 
-        self.start_time: int = None
         self.version: str = ""
         self.base_uri: str = ""
         self.headers = FieldSection()
@@ -102,10 +111,8 @@ class HttpRequest(HttpMessage):
 
     max_uri_chars = 8000
 
-    def __init__(
-        self,
-    ) -> None:
-        HttpMessage.__init__(self)
+    def __init__(self, **kw: Unpack[HttpMessageParams]) -> None:
+        HttpMessage.__init__(self, **kw)
         self.method: str = None
         self.iri: str = None
         self.uri: str = None
@@ -140,8 +147,8 @@ class HttpResponse(HttpMessage):
     A HTTP Response message.
     """
 
-    def __init__(self) -> None:
-        HttpMessage.__init__(self)
+    def __init__(self, **kw: Unpack[HttpMessageParams]) -> None:
+        HttpMessage.__init__(self, **kw)
         self.status_code: int = None
         self.status_phrase: str = ""
         self.is_head_response = False
