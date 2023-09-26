@@ -13,7 +13,6 @@ from httplint.util import iri_to_uri, f_num
 
 class HttpMessageParams(TypedDict):
     notes: NotRequired[Notes]
-    start_time: NotRequired[int]
     max_sample_size: NotRequired[int]
 
 
@@ -22,11 +21,9 @@ class HttpMessage:
     Base class for HTTP message state.
     """
 
-    def __init__(
-        self, notes: Notes = None, start_time: int = None, max_sample_size: int = 1024
-    ) -> None:
+    def __init__(self, notes: Notes = None, max_sample_size: int = 1024) -> None:
         self.notes = notes or Notes()
-        self.start_time = start_time
+        self.start_time: int = None
         self.max_sample_size = max_sample_size  # biggest sample, in bytes. 0 to disable
 
         self.version: str = ""
@@ -43,10 +40,13 @@ class HttpMessage:
         self.transfer_length: int = 0
         self.complete: bool = False
 
-    def process_headers(self, headers: RawFieldListType) -> None:
+    def process_headers(
+        self, headers: RawFieldListType, start_time: int = None
+    ) -> None:
         """
         Feed a list of (bytes name, bytes value) header tuples in and process them.
         """
+        self.start_time = start_time
         self.headers.process(headers, self)
 
     def feed_content(self, chunk: bytes) -> None:
