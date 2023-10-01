@@ -40,7 +40,7 @@ Each file should define exactly one `headers.HttpHeader` class, whose name is th
 * `reference` - unicode string, URL to the most recent definition of the header.
 * `syntax` - string, regular expression for the field's syntax (evaluated with `re.VERBOSE` and `re.IGNORECASE`). _required_
 * `list_header` - boolean, indicates whether the field supports list syntax (see `parse`). _required_
-* `deprecated` - boolean, indicates whether the field has been deprecated. 
+* `deprecated` - boolean, indicates whether the field has been deprecated.
 * `valid_in_requests` - boolean, indicates whether the field is valid in HTTP requests. _required_
 * `valid_in_responses` - boolean, indicates whether the field is valid in HTTP responses. _required_
 * `no_coverage` - boolean, turns off coverage checks for trivial headers.
@@ -116,7 +116,7 @@ variable.
 
 ## Notes
 
-Header definitions should also include header specific _Note_ classses. 
+Header definitions should also include header specific _Note_ classes.
 
 When writing new notes, it's important to keep in mind that the `text` field is expected to contain
 valid HTML; any variables you pass to it will be escaped for you before rendering.
@@ -128,12 +128,12 @@ Each header definition should also include tests, as subclasses of
 `redbot.message.headers.HeaderTest`. It expects the following class properties:
 
  * `name` - the header field-name
- * `inputs` - a list of header field-values, one item per line. 
+ * `inputs` - a list of header field-values, one item per line.
    E.g., `["foo", "foo, bar"]`
  * `expected_out` - the data structure that _parse_ should return, given
    the inputs
  * `expected_err` - a list of `redbot.speak.Note` classes that are expected
    to be set with `add_note` when parsing the inputs
-    
+
 You can create any number of tests this way; they will be run automatically when
 _tests/test\_headers.py_ is run.
