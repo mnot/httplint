@@ -6,6 +6,6 @@ pytest
 pytest-md
 validate-pyproject
 MarkupSafe==2.1.3
-Markdown==3.4.4
+Markdown==3.5
 types-Markdown
 typing_extensions
