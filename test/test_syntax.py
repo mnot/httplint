@@ -22,9 +22,11 @@ def check_regex() -> None:
                 except re.error as why:
                     errors += 1
                     print("*", module_name, attr_name, why)
+    return count, modules, errors
+
+if __name__ == "__main__":
+    print("Checking Syntax...")
+    count, modules, errors = check_regex()
     print(f"Checked {count} syntax regex in {modules} modules; {errors} errors.")
     if errors > 0:
         sys.exit(1)
-
-if __name__ == "__main__":
-    check_regex()
