@@ -12,6 +12,7 @@ test/http-fields.xml:
 
 .PHONY: clean
 clean: clean_py
+	rm test/http-fields.xml
 
 .PHONY: lint
 lint: lint_py

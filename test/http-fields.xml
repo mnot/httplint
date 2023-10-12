@@ -1,0 +1,1235 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<?xml-stylesheet type="text/xsl" href="http-fields.xsl"?>
+<?xml-model href="http-fields.rng" schematypens="http://relaxng.org/ns/structure/1.0" ?>
+<registry xmlns="http://www.iana.org/assignments" id="http-fields">
+  <title>Hypertext Transfer Protocol (HTTP) Field Name Registry</title>
+  <created>2021-10-01</created>
+  <updated>2023-09-18</updated>
+  
+  <registry id="field-names">
+    <title>Hypertext Transfer Protocol (HTTP) Field Name Registry</title>
+    <xref type="rfc" data="rfc9110"/>
+    <registration_rule>Specification Required for Permanent registrations,
+Expert Review for Provisional registrations. 
+    </registration_rule>
+    <expert>Mark Nottingham, Roy Fielding</expert>
+    <note>See Section 16.3 of <xref type="rfc" data="rfc9110"/> for more
+information on defining and registering new HTTP Fields.
+    </note>
+    <note>New field names, along with changes to existing ones, can be 
+requested using the <xref type="uri" data="https://github.com/protocol-registries/http-fields">registry interface</xref> or the mailing list
+defined in <xref type="rfc" data="rfc9110"/>.
+    </note>
+    <record updated="2022-04-05">
+      <value>A-IM</value>
+      <status>permanent</status>
+      <xref type="rfc" data="rfc3229">RFC 3229: Delta encoding in HTTP</xref>
+    </record>
+    <record updated="2021-10-01">
+      <value>Accept</value>
+      <status>permanent</status>
+      <xref type="rfc" data="rfc9110">RFC9110, Section 12.5.1: HTTP Semantics</xref>
+    </record>
+    <record updated="2022-04-05">
+      <value>Accept-Additions</value>
+      <status>permanent</status>
+      <xref type="rfc" data="rfc2324">RFC 2324: Hyper Text Coffee Pot Control Protocol (HTCPCP/1.0)</xref>
+    </record>
+    <record date="2020-07-13">
+      <value>Accept-CH</value>
+      <status>permanent</status>
+      <xref type="rfc" data="rfc8942">RFC 8942, Section 3.1: HTTP Client Hints</xref>
+    </record>
+    <record updated="2021-10-01">
+      <value>Accept-Charset</value>
+      <status>deprecated</status>
+      <xref type="rfc" data="rfc9110">RFC9110, Section 12.5.2: HTTP Semantics</xref>
+    </record>
+    <record date="2013-11-01">
+      <value>Accept-Datetime</value>
+      <status>permanent</status>
+      <xref type="rfc" data="rfc7089">RFC 7089: HTTP Framework for Time-Based Access to Resource States -- Memento</xref>
+    </record>
+    <record updated="2019-09-15">
+      <value>Accept-Encoding</value>
+      <status>permanent</status>
+      <xref type="rfc" data="rfc9110">RFC9110, Section 12.5.3: HTTP Semantics</xref>
+    </record>
+    <record updated="2022-04-05">
+      <value>Accept-Features</value>
+      <status>permanent</status>
+      <xref type="rfc" data="rfc2295">RFC 2295: Transparent Content Negotiation in HTTP</xref>
+    </record>
+    <record updated="2021-10-01">
+      <value>Accept-Language</value>
+      <status>permanent</status>
+      <xref type="rfc" data="rfc9110">RFC9110, Section 12.5.4: HTTP Semantics</xref>
+    </record>
+    <record updated="2022-04-01">
+      <value>Accept-Patch</value>
+      <status>permanent</status>
+      <xref type="rfc" data="rfc5789">RFC 5789: PATCH Method for HTTP</xref>
+    </record>
+    <record date="2017-03-14">
+      <file type="template">perm/accept-post</file>
+      <value>Accept-Post</value>
+      <status>permanent</status>
+      <xref type="uri" data="https://www.w3.org/TR/ldp">Linked Data Platform 1.0</xref>
+    </record>
+    <record updated="2021-10-01">
+      <value>Accept-Ranges</value>
+      <status>permanent</status>
+      <xref type="rfc" data="rfc9110">RFC9110, Section 14.3: HTTP Semantics</xref>
+    </record>
+    <record date="2023-08-18">
+      <value>Accept-Signature</value>
+      <status>permanent</status>
+      <xref type="draft" data="RFC-ietf-httpbis-message-signatures-19">RFC-ietf-httpbis-message-signatures-19, Section 5.1: HTTP Message Signatures</xref>
+    </record>
+    <record updated="2021-11-03">
+      <value>Access-Control</value>
+      <status>obsoleted</status>
+      <xref type="uri" data="https://www.w3.org/TR/2007/WD-access-control-20071126/#access-control0">Access Control for Cross-site Requests</xref>
+    </record>
+    <record updated="2021-11-01">
+      <value>Access-Control-Allow-Credentials</value>
+      <status>permanent</status>
+      <xref type="uri" data="https://fetch.spec.whatwg.org/#http-access-control-allow-credentials">Fetch</xref>
+    </record>
+    <record updated="2021-11-01">
+      <value>Access-Control-Allow-Headers</value>
+      <status>permanent</status>
+      <xref type="uri" data="https://fetch.spec.whatwg.org/#http-access-control-allow-headers">Fetch</xref>
+    </record>
+    <record updated="2021-11-01">
+      <value>Access-Control-Allow-Methods</value>
+      <status>permanent</status>
+      <xref type="uri" data="https://fetch.spec.whatwg.org/#http-access-control-allow-methods">Fetch</xref>
+    </record>
+    <record updated="2021-11-01">
+      <value>Access-Control-Allow-Origin</value>
+      <status>permanent</status>
+      <xref type="uri" data="https://fetch.spec.whatwg.org/#http-access-control-allow-origin">Fetch</xref>
+    </record>
+    <record date="2021-11-01">
+      <value>Access-Control-Expose-Headers</value>
+      <status>permanent</status>
+      <xref type="uri" data="https://fetch.spec.whatwg.org/#http-access-control-expose-headers">Fetch</xref>
+    </record>
+    <record updated="2021-11-01">
+      <value>Access-Control-Max-Age</value>
+      <status>permanent</status>
+      <xref type="uri" data="https://fetch.spec.whatwg.org/#http-access-control-max-age">Fetch</xref>
+    </record>
+    <record updated="2021-11-01">
+      <value>Access-Control-Request-Headers</value>
+      <status>permanent</status>
+      <xref type="uri" data="https://fetch.spec.whatwg.org/#http-access-control-request-headers">Fetch</xref>
+    </record>
+    <record updated="2021-11-01">
+      <value>Access-Control-Request-Method</value>
+      <status>permanent</status>
+      <xref type="uri" data="https://fetch.spec.whatwg.org/#http-access-control-request-method">Fetch</xref>
+    </record>
+    <record updated="2021-10-06">
+      <value>Age</value>
+      <status>permanent</status>
+      <xref type="rfc" data="rfc9111">RFC9111, Section 5.1: HTTP Caching</xref>
+    </record>
+    <record updated="2021-10-01">
+      <value>Allow</value>
+      <status>permanent</status>
+      <xref type="rfc" data="rfc9110">RFC9110, Section 10.2.1: HTTP Semantics</xref>
+    </record>
+    <record date="2015-07-08">
+      <value>ALPN</value>
+      <status>permanent</status>
+      <xref type="rfc" data="rfc7639">RFC 7639, Section 2: The ALPN HTTP Header Field</xref>
+    </record>
+    <record date="2016-03-18">
+      <value>Alt-Svc</value>
+      <status>permanent</status>
+      <xref type="rfc" data="rfc7838">RFC 7838: HTTP Alternative Services</xref>
+    </record>
+    <record date="2016-03-18">
+      <value>Alt-Used</value>
+      <status>permanent</status>
+      <xref type="rfc" data="rfc7838">RFC 7838: HTTP Alternative Services</xref>
+    </record>
+    <record updated="2022-04-05">
+      <value>Alternates</value>
+      <status>permanent</status>
+      <xref type="rfc" data="rfc2295">RFC 2295: Transparent Content Negotiation in HTTP</xref>
+    </record>
+    <record date="2018-09-24" updated="2022-05-23">
+      <value>AMP-Cache-Transform</value>
+      <status>provisional</status>
+      <xref type="uri" data="https://github.com/ampproject/amphtml/blob/main/docs/spec/amp-cache-transform.md">AMP-Cache-Transform HTTP request header</xref>
+    </record>
+    <record>
+      <value>Apply-To-Redirect-Ref</value>
+      <status>permanent</status>
+      <xref type="rfc" data="rfc4437">RFC 4437: Web Distributed Authoring and Versioning (WebDAV) Redirect Reference Resources</xref>
+    </record>
+    <record updated="2016-11-17">
+      <value>Authentication-Control</value>
+      <status>permanent</status>
+      <xref type="rfc" data="rfc8053">RFC 8053, Section 4: HTTP Authentication Extensions for Interactive Clients</xref>
+    </record>
+    <record updated="2021-10-01">
+      <value>Authentication-Info</value>
+      <status>permanent</status>
+      <xref type="rfc" data="rfc9110">RFC9110, Section 11.6.3: HTTP Semantics</xref>
+    </record>
+    <record updated="2021-10-01">
+      <value>Authorization</value>
+      <status>permanent</status>
+      <xref type="rfc" data="rfc9110">RFC9110, Section 11.6.2: HTTP Semantics</xref>
+    </record>
+    <record updated="2021-12-28">
+      <value>C-Ext</value>
+      <status>obsoleted</status>
+      <xref type="rfc" data="rfc2774">RFC 2774: An HTTP Extension Framework</xref>
+      <xref type="uri" data="https://datatracker.ietf.org/doc/status-change-http-experiments-to-historic">status-change-http-experiments-to-historic</xref>
+    </record>
+    <record updated="2021-12-28">
+      <value>C-Man</value>
+      <status>obsoleted</status>
+      <xref type="rfc" data="rfc2774">RFC 2774: An HTTP Extension Framework</xref>
+      <xref type="uri" data="https://datatracker.ietf.org/doc/status-change-http-experiments-to-historic">status-change-http-experiments-to-historic</xref>
+    </record>
+    <record updated="2021-12-28">
+      <value>C-Opt</value>
+      <status>obsoleted</status>
+      <xref type="rfc" data="rfc2774">RFC 2774: An HTTP Extension Framework</xref>
+      <xref type="uri" data="https://datatracker.ietf.org/doc/status-change-http-experiments-to-historic">status-change-http-experiments-to-historic</xref>
+    </record>
+    <record updated="2021-12-28">
+      <value>C-PEP</value>
+      <status>obsoleted</status>
+      <xref type="uri" data="https://www.w3.org/TR/WD-http-pep">PEP - an Extension Mechanism for HTTP</xref>
+      <xref type="uri" data="https://datatracker.ietf.org/doc/status-change-http-experiments-to-historic">status-change-http-experiments-to-historic</xref>
+    </record>
+    <record updated="2021-12-28">
+      <value>C-PEP-Info</value>
+      <status>deprecated</status>
+      <xref type="uri" data="https://www.w3.org/TR/WD-http-pep">PEP - an Extension Mechanism for HTTP</xref>
+      <xref type="uri" data="https://datatracker.ietf.org/doc/status-change-http-experiments-to-historic">status-change-http-experiments-to-historic</xref>
+    </record>
+    <record updated="2021-10-06">
+      <value>Cache-Control</value>
+      <status>permanent</status>
+      <xref type="rfc" data="rfc9111">RFC9111, Section 5.2</xref>
+    </record>
+    <record date="2021-10-06">
+      <value>Cache-Status</value>
+      <status>permanent</status>
+      <xref type="rfc" data="rfc9211">RFC9211: The Cache-Status HTTP Response Header Field</xref>
+    </record>
+    <record date="2019-03-28">
+      <value>Cal-Managed-ID</value>
+      <status>permanent</status>
+      <xref type="rfc" data="rfc8607">RFC 8607, Section 5.1: Calendaring Extensions to WebDAV (CalDAV): Managed Attachments</xref>
+    </record>
+    <record date="2015-10-15">
+      <value>CalDAV-Timezones</value>
+      <status>permanent</status>
+      <xref type="rfc" data="rfc7809">RFC 7809, Section 7.1: Calendaring Extensions to WebDAV (CalDAV): Time Zones by Reference</xref>
+    </record>
+    <record date="2022-06-23">
+      <value>Capsule-Protocol</value>
+      <status>permanent</status>
+      <xref type="rfc" data="rfc9297"/>
+    </record>
+    <record date="2022-01-26">
+      <value>CDN-Cache-Control</value>
+      <status>permanent</status>
+      <xref type="rfc" data="rfc9213">RFC9213: Targeted HTTP Cache Control</xref>
+      <comments>Cache directives targeted at content delivery networks</comments>
+    </record>
+    <record date="2019-02-08">
+      <value>CDN-Loop</value>
+      <status>permanent</status>
+      <xref type="rfc" data="rfc8586">RFC 8586: Loop Detection in Content Delivery Networks (CDNs)</xref>
+    </record>
+    <record date="2019-10-25">
+      <value>Cert-Not-After</value>
+      <status>permanent</status>
+      <xref type="rfc" data="rfc8739">RFC 8739, Section 3.3: Support for Short-Term, Automatically Renewed (STAR) Certificates in the Automated Certificate Management Environment (ACME)</xref>
+    </record>
+    <record date="2019-10-25">
+      <value>Cert-Not-Before</value>
+      <status>permanent</status>
+      <xref type="rfc" data="rfc8739">RFC 8739, Section 3.3: Support for Short-Term, Automatically Renewed (STAR) Certificates in the Automated Certificate Management Environment (ACME)</xref>
+    </record>
+    <record date="2022-02-07">
+      <value>Clear-Site-Data</value>
+      <status>permanent</status>
+      <xref type="uri" data="https://w3.org/TR/clear-site-data/#header">Clear Site Data</xref>
+    </record>
+    <record date="2023-03-21">
+      <value>Client-Cert</value>
+      <status>permanent</status>
+      <xref type="rfc" data="rfc9440">RFC9440, Section 2: Client-Cert HTTP Header Field</xref>
+    </record>
+    <record date="2023-03-21">
+      <value>Client-Cert-Chain</value>
+      <status>permanent</status>
+      <xref type="rfc" data="rfc9440">RFC9440, Section 2: Client-Cert HTTP Header Field</xref>
+    </record>
+    <record updated="2021-10-06">
+      <value>Close</value>
+      <status>permanent</status>
+      <xref type="rfc" data="rfc9112">RFC9112, Section 9.6: HTTP/1.1</xref>
+      <comments>(reserved)</comments>
+    </record>
+    <record date="2021-12-02">
+      <value>Configuration-Context</value>
+      <status>provisional</status>
+      <xref type="uri" data="https://docs.oasis-open-projects.org/oslc-op/config/v1.0/psd01/config-resources.html#configcontext">OSLC Configuration Management Version 1.0. Part 3: Configuration Specification</xref>
+    </record>
+    <record updated="2021-10-01">
+      <value>Connection</value>
+      <status>permanent</status>
+      <xref type="rfc" data="rfc9110">RFC9110, Section 7.6.1: HTTP Semantics</xref>
+    </record>
+    <record>
+      <value>Content-Base</value>
+      <status>obsoleted</status>
+      <xref type="rfc" data="rfc2068">RFC 2068: Hypertext Transfer Protocol -- HTTP/1.1</xref>
+      <xref type="rfc" data="rfc2616">RFC 2616: Hypertext Transfer Protocol -- HTTP/1.1</xref>
+    </record>
+    <record date="2023-07-27">
+      <value>Content-Digest</value>
+      <status>permanent</status>
+      <xref type="draft" data="RFC-ietf-httpbis-digest-headers-13">RFC-ietf-httpbis-digest-headers-13, Section 2: Digest Fields</xref>
+    </record>
+    <record>
+      <value>Content-Disposition</value>
+      <status>permanent</status>
+      <xref type="rfc" data="rfc6266">RFC 6266: Use of the Content-Disposition Header Field in the 
+        Hypertext Transfer Protocol (HTTP)</xref>
+    </record>
+    <record updated="2021-10-01">
+      <value>Content-Encoding</value>
+      <status>permanent</status>
+      <xref type="rfc" data="rfc9110">RFC9110, Section 8.4: HTTP Semantics</xref>
+    </record>
+    <record updated="2022-05-02">
+      <value>Content-ID</value>
+      <status>permanent</status>
+      <xref type="uri" data="https://www.w3.org/TR/NOTE-drp">The HTTP Distribution and Replication Protocol</xref>
+    </record>
+    <record updated="2021-10-01">
+      <value>Content-Language</value>
+      <status>permanent</status>
+      <xref type="rfc" data="rfc9110">RFC9110, Section 8.5: HTTP Semantics</xref>
+    </record>
+    <record updated="2021-10-01">
+      <value>Content-Length</value>
+      <status>permanent</status>
+      <xref type="rfc" data="rfc9110">RFC9110, Section 8.6: HTTP Semantics</xref>
+    </record>
+    <record updated="2021-10-01">
+      <value>Content-Location</value>
+      <status>permanent</status>
+      <xref type="rfc" data="rfc9110">RFC9110, Section 8.7: HTTP Semantics</xref>
+    </record>
+    <record updated="2021-10-01">
+      <value>Content-MD5</value>
+      <status>obsoleted</status>
+      <xref type="rfc" data="rfc2616">RFC 2616, Section 14.15: Hypertext Transfer Protocol -- HTTP/1.1</xref>
+      <xref type="rfc" data="rfc7231">RFC 7231, Appendix B: Hypertext Transfer Protocol (HTTP/1.1): Semantics and Content</xref>
+    </record>
+    <record updated="2021-10-01">
+      <value>Content-Range</value>
+      <status>permanent</status>
+      <xref type="rfc" data="rfc9110">RFC9110, Section 14.4: HTTP Semantics</xref>
+    </record>
+    <record updated="2022-05-03">
+      <value>Content-Script-Type</value>
+      <status>obsoleted</status>
+      <xref type="uri" data="https://www.w3.org/TR/html401">HTML 4.01 Specification</xref>
+    </record>
+    <record date="2021-11-10">
+      <value>Content-Security-Policy</value>
+      <status>permanent</status>
+      <xref type="uri" data="https://www.w3.org/TR/CSP/#csp-header">Content Security Policy Level 3</xref>
+    </record>
+    <record date="2021-11-10">
+      <value>Content-Security-Policy-Report-Only</value>
+      <status>permanent</status>
+      <xref type="uri" data="https://www.w3.org/TR/CSP/#cspro-header">Content Security Policy Level 3</xref>
+    </record>
+    <record updated="2022-05-03">
+      <value>Content-Style-Type</value>
+      <status>obsoleted</status>
+      <xref type="uri" data="https://www.w3.org/TR/html401">HTML 4.01 Specification</xref>
+    </record>
+    <record updated="2021-10-01">
+      <value>Content-Type</value>
+      <status>permanent</status>
+      <xref type="rfc" data="rfc9110">RFC9110, Section 8.3: HTTP Semantics</xref>
+    </record>
+    <record updated="2022-04-05">
+      <value>Content-Version</value>
+      <status>obsoleted</status>
+      <xref type="rfc" data="rfc2068">RFC 2068: Hypertext Transfer Protocol -- HTTP/1.1</xref>
+    </record>
+    <record>
+      <value>Cookie</value>
+      <status>permanent</status>
+      <xref type="rfc" data="rfc6265">RFC 6265: HTTP State Management Mechanism</xref>
+    </record>
+    <record>
+      <value>Cookie2</value>
+      <status>obsoleted</status>
+      <xref type="rfc" data="rfc2965">RFC 2965: HTTP State Management Mechanism</xref>
+      <xref type="rfc" data="rfc6265">RFC 6265: HTTP State Management Mechanism</xref>
+    </record>
+    <record date="2021-11-10" updated="2021-11-29">
+      <value>Cross-Origin-Embedder-Policy</value>
+      <status>permanent</status>
+      <xref type="uri" data="https://html.spec.whatwg.org/multipage/origin.html#cross-origin-embedder-policy">HTML</xref>
+    </record>
+    <record date="2021-11-10" updated="2021-11-29">
+      <value>Cross-Origin-Embedder-Policy-Report-Only</value>
+      <status>permanent</status>
+      <xref type="uri" data="https://html.spec.whatwg.org/multipage/origin.html#cross-origin-embedder-policy-report-only">HTML</xref>
+    </record>
+    <record date="2021-11-10" updated="2021-11-29">
+      <value>Cross-Origin-Opener-Policy</value>
+      <status>permanent</status>
+      <xref type="uri" data="https://html.spec.whatwg.org/multipage/origin.html#cross-origin-opener-policy-2">HTML</xref>
+    </record>
+    <record date="2021-11-10" updated="2021-11-29">
+      <value>Cross-Origin-Opener-Policy-Report-Only</value>
+      <status>permanent</status>
+      <xref type="uri" data="https://html.spec.whatwg.org/multipage/origin.html#cross-origin-opener-policy-report-only">HTML</xref>
+    </record>
+    <record date="2021-10-27">
+      <value>Cross-Origin-Resource-Policy</value>
+      <status>permanent</status>
+      <xref type="uri" data="https://fetch.spec.whatwg.org/#cross-origin-resource-policy-header">Fetch</xref>
+    </record>
+    <record>
+      <value>DASL</value>
+      <status>permanent</status>
+      <xref type="rfc" data="rfc5323">RFC 5323: Web Distributed Authoring and Versioning (WebDAV) SEARCH</xref>
+    </record>
+    <record updated="2021-10-01">
+      <value>Date</value>
+      <status>permanent</status>
+      <xref type="rfc" data="rfc9110">RFC9110, Section 6.6.1: HTTP Semantics</xref>
+    </record>
+    <record>
+      <value>DAV</value>
+      <status>permanent</status>
+      <xref type="rfc" data="rfc4918">RFC 4918: HTTP Extensions for Web Distributed Authoring and Versioning (WebDAV)</xref>
+    </record>
+    <record updated="2022-05-03">
+      <value>Default-Style</value>
+      <status>obsoleted</status>
+      <xref type="uri" data="https://www.w3.org/TR/html401">HTML 4.01 Specification</xref>
+    </record>
+    <record updated="2022-04-05">
+      <value>Delta-Base</value>
+      <status>permanent</status>
+      <xref type="rfc" data="rfc3229">RFC 3229: Delta encoding in HTTP</xref>
+    </record>
+    <record>
+      <value>Depth</value>
+      <status>permanent</status>
+      <xref type="rfc" data="rfc4918">RFC 4918: HTTP Extensions for Web Distributed Authoring and Versioning (WebDAV)</xref>
+    </record>
+    <record updated="2022-04-05">
+      <value>Derived-From</value>
+      <status>obsoleted</status>
+      <xref type="rfc" data="rfc2068">RFC 2068: Hypertext Transfer Protocol -- HTTP/1.1</xref>
+    </record>
+    <record>
+      <value>Destination</value>
+      <status>permanent</status>
+      <xref type="rfc" data="rfc4918">RFC 4918: HTTP Extensions for Web Distributed Authoring and Versioning (WebDAV)</xref>
+    </record>
+    <record updated="2022-05-02">
+      <value>Differential-ID</value>
+      <status>permanent</status>
+      <xref type="uri" data="https://www.w3.org/TR/NOTE-drp">The HTTP Distribution and Replication Protocol</xref>
+    </record>
+    <record updated="2023-07-27">
+      <value>Digest</value>
+      <status>obsoleted</status>
+      <xref type="rfc" data="rfc3230">RFC 3230: Instance Digests in HTTP</xref>
+      <xref type="draft" data="RFC-ietf-httpbis-digest-headers-13">RFC-ietf-httpbis-digest-headers-13, Section 1.3: Digest Fields</xref>
+    </record>
+    <record updated="2023-05-01">
+      <value>DPoP</value>
+      <status>permanent</status>
+      <xref type="rfc" data="rfc9449">RFC9449: OAuth 2.0 Demonstrating Proof of Possession (DPoP)</xref>
+    </record>
+    <record updated="2023-05-01">
+      <value>DPoP-Nonce</value>
+      <status>permanent</status>
+      <xref type="rfc" data="rfc9449">RFC9449: OAuth 2.0 Demonstrating Proof of Possession (DPoP)</xref>
+    </record>
+    <record date="2018-07-02">
+      <value>Early-Data</value>
+      <status>permanent</status>
+      <xref type="rfc" data="rfc8470">RFC 8470: Using Early Data in HTTP</xref>
+    </record>
+    <record>
+      <value>EDIINT-Features</value>
+      <status>provisional</status>
+      <xref type="rfc" data="rfc6017">RFC 6017: Electronic Data Interchange - Internet Integration (EDIINT) Features Header Field</xref>
+    </record>
+    <record updated="2021-10-01">
+      <value>ETag</value>
+      <status>permanent</status>
+      <xref type="rfc" data="rfc9110">RFC9110, Section 8.8.3: HTTP Semantics</xref>
+    </record>
+    <record updated="2021-10-01">
+      <value>Expect</value>
+      <status>permanent</status>
+      <xref type="rfc" data="rfc9110">RFC9110, Section 10.1.1: HTTP Semantics</xref>
+    </record>
+    <record date="2018-12-21">
+      <value>Expect-CT</value>
+      <status>permanent</status>
+      <xref type="rfc" data="rfc9163">RFC9163: Expect-CT Extension for HTTP</xref>
+    </record>
+    <record updated="2021-10-06">
+      <value>Expires</value>
+      <status>permanent</status>
+      <xref type="rfc" data="rfc9111">RFC9111, Section 5.3: HTTP Caching</xref>
+    </record>
+    <record updated="2022-04-05">
+      <value>Ext</value>
+      <status>obsoleted</status>
+      <xref type="rfc" data="rfc2774">RFC 2774: An HTTP Extension Framework</xref>
+      <xref type="uri" data="https://datatracker.ietf.org/doc/status-change-http-experiments-to-historic">status-change-http-experiments-to-historic</xref>
+    </record>
+    <record>
+      <value>Forwarded</value>
+      <status>permanent</status>
+      <xref type="rfc" data="rfc7239">RFC 7239: Forwarded HTTP Extension</xref>
+    </record>
+    <record updated="2021-10-01">
+      <value>From</value>
+      <status>permanent</status>
+      <xref type="rfc" data="rfc9110">RFC9110, Section 10.1.2: HTTP Semantics</xref>
+    </record>
+    <record updated="2022-05-02">
+      <value>GetProfile</value>
+      <status>obsoleted</status>
+      <xref type="uri" data="https://www.w3.org/TR/NOTE-OPS-OverHTTP">Implementation of OPS Over HTTP</xref>
+    </record>
+    <record date="2015-01-20">
+      <value>Hobareg</value>
+      <status>permanent</status>
+      <xref type="rfc" data="rfc7486">RFC 7486, Section 6.1.1: HTTP Origin-Bound Authentication (HOBA)</xref>
+    </record>
+    <record updated="2021-10-01">
+      <value>Host</value>
+      <status>permanent</status>
+      <xref type="rfc" data="rfc9110">RFC9110, Section 7.2: HTTP Semantics</xref>
+    </record>
+    <record date="2015-02-20" updated="2022-02-02">
+      <value>HTTP2-Settings</value>
+      <status>obsoleted</status>
+      <xref type="rfc" data="rfc7540">RFC 7540, Section 3.2.1: Hypertext Transfer Protocol Version 2 (HTTP/2)</xref>
+      <comments>Obsolete; see Section 11.1 of <xref type="rfc" data="rfc9113"/></comments>
+    </record>
+    <record>
+      <value>If</value>
+      <status>permanent</status>
+      <xref type="rfc" data="rfc4918">RFC 4918: HTTP Extensions for Web Distributed Authoring and Versioning (WebDAV)</xref>
+    </record>
+    <record updated="2021-10-01">
+      <value>If-Match</value>
+      <status>permanent</status>
+      <xref type="rfc" data="rfc9110">RFC9110, Section 13.1.1: HTTP Semantics</xref>
+    </record>
+    <record updated="2021-10-01">
+      <value>If-Modified-Since</value>
+      <status>permanent</status>
+      <xref type="rfc" data="rfc9110">RFC9110, Section 13.1.3: HTTP Semantics</xref>
+    </record>
+    <record updated="2021-10-01">
+      <value>If-None-Match</value>
+      <status>permanent</status>
+      <xref type="rfc" data="rfc9110">RFC9110, Section 13.1.2: HTTP Semantics</xref>
+    </record>
+    <record updated="2021-10-01">
+      <value>If-Range</value>
+      <status>permanent</status>
+      <xref type="rfc" data="rfc9110">RFC9110, Section 13.1.5: HTTP Semantics</xref>
+    </record>
+    <record>
+      <value>If-Schedule-Tag-Match</value>
+      <status>permanent</status>
+      <xref type="rfc" data="rfc6638"> RFC 6338: Scheduling Extensions to CalDAV</xref>
+    </record>
+    <record updated="2021-10-01">
+      <value>If-Unmodified-Since</value>
+      <status>permanent</status>
+      <xref type="rfc" data="rfc9110">RFC9110, Section 13.1.4: HTTP Semantics</xref>
+    </record>
+    <record updated="2022-04-05">
+      <value>IM</value>
+      <status>permanent</status>
+      <xref type="rfc" data="rfc3229">RFC 3229: Delta encoding in HTTP</xref>
+    </record>
+    <record date="2018-07-13">
+      <value>Include-Referred-Token-Binding-ID</value>
+      <status>permanent</status>
+      <xref type="rfc" data="rfc8473">RFC 8473: Token Binding over HTTP</xref> 
+    </record>
+    <record date="2020-01-14">
+      <file type="template">prov/isolation</file>
+      <value>Isolation</value>
+      <status>provisional</status>
+      <xref type="uri" data="http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_HeaderIsolationODataIsolation">OData Version 4.01 Part 1: Protocol</xref>
+      <xref type="person" data="OASIS"/>
+      <xref type="person" data="Chet_Ensign"/>
+    </record>
+    <record updated="2022-04-05">
+      <value>Keep-Alive</value>
+      <status>permanent</status>
+      <xref type="rfc" data="rfc2068">RFC 2068: Hypertext Transfer Protocol -- HTTP/1.1</xref>
+    </record>
+    <record updated="2022-04-05">
+      <value>Label</value>
+      <status>permanent</status>
+      <xref type="rfc" data="rfc3253">RFC 3253: Versioning Extensions to WebDAV: (Web Distributed Authoring and Versioning)</xref>
+    </record>
+    <record date="2021-11-29">
+      <value>Last-Event-ID</value>
+      <status>permanent</status>
+      <xref type="uri" data="https://html.spec.whatwg.org/multipage/server-sent-events.html#last-event-id">HTML</xref>
+    </record>
+    <record updated="2021-10-01">
+      <value>Last-Modified</value>
+      <status>permanent</status>
+      <xref type="rfc" data="rfc9110">RFC9110, Section 8.8.2: HTTP Semantics</xref>
+    </record>
+    <record updated="2017-08-21">
+      <value>Link</value>
+      <status>permanent</status>
+      <xref type="rfc" data="rfc8288">RFC 8288: Web Linking</xref>
+    </record>
+    <record updated="2021-10-01">
+      <value>Location</value>
+      <status>permanent</status>
+      <xref type="rfc" data="rfc9110">RFC9110, Section 10.2.2: HTTP Semantics</xref>
+    </record>
+    <record>
+      <value>Lock-Token</value>
+      <status>permanent</status>
+      <xref type="rfc" data="rfc4918">RFC 4918: HTTP Extensions for Web Distributed Authoring and Versioning (WebDAV)</xref>
+    </record>
+    <record updated="2022-04-05">
+      <value>Man</value>
+      <status>obsoleted</status>
+      <xref type="rfc" data="rfc2774">RFC 2774: An HTTP Extension Framework</xref>
+      <xref type="uri" data="https://datatracker.ietf.org/doc/status-change-http-experiments-to-historic">status-change-http-experiments-to-historic</xref>
+    </record>
+    <record updated="2021-10-01">
+      <value>Max-Forwards</value>
+      <status>permanent</status>
+      <xref type="rfc" data="rfc9110">RFC9110, Section 7.6.2: HTTP Semantics</xref>
+    </record>
+    <record date="2013-11-01">
+      <value>Memento-Datetime</value>
+      <status>permanent</status>
+      <xref type="rfc" data="rfc7089">RFC 7089: HTTP Framework for Time-Based Access to Resource States -- Memento</xref>
+    </record>
+    <record updated="2022-04-05">
+      <value>Meter</value>
+      <status>permanent</status>
+      <xref type="rfc" data="rfc2227">RFC 2227: Simple Hit-Metering and Usage-Limiting for HTTP</xref>
+    </record>
+    <record updated="2021-11-03">
+      <value>Method-Check</value>
+      <status>obsoleted</status>
+      <xref type="uri" data="https://www.w3.org/TR/2007/WD-access-control-20071126/#method-check">Access Control for Cross-site Requests</xref>
+    </record>
+    <record updated="2021-11-03">
+      <value>Method-Check-Expires</value>
+      <status>obsoleted</status>
+      <xref type="uri" data="https://www.w3.org/TR/2007/WD-access-control-20071126/#method-check-expires">Access Control for Cross-site Requests</xref>
+    </record>
+    <record updated="2021-10-06">
+      <value>MIME-Version</value>
+      <status>permanent</status>
+      <xref type="rfc" data="rfc9112">RFC9112, Appendix B.1: HTTP/1.1</xref>
+    </record>
+    <record updated="2022-04-05">
+      <value>Negotiate</value>
+      <status>permanent</status>
+      <xref type="rfc" data="rfc2295">RFC 2295: Transparent Content Negotiation in HTTP</xref>
+    </record>
+    <record date="2023-09-18">
+      <value>NEL</value>
+      <status>permanent</status>
+      <xref type="uri" data="https://www.w3.org/TR/network-error-logging/">Network Error Logging</xref>
+    </record>
+    <record date="2020-01-14">
+      <file type="template">perm/odata-entityid</file>
+      <value>OData-EntityId</value>
+      <status>permanent</status>
+      <xref type="uri" data="http://docs.oasis-open.org/odata/odata/v4.01/csprd05/part1-protocol/odata-v4.01-csprd05-part1-protocol.html#_Toc14172735">OData Version 4.01 Part 1: Protocol</xref>
+      <xref type="person" data="OASIS"/>
+      <xref type="person" data="Chet_Ensign"/>
+    </record>
+    <record date="2020-01-14">
+      <file type="template">perm/odata-isolation</file>
+      <value>OData-Isolation</value>
+      <status>permanent</status>
+      <xref type="uri" data="http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_HeaderIsolationODataIsolation">OData Version 4.01 Part 1: Protocol</xref>
+      <xref type="person" data="OASIS"/>
+      <xref type="person" data="Chet_Ensign"/>
+    </record>
+    <record date="2020-01-14">
+      <file type="template">perm/odata-maxversion</file>
+      <value>OData-MaxVersion</value>
+      <status>permanent</status>
+      <xref type="uri" data="http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_HeaderODataMaxVersion">OData Version 4.01 Part 1: Protocol</xref>
+      <xref type="person" data="OASIS"/>
+      <xref type="person" data="Chet_Ensign"/>
+    </record>
+    <record date="2020-01-14">
+      <file type="template">perm/odata-version</file>
+      <value>OData-Version</value>
+      <status>permanent</status>
+      <xref type="uri" data="http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_HeaderODataVersion">OData Version 4.01 Part 1: Protocol</xref>
+      <xref type="person" data="OASIS"/>
+      <xref type="person" data="Chet_Ensign"/>
+    </record>
+    <record updated="2022-04-05">
+      <value>Opt</value>
+      <status>obsoleted</status>
+      <xref type="rfc" data="rfc2774">RFC 2774: An HTTP Extension Framework</xref>
+      <xref type="uri" data="https://datatracker.ietf.org/doc/status-change-http-experiments-to-historic">status-change-http-experiments-to-historic</xref>
+    </record>
+    <record updated="2016-11-17">
+      <value>Optional-WWW-Authenticate</value>
+      <status>permanent</status>
+      <xref type="rfc" data="rfc8053">RFC 8053, Section 3: HTTP Authentication Extensions for Interactive Clients</xref>
+    </record>
+    <record updated="2022-04-05">
+      <value>Ordering-Type</value>
+      <status>permanent</status>
+      <xref type="rfc" data="rfc3648">RFC 3648: Web Distributed Authoring and Versioning (WebDAV) Ordered Collections Protocol</xref>
+    </record>
+    <record>
+      <value>Origin</value>
+      <status>permanent</status>
+      <xref type="rfc" data="rfc6454">RFC 6454: The Web Origin Concept</xref>
+    </record>
+    <record date="2021-11-29">
+      <value>Origin-Agent-Cluster</value>
+      <status>permanent</status>
+      <xref type="uri" data="https://html.spec.whatwg.org/multipage/origin.html#origin-agent-cluster">HTML</xref>
+    </record>
+    <record date="2019-03-26">
+      <value>OSCORE</value>
+      <status>permanent</status>
+      <xref type="rfc" data="rfc8613">RFC 8613, Section 11.1: Object Security for Constrained RESTful Environments (OSCORE)</xref>
+    </record>
+    <record date="2021-02-25" updated="2021-12-06">
+      <value>OSLC-Core-Version</value>
+      <status>permanent</status>
+      <xref type="uri" data="https://docs.oasis-open-projects.org/oslc-op/core/v3.0/oslc-core.html">OASIS Project Specification 01</xref>
+      <xref type="person" data="OASIS"/>
+      <xref type="person" data="Chet_Ensign"/>
+    </record>
+    <record>
+      <value>Overwrite</value>
+      <status>permanent</status>
+      <xref type="rfc" data="rfc4918">RFC 4918: HTTP Extensions for Web Distributed Authoring and Versioning (WebDAV)</xref>
+    </record>
+    <record updated="2022-05-03">
+      <value>P3P</value>
+      <status>obsoleted</status>
+      <xref type="uri" data="https://www.w3.org/TR/P3P">The Platform for Privacy Preferences 1.0 (P3P1.0) Specification</xref>
+    </record>
+    <record date="2022-05-03">
+      <value>PEP</value>
+      <status>obsoleted</status>
+      <xref type="uri" data="http://www.w3.org/TR/WD-http-pep">PEP - an Extension Mechanism for HTTP</xref>
+    </record>
+    <record date="2022-05-03">
+      <value>Pep-Info</value>
+      <status>obsoleted</status>
+      <xref type="uri" data="http://www.w3.org/TR/WD-http-pep">PEP - an Extension Mechanism for HTTP</xref>
+    </record>
+    <record date="2023-05-15">
+      <value>Permissions-Policy</value>
+      <status>provisional</status>
+      <xref type="uri" data=" https://w3c.github.io/webappsec-permissions-policy">Permissions Policy</xref>
+    </record>
+    <record updated="2022-05-03">
+      <value>PICS-Label</value>
+      <status>obsoleted</status>
+      <xref type="uri" data="https://www.w3.org/TR/REC-PICS-labels-961031">PICS Label Distribution Label Syntax and Communication Protocols</xref>
+    </record>
+    <record date="2021-11-29">
+      <value>Ping-From</value>
+      <status>permanent</status>
+      <xref type="uri" data="https://html.spec.whatwg.org/multipage/links.html#ping-from">HTML</xref>
+    </record>
+    <record date="2021-11-29">
+      <value>Ping-To</value>
+      <status>permanent</status>
+      <xref type="uri" data="https://html.spec.whatwg.org/multipage/links.html#ping-to">HTML</xref>
+    </record>
+    <record updated="2022-04-05">
+      <value>Position</value>
+      <status>permanent</status>
+      <xref type="rfc" data="rfc3648">RFC 3648: Web Distributed Authoring and Versioning (WebDAV) Ordered Collections Protocol</xref>
+    </record>
+    <record updated="2022-04-22">
+      <value>Pragma</value>
+      <status>deprecated</status>
+      <xref type="rfc" data="rfc9111">RFC9111, Section 5.4: HTTP Caching</xref>
+    </record>
+    <record>
+      <value>Prefer</value>
+      <status>permanent</status>
+      <xref type="rfc" data="rfc7240">RFC 7240: Prefer Header for HTTP</xref>
+    </record>
+    <record>
+      <value>Preference-Applied</value>
+      <status>permanent</status>
+      <xref type="rfc" data="rfc7240">RFC 7240: Prefer Header for HTTP</xref>
+    </record>
+    <record date="2022-01-25">
+      <value>Priority</value>
+      <status>permanent</status>
+      <xref type="rfc" data="rfc9218">RFC9218: Extensible Prioritization Scheme for HTTP</xref>
+    </record>
+    <record updated="2022-05-02">
+      <value>ProfileObject</value>
+      <status>obsoleted</status>
+      <xref type="uri" data="https://www.w3.org/TR/NOTE-OPS-OverHTTP">Implementation of OPS Over HTTP</xref>
+    </record>
+    <record updated="2022-05-03">
+      <value>Protocol</value>
+      <status>obsoleted</status>
+      <xref type="uri" data="https://www.w3.org/TR/REC-PICS-labels-961031">PICS Label Distribution Label Syntax and Communication Protocols</xref>
+    </record>
+    <record updated="2022-05-03">
+      <value>Protocol-Info</value>
+      <status>deprecated</status>
+      <xref type="uri" data="https://www.w3.org/TR/NOTE-jepi">White Paper: Joint Electronic Payment Initiative</xref>
+    </record>
+    <record updated="2022-05-03">
+      <value>Protocol-Query</value>
+      <status>deprecated</status>
+      <xref type="uri" data="https://www.w3.org/TR/NOTE-jepi">White Paper: Joint Electronic Payment Initiative</xref>
+    </record>
+    <record updated="2022-05-03">
+      <value>Protocol-Request</value>
+      <status>obsoleted</status>
+      <xref type="uri" data="https://www.w3.org/TR/REC-PICS-labels-961031">PICS Label Distribution Label Syntax and Communication Protocols</xref>
+    </record>
+    <record updated="2021-10-01">
+      <value>Proxy-Authenticate</value>
+      <status>permanent</status>
+      <xref type="rfc" data="rfc9110">RFC9110, Section 11.7.1: HTTP Semantics</xref>
+    </record>
+    <record date="2015-04-15" updated="2021-10-01">
+      <value>Proxy-Authentication-Info</value>
+      <status>permanent</status>
+      <xref type="rfc" data="rfc9110">RFC9110, Section 11.7.3: HTTP Semantics</xref>
+    </record>
+    <record updated="2021-10-01">
+      <value>Proxy-Authorization</value>
+      <status>permanent</status>
+      <xref type="rfc" data="rfc9110">RFC9110, Section 11.7.2: HTTP Semantics</xref>
+    </record>
+    <record updated="2022-05-02">
+      <value>Proxy-Features</value>
+      <status>obsoleted</status>
+      <xref type="uri" data="https://www.w3.org/TR/WD-proxy.html">Notification for Proxy Caches</xref>
+    </record>
+    <record updated="2022-05-02">
+      <value>Proxy-Instruction</value>
+      <status>obsoleted</status>
+      <xref type="uri" data="https://www.w3.org/TR/WD-proxy.html">Notification for Proxy Caches</xref>
+    </record>
+    <record date="2021-10-22">
+      <value>Proxy-Status</value>
+      <status>permanent</status>
+      <xref type="rfc" data="rfc9209">RFC9209: The Proxy-Status HTTP Response Header Field</xref>
+    </record>
+    <record updated="2022-04-05">
+      <value>Public</value>
+      <status>obsoleted</status>
+      <xref type="rfc" data="rfc2068">RFC 2068: Hypertext Transfer Protocol -- HTTP/1.1</xref>
+    </record>
+    <record date="2014-10-13">
+      <value>Public-Key-Pins</value>
+      <status>permanent</status>
+      <xref type="rfc" data="rfc7469">RFC 7469: Public Key Pinning Extension for HTTP</xref>
+    </record>
+    <record date="2014-10-13">
+      <value>Public-Key-Pins-Report-Only</value>
+      <status>permanent</status>
+      <xref type="rfc" data="rfc7469">RFC 7469: Public Key Pinning Extension for HTTP</xref>
+    </record>
+    <record updated="2021-10-01">
+      <value>Range</value>
+      <status>permanent</status>
+      <xref type="rfc" data="rfc9110">RFC9110, Section 14.2: HTTP Semantics</xref>
+    </record>
+    <record>
+      <value>Redirect-Ref</value>
+      <status>permanent</status>
+      <xref type="rfc" data="rfc4437">RFC 4437: Web Distributed Authoring and Versioning (WebDAV) Redirect Reference Resources</xref>
+    </record>
+    <record updated="2021-10-01">
+      <value>Referer</value>
+      <status>permanent</status>
+      <xref type="rfc" data="rfc9110">RFC9110, Section 10.1.3: HTTP Semantics</xref>
+    </record>
+    <record updated="2021-11-03">
+      <value>Referer-Root</value>
+      <status>obsoleted</status>
+      <xref type="uri" data="https://www.w3.org/TR/2007/WD-access-control-20071126/#referer-root">Access Control for Cross-site Requests</xref>
+    </record>
+    <record date="2021-11-29">
+      <value>Refresh</value>
+      <status>permanent</status>
+      <xref type="uri" data="https://html.spec.whatwg.org/multipage/browsing-the-web.html#refresh">HTML</xref>
+    </record>
+    <record date="2020-09-01">
+      <file type="template">prov/repeatability-client-id</file>
+      <value>Repeatability-Client-ID</value>
+      <status>provisional</status>
+      <xref type="uri" data="https://docs.oasis-open.org/odata/repeatable-requests/v1.0/cs01/repeatable-requests-v1.0-cs01.html">Repeatable Requests Version 1.0</xref>
+      <xref type="person" data="OASIS"/>
+      <xref type="person" data="Chet_Ensign"/>
+    </record>
+    <record date="2020-09-01">
+      <file type="template">prov/repeatability-first-sent</file>
+      <value>Repeatability-First-Sent</value>
+      <status>provisional</status>
+      <xref type="uri" data="https://docs.oasis-open.org/odata/repeatable-requests/v1.0/cs01/repeatable-requests-v1.0-cs01.html">Repeatable Requests Version 1.0</xref>
+      <xref type="person" data="OASIS"/>
+      <xref type="person" data="Chet_Ensign"/>
+    </record>
+    <record date="2020-09-01">
+      <file type="template">prov/repeatability-request-id</file>
+      <value>Repeatability-Request-ID</value>
+      <status>provisional</status>
+      <xref type="uri" data="https://docs.oasis-open.org/odata/repeatable-requests/v1.0/cs01/repeatable-requests-v1.0-cs01.html">Repeatable Requests Version 1.0</xref>
+      <xref type="person" data="OASIS"/>
+      <xref type="person" data="Chet_Ensign"/>
+    </record>
+    <record date="2020-09-01">
+      <file type="template">prov/repeatability-result</file>
+      <value>Repeatability-Result</value>
+      <status>provisional</status>
+      <xref type="uri" data="https://docs.oasis-open.org/odata/repeatable-requests/v1.0/cs01/repeatable-requests-v1.0-cs01.html">Repeatable Requests Version 1.0</xref>
+      <xref type="person" data="OASIS"/>
+      <xref type="person" data="Chet_Ensign"/>
+    </record>
+    <record updated="2019-01-02">
+      <value>Replay-Nonce</value>
+      <status>permanent</status>
+      <xref type="rfc" data="rfc8555">RFC 8555, Section 6.5.1: Automatic Certificate Management Environment (ACME)</xref>
+    </record>
+    <record date="2023-05-15">
+      <value>Reporting-Endpoints</value>
+      <status>provisional</status>
+      <xref type="uri" data="https://w3c.github.io/reporting/#header">Reporting API</xref>
+    </record>
+    <record date="2023-07-27">
+      <value>Repr-Digest</value>
+      <status>permanent</status>
+      <xref type="draft" data="RFC-ietf-httpbis-digest-headers-13">RFC-ietf-httpbis-digest-headers-13, Section 3: Digest Fields</xref>
+    </record>
+    <record updated="2021-10-01">
+      <value>Retry-After</value>
+      <status>permanent</status>
+      <xref type="rfc" data="rfc9110">RFC9110, Section 10.2.3: HTTP Semantics</xref>
+    </record>
+    <record updated="2021-12-28">
+      <value>Safe</value>
+      <status>obsoleted</status>
+      <xref type="rfc" data="rfc2310">RFC 2310: The Safe Response Header Field</xref>
+      <xref type="uri" data="https://datatracker.ietf.org/doc/status-change-http-experiments-to-historic">status-change-http-experiments-to-historic</xref>
+    </record>
+    <record>
+      <value>Schedule-Reply</value>
+      <status>permanent</status>
+      <xref type="rfc" data="rfc6638">RFC 6638: Scheduling Extensions to CalDAV</xref>
+    </record>
+    <record>
+      <value>Schedule-Tag</value>
+      <status>permanent</status>
+      <xref type="rfc" data="rfc6638">RFC 6338: Scheduling Extensions to CalDAV</xref>
+    </record>
+    <record date="2022-01-28">
+      <value>Sec-GPC</value>
+      <status>provisional</status>
+      <xref type="uri" data="https://globalprivacycontrol.github.io/gpc-spec/">Global Privacy Control (GPC)</xref>
+    </record>
+    <record date="2023-01-17">
+      <value>Sec-Purpose</value>
+      <status>permanent</status>
+      <xref type="uri" data="https://fetch.spec.whatwg.org/#sec-purpose-header">Fetch</xref>
+      <comments>Intended to replace the (not registered) Purpose and x-moz headers.</comments>
+    </record>
+    <record date="2018-07-13">
+      <value>Sec-Token-Binding</value>
+      <status>permanent</status>
+      <xref type="rfc" data="rfc8473">RFC 8473: Token Binding over HTTP</xref>
+    </record>
+    <record>
+      <value>Sec-WebSocket-Accept</value>
+      <status>permanent</status>
+      <xref type="rfc" data="rfc6455">RFC 6455: The WebSocket Protocol</xref>
+    </record>
+    <record>
+      <value>Sec-WebSocket-Extensions</value>
+      <status>permanent</status>
+      <xref type="rfc" data="rfc6455">RFC 6455: The WebSocket Protocol</xref>
+    </record>
+    <record>
+      <value>Sec-WebSocket-Key</value>
+      <status>permanent</status>
+      <xref type="rfc" data="rfc6455">RFC 6455: The WebSocket Protocol</xref>
+    </record>
+    <record>
+      <value>Sec-WebSocket-Protocol</value>
+      <status>permanent</status>
+      <xref type="rfc" data="rfc6455">RFC 6455: The WebSocket Protocol</xref>
+    </record>
+    <record>
+      <value>Sec-WebSocket-Version</value>
+      <status>permanent</status>
+      <xref type="rfc" data="rfc6455">RFC 6455: The WebSocket Protocol</xref>
+    </record>
+    <record updated="2021-12-28">
+      <value>Security-Scheme</value>
+      <status>obsoleted</status>
+      <xref type="rfc" data="rfc2660">RFC 2660: The Secure HyperText Transfer Protocol</xref>
+      <xref type="uri" data="https://datatracker.ietf.org/doc/status-change-http-experiments-to-historic">status-change-http-experiments-to-historic</xref>
+    </record>
+    <record updated="2021-10-01">
+      <value>Server</value>
+      <status>permanent</status>
+      <xref type="rfc" data="rfc9110">RFC9110, Section 10.2.4: HTTP Semantics</xref>
+    </record>
+    <record date="2021-12-08">
+      <value>Server-Timing</value>
+      <status>permanent</status>
+      <xref type="uri" data="https://www.w3.org/TR/server-timing/">Server Timing</xref>
+    </record>
+    <record>
+      <value>Set-Cookie</value>
+      <status>permanent</status>
+      <xref type="rfc" data="rfc6265">RFC 6265: HTTP State Management Mechanism</xref>
+    </record>
+    <record>
+      <value>Set-Cookie2</value>
+      <status>obsoleted</status>
+      <xref type="rfc" data="rfc2965">RFC 2965: HTTP State Management Mechanism</xref>
+      <xref type="rfc" data="rfc6265">RFC 6265: HTTP State Management Mechanism</xref>
+    </record>
+    <record updated="2022-05-02">
+      <value>SetProfile</value>
+      <status>obsoleted</status>
+      <xref type="uri" data="https://www.w3.org/TR/NOTE-OPS-OverHTTP">Implementation of OPS Over HTTP</xref>
+    </record>
+    <record date="2023-08-18">
+      <value>Signature</value>
+      <status>permanent</status>
+      <xref type="draft" data="RFC-ietf-httpbis-message-signatures-19">RFC-ietf-httpbis-message-signatures-19, Section 4.2: HTTP Message Signatures</xref>
+    </record>
+    <record date="2023-08-18">
+      <value>Signature-Input</value>
+      <status>permanent</status>
+      <xref type="draft" data="RFC-ietf-httpbis-message-signatures-19">RFC-ietf-httpbis-message-signatures-19, Section 4.1: HTTP Message Signatures</xref>
+    </record>
+    <record>
+      <value>SLUG</value>
+      <status>permanent</status>
+      <xref type="rfc" data="rfc5023">RFC 5023: The Atom Publishing Protocol</xref>
+    </record>
+    <record updated="2022-05-03">
+      <value>SoapAction</value>
+      <status>permanent</status>
+      <xref type="uri" data="https://www.w3.org/TR/2000/NOTE-SOAP-20000508">Simple Object Access Protocol (SOAP) 1.1</xref>
+    </record>
+    <record updated="2022-04-05">
+      <value>Status-URI</value>
+      <status>permanent</status>
+      <xref type="rfc" data="rfc2518">RFC 2518: HTTP Extensions for Distributed Authoring -- WEBDAV</xref>
+    </record>
+    <record>
+      <value>Strict-Transport-Security</value>
+      <status>permanent</status>
+      <xref type="rfc" data="rfc6797">RFC 6797: HTTP Strict Transport Security (HSTS)</xref>
+    </record>
+    <record date="2019-04-01">
+      <value>Sunset</value>
+      <status>permanent</status>
+      <xref type="rfc" data="rfc8594">RFC 8594: The Sunset HTTP Header Field</xref>
+    </record>
+    <record updated="2022-05-03">
+      <value>Surrogate-Capability</value>
+      <status>permanent</status>
+      <xref type="uri" data="https://www.w3.org/TR/edge-arch">Edge Architecture Specification</xref>
+    </record>
+    <record updated="2022-05-03">
+      <value>Surrogate-Control</value>
+      <status>permanent</status>
+      <xref type="uri" data="https://www.w3.org/TR/edge-arch">Edge Architecture Specification</xref>
+    </record>
+    <record updated="2022-04-05">
+      <value>TCN</value>
+      <status>permanent</status>
+      <xref type="rfc" data="rfc2295">RFC 2295: Transparent Content Negotiation in HTTP</xref>
+    </record>
+    <record updated="2021-10-01">
+      <value>TE</value>
+      <status>permanent</status>
+      <xref type="rfc" data="rfc9110">RFC9110, Section 10.1.4: HTTP Semantics</xref>
+    </record>
+    <record>
+      <value>Timeout</value>
+      <status>permanent</status>
+      <xref type="rfc" data="rfc4918">RFC 4918: HTTP Extensions for Web Distributed Authoring and Versioning (WebDAV)</xref>
+    </record>
+    <record date="2018-12-27">
+      <file type="template">prov/timing-allow-origin</file>
+      <value>Timing-Allow-Origin</value>
+      <status>provisional</status>
+      <xref type="uri" data="https://www.w3.org/TR/resource-timing-1/#timing-allow-origin">Resource Timing Level 1</xref>
+    </record>
+    <record date="2016-11-01">
+      <value>Topic</value>
+      <status>permanent</status>
+      <xref type="rfc" data="rfc8030">RFC 8030, Section 5.4: Generic Event Delivery Using HTTP Push</xref>
+    </record>
+    <record date="2018-12-20" updated="2022-03-29">
+      <value>Traceparent</value>
+      <status>permanent</status>
+      <xref type="uri" data="https://www.w3.org/TR/trace-context/#traceparent-header">Trace Context</xref>
+    </record>
+    <record date="2018-12-20" updated="2022-03-29">
+      <value>Tracestate</value>
+      <status>permanent</status>
+      <xref type="uri" data="https://www.w3.org/TR/trace-context/#tracestate-header">Trace Context</xref>
+    </record>
+    <record updated="2021-10-01">
+      <value>Trailer</value>
+      <status>permanent</status>
+      <xref type="rfc" data="rfc9110">RFC9110, Section 6.6.2: HTTP Semantics</xref>
+    </record>
+    <record updated="2021-10-06">
+      <value>Transfer-Encoding</value>
+      <status>permanent</status>
+      <xref type="rfc" data="rfc9112">RFC9112, Section 6.1: HTTP Semantics</xref>
+    </record>
+    <record date="2016-11-01">
+      <value>TTL</value>
+      <status>permanent</status>
+      <xref type="rfc" data="rfc8030">RFC 8030, Section 5.2: Generic Event Delivery Using HTTP Push</xref>
+    </record>
+    <record updated="2021-10-01">
+      <value>Upgrade</value>
+      <status>permanent</status>
+      <xref type="rfc" data="rfc9110">RFC9110, Section 7.8: HTTP Semantics</xref>
+    </record>
+    <record date="2016-11-01">
+      <value>Urgency</value>
+      <status>permanent</status>
+      <xref type="rfc" data="rfc8030">RFC 8030, Section 5.3: Generic Event Delivery Using HTTP Push</xref>
+    </record>
+    <record updated="2022-04-05">
+      <value>URI</value>
+      <status>obsoleted</status>
+      <xref type="rfc" data="rfc2068">RFC 2068: Hypertext Transfer Protocol -- HTTP/1.1</xref>
+    </record>
+    <record updated="2021-10-01">
+      <value>User-Agent</value>
+      <status>permanent</status>
+      <xref type="rfc" data="rfc9110">RFC9110, Section 10.1.5: HTTP Semantics</xref>
+    </record>
+    <record updated="2022-04-05">
+      <value>Variant-Vary</value>
+      <status>permanent</status>
+      <xref type="rfc" data="rfc2295">RFC 2295: Transparent Content Negotiation in HTTP</xref>
+    </record>
+    <record updated="2021-10-01">
+      <value>Vary</value>
+      <status>permanent</status>
+      <xref type="rfc" data="rfc9110">RFC9110, Section 12.5.5: HTTP Semantics</xref>
+    </record>
+    <record updated="2021-10-01">
+      <value>Via</value>
+      <status>permanent</status>
+      <xref type="rfc" data="rfc9110">RFC9110, Section 7.6.3: HTTP Semantics</xref>
+    </record>
+    <record date="2023-07-27">
+      <value>Want-Content-Digest</value>
+      <status>permanent</status>
+      <xref type="draft" data="RFC-ietf-httpbis-digest-headers-13">RFC-ietf-httpbis-digest-headers-13, Section 4: Digest Fields</xref>
+    </record>
+    <record updated="2023-07-27">
+      <value>Want-Digest</value>
+      <status>obsoleted</status>
+      <xref type="rfc" data="rfc3230">RFC 3230: Instance Digests in HTTP</xref>
+      <xref type="draft" data="RFC-ietf-httpbis-digest-headers-13">RFC-ietf-httpbis-digest-headers-13, Section 1.3: Digest Fields</xref>
+    </record>
+    <record date="2023-07-27">
+      <value>Want-Repr-Digest</value>
+      <status>permanent</status>
+      <xref type="draft" data="RFC-ietf-httpbis-digest-headers-13">RFC-ietf-httpbis-digest-headers-13, Section 4: Digest Fields</xref>
+    </record>
+    <record updated="2021-10-06">
+      <value>Warning</value>
+      <status>obsoleted</status>
+      <xref type="rfc" data="rfc9111">RFC9111, Section 5.5: HTTP Caching</xref>
+    </record>
+    <record updated="2021-10-01">
+      <value>WWW-Authenticate</value>
+      <status>permanent</status>
+      <xref type="rfc" data="rfc9110">RFC9110, Section 11.6.1: HTTP Semantics</xref>
+    </record>
+    <record>
+      <value>X-Content-Type-Options</value>
+      <status>permanent</status>
+      <xref type="uri" data="https://fetch.spec.whatwg.org/#x-content-type-options-header">Fetch</xref>
+    </record>
+    <record updated="2021-11-29">
+      <value>X-Frame-Options</value>
+      <status>permanent</status>
+      <xref type="uri" data="https://html.spec.whatwg.org/multipage/browsing-the-web.html#x-frame-options">HTML</xref>
+    </record>
+    <record date="2021-10-01">
+      <value>*</value>
+      <status>permanent</status>
+      <xref type="rfc" data="rfc9110">RFC9110, Section 12.5.5: HTTP Semantics</xref>
+      <comments>(reserved)</comments>
+    </record>
+  </registry>
+  
+
+  <people>
+    <person id="Chet_Ensign">
+      <name>Chet Ensign</name>
+      <uri>mailto:chet.ensign&amp;oasis-open.org</uri>
+      <updated>2020-09-01</updated>
+    </person>
+    <person id="OASIS">
+      <name>OASIS</name>
+      <uri>https://www.oasis-open.org</uri>
+    </person>
+  </people>
+</registry>
