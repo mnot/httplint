@@ -5,6 +5,7 @@ PROJECT = httplint
 test: test/http-fields.xml
 	PYTHONPATH=. $(VENV)/python test/test_syntax.py
 	PYTHONPATH=. $(VENV)/python test/test_fields.py test/http-fields.xml
+	PYTHONPATH=. $(VENV)/python test/test_notes.py
 
 test/http-fields.xml:
 	curl -o $@ https://www.iana.org/assignments/http-fields/http-fields.xml
