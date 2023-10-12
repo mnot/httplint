@@ -2,7 +2,7 @@ PROJECT = httplint
 
 
 .PHONY: test
-test: test/http-fields.xml
+test: test/http-fields.xml venv
 	PYTHONPATH=. $(VENV)/python test/test_syntax.py
 	PYTHONPATH=. $(VENV)/python test/test_fields.py test/http-fields.xml
 	PYTHONPATH=. $(VENV)/python test/test_notes.py
