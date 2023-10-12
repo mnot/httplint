@@ -1,3 +1,4 @@
+import importlib
 import re
 import sys
 
@@ -11,7 +12,7 @@ def check_regex() -> None:
     for module_name in syntax.__all__:
         modules += 1
         full_name = f"httplint.syntax.{module_name}"
-        __import__(full_name)
+        importlib.import_module(full_name)
         module = sys.modules[full_name]
         for attr_name in dir(module):
             attr_value = getattr(module, attr_name, None)

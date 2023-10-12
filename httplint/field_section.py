@@ -1,4 +1,5 @@
 from functools import partial
+import importlib
 import sys
 from typing import (
     Any,
@@ -144,7 +145,7 @@ class FieldSection:
             name_token = FieldSection.field_aliases[name_token]
         try:
             module_name = f"httplint.fields.{name_token}"
-            __import__(module_name)
+            importlib.import_module(module_name)
             return sys.modules[module_name]
         except (ImportError, KeyError, TypeError):
             return None
