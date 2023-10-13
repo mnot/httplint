@@ -17,13 +17,16 @@ classifiers = [
     "Topic :: Software Development :: Testing"
 ]
 dependencies = [
+    "Markdown",
+    "MarkupSafe",
+    "typing_extensions"
 ]
 
 [project.urls]
 homepage = "https://github.com/mnot/httplint/"
 
 [project.optional-dependencies]
-dev = ["mypy", "black", "pylint", "pytest", "pytest-md", "validate-pyproject", "typing_extensions"]
+dev = ["mypy", "black", "pylint", "pytest", "pytest-md", "validate-pyproject", "types-Markdown"]
 
 [project.scripts]
 
