@@ -22,12 +22,12 @@ dependencies = [
     "typing_extensions"
 ]
 
-[project.urls]
-homepage = "https://github.com/mnot/httplint/"
-
 [project.optional-dependencies]
 dev = ["mypy", "black", "pylint", "pytest", "pytest-md", "validate-pyproject", "build",
        "types-Markdown"]
+
+[project.urls]
+homepage = "https://github.com/mnot/httplint/"
 
 [project.scripts]
 
