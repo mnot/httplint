@@ -4,7 +4,7 @@ import time
 
 from thor.http.common import Delimiters
 
-from httplint.cli_parser import HttpParser
+from httplint.cli_http_parser import HttpParser
 from httplint.message import HttpResponse
 
 
