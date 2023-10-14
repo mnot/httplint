@@ -1,26 +1,17 @@
 #!/usr/bin/env python3
 
-from httplint.message import HttpResponseLinter
-
-version = b"HTTP/1.1"
-status_code = b"200"
-status_phrase = b"OK"
-raw_headers = [
-    [b"Content-Type", b"text/html"],
-    [b"Cache-Control", b"max-age=60"],
-    [b"Content-Length", b"233"]
-]
-content_chunks = [
-    b"this is a test",
-    b"please ignore."
-]
+from httplint import HttpResponseLinter
 
 linter = HttpResponseLinter()
-linter.process_response_topline(version, status_code, status_phrase)
-linter.process_headers(raw_headers)
-for chunk in content_chunks:
-    linter.feed_content(chunk)
+linter.process_response_topline(b'HTTP/1.1', b'200', b'OK')
+linter.process_headers([
+  (b'Content-Type', b'text/plain'),
+  (b'Content-Length', b'10'),
+  (b'Cache-Control', b'max-age=60')
+])
+linter.feed_content(b'12345')
+linter.feed_content(b'67890')
 linter.finish_content(True)
 
-for note in linter.notes.notes:
-    print(note)
+for note in linter.notes:
+  print(note.summary)
