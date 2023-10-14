@@ -16,7 +16,7 @@ content_chunks = [
 ]
 
 linter = HttpResponseLinter()
-linter.process_top_line(version, status_code, status_phrase)
+linter.process_response_topline(version, status_code, status_phrase)
 linter.process_headers(raw_headers)
 for chunk in content_chunks:
     linter.feed_content(chunk)

@@ -44,6 +44,16 @@ class HttpMessageLinter:
         self.transfer_length: int = 0
         self.complete: bool = False
 
+    def process_request_topline(
+        self, method: bytes, iri: bytes, version: bytes
+    ) -> None:
+        ...
+
+    def process_response_topline(
+        self, version: bytes, status_code: bytes, status_phrase: bytes = None
+    ) -> None:
+        ...
+
     def process_headers(self, headers: RawFieldListType) -> None:
         """
         Feed a list of (bytes name, bytes value) header tuples in and process them.
@@ -122,7 +132,9 @@ class HttpRequestLinter(HttpMessageLinter):
         self.iri: str = None
         self.uri: str = None
 
-    def process_top_line(self, method: bytes, iri: bytes, version: bytes) -> None:
+    def process_request_topline(
+        self, method: bytes, iri: bytes, version: bytes
+    ) -> None:
         self.method = method.decode("ascii", "replace")
         self.iri = iri.decode("utf-8", "replace")
         self.uri = self.set_uri(self.iri)
@@ -158,7 +170,7 @@ class HttpResponseLinter(HttpMessageLinter):
         self.status_phrase: str = ""
         self.is_head_response = False
 
-    def process_top_line(
+    def process_response_topline(
         self, version: bytes, status_code: bytes, status_phrase: bytes = None
     ) -> None:
         self.version = version.decode("ascii", "replace")

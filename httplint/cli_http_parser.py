@@ -1,17 +1,28 @@
+from argparse import Namespace
+from enum import Enum
 from typing import List, Tuple
 
 from thor.http.common import HttpMessageHandler, States, no_body_status
 from thor.http.error import HttpError, StartLineError, HttpVersionError
 
-from httplint.message import HttpResponseLinter
+from httplint.message import HttpMessageLinter, HttpResponseLinter
 from httplint.types import RawFieldListType
 
 
-class HttpParser(HttpMessageHandler):
+class modes(Enum):
+    "Parser modes."
+    REQUEST = "request"
+    RESPONSE = "response"
+    EXCHANGE = "exchange"
+
+
+class HttpCliParser(HttpMessageHandler):
     default_state = States.WAITING
 
-    def __init__(self, message: HttpResponseLinter) -> None:
-        self.message = message
+    def __init__(self, args: Namespace, start_time: int) -> None:
+        self.start_time = start_time
+        self.mode = args.mode
+        self.linter: HttpMessageLinter
         HttpMessageHandler.__init__(self)
 
     def input_start(
@@ -22,21 +33,23 @@ class HttpParser(HttpMessageHandler):
         transfer_codes: List[bytes],
         content_length: int,
     ) -> Tuple[bool, bool]:
-        version, status_code, status_phrase = self.response_topline(top_line)
-        self.message.process_top_line(version, status_code, status_phrase)
-        self.message.process_headers(hdr_tuples)
-        is_final = not status_code.startswith(b"1")
-        allows_body = is_final and (
-            status_code not in no_body_status
-        )  # and (self.method != b"HEAD")
+        if self.mode == modes.RESPONSE:
+            self.linter = HttpResponseLinter(start_time=self.start_time)
+            version, status_code, status_phrase = self.response_topline(top_line)
+            self.linter.process_response_topline(version, status_code, status_phrase)
+            self.linter.process_headers(hdr_tuples)
+            is_final = not status_code.startswith(b"1")
+            allows_body = is_final and (
+                status_code not in no_body_status
+            )  # and (self.method != b"HEAD")
         return allows_body, is_final
 
     def input_body(self, chunk: bytes) -> None:
-        self.message.feed_content(chunk)
+        self.linter.feed_content(chunk)
 
     def input_end(self, trailers: RawFieldListType) -> None:
-        self.message.finish_content(True, trailers)
-        for note in self.message.notes:
+        self.linter.finish_content(True, trailers)
+        for note in self.linter.notes:
             print(f"* {note}")
 
     def input_error(self, err: HttpError, close: bool = True) -> None:
