@@ -2,8 +2,6 @@ from argparse import ArgumentParser, Namespace
 import sys
 import time
 
-from thor.http.common import Delimiters
-
 from httplint.cli_http_parser import HttpCliParser, modes
 
 
@@ -12,8 +10,6 @@ def main() -> None:
     start_time = int(time.time()) if args.now else None
     parser = HttpCliParser(args, start_time)
     parser.handle_input(sys.stdin.read().encode("utf-8"))
-    if parser._input_delimit == Delimiters.CLOSE:
-        parser.input_end([])
 
 
 def getargs() -> Namespace:

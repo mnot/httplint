@@ -2,7 +2,7 @@ from argparse import Namespace
 from enum import Enum
 from typing import List, Tuple
 
-from thor.http.common import HttpMessageHandler, States, no_body_status
+from thor.http.common import HttpMessageHandler, States, Delimiters, no_body_status
 from thor.http.error import HttpError, StartLineError, HttpVersionError
 
 from httplint.message import HttpMessageLinter, HttpRequestLinter, HttpResponseLinter
@@ -23,6 +23,11 @@ class HttpCliParser(HttpMessageHandler):
         self.mode = args.mode
         self.linter: HttpMessageLinter
         HttpMessageHandler.__init__(self)
+
+    def handle_input(self, inbytes: bytes) -> None:
+        HttpMessageHandler.handle_input(self, inbytes)
+        if self._input_delimit == Delimiters.CLOSE:
+            self.input_end([])
 
     def input_start(
         self,
