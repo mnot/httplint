@@ -75,13 +75,13 @@ method-rgx = "[a-z_][a-z0-9_]{1,30}$"
 class-rgx = "[a-zA-Z0-9_]+$"
 
 [tool.pylint.messages_control]
-disable = "C0114,C0115,C0116,W0613"
+disable = "C0114,C0115,C0116,W0613,W0707"
 
 [tool.pylint.reports]
 reports = false
 
 [tool.pylint.variables]
-dummy-variables-rgx = "response_start|response_body|response_done|error|formatter_done|check_done|_"
+dummy-variables-rgx = "_"
 
 [tool.pylint.design]
 max-args=10
