@@ -117,7 +117,7 @@ build: clean venv
 
 # requires /.github/workflows/release.yml
 .PHONY: release
-release: version_py
+release: py_version
 	git tag -a "v$(VERSION)" -m "v$(VERSION)"
 	git push
 	git push --tags origin  # github action will push to pypi and create a release
