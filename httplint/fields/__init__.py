@@ -30,8 +30,8 @@ from httplint.fields._notes import *
 
 if TYPE_CHECKING:
     from httplint.message import (
-        HttpMessage,
-    )  # pylint: disable=cyclic-import
+        HttpMessageLinter,
+    )
 
 # base URLs for references
 RFC2616 = "http://tools.ietf.org/html/rfc2616.html#%s"
@@ -59,7 +59,7 @@ class HttpField:
     valid_in_responses: bool = None
     no_coverage: bool = False  # Turns off coverage checks.
 
-    def __init__(self, wire_name: str, message: "HttpMessage") -> None:
+    def __init__(self, wire_name: str, message: "HttpMessageLinter") -> None:
         self.wire_name = wire_name.strip()
         self.message = message
         self.norm_name = self.wire_name.lower()
@@ -118,7 +118,7 @@ class HttpField:
             if f
         ] or []
 
-    def finish(self, message: "HttpMessage", add_note: AddNoteMethodType) -> None:
+    def finish(self, message: "HttpMessageLinter", add_note: AddNoteMethodType) -> None:
         """
         Called when all field lines in the section are available.
         """

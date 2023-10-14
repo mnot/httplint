@@ -3,7 +3,7 @@ from urllib.parse import urljoin
 
 from httplint.fields import HttpField
 from httplint.fields._test import FieldTest
-from httplint.message import HttpMessage, HttpResponse
+from httplint.message import HttpMessageLinter, HttpResponseLinter
 from httplint.note import Note, categories, levels
 from httplint.syntax import rfc7231, rfc3986
 from httplint.types import AddNoteMethodType
@@ -24,7 +24,9 @@ In `201 Created` responses, it identifies a newly created resource."""
     valid_in_responses = True
 
     def parse(self, field_value: str, add_note: AddNoteMethodType) -> str:
-        if isinstance(self.message, HttpResponse) and self.message.status_code not in [
+        if isinstance(
+            self.message, HttpResponseLinter
+        ) and self.message.status_code not in [
             201,
             300,
             301,
@@ -75,5 +77,5 @@ class LocationTest(FieldTest):
     inputs = [b"http://other.example.com/foo"]
     expected_out = "http://other.example.com/foo"
 
-    def set_context(self, message: HttpMessage) -> None:
+    def set_context(self, message: HttpMessageLinter) -> None:
         message.status_code = 300  # type: ignore

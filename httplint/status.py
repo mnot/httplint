@@ -3,7 +3,7 @@
 from functools import partial
 from typing import List
 
-from httplint.message import HttpRequest, HttpResponse
+from httplint.message import HttpRequestLinter, HttpResponseLinter
 from httplint.note import Note, levels, categories
 from httplint.types import StrFieldListType
 
@@ -37,7 +37,9 @@ class StatusChecker:
     Additional tests will be performed if the request is available.
     """
 
-    def __init__(self, response: HttpResponse, request: HttpRequest = None) -> None:
+    def __init__(
+        self, response: HttpResponseLinter, request: HttpRequestLinter = None
+    ) -> None:
         self.request = request
         self.response = response
         self.add_note = partial(response.notes.add, status=response.status_code)

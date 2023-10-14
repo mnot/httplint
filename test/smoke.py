@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-from httplint.message import HttpResponse
+from httplint.message import HttpResponseLinter
 
 version = b"HTTP/1.1"
 status_code = b"200"
@@ -15,12 +15,12 @@ content_chunks = [
     b"please ignore."
 ]
 
-m = HttpResponse()
-m.process_top_line(version, status_code, status_phrase)
-m.process_headers(raw_headers)
+linter = HttpResponseLinter()
+linter.process_top_line(version, status_code, status_phrase)
+linter.process_headers(raw_headers)
 for chunk in content_chunks:
-    m.feed_content(chunk)
-m.finish_content(True)
+    linter.feed_content(chunk)
+linter.finish_content(True)
 
-for note in m.notes.notes:
+for note in linter.notes.notes:
     print(note)

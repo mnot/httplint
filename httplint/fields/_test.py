@@ -1,24 +1,21 @@
-from typing import Any, List, Type, Union, TYPE_CHECKING
+from typing import Any, List, Type, Union
 import unittest
 
 from httplint.field_section import FieldSection
 from httplint.note import Note
-from httplint.message import HttpResponse
+from httplint.message import HttpResponseLinter, HttpMessageLinter
 from httplint.types import (
     AddNoteMethodType,
 )
 
-if TYPE_CHECKING:
-    from httplint.fields import HttpMessage
 
-
-class TestMessage(HttpResponse):
+class TestMessageLinter(HttpResponseLinter):
     """
     A dummy HTTP message, for testing.
     """
 
     def __init__(self, add_note: AddNoteMethodType = None) -> None:
-        HttpResponse.__init__(self)
+        HttpResponseLinter.__init__(self)
         self.base_uri = "http://www.example.com/foo/bar/baz.html?bat=bam"
         self.status_phrase = ""
         self.note_list: List[Note] = []
@@ -44,7 +41,7 @@ class FieldTest(unittest.TestCase):
 
     def setUp(self) -> None:
         "Test setup."
-        self.message = TestMessage()
+        self.message = TestMessageLinter()
         self.set_context(self.message)
 
     def test_header(self) -> Any:
@@ -66,5 +63,5 @@ class FieldTest(unittest.TestCase):
         self.assertEqual(len(diff), 0, f"Mismatched notes: {diff}")
         return None
 
-    def set_context(self, message: "HttpMessage") -> None:
+    def set_context(self, message: "HttpMessageLinter") -> None:
         pass

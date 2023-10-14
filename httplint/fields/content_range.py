@@ -1,6 +1,6 @@
 from httplint.fields import HttpField
 from httplint.fields._test import FieldTest
-from httplint.message import HttpMessage, HttpResponse
+from httplint.message import HttpMessageLinter, HttpResponseLinter
 from httplint.note import Note, categories, levels
 from httplint.syntax import rfc7233
 from httplint.types import AddNoteMethodType
@@ -20,7 +20,9 @@ partial content should be applied."""
 
     def parse(self, field_value: str, add_note: AddNoteMethodType) -> str:
         # #53: check syntax, values?
-        if isinstance(self.message, HttpResponse) and self.message.status_code not in [
+        if isinstance(
+            self.message, HttpResponseLinter
+        ) and self.message.status_code not in [
             206,
             416,
         ]:
@@ -44,5 +46,5 @@ class ContentRangeTest(FieldTest):
     inputs = [b"bytes 1-100/200"]
     expected_out = "bytes 1-100/200"
 
-    def set_context(self, message: HttpMessage) -> None:
+    def set_context(self, message: HttpMessageLinter) -> None:
         message.status_code = 206  # type: ignore

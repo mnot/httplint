@@ -1,4 +1,4 @@
-from httplint.message import HttpRequest, HttpResponse
+from httplint.message import HttpRequestLinter, HttpResponseLinter
 from httplint.note import Notes
 
 

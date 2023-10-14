@@ -20,7 +20,7 @@ from httplint.types import (
 from httplint.util import f_num
 
 if TYPE_CHECKING:
-    from httplint.message import HttpMessage
+    from httplint.message import HttpMessageLinter
 
 
 class FieldSection:
@@ -49,7 +49,9 @@ class FieldSection:
         self.size: int = 0
         self._handlers: Dict[str, HttpField] = {}
 
-    def process(self, raw_fields: RawFieldListType, message: "HttpMessage") -> None:
+    def process(
+        self, raw_fields: RawFieldListType, message: "HttpMessageLinter"
+    ) -> None:
         """
         Given a list of (bytes name, bytes value) fields and:
          - populate text and parsed
@@ -103,7 +105,7 @@ class FieldSection:
             handler.finish(message, field_add_note)
             self.parsed[handler.norm_name] = handler.value
 
-    def get_handler(self, field_name: str, message: "HttpMessage") -> HttpField:
+    def get_handler(self, field_name: str, message: "HttpMessageLinter") -> HttpField:
         """
         If a handler has already been instantiated for field_name, return it;
         otherwise, instantiate and return a new one.

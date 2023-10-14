@@ -3,14 +3,14 @@ from typing import List, Tuple
 from thor.http.common import HttpMessageHandler, States, no_body_status
 from thor.http.error import HttpError, StartLineError, HttpVersionError
 
-from httplint.message import HttpResponse
+from httplint.message import HttpResponseLinter
 from httplint.types import RawFieldListType
 
 
 class HttpParser(HttpMessageHandler):
     default_state = States.WAITING
 
-    def __init__(self, message: HttpResponse) -> None:
+    def __init__(self, message: HttpResponseLinter) -> None:
         self.message = message
         HttpMessageHandler.__init__(self)
 

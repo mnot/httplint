@@ -5,13 +5,13 @@ import time
 from thor.http.common import Delimiters
 
 from httplint.cli_http_parser import HttpParser
-from httplint.message import HttpResponse
+from httplint.message import HttpResponseLinter
 
 
 def main() -> None:
     args = getargs()
     start_time = int(time.time()) if args.now else None
-    linter = HttpResponse(start_time=start_time)
+    linter = HttpResponseLinter(start_time=start_time)
     parser = HttpParser(linter)
     parser.handle_input(sys.stdin.read().encode("utf-8"))
     if parser._input_delimit == Delimiters.CLOSE:

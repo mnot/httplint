@@ -6,7 +6,7 @@ from httplint.note import Note, categories, levels
 from httplint.util import relative_time, f_num
 
 if TYPE_CHECKING:
-    from httplint.message import HttpRequest, HttpResponse
+    from httplint.message import HttpRequestLinter, HttpResponseLinter
 
 
 ### configuration
@@ -29,7 +29,9 @@ KNOWN_CC = [
 
 
 class ResponseCacheChecker:
-    def __init__(self, response: "HttpResponse", request: "HttpRequest" = None) -> None:
+    def __init__(
+        self, response: "HttpResponseLinter", request: "HttpRequestLinter" = None
+    ) -> None:
         self.response = response
         self.request = request
         self.age: int

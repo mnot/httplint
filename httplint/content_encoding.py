@@ -7,11 +7,11 @@ from httplint.note import Note, levels, categories
 from httplint.util import f_num, display_bytes
 
 if TYPE_CHECKING:
-    from httplint.message import HttpMessage
+    from httplint.message import HttpMessageLinter
 
 
 class ContentEncodingProcessor:
-    def __init__(self, message: "HttpMessage") -> None:
+    def __init__(self, message: "HttpMessageLinter") -> None:
         self.message = message
         self.content_codings = self.message.headers.parsed.get("content-encoding", [])
         self.content_codings.reverse()

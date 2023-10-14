@@ -18,9 +18,9 @@ class HttpMessageParams(TypedDict):
     max_sample_size: NotRequired[int]
 
 
-class HttpMessage:
+class HttpMessageLinter:
     """
-    Base class for HTTP message state.
+    Base class for HTTP message linters.
     """
 
     def __init__(
@@ -109,15 +109,15 @@ class HttpMessage:
         return state
 
 
-class HttpRequest(HttpMessage):
+class HttpRequestLinter(HttpMessageLinter):
     """
-    A HTTP Request message.
+    A HTTP Request message linter.
     """
 
     max_uri_chars = 8000
 
     def __init__(self, **kw: Unpack[HttpMessageParams]) -> None:
-        HttpMessage.__init__(self, **kw)
+        HttpMessageLinter.__init__(self, **kw)
         self.method: str = None
         self.iri: str = None
         self.uri: str = None
@@ -147,13 +147,13 @@ class HttpRequest(HttpMessage):
         return uri
 
 
-class HttpResponse(HttpMessage):
+class HttpResponseLinter(HttpMessageLinter):
     """
-    A HTTP Response message.
+    A HTTP Response message linter.
     """
 
     def __init__(self, **kw: Unpack[HttpMessageParams]) -> None:
-        HttpMessage.__init__(self, **kw)
+        HttpMessageLinter.__init__(self, **kw)
         self.status_code: int = None
         self.status_phrase: str = ""
         self.is_head_response = False
