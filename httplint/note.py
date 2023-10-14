@@ -1,5 +1,6 @@
+from collections import UserList
 from enum import Enum
-from typing import Any, MutableMapping, Dict, Union, Type, List
+from typing import Any, MutableMapping, Dict, Union, Type
 
 from markupsafe import Markup, escape
 from markdown import Markdown
@@ -26,20 +27,17 @@ class levels(Enum):
     INFO = "info"
 
 
-class Notes:
+class Notes(UserList):
     """
     A list of notes.
     """
 
     default_vars: Dict[str, VariableType] = {"response": "This response"}
 
-    def __init__(self) -> None:
-        self.notes: List[Note] = []
-
     def add(self, subject: str, note: Type["Note"], **vrs: VariableType) -> None:
         tmp_vars: MutableMapping[str, VariableType] = self.default_vars.copy()
         tmp_vars.update(vrs)
-        self.notes.append(note(subject, **tmp_vars))
+        self.data.append(note(subject, **tmp_vars))
 
 
 class Note:
