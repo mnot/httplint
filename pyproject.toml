@@ -19,7 +19,8 @@ classifiers = [
 dependencies = [
     "Markdown",
     "MarkupSafe",
-    "typing_extensions"
+    "typing_extensions",
+    "thor"
 ]
 
 [project.optional-dependencies]
@@ -30,7 +31,7 @@ dev = ["mypy", "black", "pylint", "pytest", "pytest-md", "validate-pyproject", "
 homepage = "https://github.com/mnot/httplint/"
 
 [project.scripts]
-
+httplint = "httplint.cli:main"
 
 [build-system]
 requires = [
