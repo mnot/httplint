@@ -75,6 +75,8 @@ class ResponseCacheChecker:
     def check_last_modified(self) -> bool:
         if self.lm_hdr:
             serv_date = self.date_hdr or self.response.start_time
+            if not serv_date:
+                return True  # we don't know
             if self.lm_hdr > serv_date:
                 self.response.notes.add("header-last-modified", LM_FUTURE)
             else:
@@ -171,7 +173,7 @@ class ResponseCacheChecker:
     def check_freshness(self) -> bool:
         age = self.age_hdr or 0
         age_str = relative_time(age, 0, 0)
-        if self.date_hdr and self.date_hdr > 0:
+        if self.response.start_time and self.date_hdr and self.date_hdr > 0:
             apparent_age = max(0, int(self.response.start_time - self.date_hdr))
         else:
             apparent_age = 0
@@ -186,7 +188,7 @@ class ResponseCacheChecker:
                 self.response.notes.add(
                     "header-expires header-last-modified", DATE_CLOCKLESS_BAD_HDR
                 )
-        else:
+        elif self.response.start_time:
             skew = self.date_hdr - self.response.start_time + (age)
             if age > MAX_CLOCK_SKEW > (current_age - skew):
                 self.response.notes.add("header-date header-age", AGE_PENALTY)
@@ -213,7 +215,7 @@ class ResponseCacheChecker:
             freshness_hdrs.append("header-cache-control")
             has_explicit_freshness = True
             has_cc_freshness = True
-        elif "expires" in self.response.headers.parsed:
+        elif "expires" in self.response.headers.parsed and self.response.start_time:
             # An invalid Expires header means it's automatically stale
             has_explicit_freshness = True
             freshness_hdrs.append("header-expires")
