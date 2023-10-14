@@ -128,7 +128,7 @@ class RepeatCDTest(FieldTest):
     name = "Content-Disposition"
     inputs = [b"attachment; filename=foo.txt", b"inline; filename=bar.txt"]
     expected_out = ("inline", {"filename": "bar.txt"})
-    expected_err = [SINGLE_HEADER_REPEAT]
+    expected_notes = [SINGLE_HEADER_REPEAT]
 
 
 class FilenameStarCDTest(FieldTest):
@@ -141,18 +141,18 @@ class FilenameStarQuotedCDTest(FieldTest):
     name = "Content-Disposition"
     inputs = [b"attachment; filename=foo.txt; filename*=\"UTF-8''a%cc%88.txt\""]
     expected_out = ("attachment", {"filename": "foo.txt", "filename*": "a\u0308.txt"})
-    expected_err = [PARAM_STAR_QUOTED]
+    expected_notes = [PARAM_STAR_QUOTED]
 
 
 class FilenamePercentCDTest(FieldTest):
     name = "Content-Disposition"
     inputs = [b"attachment; filename=fo%22o.txt"]
     expected_out = ("attachment", {"filename": "fo%22o.txt"})
-    expected_err = [DISPOSITION_FILENAME_PERCENT]
+    expected_notes = [DISPOSITION_FILENAME_PERCENT]
 
 
 class FilenamePathCharCDTest(FieldTest):
     name = "Content-Disposition"
     inputs = [b'attachment; filename="/foo.txt"']
     expected_out = ("attachment", {"filename": "/foo.txt"})
-    expected_err = [DISPOSITION_FILENAME_PATH_CHAR]
+    expected_notes = [DISPOSITION_FILENAME_PATH_CHAR]

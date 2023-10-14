@@ -36,4 +36,4 @@ class SHORT_NAMETest(HeaderTest):
     name = 'SHORT_NAME'
     inputs = ['FIXME']
     expected_out = ('FIXME')
-    expected_err = []
+    expected_notes = []

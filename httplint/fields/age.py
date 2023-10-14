@@ -58,18 +58,18 @@ class MultipleAgeTest(FieldTest):
     name = "Age"
     inputs = [b"20", b"10"]
     expected_out = 10
-    expected_err = [SINGLE_HEADER_REPEAT]
+    expected_notes = [SINGLE_HEADER_REPEAT]
 
 
 class CharAgeTest(FieldTest):
     name = "Age"
     inputs = [b"foo"]
     expected_out = None
-    expected_err = [AGE_NOT_INT]
+    expected_notes = [AGE_NOT_INT]
 
 
 class NegAgeTest(FieldTest):
     name = "Age"
     inputs = [b"-20"]
     expected_out = None
-    expected_err = [AGE_NEGATIVE]
+    expected_notes = [AGE_NEGATIVE]

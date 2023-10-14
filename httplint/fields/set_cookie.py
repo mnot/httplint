@@ -386,7 +386,7 @@ class MaxAgeLeadingZeroScTest(FieldTest):
     name = "Set-Cookie"
     inputs = [b"lang=en-US; Max-Age=0123"]
     expected_out = [("lang", "en-US", [])]
-    expected_err = [SET_COOKIE_LEADING_ZERO_MAX_AGE]
+    expected_notes = [SET_COOKIE_LEADING_ZERO_MAX_AGE]
 
 
 class RemoveSCTest(FieldTest):

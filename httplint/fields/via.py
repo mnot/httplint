@@ -48,4 +48,4 @@ class ViaTest(FieldTest):
     name = "Via"
     inputs = [b"1.1 test"]
     expected_out = ["1.1 test"]
-    expected_err = [VIA_PRESENT]
+    expected_notes = [VIA_PRESENT]

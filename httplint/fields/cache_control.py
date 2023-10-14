@@ -74,4 +74,4 @@ class CacheControlMaxAgeTest(FieldTest):
 class CacheControlBadMaxAgeTest(FieldTest):
     name = "Cache-Control"
     inputs = [b"max-age=foo"]
-    expected_err = [BAD_CC_SYNTAX]
+    expected_notes = [BAD_CC_SYNTAX]

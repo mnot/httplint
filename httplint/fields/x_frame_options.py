@@ -94,25 +94,25 @@ class DenyXFOTest(FieldTest):
     name = "X-Frame-Options"
     inputs = [b"DENY"]
     expected_out = "DENY"
-    expected_err = [FRAME_OPTIONS_DENY]
+    expected_notes = [FRAME_OPTIONS_DENY]
 
 
 class DenyXFOCaseTest(FieldTest):
     name = "X-Frame-Options"
     inputs = [b"deny"]
     expected_out = "DENY"
-    expected_err = [FRAME_OPTIONS_DENY]
+    expected_notes = [FRAME_OPTIONS_DENY]
 
 
 class SameOriginXFOTest(FieldTest):
     name = "X-Frame-Options"
     inputs = [b"SAMEORIGIN"]
     expected_out = "SAMEORIGIN"
-    expected_err = [FRAME_OPTIONS_SAMEORIGIN]
+    expected_notes = [FRAME_OPTIONS_SAMEORIGIN]
 
 
 class UnknownXFOTest(FieldTest):
     name = "X-Frame-Options"
     inputs = [b"foO"]
     expected_out = "FOO"
-    expected_err = [BAD_SYNTAX, FRAME_OPTIONS_UNKNOWN]
+    expected_notes = [BAD_SYNTAX, FRAME_OPTIONS_UNKNOWN]

@@ -41,4 +41,4 @@ class UnquotedETagTest(FieldTest):
     name = "ETag"
     inputs = [b"foo"]
     expected_out = (False, "foo")
-    expected_err = [BAD_SYNTAX]
+    expected_notes = [BAD_SYNTAX]

@@ -31,11 +31,11 @@ class BadExpiresTest(FieldTest):
     name = "Expires"
     inputs = [b"0"]
     expected_out = None
-    expected_err = [BAD_DATE_SYNTAX]
+    expected_notes = [BAD_DATE_SYNTAX]
 
 
 class BlankExpiresTest(FieldTest):
     name = "Expires"
     inputs = [b""]
     expected_out = None
-    expected_err = [BAD_DATE_SYNTAX]
+    expected_notes = [BAD_DATE_SYNTAX]

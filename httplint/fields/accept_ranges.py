@@ -57,7 +57,7 @@ class BadAcceptRangeTest(FieldTest):
     name = "Accept-Ranges"
     inputs = [b"foo"]
     expected_out = ["foo"]
-    expected_err = [UNKNOWN_RANGE]
+    expected_notes = [UNKNOWN_RANGE]
 
 
 class CaseAcceptRangeTest(FieldTest):

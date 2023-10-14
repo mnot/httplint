@@ -40,10 +40,10 @@ class KeepAliveTest(FieldTest):
     name = "Keep-Alive"
     inputs = [b"timeout=30"]
     expected_out = [("timeout", "30")]
-    expected_err = [FIELD_DEPRECATED]
+    expected_notes = [FIELD_DEPRECATED]
 
 
 class EmptyKeepAliveTest(FieldTest):
     name = "Keep-Alive"
     inputs = [b""]
-    expected_err = [FIELD_DEPRECATED]
+    expected_notes = [FIELD_DEPRECATED]

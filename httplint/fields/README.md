@@ -132,7 +132,7 @@ Each header definition should also include tests, as subclasses of
    E.g., `["foo", "foo, bar"]`
  * `expected_out` - the data structure that _parse_ should return, given
    the inputs
- * `expected_err` - a list of `redbot.speak.Note` classes that are expected
+ * `expected_notes` - a list of `redbot.speak.Note` classes that are expected
    to be set with `add_note` when parsing the inputs
 
 You can create any number of tests this way; they will be run automatically when

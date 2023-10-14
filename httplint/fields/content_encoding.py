@@ -57,4 +57,4 @@ class UnwantedContentEncodingTest(FieldTest):
     name = "Content-Encoding"
     inputs = [b"gzip", b"foo"]
     expected_out = ["gzip", "foo"]
-    expected_err = [ENCODING_UNWANTED]
+    expected_notes = [ENCODING_UNWANTED]

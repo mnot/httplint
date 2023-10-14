@@ -35,14 +35,14 @@ class ContentLengthTextTest(FieldTest):
     name = "Content-Length"
     inputs = [b"a"]
     expected_out = None
-    expected_err = [BAD_SYNTAX]
+    expected_notes = [BAD_SYNTAX]
 
 
 class ContentLengthSemiTest(FieldTest):
     name = "Content-Length"
     inputs = [b"1;"]
     expected_out = None
-    expected_err = [BAD_SYNTAX]
+    expected_notes = [BAD_SYNTAX]
 
 
 class ContentLengthSpaceTest(FieldTest):

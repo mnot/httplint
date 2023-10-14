@@ -40,7 +40,7 @@ class FieldTest(unittest.TestCase):
     name: str = None
     inputs: List[bytes] = []
     expected_out: Any = []
-    expected_err: List[Type[Note]] = []
+    expected_notes: List[Type[Note]] = []
 
     def setUp(self) -> None:
         "Test setup."
@@ -56,7 +56,7 @@ class FieldTest(unittest.TestCase):
         section.process([(name, inp) for inp in self.inputs], self.message)
         out = section.parsed.get(self.name.lower(), "HEADER HANDLER NOT FOUND")
         self.assertEqual(self.expected_out, out)
-        diff = {n.__name__ for n in self.expected_err}.symmetric_difference(
+        diff = {n.__name__ for n in self.expected_notes}.symmetric_difference(
             set(self.message.note_classes)
         )
         for message in self.message.note_list:  # check formatting

@@ -34,11 +34,11 @@ class BadDateTest(FieldTest):
     name = "Date"
     inputs = [b"0"]
     expected_out = None
-    expected_err = [BAD_DATE_SYNTAX]
+    expected_notes = [BAD_DATE_SYNTAX]
 
 
 class BlankDateTest(FieldTest):
     name = "Date"
     inputs = [b""]
     expected_out = None
-    expected_err = [BAD_DATE_SYNTAX]
+    expected_notes = [BAD_DATE_SYNTAX]

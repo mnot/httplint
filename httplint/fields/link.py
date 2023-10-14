@@ -79,7 +79,7 @@ class QuotedLinkTest(FieldTest):
     name = "Link"
     inputs = [b'"http://www.example.com/"; rel=example']
     expected_out = [("http://www.example.com/", {"rel": "example"})]
-    expected_err = [BAD_SYNTAX]
+    expected_notes = [BAD_SYNTAX]
 
 
 class QuotedRelationLinkTest(FieldTest):
@@ -98,18 +98,18 @@ class RepeatingRelationLinkTest(FieldTest):
     name = "Link"
     inputs = [b'</foo>; rel="example"; rel="another"']
     expected_out = [("/foo", {"rel": "another"})]
-    expected_err = [PARAM_REPEATS]
+    expected_notes = [PARAM_REPEATS]
 
 
 class RevLinkTest(FieldTest):
     name = "Link"
     inputs = [b'</foo>; rev="bar"']
     expected_out = [("/foo", {"rev": "bar"})]
-    expected_err = [LINK_REV]
+    expected_notes = [LINK_REV]
 
 
 class BadAnchorLinkTest(FieldTest):
     name = "Link"
     inputs = [b'</foo>; rel="bar"; anchor="{blah}"']
     expected_out = [("/foo", {"rel": "bar", "anchor": "{blah}"})]
-    expected_err = [LINK_BAD_ANCHOR]
+    expected_notes = [LINK_BAD_ANCHOR]

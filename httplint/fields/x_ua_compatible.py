@@ -67,4 +67,4 @@ class BasicUACTest(FieldTest):
     name = "X-UA-Compatible"
     inputs = [b"foo=bar"]
     expected_out = ("foo", "bar")
-    expected_err = [UA_COMPATIBLE]
+    expected_notes = [UA_COMPATIBLE]

@@ -51,4 +51,4 @@ class PragmaTest(FieldTest):
     name = "Pragma"
     inputs = [b"no-cache"]
     expected_out = ["no-cache"]
-    expected_err = [PRAGMA_NO_CACHE, FIELD_DEPRECATED]
+    expected_notes = [PRAGMA_NO_CACHE, FIELD_DEPRECATED]

@@ -23,4 +23,4 @@ class ContentMD5Test(FieldTest):
     name = "Content-MD5"
     inputs = [b"Q2hlY2sgSW50ZWdyaXR5IQ=="]
     expected_out = "Q2hlY2sgSW50ZWdyaXR5IQ=="
-    expected_err = [FIELD_DEPRECATED]
+    expected_notes = [FIELD_DEPRECATED]

@@ -96,25 +96,25 @@ class OneXXSSTest(FieldTest):
     name = "X-XSS-Protection"
     inputs = [b"1"]
     expected_out = (1, {})  # type: ignore
-    expected_err = [XSS_PROTECTION_ON]
+    expected_notes = [XSS_PROTECTION_ON]
 
 
 class ZeroXXSSTest(FieldTest):
     name = "X-XSS-Protection"
     inputs = [b"0"]
     expected_out = (0, {})  # type: ignore
-    expected_err = [XSS_PROTECTION_OFF]
+    expected_notes = [XSS_PROTECTION_OFF]
 
 
 class OneBlockXXSSTest(FieldTest):
     name = "X-XSS-Protection"
     inputs = [b"1; mode=block"]
     expected_out = (1, {"mode": "block"})
-    expected_err = [XSS_PROTECTION_BLOCK]
+    expected_notes = [XSS_PROTECTION_BLOCK]
 
 
 class BadXXSSTest(FieldTest):
     name = "X-XSS-Protection"
     inputs = [b"foo"]
     expected_out = None
-    expected_err = [BAD_SYNTAX]
+    expected_notes = [BAD_SYNTAX]
