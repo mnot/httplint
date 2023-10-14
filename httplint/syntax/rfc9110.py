@@ -1,8 +1,9 @@
-
 #   Accept = [ ( media-range [ weight ] ) *( OWS "," OWS ( media-range [ weight ] ) ) ]
-#   Accept-Charset = [ ( ( token / "*" ) [ weight ] ) *( OWS "," OWS ( ( token / "*" ) [ weight ] ) ) ]
+#   Accept-Charset = [ ( ( token / "*" ) [ weight ] )
+#                      *( OWS "," OWS ( ( token / "*" ) [ weight ] ) ) ]
 #   Accept-Encoding = [ ( codings [ weight ] ) *( OWS "," OWS ( codings [ weight ] ) ) ]
-#   Accept-Language = [ ( language-range [ weight ] ) *( OWS "," OWS ( language-range [ weight ] ) ) ]
+#   Accept-Language = [ ( language-range [ weight ] )
+#                       *( OWS "," OWS ( language-range [ weight ] ) ) ]
 #   Accept-Ranges = acceptable-ranges
 #   Allow = [ method *( OWS "," OWS method ) ]
 #   Authentication-Info = [ auth-param *( OWS "," OWS auth-param ) ]
@@ -63,7 +64,8 @@
 #   User-Agent = product *( RWS ( product / comment ) )
 #
 #   Vary = [ ( "*" / field-name ) *( OWS "," OWS ( "*" / field-name ) ) ]
-#   Via = [ ( received-protocol RWS received-by [ RWS comment ] ) *( OWS "," OWS ( received-protocol RWS received-by [ RWS comment ] ) ) ]
+#   Via = [ ( received-protocol RWS received-by [ RWS comment ] )
+#           *( OWS "," OWS ( received-protocol RWS received-by [ RWS comment ] ) ) ]
 #
 #   WWW-Authenticate = [ challenge *( OWS "," OWS challenge ) ]
 #
@@ -192,7 +194,8 @@
 #   suffix-range = "-" suffix-length
 #
 #   t-codings = "trailers" / ( transfer-coding [ weight ] )
-#   tchar = "!" / "#" / "$" / "%" / "&" / "'" / "*" / "+" / "-" / "." / "^" / "_" / "`" / "|" / "~" / DIGIT / ALPHA
+#   tchar = "!" / "#" / "$" / "%" / "&" / "'" / "*" / "+" / "-" / "."
+#           / "^" / "_" / "`" / "|" / "~" / DIGIT / ALPHA
 #   time-of-day = hour ":" minute ":" second
 #   token = 1*tchar
 #   token68 = 1*( ALPHA / DIGIT / "-" / "." / "_" / "~" / "+" / "/" ) *"="

@@ -72,6 +72,12 @@ class HttpParser(HttpMessageHandler):
             status_phrase = b""
         return version, status_code, status_phrase
 
+    def output(self, data: bytes) -> None:
+        pass
+
+    def output_done(self) -> None:
+        pass
+
 
 def getargs() -> Namespace:
     parser = ArgumentParser()
