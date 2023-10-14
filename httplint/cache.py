@@ -15,7 +15,7 @@ HEURISTIC_CACHEABLE_STATUS = [200, 203, 206, 300, 301, 410]
 MAX_CLOCK_SKEW = 5  # seconds
 
 # known Cache-Control directives that don't allow duplicates
-known_cc = [
+KNOWN_CC = [
     "max-age",
     "no-store",
     "s-maxage",
@@ -89,11 +89,11 @@ class ResponseCacheChecker:
 
     def check_cache_control(self) -> bool:
         for cc in self.cc_keys:
-            if cc.lower() in known_cc and cc != cc.lower():
+            if cc.lower() in KNOWN_CC and cc != cc.lower():
                 self.response.notes.add(
                     "header-cache-control", CC_MISCAP, cc_lower=cc.lower(), cc=cc
                 )
-            if cc in known_cc and self.cc_list.count(cc) > 1:
+            if cc in KNOWN_CC and self.cc_list.count(cc) > 1:
                 self.response.notes.add("header-cache-control", CC_DUP, cc=cc)
 
         if "no-store" in self.cc_keys:
