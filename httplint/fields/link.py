@@ -49,8 +49,8 @@ statement of the form "[context IRI] has a [relation type] resource at [target I
 class LINK_REV(Note):
     category = categories.GENERAL
     level = levels.WARN
-    summary = "The 'rev' parameter on the Link header is deprecated."
-    text = """\
+    _summary = "The 'rev' parameter on the Link header is deprecated."
+    _text = """\
 The `Link` header, defined by [RFC5988](http://tools.ietf.org/html/rfc5988#section-5), uses the
 `rel` parameter to communicate the type of a link. `rev` is deprecated by that specification
 because it is often confusing.
@@ -61,8 +61,8 @@ Use `rel` and an appropriate relation."""
 class LINK_BAD_ANCHOR(Note):
     category = categories.GENERAL
     level = levels.WARN
-    summary = "The 'anchor' parameter on the %(link)s Link header isn't a URI."
-    text = """\
+    _summary = "The 'anchor' parameter on the %(link)s Link header isn't a URI."
+    _text = """\
 The `Link` header, defined by [RFC5988](http://tools.ietf.org/html/rfc5988#section-5), uses the
 `anchor` parameter to define the context URI for the link.
 

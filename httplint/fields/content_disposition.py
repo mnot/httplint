@@ -48,8 +48,8 @@ the file, rather than display it."""
 class DISPOSITION_UNKNOWN(Note):
     category = categories.GENERAL
     level = levels.WARN
-    summary = "The '%(disposition)s' Content-Disposition isn't known."
-    text = """\
+    _summary = "The '%(disposition)s' Content-Disposition isn't known."
+    _text = """\
 The `Content-Disposition` header has two widely-known values; `inline` and `attachment`.
 `%(disposition)s` isn't recognised, and most implementations will default to handling it like
 `attachment`."""
@@ -58,8 +58,8 @@ The `Content-Disposition` header has two widely-known values; `inline` and `atta
 class DISPOSITION_OMITS_FILENAME(Note):
     category = categories.GENERAL
     level = levels.WARN
-    summary = "The Content-Disposition header doesn't have a 'filename' parameter."
-    text = """\
+    _summary = "The Content-Disposition header doesn't have a 'filename' parameter."
+    _text = """\
 The `Content-Disposition` header suggests a filename for clients to use when saving the file
 locally.
 
@@ -70,11 +70,11 @@ carry an internationalised filename, so that browsers can fall back to an ASCII-
 class DISPOSITION_FILENAME_PERCENT(Note):
     category = categories.GENERAL
     level = levels.WARN
-    summary = (
+    _summary = (
         "The 'filename' parameter on the Content-Disposition header"
         "contains a '%%' character."
     )
-    text = """\
+    _text = """\
 The `Content-Disposition` header suggests a filename for clients to use when saving the file
 locally, using the `filename` parameter.
 
@@ -90,10 +90,10 @@ correct encoding in the `filename*` parameter instead."""
 class DISPOSITION_FILENAME_PATH_CHAR(Note):
     category = categories.GENERAL
     level = levels.WARN
-    summary = (
+    _summary = (
         "The filename in the Content-Disposition header contains a path character."
     )
-    text = """\
+    _text = """\
 The `Content-Disposition` header suggests a filename for clients to use when saving the file
 locally, using the `filename` and `filename*` parameters.
 

@@ -43,8 +43,8 @@ in a request does not imply that the same directive is in effect in the response
 class BAD_CC_SYNTAX(Note):
     category = categories.CACHING
     level = levels.BAD
-    summary = "The %(bad_cc_attr)s Cache-Control directive's syntax is incorrect."
-    text = "This value must be an integer."
+    _summary = "The %(bad_cc_attr)s Cache-Control directive's syntax is incorrect."
+    _text = "This value must be an integer."
 
 
 class CacheControlTest(FieldTest):

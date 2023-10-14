@@ -27,8 +27,8 @@ FIXME
 class SHORT_NAME_NOTE(Note):
     category = categories.GENERAL
     level = levels.INFO
-    summary = "FIXME"
-    text = """\
+    _summary =  "FIXME"
+    _text ="""\
 FIXME"""
 
 

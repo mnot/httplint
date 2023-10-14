@@ -17,7 +17,7 @@ class x_meta_mssmarttagspreventparsing(HttpField):
 class SMART_TAG_NO_WORK(Note):
     category = categories.GENERAL
     level = levels.WARN
-    summary = "The %(field_name)s header doesn't have any effect on smart tags."
-    text = """\
+    _summary = "The %(field_name)s header doesn't have any effect on smart tags."
+    _text = """\
 This header doesn't have any effect on Microsoft Smart Tags, except in certain beta versions of
 IE6. To turn them off, you'll need to make changes in the HTML content itself."""

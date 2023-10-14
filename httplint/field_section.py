@@ -177,24 +177,24 @@ class UnknownHttpField(HttpField):
 class FIELD_TOO_LARGE(Note):
     category = categories.GENERAL
     level = levels.WARN
-    summary = "The %(field_name)s header is very large (%(header_size)s bytes)."
-    text = """\
+    _summary = "The %(field_name)s header is very large (%(header_size)s bytes)."
+    _text = """\
 Some implementations limit the size of any single header line."""
 
 
 class FIELD_NAME_ENCODING(Note):
     category = categories.GENERAL
     level = levels.BAD
-    summary = "The %(field_name)s header's name contains non-ASCII characters."
-    text = """\
+    _summary = "The %(field_name)s header's name contains non-ASCII characters."
+    _text = """\
 HTTP field names can only contain ASCII characters."""
 
 
 class FIELD_VALUE_ENCODING(Note):
     category = categories.GENERAL
     level = levels.WARN
-    summary = "The %(field_name)s header's value contains non-ASCII characters."
-    text = """\
+    _summary = "The %(field_name)s header's value contains non-ASCII characters."
+    _text = """\
 HTTP fields notionally use the ISO-8859-1 character set, but in most cases are pure ASCII
 (a subset of this encoding).
 

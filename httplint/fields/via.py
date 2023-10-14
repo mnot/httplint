@@ -30,8 +30,8 @@ the request/response chain."""
 class VIA_PRESENT(Note):
     category = categories.GENERAL
     level = levels.INFO
-    summary = "One or more intermediaries are present."
-    text = """\
+    _summary = "One or more intermediaries are present."
+    _text = """\
 The `Via` header indicates that one or more intermediaries are present between the user agent and
 the origin server for the resource.
 

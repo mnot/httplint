@@ -34,8 +34,8 @@ This header is deprecated, in favour of `Cache-Control`."""
 class PRAGMA_NO_CACHE(Note):
     category = categories.CACHING
     level = levels.WARN
-    summary = "Pragma: no-cache is a request directive, not a response directive."
-    text = """\
+    _summary = "Pragma: no-cache is a request directive, not a response directive."
+    _text = """\
 `Pragma` is a very old request header that is sometimes used as a response header, even though
 this is not specified behaviour. `Cache-Control: no-cache` is more appropriate."""
 
@@ -43,8 +43,8 @@ this is not specified behaviour. `Cache-Control: no-cache` is more appropriate."
 class PRAGMA_OTHER(Note):
     category = categories.GENERAL
     level = levels.WARN
-    summary = """The Pragma header is being used in an undefined way."""
-    text = """HTTP only defines `Pragma: no-cache`; other uses of this header are deprecated."""
+    _summary = """The Pragma header is being used in an undefined way."""
+    _text = """HTTP only defines `Pragma: no-cache`; other uses of this header are deprecated."""
 
 
 class PragmaTest(FieldTest):

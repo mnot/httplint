@@ -53,8 +53,8 @@ class Note:
 
     category: categories = None
     level: levels = None
-    summary = ""
-    text = ""
+    _summary = ""
+    _text = ""
     _markdown = Markdown(output_format="html")
 
     def __init__(self, subject: str, **vrs: Union[str, int]) -> None:
@@ -62,7 +62,7 @@ class Note:
         self.vars = vrs or {}
 
     def __str__(self) -> str:
-        return str(self.show_summary("en"))
+        return str(self.summary)
 
     def __eq__(self, other: Any) -> bool:
         return bool(
@@ -71,16 +71,16 @@ class Note:
             and self.subject == other.subject
         )
 
-    def show_summary(self, lang: str) -> Markup:
+    def get_summary(self) -> Markup:
         """
         Output a textual summary of the message as a Unicode string.
 
         Note that if it is displayed in an environment that needs
         encoding (e.g., HTML), that is *NOT* done.
         """
-        return Markup(self.summary % self.vars)
+        return Markup(self._summary % self.vars)
 
-    def show_text(self, lang: str) -> Markup:
+    def get_text(self) -> Markup:
         """
         Show the HTML text for the message as a Unicode string.
 
@@ -88,6 +88,9 @@ class Note:
         """
         return Markup(
             self._markdown.reset().convert(
-                self.text % {k: escape(str(v)) for k, v in self.vars.items()}
+                self._text % {k: escape(str(v)) for k, v in self.vars.items()}
             )
         )
+
+    summary = property(get_summary)
+    text = property(get_text)

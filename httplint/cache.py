@@ -281,8 +281,8 @@ class ResponseCacheChecker:
 class LM_FUTURE(Note):
     category = categories.CACHING
     level = levels.BAD
-    summary = "The Last-Modified time is in the future."
-    text = """\
+    _summary = "The Last-Modified time is in the future."
+    _text = """\
 The `Last-Modified` header indicates the last point in time that the resource has changed.
 %(response)s's `Last-Modified` time is in the future, which doesn't have any defined meaning in
 HTTP."""
@@ -291,8 +291,8 @@ HTTP."""
 class LM_PRESENT(Note):
     category = categories.CACHING
     level = levels.INFO
-    summary = "The resource last changed %(last_modified_string)s."
-    text = """\
+    _summary = "The resource last changed %(last_modified_string)s."
+    _text = """\
 The `Last-Modified` header indicates the last point in time that the resource has changed. It is
 used in HTTP for validating cached responses, and for calculating heuristic freshness in caches.
 
@@ -302,17 +302,17 @@ This resource last changed %(last_modified_string)s."""
 class METHOD_UNCACHEABLE(Note):
     category = categories.CACHING
     level = levels.INFO
-    summary = "Responses to the %(method)s method can't be stored by caches."
-    text = """\
+    _summary = "Responses to the %(method)s method can't be stored by caches."
+    _text = """\
 """
 
 
 class CC_MISCAP(Note):
     category = categories.CACHING
     level = levels.WARN
-    summary = "The %(cc)s Cache-Control directive appears to have incorrect \
+    _summary = "The %(cc)s Cache-Control directive appears to have incorrect \
 capitalisation."
-    text = """\
+    _text = """\
 Cache-Control directive names are case-sensitive, and will not be recognised by most
 implementations if the capitalisation is wrong.
 
@@ -322,8 +322,8 @@ Did you mean to use %(cc_lower)s instead of %(cc)s?"""
 class CC_DUP(Note):
     category = categories.CACHING
     level = levels.WARN
-    summary = "The %(cc)s Cache-Control directive appears more than once."
-    text = """\
+    _summary = "The %(cc)s Cache-Control directive appears more than once."
+    _text = """\
 The %(cc)s Cache-Control directive is only defined to appear once; it is used more than once here,
 so implementations may use different instances (e.g., the first, or the last), making their
 behaviour unpredictable."""
@@ -332,16 +332,16 @@ behaviour unpredictable."""
 class NO_STORE(Note):
     category = categories.CACHING
     level = levels.INFO
-    summary = "%(response)s can't be stored by a cache."
-    text = """\
+    _summary = "%(response)s can't be stored by a cache."
+    _text = """\
 The `Cache-Control: no-store` directive indicates that this response can't be stored by a cache."""
 
 
 class PRIVATE_CC(Note):
     category = categories.CACHING
     level = levels.INFO
-    summary = "%(response)s only allows a private cache to store it."
-    text = """\
+    _summary = "%(response)s only allows a private cache to store it."
+    _text = """\
 The `Cache-Control: private` directive indicates that the response can only be stored by caches
 that are specific to a single user; for example, a browser cache. Shared caches, such as those in
 proxies, cannot store it."""
@@ -350,8 +350,8 @@ proxies, cannot store it."""
 class PRIVATE_AUTH(Note):
     category = categories.CACHING
     level = levels.INFO
-    summary = "%(response)s only allows a private cache to store it."
-    text = """\
+    _summary = "%(response)s only allows a private cache to store it."
+    _text = """\
 Because the request was authenticated and this response doesn't contain a `Cache-Control: public`
 directive, this response can only be stored by caches that are specific to a single user; for
 example, a browser cache. Shared caches, such as those in proxies, cannot store it."""
@@ -360,9 +360,9 @@ example, a browser cache. Shared caches, such as those in proxies, cannot store 
 class STORABLE(Note):
     category = categories.CACHING
     level = levels.INFO
-    summary = """\
+    _summary = """\
 %(response)s allows all caches to store it."""
-    text = """\
+    _text = """\
 A cache can store this response; it may or may not be able to use it to satisfy a particular
 request."""
 
@@ -370,8 +370,8 @@ request."""
 class NO_CACHE(Note):
     category = categories.CACHING
     level = levels.INFO
-    summary = "%(response)s cannot be served from cache without validation."
-    text = """\
+    _summary = "%(response)s cannot be served from cache without validation."
+    _text = """\
 The `Cache-Control: no-cache` directive means that while caches **can** store this
 response, they cannot use it to satisfy a request unless it has been validated (either with an
 `If-None-Match` or `If-Modified-Since` conditional) for that request."""
@@ -380,8 +380,8 @@ response, they cannot use it to satisfy a request unless it has been validated (
 class NO_CACHE_NO_VALIDATOR(Note):
     category = categories.CACHING
     level = levels.INFO
-    summary = "%(response)s cannot be served from cache without validation."
-    text = """\
+    _summary = "%(response)s cannot be served from cache without validation."
+    _text = """\
 The `Cache-Control: no-cache` directive means that while caches **can** store this response, they
 cannot use it to satisfy a request unless it has been validated (either with an `If-None-Match` or
 `If-Modified-Since` conditional) for that request.
@@ -393,8 +393,8 @@ cache."""
 class VARY_ASTERISK(Note):
     category = categories.CACHING
     level = levels.WARN
-    summary = "Vary: * effectively makes this response uncacheable."
-    text = """\
+    _summary = "Vary: * effectively makes this response uncacheable."
+    _text = """\
 `Vary *` indicates that responses for this resource vary by some aspect that can't (or won't) be
 described by the server. This makes this response effectively uncacheable."""
 
@@ -402,8 +402,8 @@ described by the server. This makes this response effectively uncacheable."""
 class VARY_USER_AGENT(Note):
     category = categories.CACHING
     level = levels.INFO
-    summary = "Vary: User-Agent can cause cache inefficiency."
-    text = """\
+    _summary = "Vary: User-Agent can cause cache inefficiency."
+    _text = """\
 Sending `Vary: User-Agent` requires caches to store a separate copy of the response for every
 `User-Agent` request header they see.
 
@@ -417,8 +417,8 @@ finer control over caching without sacrificing efficiency."""
 class VARY_HOST(Note):
     category = categories.CACHING
     level = levels.WARN
-    summary = "Vary: Host is not necessary."
-    text = """\
+    _summary = "Vary: Host is not necessary."
+    _text = """\
 Some servers (e.g., [Apache](http://httpd.apache.org/) with
 [mod_rewrite](http://httpd.apache.org/docs/2.4/mod/mod_rewrite.html)) will send `Host` in the
 `Vary` header, in the belief that since it affects how the server selects what to send back, this
@@ -434,8 +434,8 @@ some cache implementations will not store anything that has a `Vary` header)."""
 class VARY_COMPLEX(Note):
     category = categories.CACHING
     level = levels.WARN
-    summary = "This resource varies in %(vary_count)s ways."
-    text = """\
+    _summary = "This resource varies in %(vary_count)s ways."
+    _text = """\
 The `Vary` mechanism allows a resource to describe the dimensions that its responses vary, or
 change, over; each listed header is another dimension.
 
@@ -445,8 +445,8 @@ Varying by too many dimensions makes using this information impractical."""
 class PUBLIC(Note):
     category = categories.CACHING
     level = levels.WARN
-    summary = "Cache-Control: public is rarely necessary."
-    text = """\
+    _summary = "Cache-Control: public is rarely necessary."
+    _text = """\
 The `Cache-Control: public` directive makes a response cacheable even when the request had an
 `Authorization` header (i.e., HTTP authentication was in use).
 
@@ -460,8 +460,8 @@ response "more cacheable", and only makes the response headers larger."""
 class CURRENT_AGE(Note):
     category = categories.CACHING
     level = levels.INFO
-    summary = "%(response)s has been cached for %(age)s."
-    text = """\
+    _summary = "%(response)s has been cached for %(age)s."
+    _text = """\
 The `Age` header indicates the age of the response; i.e., how long it has been cached since it was
 generated. HTTP takes this as well as any apparent clock skew into account in computing how old the
 response already is."""
@@ -470,8 +470,8 @@ response already is."""
 class FRESHNESS_FRESH(Note):
     category = categories.CACHING
     level = levels.GOOD
-    summary = "%(response)s is fresh until %(freshness_left)s from now."
-    text = """\
+    _summary = "%(response)s is fresh until %(freshness_left)s from now."
+    _text = """\
 A response can be considered fresh when its age (here, %(current_age)s) is less than its freshness
 lifetime (in this case, %(freshness_lifetime)s)."""
 
@@ -479,8 +479,8 @@ lifetime (in this case, %(freshness_lifetime)s)."""
 class FRESHNESS_STALE_CACHE(Note):
     category = categories.CACHING
     level = levels.WARN
-    summary = "%(response)s has been served stale by a cache."
-    text = """\
+    _summary = "%(response)s has been served stale by a cache."
+    _text = """\
 An HTTP response is stale when its age (here, %(current_age)s) is equal to or exceeds its freshness
 lifetime (in this case, %(freshness_lifetime)s).
 
@@ -492,8 +492,8 @@ has ignored the response's freshness directives."""
 class FRESHNESS_STALE_ALREADY(Note):
     category = categories.CACHING
     level = levels.INFO
-    summary = "%(response)s is already stale."
-    text = """\
+    _summary = "%(response)s is already stale."
+    _text = """\
 A cache considers a HTTP response stale when its age (here, %(current_age)s) is equal to or exceeds
 its freshness lifetime (in this case, %(freshness_lifetime)s).
 
@@ -504,8 +504,8 @@ e.g., when they lose contact with the origin server."""
 class FRESHNESS_HEURISTIC(Note):
     category = categories.CACHING
     level = levels.WARN
-    summary = "%(response)s allows a cache to assign its own freshness lifetime."
-    text = """\
+    _summary = "%(response)s allows a cache to assign its own freshness lifetime."
+    _text = """\
 When responses with certain status codes don't have explicit freshness information (like a `
 Cache-Control: max-age` directive, or `Expires` header), caches are allowed to estimate how fresh
 it is using a heuristic.
@@ -521,10 +521,10 @@ you'd like."""
 class FRESHNESS_NONE(Note):
     category = categories.CACHING
     level = levels.INFO
-    summary = (
+    _summary = (
         "%(response)s can only be served by a cache under exceptional circumstances."
     )
-    text = """\
+    _text = """\
 %(response)s doesn't have explicit freshness information (like a ` Cache-Control: max-age`
 directive, or `Expires` header), and this status code doesn't allow caches to calculate their own.
 
@@ -540,8 +540,8 @@ so."""
 class FRESH_SERVABLE(Note):
     category = categories.CACHING
     level = levels.INFO
-    summary = "%(response)s may still be served by a cache once it becomes stale."
-    text = """\
+    _summary = "%(response)s may still be served by a cache once it becomes stale."
+    _text = """\
 HTTP allows stale responses to be served under some circumstances; for example, if the origin
 server can't be contacted, a stale response can be used (even if it doesn't have explicit freshness
 information).
@@ -552,8 +552,8 @@ This behaviour can be prevented by using the `Cache-Control: must-revalidate` re
 class STALE_SERVABLE(Note):
     category = categories.CACHING
     level = levels.INFO
-    summary = "%(response)s can be served by a cache, even though it is stale."
-    text = """\
+    _summary = "%(response)s can be served by a cache, even though it is stale."
+    _text = """\
 HTTP allows stale responses to be served under some circumstances; for example, if the origin
 server can't be contacted, a stale response can be used (even if it doesn't have explicit freshness
 information).
@@ -564,8 +564,8 @@ This behaviour can be prevented by using the `Cache-Control: must-revalidate` re
 class FRESH_MUST_REVALIDATE(Note):
     category = categories.CACHING
     level = levels.INFO
-    summary = "%(response)s cannot be served by a cache once it becomes stale."
-    text = """\
+    _summary = "%(response)s cannot be served by a cache once it becomes stale."
+    _text = """\
 The `Cache-Control: must-revalidate` directive forbids caches from using stale responses to satisfy
 requests.
 
@@ -576,8 +576,8 @@ this directive is present, they will return an error rather than a stale respons
 class STALE_MUST_REVALIDATE(Note):
     category = categories.CACHING
     level = levels.INFO
-    summary = "%(response)s cannot be served by a cache, because it is stale."
-    text = """\
+    _summary = "%(response)s cannot be served by a cache, because it is stale."
+    _text = """\
 The `Cache-Control: must-revalidate` directive forbids caches from using stale responses to satisfy
 requests.
 
@@ -588,8 +588,8 @@ this directive is present, they will return an error rather than a stale respons
 class FRESH_PROXY_REVALIDATE(Note):
     category = categories.CACHING
     level = levels.INFO
-    summary = "%(response)s cannot be served by a shared cache once it becomes stale."
-    text = """\
+    _summary = "%(response)s cannot be served by a shared cache once it becomes stale."
+    _text = """\
 The presence of the `Cache-Control: proxy-revalidate` and/or `s-maxage` directives forbids shared
 caches (e.g., proxy caches) from using stale responses to satisfy requests.
 
@@ -602,8 +602,8 @@ These directives do not affect private caches; for example, those in browsers.""
 class STALE_PROXY_REVALIDATE(Note):
     category = categories.CACHING
     level = levels.INFO
-    summary = "%(response)s cannot be served by a shared cache, because it is stale."
-    text = """\
+    _summary = "%(response)s cannot be served by a shared cache, because it is stale."
+    _text = """\
 The presence of the `Cache-Control: proxy-revalidate` and/or `s-maxage` directives forbids shared
 caches (e.g., proxy caches) from using stale responses to satisfy requests.
 
@@ -616,10 +616,10 @@ These directives do not affect private caches; for example, those in browsers.""
 class CHECK_SINGLE(Note):
     category = categories.CACHING
     level = levels.WARN
-    summary = (
+    _summary = (
         "Only one of the pre-check and post-check Cache-Control directives is present."
     )
-    text = """\
+    _text = """\
 Microsoft Internet Explorer implements two `Cache-Control` extensions, `pre-check` and
 `post-check`, to give more control over how its cache stores responses.
 
@@ -633,8 +633,8 @@ See [this blog entry](http://bit.ly/rzT0um) for more information.
 class CHECK_NOT_INTEGER(Note):
     category = categories.CACHING
     level = levels.WARN
-    summary = "One of the pre-check/post-check Cache-Control directives has a non-integer value."
-    text = """\
+    _summary = "One of the pre-check/post-check Cache-Control directives has a non-integer value."
+    _text = """\
 Microsoft Internet Explorer implements two `Cache-Control` extensions, `pre-check` and
 `post-check`, to give more control over how its cache stores responses.
 
@@ -647,8 +647,8 @@ See [this blog entry](http://bit.ly/rzT0um) for more information."""
 class CHECK_ALL_ZERO(Note):
     category = categories.CACHING
     level = levels.WARN
-    summary = "The pre-check and post-check Cache-Control directives are both '0'."
-    text = """\
+    _summary = "The pre-check and post-check Cache-Control directives are both '0'."
+    _text = """\
 Microsoft Internet Explorer implements two `Cache-Control` extensions, `pre-check` and
 `post-check`, to give more control over how its cache stores responses.
 
@@ -664,10 +664,10 @@ See [this blog entry](http://bit.ly/rzT0um) for more information."""
 class CHECK_POST_BIGGER(Note):
     category = categories.CACHING
     level = levels.WARN
-    summary = (
+    _summary = (
         "The post-check Cache-control directive's value is larger than pre-check's."
     )
-    text = """\
+    _text = """\
 Microsoft Internet Explorer implements two `Cache-Control` extensions, `pre-check` and
 `post-check`, to give more control over how its cache stores responses.
 
@@ -680,8 +680,8 @@ See [this blog entry](http://bit.ly/rzT0um) for more information."""
 class CHECK_POST_ZERO(Note):
     category = categories.CACHING
     level = levels.BAD
-    summary = "The post-check Cache-control directive's value is '0'."
-    text = """\
+    _summary = "The post-check Cache-control directive's value is '0'."
+    _text = """\
 Microsoft Internet Explorer implements two `Cache-Control` extensions, `pre-check` and
 `post-check`, to give more control over how its cache stores responses.
 
@@ -694,8 +694,8 @@ See [this blog entry](http://bit.ly/rzT0um) for more information."""
 class CHECK_POST_PRE(Note):
     category = categories.CACHING
     level = levels.INFO
-    summary = "%(response)s may be refreshed in the background by Internet Explorer."
-    text = """\
+    _summary = "%(response)s may be refreshed in the background by Internet Explorer."
+    _text = """\
 Microsoft Internet Explorer implements two `Cache-Control` extensions, `pre-check` and
 `post-check`, to give more control over how its cache stores responses.
 
@@ -712,8 +712,8 @@ See [this blog entry](http://bit.ly/rzT0um) for more information."""
 class DATE_CORRECT(Note):
     category = categories.GENERAL
     level = levels.GOOD
-    summary = "The server's clock is correct."
-    text = """\
+    _summary = "The server's clock is correct."
+    _text = """\
 HTTP's caching model assumes reasonable synchronisation between clocks on the server and client;
 using RED's local clock, the server's clock appears to be well-synchronised."""
 
@@ -721,8 +721,8 @@ using RED's local clock, the server's clock appears to be well-synchronised."""
 class DATE_INCORRECT(Note):
     category = categories.GENERAL
     level = levels.BAD
-    summary = "The server's clock is %(clock_skew_string)s."
-    text = """\
+    _summary = "The server's clock is %(clock_skew_string)s."
+    _text = """\
 Using RED's local clock, the server's clock does not appear to be well-synchronised.
 
 HTTP's caching model assumes reasonable synchronisation between clocks on the server and client;
@@ -740,8 +740,8 @@ paper](https://www.usenix.org/legacy/events/usits01/full_papers/cohen/cohen_html
 class AGE_PENALTY(Note):
     category = categories.GENERAL
     level = levels.WARN
-    summary = "It appears that the Date header has been changed by an intermediary."
-    text = """\
+    _summary = "It appears that the Date header has been changed by an intermediary."
+    _text = """\
 It appears that this response has been cached by a reverse proxy or Content Delivery Network,
 because the `Age` header is present, but the `Date` header is more recent than it indicates.
 
@@ -755,8 +755,8 @@ See [this paper](http://j.mp/S7lPL4) for more information."""
 class DATE_CLOCKLESS(Note):
     category = categories.GENERAL
     level = levels.WARN
-    summary = "%(response)s doesn't have a Date header."
-    text = """\
+    _summary = "%(response)s doesn't have a Date header."
+    _text = """\
 Although HTTP allows a server not to send a `Date` header if it doesn't have a local clock, this
 can make calculation of the response's age inexact."""
 
@@ -764,8 +764,8 @@ can make calculation of the response's age inexact."""
 class DATE_CLOCKLESS_BAD_HDR(Note):
     category = categories.CACHING
     level = levels.BAD
-    summary = "Responses without a Date aren't allowed to have Expires or Last-Modified values."
-    text = """\
+    _summary = "Responses without a Date aren't allowed to have Expires or Last-Modified values."
+    _text = """\
 Because both the `Expires` and `Last-Modified` headers are date-based, it's necessary to know when
 the message was generated for them to be useful; otherwise, clock drift, transit times between
 nodes as well as caching could skew their application."""

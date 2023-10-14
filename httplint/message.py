@@ -206,8 +206,8 @@ class HttpResponseLinter(HttpMessageLinter):
 class CL_CORRECT(Note):
     category = categories.GENERAL
     level = levels.GOOD
-    summary = "The Content-Length header is correct."
-    text = """\
+    _summary = "The Content-Length header is correct."
+    _text = """\
 `Content-Length` is used by HTTP to delimit messages; that is, to mark the end of one message and
 the beginning of the next."""
 
@@ -215,8 +215,8 @@ the beginning of the next."""
 class CL_INCORRECT(Note):
     category = categories.GENERAL
     level = levels.BAD
-    summary = "%(response)s's Content-Length header is incorrect."
-    text = """\
+    _summary = "%(response)s's Content-Length header is incorrect."
+    _text = """\
 `Content-Length` is used by HTTP to delimit messages; that is, to mark the end of one message and
 the beginning of the next. An incorrect `Content-Length` can cause security and intereoperablity
 issues.
@@ -227,8 +227,8 @@ The actual content size was %(content_length)s bytes."""
 class URI_TOO_LONG(Note):
     category = categories.GENERAL
     level = levels.WARN
-    summary = "The URI is very long (%(uri_len)s characters)."
-    text = """\
+    _summary = "The URI is very long (%(uri_len)s characters)."
+    _text = """\
 Long URIs aren't supported by some implementations, including proxies. A reasonable upper size
 limit is 8192 characters."""
 
@@ -236,8 +236,8 @@ limit is 8192 characters."""
 class URI_BAD_SYNTAX(Note):
     category = categories.GENERAL
     level = levels.BAD
-    summary = "The URI's syntax isn't valid."
-    text = """\
+    _summary = "The URI's syntax isn't valid."
+    _text = """\
 This isn't a valid URI. See
 [RFC3986](http://www.ietf.org/rfc/rfc3986.txt) for more information."""
 
@@ -245,6 +245,6 @@ This isn't a valid URI. See
 class STATUS_PHRASE_ENCODING(Note):
     category = categories.GENERAL
     level = levels.BAD
-    summary = "The status phrase contains non-ASCII characters."
-    text = """\
+    _summary = "The status phrase contains non-ASCII characters."
+    _text = """\
 The status phrase can only contain ASCII characters."""

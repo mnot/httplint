@@ -15,10 +15,10 @@ def checkNote(note_cls):
     note_name = note_cls.__name__
     assert isinstance(note_cls.category, categories), note_name
     assert isinstance(note_cls.level, levels), note_name
-    assert isinstance(note_cls.summary, str), note_name
-    assert note_cls.summary != "", note_name
-    assert not re.search(r"\s{2,}", note_cls.summary), note_name
-    assert isinstance(note_cls.text, str), note_name
+    assert isinstance(note_cls._summary, str), note_name
+    assert note_cls._summary != "", note_name
+    assert not re.search(r"\s{2,}", note_cls._summary), note_name
+    assert isinstance(note_cls._text, str), note_name
 
 
 def loadModules(paths, prefix):

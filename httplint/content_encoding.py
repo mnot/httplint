@@ -127,9 +127,9 @@ class ContentEncodingProcessor:
 class BAD_GZIP(Note):
     category = categories.CONNEG
     level = levels.BAD
-    summary = "%(response)s was compressed using GZip, but the header wasn't \
+    _summary = "%(response)s was compressed using GZip, but the header wasn't \
 valid."
-    text = """\
+    _text = """\
 GZip-compressed responses have a header that contains metadata. %(response)s's header wasn't valid;
 the error encountered was "`%(gzip_error)s`"."""
 
@@ -137,8 +137,8 @@ the error encountered was "`%(gzip_error)s`"."""
 class BAD_ZLIB(Note):
     category = categories.CONNEG
     level = levels.BAD
-    summary = "%(response)s was compressed using GZip, but the data was corrupt."
-    text = """\
+    _summary = "%(response)s was compressed using GZip, but the data was corrupt."
+    _text = """\
 GZip-compressed responses use zlib compression to reduce the number of bytes transferred on the
 wire. However, this response could not be decompressed; the error encountered was
 "`%(zlib_error)s`".

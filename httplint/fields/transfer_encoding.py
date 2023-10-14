@@ -48,8 +48,8 @@ without knowing the content's length."""
 class TRANSFER_CODING_IDENTITY(Note):
     category = categories.CONNECTION
     level = levels.INFO
-    summary = "The identity transfer-coding isn't necessary."
-    text = """\
+    _summary = "The identity transfer-coding isn't necessary."
+    _text = """\
 HTTP defines _transfer-codings_ as a hop-by-hop encoding of the message's content. The `identity`
 transfer-coding was defined as the absence of encoding; it doesn't do anything, so it's necessary.
 
@@ -59,8 +59,8 @@ You can remove this token to save a few bytes."""
 class TRANSFER_CODING_UNWANTED(Note):
     category = categories.CONNECTION
     level = levels.BAD
-    summary = "%(response)s has unsupported transfer-coding."
-    text = """\
+    _summary = "%(response)s has unsupported transfer-coding."
+    _text = """\
 %(response)s's `Transfer-Encoding` header indicates it has transfer-codings applied, but the
 request didn't ask for it (or them) to be.
 
@@ -73,8 +73,8 @@ the client doesn't explicitly request can lead to interoperability problems."""
 class TRANSFER_CODING_PARAM(Note):
     category = categories.CONNECTION
     level = levels.WARN
-    summary = "%(response)s had parameters on its transfer-codings."
-    text = """\
+    _summary = "%(response)s had parameters on its transfer-codings."
+    _text = """\
 HTTP allows transfer-codings in the `Transfer-Encoding` header to have optional parameters, but it
 doesn't define what they mean.
 

@@ -33,8 +33,8 @@ validation) was generated at the origin server."""
 class AGE_NOT_INT(Note):
     category = categories.CACHING
     level = levels.BAD
-    summary = "The Age header's value should be an integer."
-    text = """\
+    _summary = "The Age header's value should be an integer."
+    _text = """\
 The `Age` header indicates the age of the response; i.e., how long it has been cached
 since it was generated. The value given was not an integer, so it is not a valid age."""
 
@@ -42,8 +42,8 @@ since it was generated. The value given was not an integer, so it is not a valid
 class AGE_NEGATIVE(Note):
     category = categories.CACHING
     level = levels.BAD
-    summary = "The Age headers' value must be a positive integer."
-    text = """\
+    _summary = "The Age headers' value must be a positive integer."
+    _text = """\
 The `Age` header indicates the age of the response; i.e., how long it has been cached
 since it was generated. The value given was negative, so it is not a valid age."""
 

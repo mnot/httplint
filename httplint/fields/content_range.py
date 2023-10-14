@@ -33,8 +33,8 @@ partial content should be applied."""
 class CONTENT_RANGE_MEANINGLESS(Note):
     category = categories.RANGE
     level = levels.WARN
-    summary = "%(response)s shouldn't have a Content-Range header."
-    text = """\
+    _summary = "%(response)s shouldn't have a Content-Range header."
+    _text = """\
 HTTP only defines meaning for the `Content-Range` header in responses with a `206 Partial Content`
 or `416 Requested Range Not Satisfiable` status code.
 

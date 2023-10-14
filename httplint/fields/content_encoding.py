@@ -32,8 +32,8 @@ of its underlying media type; e.g., `gzip` and `deflate`."""
 class ENCODING_UNWANTED(Note):
     category = categories.CONNEG
     level = levels.WARN
-    summary = "%(response)s contained unwanted content-codings."
-    text = """\
+    _summary = "%(response)s contained unwanted content-codings."
+    _text = """\
 %(response)s's `Content-Encoding` header indicates it has content-codings applied
 (`%(unwanted_codings)s`) that the request didn't ask for.
 

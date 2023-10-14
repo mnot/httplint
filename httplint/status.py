@@ -233,8 +233,8 @@ class StatusChecker:
 class NO_DATE_304(Note):
     category = categories.VALIDATION
     level = levels.WARN
-    summary = "304 responses need to have a Date header field."
-    text = """\
+    _summary = "304 responses need to have a Date header field."
+    _text = """\
 HTTP requires `304 (Not Modified)` responses to have a `Date` header field in all but the most unusual
 circumstances."""
 
@@ -242,8 +242,8 @@ circumstances."""
 class UNEXPECTED_CONTINUE(Note):
     category = categories.GENERAL
     level = levels.BAD
-    summary = "A 100 Continue response was sent when it wasn't asked for."
-    text = """\
+    _summary = "A 100 Continue response was sent when it wasn't asked for."
+    _text = """\
 HTTP allows clients to ask a server if a request containing content (e.g., uploading a large file)
 will succeed before sending it, using a mechanism called "Expect/continue".
 
@@ -259,8 +259,8 @@ interoperability problems."""
 class UPGRADE_NOT_REQUESTED(Note):
     category = categories.GENERAL
     level = levels.BAD
-    summary = "The protocol was upgraded without being requested."
-    text = """\
+    _summary = "The protocol was upgraded without being requested."
+    _text = """\
 HTTP defines the `Upgrade` header field as a means of negotiating a change of protocol; i.e., it
 allows you to switch the protocol on a given connection from HTTP to something else.
 
@@ -271,8 +271,8 @@ This response was upgraded, but the request did not contain an `Upgrade` heade f
 class CREATED_SAFE_METHOD(Note):
     category = categories.GENERAL
     level = levels.WARN
-    summary = "A new resource was created in response to a safe request."
-    text = """\
+    _summary = "A new resource was created in response to a safe request."
+    _text = """\
 The `201 (Created)` status code indicates that the request created a new resource.
 
 However, the request method used (%(method)s) is defined as a "safe" method; that is, it
@@ -286,8 +286,8 @@ re-try safe methods when they fail."""
 class CREATED_WITHOUT_LOCATION(Note):
     category = categories.GENERAL
     level = levels.BAD
-    summary = "A new resource was created without its location being sent."
-    text = """\
+    _summary = "A new resource was created without its location being sent."
+    _text = """\
 The `201 (Created)` status code indicates that the request created a new resource.
 
 HTTP specifies that the URL of the new resource is to be indicated in the `Location` header field,
@@ -297,8 +297,8 @@ but it isn't present in this response."""
 class PARTIAL_WITHOUT_RANGE(Note):
     category = categories.GENERAL
     level = levels.BAD
-    summary = "%(response)s doesn't have a Content-Range header field."
-    text = """\
+    _summary = "%(response)s doesn't have a Content-Range header field."
+    _text = """\
 The `206 (Partial Response)` status code indicates that the response content is only partial.
 
 However, for a response to be partial, it needs to have a `Content-Range` header field to indicate
@@ -308,8 +308,8 @@ what part of the full response it carries. This response does not have one."""
 class PARTIAL_NOT_REQUESTED(Note):
     category = categories.GENERAL
     level = levels.BAD
-    summary = "A partial response was sent when it wasn't requested."
-    text = """\
+    _summary = "A partial response was sent when it wasn't requested."
+    _text = """\
 The `206 (Partial Response)` status code indicates that the response content is only partial.
 
 However, the client needs to ask for it with the `Range` header field, and the request did not
@@ -319,8 +319,8 @@ include one."""
 class REDIRECT_WITHOUT_LOCATION(Note):
     category = categories.GENERAL
     level = levels.BAD
-    summary = "Redirects need to have a Location header field."
-    text = """\
+    _summary = "Redirects need to have a Location header field."
+    _text = """\
 The %(status)s status code redirects users to another URI. The `Location` header field is used to
 convey this URI, but a valid one isn't present in this response."""
 
@@ -328,8 +328,8 @@ convey this URI, but a valid one isn't present in this response."""
 class STATUS_DEPRECATED(Note):
     category = categories.GENERAL
     level = levels.BAD
-    summary = "The %(status)s status code is deprecated."
-    text = """\
+    _summary = "The %(status)s status code is deprecated."
+    _text = """\
 When a status code is deprecated, it should not be used, because its meaning is not well-defined
 enough to ensure interoperability."""
 
@@ -337,8 +337,8 @@ enough to ensure interoperability."""
 class STATUS_RESERVED(Note):
     category = categories.GENERAL
     level = levels.BAD
-    summary = "The %(status)s status code is reserved."
-    text = """\
+    _summary = "The %(status)s status code is reserved."
+    _text = """\
 Reserved status codes can only be used by future, standard protocol extensions; they are not for
 private use."""
 
@@ -346,8 +346,8 @@ private use."""
 class STATUS_NONSTANDARD(Note):
     category = categories.GENERAL
     level = levels.BAD
-    summary = "%(status)s is not a standard HTTP status code."
-    text = """\
+    _summary = "%(status)s is not a standard HTTP status code."
+    _text = """\
 Non-standard status codes are not well-defined and interoperable. Instead of defining your own
 status code, you should reuse one of the more generic ones; for example, `400` for a client-side
 problem, or `500` for a server-side problem."""
@@ -356,82 +356,82 @@ problem, or `500` for a server-side problem."""
 class STATUS_BAD_REQUEST(Note):
     category = categories.GENERAL
     level = levels.WARN
-    summary = "The server didn't understand the request."
-    text = """\
+    _summary = "The server didn't understand the request."
+    _text = """\
  """
 
 
 class STATUS_FORBIDDEN(Note):
     category = categories.GENERAL
     level = levels.INFO
-    summary = "The server has forbidden this request."
-    text = """\
+    _summary = "The server has forbidden this request."
+    _text = """\
  """
 
 
 class STATUS_NOT_FOUND(Note):
     category = categories.GENERAL
     level = levels.INFO
-    summary = "The resource could not be found."
-    text = """\
+    _summary = "The resource could not be found."
+    _text = """\
 The server couldn't find any resource to serve for the given URI."""
 
 
 class STATUS_NOT_ACCEPTABLE(Note):
     category = categories.GENERAL
     level = levels.INFO
-    summary = "The resource could not be found."
-    text = """\
+    _summary = "The resource could not be found."
+    _text = """\
 """
 
 
 class STATUS_CONFLICT(Note):
     category = categories.GENERAL
     level = levels.INFO
-    summary = "The request conflicted with the state of the resource."
-    text = """\
+    _summary = "The request conflicted with the state of the resource."
+    _text = """\
  """
 
 
 class STATUS_GONE(Note):
     category = categories.GENERAL
     level = levels.INFO
-    summary = "The resource is gone."
-    text = """\
+    _summary = "The resource is gone."
+    _text = """\
 The server previously had a resource at the given URI, but it is no longer there."""
 
 
 class STATUS_REQUEST_ENTITY_TOO_LARGE(Note):
     category = categories.GENERAL
     level = levels.INFO
-    summary = "The request content was too large for the server."
-    text = """\
+    _summary = "The request content was too large for the server."
+    _text = """\
 The server rejected the request because the request content sent was too large."""
 
 
 class STATUS_URI_TOO_LONG(Note):
     category = categories.GENERAL
     level = levels.BAD
-    summary = "The server won't accept a URI this long %(uri_len)s."
-    text = """\
+    _summary = "The server won't accept a URI this long %(uri_len)s."
+    _text = """\
 The %(status)s status code means that the server can't or won't accept a request-uri this long."""
 
 
 class STATUS_UNSUPPORTED_MEDIA_TYPE(Note):
     category = categories.GENERAL
     level = levels.INFO
-    summary = "The resource doesn't support this media type in requests."
-    text = """\
+    _summary = "The resource doesn't support this media type in requests."
+    _text = """\
  """
 
 
 class STATUS_IM_A_TEAPOT(Note):
     category = categories.GENERAL
     level = levels.WARN
-    summary = (
+    _summary = (
         "The server returned 418 (I'm a Teapot), an easter egg defined in RFC 2324."
     )
-    text = """\
+    _text = """\
 RFC 2324 was an April 1 RFC that lampooned the various ways HTTP was abused; one such abuse
 was the definition of the application-specific `418 (I'm a Teapot)` status code. In the
 intervening years, this status code has been sometimes implemented as an "easter egg".
@@ -444,46 +444,46 @@ standards-compliant clients.
 class STATUS_INTERNAL_SERVICE_ERROR(Note):
     category = categories.GENERAL
     level = levels.INFO
-    summary = "There was a general server error."
-    text = """\
+    _summary = "There was a general server error."
+    _text = """\
  """
 
 
 class STATUS_NOT_IMPLEMENTED(Note):
     category = categories.GENERAL
     level = levels.INFO
-    summary = "The server doesn't implement the request method."
-    text = """\
+    _summary = "The server doesn't implement the request method."
+    _text = """\
  """
 
 
 class STATUS_BAD_GATEWAY(Note):
     category = categories.GENERAL
     level = levels.INFO
-    summary = "An intermediary encountered an error."
-    text = """\
+    _summary = "An intermediary encountered an error."
+    _text = """\
  """
 
 
 class STATUS_SERVICE_UNAVAILABLE(Note):
     category = categories.GENERAL
     level = levels.INFO
-    summary = "The server is temporarily unavailable."
-    text = """\
+    _summary = "The server is temporarily unavailable."
+    _text = """\
  """
 
 
 class STATUS_GATEWAY_TIMEOUT(Note):
     category = categories.GENERAL
     level = levels.INFO
-    summary = "An intermediary timed out."
-    text = """\
+    _summary = "An intermediary timed out."
+    _text = """\
  """
 
 
 class STATUS_VERSION_NOT_SUPPORTED(Note):
     category = categories.GENERAL
     level = levels.BAD
-    summary = "The request HTTP version isn't supported."
-    text = """\
+    _summary = "The request HTTP version isn't supported."
+    _text = """\
  """
