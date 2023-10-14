@@ -1,8 +1,13 @@
 # pylint: disable=too-many-branches,too-many-statements
 
-from httplint.message import HttpRequest, HttpResponse
+from typing import TYPE_CHECKING
+
 from httplint.note import Note, categories, levels
 from httplint.util import relative_time, f_num
+
+if TYPE_CHECKING:
+    from httplint.message import HttpRequest, HttpResponse
+
 
 ### configuration
 CACHEABLE_METHODS = ["GET"]
@@ -10,7 +15,9 @@ HEURISTIC_CACHEABLE_STATUS = [200, 203, 206, 300, 301, 410]
 MAX_CLOCK_SKEW = 5  # seconds
 
 
-def check_response_caching(response: HttpResponse, request: HttpRequest = None) -> None:
+def check_response_caching(
+    response: "HttpResponse", request: "HttpRequest" = None
+) -> None:
     "Examine HTTP caching characteristics of a response."
 
     freshness_lifetime: int = None

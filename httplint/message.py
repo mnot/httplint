@@ -3,6 +3,7 @@ import re
 from typing import Any, List, Dict, Tuple, TypedDict
 from typing_extensions import Unpack, NotRequired
 
+from httplint.cache import check_response_caching
 from httplint.content_encoding import ContentEncodingProcessor
 from httplint.field_section import FieldSection
 from httplint.note import Notes, Note, levels, categories
@@ -12,6 +13,7 @@ from httplint.util import iri_to_uri, f_num
 
 
 class HttpMessageParams(TypedDict):
+    start_time: NotRequired[int]
     notes: NotRequired[Notes]
     max_sample_size: NotRequired[int]
 
@@ -21,9 +23,11 @@ class HttpMessage:
     Base class for HTTP message state.
     """
 
-    def __init__(self, notes: Notes = None, max_sample_size: int = 1024) -> None:
+    def __init__(
+        self, start_time: int = None, notes: Notes = None, max_sample_size: int = 1024
+    ) -> None:
         self.notes = notes or Notes()
-        self.start_time: int = None
+        self.start_time: int = start_time
         self.max_sample_size = max_sample_size  # biggest sample, in bytes. 0 to disable
 
         self.version: str = ""
@@ -40,13 +44,10 @@ class HttpMessage:
         self.transfer_length: int = 0
         self.complete: bool = False
 
-    def process_headers(
-        self, headers: RawFieldListType, start_time: int = None
-    ) -> None:
+    def process_headers(self, headers: RawFieldListType) -> None:
         """
         Feed a list of (bytes name, bytes value) header tuples in and process them.
         """
-        self.start_time = start_time
         self.headers.process(headers, self)
 
     def feed_content(self, chunk: bytes) -> None:
@@ -85,10 +86,14 @@ class HttpMessage:
                         CL_INCORRECT,
                         content_length=f_num(self.content_len),
                     )
+        self.post_checks()
 
     def can_have_content(self) -> bool:
         "Say whether this message can have content."
         return True
+
+    def post_checks(self) -> None:
+        "Post-parsing checks to perform."
 
     def __repr__(self) -> str:
         status = [self.__class__.__module__ + "." + self.__class__.__name__]
@@ -175,6 +180,9 @@ class HttpResponse(HttpMessage):
         if self.status_code in [304]:
             return False
         return True
+
+    def post_checks(self) -> None:
+        check_response_caching(self)
 
 
 class CL_CORRECT(Note):
