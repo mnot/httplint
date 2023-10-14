@@ -3,7 +3,7 @@ from httplint.fields._test import FieldTest
 from httplint.message import HttpMessage, HttpResponse
 from httplint.note import Note, categories, levels
 from httplint.syntax import rfc7233
-from httplint.type import AddNoteMethodType
+from httplint.types import AddNoteMethodType
 
 
 class content_range(HttpField):

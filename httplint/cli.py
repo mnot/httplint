@@ -7,7 +7,7 @@ from thor.http.common import HttpMessageHandler, States, Delimiters, no_body_sta
 from thor.http.error import HttpError, StartLineError, HttpVersionError
 
 from httplint.message import HttpResponse
-from httplint.type import RawFieldListType
+from httplint.types import RawFieldListType
 
 
 def main() -> None:

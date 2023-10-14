@@ -3,7 +3,7 @@ from typing import Tuple
 from httplint.fields import HttpField
 from httplint.fields._test import FieldTest
 from httplint.syntax import rfc7232
-from httplint.type import AddNoteMethodType
+from httplint.types import AddNoteMethodType
 from httplint.fields._utils import unquote_string
 from httplint.fields._notes import BAD_SYNTAX
 

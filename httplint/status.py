@@ -5,7 +5,7 @@ from typing import List
 
 from httplint.message import HttpRequest, HttpResponse
 from httplint.note import Note, levels, categories
-from httplint.type import StrFieldListType
+from httplint.types import StrFieldListType
 
 safe_methods = [b"GET", b"HEAD", b"OPTIONS", b"TRACE"]
 

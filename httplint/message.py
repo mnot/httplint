@@ -8,7 +8,7 @@ from httplint.content_encoding import ContentEncodingProcessor
 from httplint.field_section import FieldSection
 from httplint.note import Notes, Note, levels, categories
 from httplint.syntax import rfc3986
-from httplint.type import RawFieldListType
+from httplint.types import RawFieldListType
 from httplint.util import iri_to_uri, f_num
 
 

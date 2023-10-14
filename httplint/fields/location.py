@@ -6,7 +6,7 @@ from httplint.fields._test import FieldTest
 from httplint.message import HttpMessage, HttpResponse
 from httplint.note import Note, categories, levels
 from httplint.syntax import rfc7231, rfc3986
-from httplint.type import AddNoteMethodType
+from httplint.types import AddNoteMethodType
 
 
 class location(HttpField):

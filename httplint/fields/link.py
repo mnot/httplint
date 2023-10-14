@@ -5,7 +5,7 @@ from httplint.fields import HttpField
 from httplint.fields._test import FieldTest
 from httplint.note import Note, categories, levels
 from httplint.syntax import rfc3986, rfc5988
-from httplint.type import AddNoteMethodType, ParamDictType
+from httplint.types import AddNoteMethodType, ParamDictType
 from httplint.fields._utils import parse_params
 from httplint.fields._notes import BAD_SYNTAX, PARAM_REPEATS
 

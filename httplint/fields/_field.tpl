@@ -3,7 +3,7 @@
 from httplint.fields import HttpField
 from httplint.fields._test import HttpTest
 from httplint.note import Note, categories, levels
-from httplint.type import AddNoteMethodType
+from httplint.types import AddNoteMethodType
 
 class SHORT_NAME(HttpField):
     canonical_name = "SHORT_NAME"

@@ -11,7 +11,7 @@ from typing import (
 
 from httplint.fields import HttpField
 from httplint.note import Note, categories, levels
-from httplint.type import (
+from httplint.types import (
     StrFieldListType,
     RawFieldListType,
     FieldDictType,

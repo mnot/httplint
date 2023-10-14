@@ -1,6 +1,6 @@
 from httplint.fields import HttpField
 from httplint.syntax import rfc7231
-from httplint.type import AddNoteMethodType
+from httplint.types import AddNoteMethodType
 
 
 class vary(HttpField):

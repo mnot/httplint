@@ -5,7 +5,7 @@ from typing import Any, MutableMapping, Dict, Union, Type
 from markupsafe import Markup, escape
 from markdown import Markdown
 
-from httplint.type import VariableType
+from httplint.types import VariableType
 
 
 class categories(Enum):

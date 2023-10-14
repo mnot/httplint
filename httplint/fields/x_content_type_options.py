@@ -1,6 +1,6 @@
 from httplint.fields import HttpField
 from httplint.note import Note, categories, levels
-from httplint.type import AddNoteMethodType
+from httplint.types import AddNoteMethodType
 
 
 class x_content_type_options(HttpField):

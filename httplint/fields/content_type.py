@@ -3,7 +3,7 @@ from typing import Tuple
 from httplint.fields import HttpField
 from httplint.fields._test import FieldTest
 from httplint.syntax import rfc7231
-from httplint.type import AddNoteMethodType, ParamDictType
+from httplint.types import AddNoteMethodType, ParamDictType
 from httplint.fields._utils import parse_params
 
 

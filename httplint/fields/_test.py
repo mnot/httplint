@@ -4,7 +4,7 @@ import unittest
 from httplint.field_section import FieldSection
 from httplint.note import Note
 from httplint.message import HttpResponse
-from httplint.type import (
+from httplint.types import (
     AddNoteMethodType,
 )
 

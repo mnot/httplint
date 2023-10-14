@@ -2,7 +2,7 @@ from httplint.fields import HttpField
 from httplint.fields._test import FieldTest
 from httplint.note import Note, categories, levels
 from httplint.syntax import rfc7233
-from httplint.type import AddNoteMethodType
+from httplint.types import AddNoteMethodType
 
 
 class accept_ranges(HttpField):

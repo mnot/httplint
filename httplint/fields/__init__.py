@@ -17,7 +17,7 @@ import unittest
 
 # from httplint.message import HttpRequest
 from httplint.syntax import rfc7230, rfc7231
-from httplint.type import (
+from httplint.types import (
     StrFieldListType,
     RawFieldListType,
     FieldDictType,
