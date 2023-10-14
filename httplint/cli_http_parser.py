@@ -5,7 +5,7 @@ from typing import List, Tuple
 from thor.http.common import HttpMessageHandler, States, no_body_status
 from thor.http.error import HttpError, StartLineError, HttpVersionError
 
-from httplint.message import HttpMessageLinter, HttpResponseLinter
+from httplint.message import HttpMessageLinter, HttpRequestLinter, HttpResponseLinter
 from httplint.types import RawFieldListType
 
 
@@ -13,7 +13,6 @@ class modes(Enum):
     "Parser modes."
     REQUEST = "request"
     RESPONSE = "response"
-    EXCHANGE = "exchange"
 
 
 class HttpCliParser(HttpMessageHandler):
@@ -33,6 +32,15 @@ class HttpCliParser(HttpMessageHandler):
         transfer_codes: List[bytes],
         content_length: int,
     ) -> Tuple[bool, bool]:
+        if self.mode == modes.REQUEST:
+            self.linter = HttpRequestLinter(start_time=self.start_time)
+            method, iri, version = self.request_topline(top_line)
+            self.linter.process_request_topline(method, iri, version)
+            self.linter.process_headers(hdr_tuples)
+            allows_body = bool(content_length and content_length > 0) or (
+                transfer_codes != []
+            )
+            is_final = True
         if self.mode == modes.RESPONSE:
             self.linter = HttpResponseLinter(start_time=self.start_time)
             version, status_code, status_phrase = self.response_topline(top_line)
@@ -54,6 +62,16 @@ class HttpCliParser(HttpMessageHandler):
 
     def input_error(self, err: HttpError, close: bool = True) -> None:
         "Indicate an error state."
+
+    def request_topline(self, top_line: bytes) -> Tuple[bytes, bytes, bytes]:
+        try:
+            method, req_line = top_line.split(None, 1)
+            uri, version = req_line.rsplit(None, 1)
+            version = version.rsplit(b"/", 1)[1]
+        except (ValueError, IndexError):
+            self.input_error(HttpVersionError(top_line.decode("utf-8", "replace")))
+            raise ValueError
+        return method, uri, version
 
     def response_topline(self, top_line: bytes) -> Tuple[bytes, bytes, bytes]:
         try:
