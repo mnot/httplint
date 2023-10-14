@@ -2,7 +2,7 @@ from argparse import ArgumentParser, Namespace
 import sys
 import time
 
-from httplint.cli_http_parser import HttpCliParser, modes
+from httplint.cli.http_parser import HttpCliParser, modes
 
 
 def main() -> None:
