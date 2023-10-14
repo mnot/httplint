@@ -3,7 +3,7 @@ import re
 from typing import Any, List, Dict, Tuple, TypedDict
 from typing_extensions import Unpack, NotRequired
 
-from httplint.cache import check_response_caching
+from httplint.cache import ResponseCacheChecker
 from httplint.content_encoding import ContentEncodingProcessor
 from httplint.field_section import FieldSection
 from httplint.note import Notes, Note, levels, categories
@@ -182,7 +182,7 @@ class HttpResponse(HttpMessage):
         return True
 
     def post_checks(self) -> None:
-        check_response_caching(self)
+        ResponseCacheChecker(self)
 
 
 class CL_CORRECT(Note):
