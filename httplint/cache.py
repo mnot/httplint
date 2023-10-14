@@ -1,6 +1,6 @@
 # pylint: disable=too-many-branches,too-many-statements
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
 from httplint.note import Note, categories, levels
 from httplint.util import relative_time, f_num
@@ -29,11 +29,9 @@ KNOWN_CC = [
 
 
 class ResponseCacheChecker:
-    def __init__(
-        self, response: "HttpResponseLinter", request: "HttpRequestLinter" = None
-    ) -> None:
+    def __init__(self, response: "HttpResponseLinter") -> None:
         self.response = response
-        self.request = request
+        self.request = cast("HttpRequestLinter", response.related)
         self.age: int
         self.freshness_lifetime: int
         self.store_shared: bool
