@@ -552,7 +552,7 @@ This behaviour can be prevented by using the `Cache-Control: must-revalidate` re
 class STALE_SERVABLE(Note):
     category = categories.CACHING
     level = levels.INFO
-    summary = "%(response)s might be served by a cache, even though it is stale."
+    summary = "%(response)s can be served by a cache, even though it is stale."
     text = """\
 HTTP allows stale responses to be served under some circumstances; for example, if the origin
 server can't be contacted, a stale response can be used (even if it doesn't have explicit freshness
