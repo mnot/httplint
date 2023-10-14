@@ -71,7 +71,7 @@ class Note:
             and self.subject == other.subject
         )
 
-    def get_summary(self) -> Markup:
+    def _get_summary(self) -> Markup:
         """
         Output a textual summary of the message as a Unicode string.
 
@@ -80,7 +80,7 @@ class Note:
         """
         return Markup(self._summary % self.vars)
 
-    def get_text(self) -> Markup:
+    def _get_detail(self) -> Markup:
         """
         Show the HTML text for the message as a Unicode string.
 
@@ -92,5 +92,5 @@ class Note:
             )
         )
 
-    summary = property(get_summary)
-    text = property(get_text)
+    summary = property(_get_summary)
+    detail = property(_get_detail)

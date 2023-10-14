@@ -58,8 +58,8 @@ class FieldTest(unittest.TestCase):
         )
         for message in self.message.note_list:  # check formatting
             message.vars.update({"field_name": self.name, "response": "response"})
-            self.assertTrue(message.text % message.vars)
-            self.assertTrue(message.summary % message.vars)
+            self.assertTrue(message.detail)
+            self.assertTrue(message.summary)
         self.assertEqual(len(diff), 0, f"Mismatched notes: {diff}")
         return None
 
