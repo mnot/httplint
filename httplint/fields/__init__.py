@@ -25,7 +25,12 @@ from httplint.types import (
 )
 from httplint.util import f_num
 
-from httplint.fields._utils import RE_FLAGS, parse_http_date, split_string
+from httplint.fields._utils import (
+    RE_FLAGS,
+    parse_http_date,
+    split_string,
+    split_list_field,
+)
 from httplint.fields._notes import *
 
 if TYPE_CHECKING:
@@ -85,7 +90,7 @@ class HttpField:
 
         # split before processing if a list field
         if self.list_header:
-            values = self.split_list_field(field_value)
+            values = split_list_field(field_value)
         else:
             values = [field_value]
         for value in values:
@@ -103,20 +108,6 @@ class HttpField:
             except ValueError:
                 continue  # we assume that the parser made a note of the problem.
             self.value.append(parsed_value)
-
-    @staticmethod
-    def split_list_field(field_value: str) -> List[str]:
-        "Split a field field value on commas. needs to conform to the #rule."
-        return [
-            f.strip()
-            for f in re.findall(
-                r'((?:[^",]|%s)+)(?=%s|\s*$)'
-                % (rfc7230.quoted_string, r"(?:\s*(?:,\s*)+)"),
-                field_value,
-                RE_FLAGS,
-            )
-            if f
-        ] or []
 
     def finish(self, message: "HttpMessageLinter", add_note: AddNoteMethodType) -> None:
         """

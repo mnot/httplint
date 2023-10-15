@@ -5,7 +5,7 @@ from typing import Dict, List, Union
 
 from urllib.parse import unquote as urlunquote
 
-from httplint.syntax import rfc7231
+from httplint.syntax import rfc7230, rfc7231
 from httplint.types import AddNoteMethodType
 from httplint.fields._notes import (
     PARAM_REPEATS,
@@ -73,6 +73,20 @@ def split_string(instr: str, item: str, split: str) -> List[str]:
     return [
         h.strip() for h in re.findall(rf"{item}(?={split}|\s*$)", instr, re.VERBOSE)
     ]
+
+
+def split_list_field(field_value: str) -> List[str]:
+    "Split a field field value on commas. needs to conform to the #rule."
+    return [
+        f.strip()
+        for f in re.findall(
+            r'((?:[^",]|%s)+)(?=%s|\s*$)'
+            % (rfc7230.quoted_string, r"(?:\s*(?:,\s*)+)"),
+            field_value,
+            RE_FLAGS,
+        )
+        if f
+    ] or []
 
 
 def parse_params(
