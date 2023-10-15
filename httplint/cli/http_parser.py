@@ -18,7 +18,7 @@ class modes(Enum):
 class HttpCliParser(HttpMessageHandler):
     default_state = States.WAITING
 
-    def __init__(self, args: Namespace, start_time: int) -> None:
+    def __init__(self, args: Namespace, start_time: float) -> None:
         self.start_time = start_time
         self.mode = args.mode
         self.linter: HttpMessageLinter

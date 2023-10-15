@@ -7,7 +7,7 @@ from httplint.cli.http_parser import HttpCliParser, modes
 
 def main() -> None:
     args = getargs()
-    start_time = int(time.time()) if args.now else None
+    start_time = time.time() if args.now else None
     parser = HttpCliParser(args, start_time)
     parser.handle_input(sys.stdin.read().encode("utf-8"))
 

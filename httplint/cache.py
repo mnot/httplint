@@ -174,7 +174,7 @@ class ResponseCacheChecker:
         age = self.age_hdr or 0
         age_str = relative_time(age, 0, 0)
         if self.response.start_time and self.date_hdr and self.date_hdr > 0:
-            apparent_age = max(0, int(self.response.start_time - self.date_hdr))
+            apparent_age = max(0, int(self.response.start_time) - self.date_hdr)
         else:
             apparent_age = 0
         current_age = max(apparent_age, age)
@@ -189,7 +189,7 @@ class ResponseCacheChecker:
                     "header-expires header-last-modified", DATE_CLOCKLESS_BAD_HDR
                 )
         elif self.response.start_time:
-            skew = self.date_hdr - self.response.start_time + (age)
+            skew = self.date_hdr - int(self.response.start_time) + (age)
             if age > MAX_CLOCK_SKEW > (current_age - skew):
                 self.response.notes.add("header-date header-age", AGE_PENALTY)
             elif abs(skew) > MAX_CLOCK_SKEW:

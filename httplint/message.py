@@ -14,7 +14,7 @@ from httplint.util import iri_to_uri, f_num
 
 
 class HttpMessageParams(TypedDict):
-    start_time: NotRequired[int]
+    start_time: NotRequired[float]
     notes: NotRequired[Notes]
     related: NotRequired["HttpMessageLinter"]
     max_sample_size: NotRequired[int]
@@ -27,14 +27,15 @@ class HttpMessageLinter:
 
     def __init__(
         self,
-        start_time: int = None,
+        start_time: float = None,
         notes: Notes = None,
         related: "HttpMessageLinter" = None,
         max_sample_size: int = 1024,
     ) -> None:
         self.notes = notes or Notes()
         self.related = related
-        self.start_time: int = start_time
+        self.start_time: float = start_time
+        self.finish_time: float
         self.max_sample_size = max_sample_size  # biggest sample, in bytes. 0 to disable
 
         self.version: str = ""
