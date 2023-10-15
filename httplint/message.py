@@ -46,7 +46,7 @@ class HttpMessageLinter:
         self.content_len: int = 0
         self.content_hash: bytes = None
         self._hash_processor = hashlib.new("md5")
-        self.content_processors = [ContentEncodingProcessor(self)]
+        self.decoded = ContentEncodingProcessor(self)
         self.character_encoding: str = None
 
         self.transfer_length: int = 0
@@ -87,8 +87,7 @@ class HttpMessageLinter:
             self.content_sample.append((self.content_len, chunk))
         self.content_len += len(chunk)
         self._hash_processor.update(chunk)
-        for processor in self.content_processors:
-            processor.feed_content(chunk)
+        self.decoded.feed_content(chunk)
 
     def finish_content(self, complete: bool, trailers: RawFieldListType = None) -> None:
         """
@@ -99,9 +98,7 @@ class HttpMessageLinter:
         self.content_hash = self._hash_processor.digest()
         if trailers:
             self.trailers.process(trailers)
-
-        for processor in self.content_processors:
-            processor.finish_content()
+        self.decoded.finish_content()
 
         if self.can_have_content():
             if "content-length" in self.headers.parsed:

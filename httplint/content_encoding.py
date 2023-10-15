@@ -16,11 +16,11 @@ class ContentEncodingProcessor:
         self.content_codings = self.message.headers.parsed.get("content-encoding", [])
         self.content_codings.reverse()
 
-        self.content_len: int = 0
-        self.content_hash: bytes = None
+        self.length: int = 0
+        self.hash: bytes = None
         self._hash_processor = hashlib.new("md5")
-        self.content_sample: List[Tuple[int, bytes]] = []
-        self.content_sample_complete: bool = True
+        self.sample: List[Tuple[int, bytes]] = []
+        self.sample_complete: bool = True
 
         self.decode_ok: bool = True  # turn False if we have a problem
 
@@ -31,13 +31,13 @@ class ContentEncodingProcessor:
     def feed_content(self, chunk: bytes) -> None:
         if self.decode_ok:
             decoded_chunk = self._process_content_codings(chunk)
-            if self.content_len < self.message.max_sample_size:
-                self.content_sample.append((self.content_len, decoded_chunk))
-            self.content_len += len(decoded_chunk)
+            if self.length < self.message.max_sample_size:
+                self.sample.append((self.length, decoded_chunk))
+            self.length += len(decoded_chunk)
             self._hash_processor.update(decoded_chunk)
 
     def finish_content(self) -> None:
-        self.content_hash = self._hash_processor.digest()
+        self.hash = self._hash_processor.digest()
 
     def _process_content_codings(self, chunk: bytes) -> bytes:
         """
