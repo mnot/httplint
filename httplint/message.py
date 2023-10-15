@@ -137,35 +137,35 @@ class HttpRequestLinter(HttpMessageLinter):
 
     def __init__(self, **kw: Unpack[HttpMessageParams]) -> None:
         HttpMessageLinter.__init__(self, **kw)
-        self.method: str = None
-        self.iri: str = None
-        self.uri: str = None
+        self.method: str
+        self.iri: str
+        self.uri: str
 
     def process_request_topline(
         self, method: bytes, iri: bytes, version: bytes
     ) -> None:
         self.method = method.decode("ascii", "replace")
-        self.iri = iri.decode("utf-8", "replace")
-        self.uri = self.set_uri(self.iri)
+        self.set_uri(iri.decode("utf-8", "replace"))
         self.version = version.decode("ascii", "replace")
 
-    def set_uri(self, iri: str) -> str:
+    def set_uri(self, iri: str) -> None:
         """
         Given a unicode string (possibly an IRI), convert to a URI and make sure it's sensible.
         """
-        uri = None
+        self.iri = iri
         try:
-            uri = iri_to_uri(iri)
+            self.uri = iri_to_uri(iri)
         except (ValueError, UnicodeError):
             self.notes.add("uri", URI_BAD_SYNTAX)
+            self.uri = iri  # hope?
+            return
         if not re.match(rf"^\s*{rfc3986.URI}\s*$", self.uri, re.VERBOSE):
             self.notes.add("uri", URI_BAD_SYNTAX)
         if "#" in self.uri:
             # chop off the fragment
-            uri = self.uri[: self.uri.index("#")]
+            self.uri = self.uri[: self.uri.index("#")]
         if len(self.uri) > self.max_uri_chars:
             self.notes.add("uri", URI_TOO_LONG, uri_len=f_num(len(self.uri)))
-        return uri
 
 
 class HttpResponseLinter(HttpMessageLinter):
