@@ -72,7 +72,7 @@ class HttpMessageLinter:
 
         Each processor in content_processors will be run over the chunk.
         """
-        if self.content_len < self.max_sample_size:
+        if self.max_sample_size == 0 or self.content_len < self.max_sample_size:
             self.content_sample.append((self.content_len, chunk))
         self.content_len += len(chunk)
         self._hash_processor.update(chunk)
