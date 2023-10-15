@@ -1,6 +1,6 @@
 import binascii
 import hashlib
-from typing import TYPE_CHECKING
+from typing import List, Callable, TYPE_CHECKING
 import zlib
 
 from httplint.note import Note, levels, categories
@@ -13,6 +13,8 @@ if TYPE_CHECKING:
 class ContentEncodingProcessor:
     def __init__(self, message: "HttpMessageLinter") -> None:
         self.message = message
+        self.processors: List[Callable[[bytes], None]] = []
+
         self.content_codings = self.message.headers.parsed.get("content-encoding", [])
         self.content_codings.reverse()
 
@@ -31,6 +33,8 @@ class ContentEncodingProcessor:
             decoded_chunk = self._process_content_codings(chunk)
             self.length += len(decoded_chunk)
             self._hash_processor.update(decoded_chunk)
+            for processor in self.processors:
+                processor(decoded_chunk)
 
     def finish_content(self) -> None:
         self.hash = self._hash_processor.digest()
