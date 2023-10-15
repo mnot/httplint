@@ -1,6 +1,6 @@
 import binascii
 import hashlib
-from typing import List, Tuple, TYPE_CHECKING
+from typing import TYPE_CHECKING
 import zlib
 
 from httplint.note import Note, levels, categories
@@ -19,8 +19,6 @@ class ContentEncodingProcessor:
         self.length: int = 0
         self.hash: bytes = None
         self._hash_processor = hashlib.new("md5")
-        self.sample: List[Tuple[int, bytes]] = []
-        self.sample_complete: bool = True
 
         self.decode_ok: bool = True  # turn False if we have a problem
 
@@ -31,8 +29,6 @@ class ContentEncodingProcessor:
     def feed_content(self, chunk: bytes) -> None:
         if self.decode_ok:
             decoded_chunk = self._process_content_codings(chunk)
-            if self.length < self.message.max_sample_size:
-                self.sample.append((self.length, decoded_chunk))
             self.length += len(decoded_chunk)
             self._hash_processor.update(decoded_chunk)
 
@@ -69,7 +65,7 @@ class ContentEncodingProcessor:
                         "header-content-encoding",
                         BAD_ZLIB,
                         zlib_error=str(zlib_error),
-                        ok_zlib_len=f_num(self.message.content_len),
+                        ok_zlib_len=f_num(self.message.content_length),
                         chunk_sample=display_bytes(chunk),
                     )
                     self.decode_ok = False

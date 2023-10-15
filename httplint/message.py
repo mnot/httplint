@@ -1,7 +1,7 @@
 import codecs
 import hashlib
 import re
-from typing import Any, List, Dict, Tuple, TypedDict
+from typing import Any, Dict, TypedDict
 from typing_extensions import Unpack, NotRequired
 
 from httplint.cache import ResponseCacheChecker
@@ -17,7 +17,6 @@ class HttpMessageParams(TypedDict):
     start_time: NotRequired[float]
     notes: NotRequired[Notes]
     related: NotRequired["HttpMessageLinter"]
-    max_sample_size: NotRequired[int]
 
 
 class HttpMessageLinter:
@@ -30,21 +29,18 @@ class HttpMessageLinter:
         start_time: float = None,
         notes: Notes = None,
         related: "HttpMessageLinter" = None,
-        max_sample_size: int = 1024,
     ) -> None:
         self.notes = notes or Notes()
         self.related = related
         self.start_time: float = start_time
         self.finish_time: float
-        self.max_sample_size = max_sample_size  # biggest sample, in bytes. 0 to disable
 
         self.version: str = ""
         self.base_uri: str = ""
         self.headers = FieldSection(self)
         self.trailers = FieldSection(self)
 
-        self.content_sample: List[Tuple[int, bytes]] = []
-        self.content_len: int = 0
+        self.content_length: int = 0
         self.content_hash: bytes = None
         self._hash_processor = hashlib.new("md5")
         self.decoded = ContentEncodingProcessor(self)
@@ -84,9 +80,7 @@ class HttpMessageLinter:
 
         Each processor in content_processors will be run over the chunk.
         """
-        if self.max_sample_size == 0 or self.content_len < self.max_sample_size:
-            self.content_sample.append((self.content_len, chunk))
-        self.content_len += len(chunk)
+        self.content_length += len(chunk)
         self._hash_processor.update(chunk)
         self.decoded.feed_content(chunk)
 
@@ -103,13 +97,13 @@ class HttpMessageLinter:
 
         if self.can_have_content():
             if "content-length" in self.headers.parsed:
-                if self.content_len == self.headers.parsed["content-length"]:
+                if self.content_length == self.headers.parsed["content-length"]:
                     self.notes.add("header-content-length", CL_CORRECT)
                 else:
                     self.notes.add(
                         "header-content-length",
                         CL_INCORRECT,
-                        content_length=f_num(self.content_len),
+                        content_length=f_num(self.content_length),
                     )
         self.post_checks()
 
