@@ -1,3 +1,4 @@
+import codecs
 import hashlib
 import re
 from typing import Any, List, Dict, Tuple, TypedDict
@@ -46,6 +47,7 @@ class HttpMessageLinter:
         self.content_hash: bytes = None
         self._hash_processor = hashlib.new("md5")
         self.content_processors = [ContentEncodingProcessor(self)]
+        self.character_encoding: str = None
 
         self.transfer_length: int = 0
         self.complete: bool = False
@@ -65,6 +67,15 @@ class HttpMessageLinter:
         Feed a list of (bytes name, bytes value) header tuples in and process them.
         """
         self.headers.process(headers)
+
+        # set the character encoding from headers
+        if "content-type" in self.headers.parsed:
+            enc = self.headers.parsed["content-type"][1].get("charset", None)
+            try:
+                codecs.lookup(enc)
+                self.character_encoding = enc
+            except (LookupError, TypeError):
+                pass
 
     def feed_content(self, chunk: bytes) -> None:
         """
