@@ -49,8 +49,8 @@ class FieldTest(unittest.TestCase):
         if not self.name:
             return self.skipTest("")
         name = self.name.encode("utf-8")
-        section = FieldSection()
-        section.process([(name, inp) for inp in self.inputs], self.message)
+        section = FieldSection(self.message)
+        section.process([(name, inp) for inp in self.inputs])
         out = section.parsed.get(self.name.lower(), "HEADER HANDLER NOT FOUND")
         self.assertEqual(self.expected_out, out)
         diff = {n.__name__ for n in self.expected_notes}.symmetric_difference(

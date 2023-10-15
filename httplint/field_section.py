@@ -43,15 +43,14 @@ class FieldSection:
 
     max_field_size = 8 * 1024
 
-    def __init__(self) -> None:
+    def __init__(self, message: "HttpMessageLinter") -> None:
+        self.message = message
         self.text: StrFieldListType = []  # unicode version of the field tuples
         self.parsed: FieldDictType = {}  # dictionary of parsed field values
         self.size: int = 0
         self._handlers: Dict[str, HttpField] = {}
 
-    def process(
-        self, raw_fields: RawFieldListType, message: "HttpMessageLinter"
-    ) -> None:
+    def process(self, raw_fields: RawFieldListType) -> None:
         """
         Given a list of (bytes name, bytes value) fields and:
          - populate text and parsed
@@ -62,7 +61,7 @@ class FieldSection:
 
         for name, value in raw_fields:
             offset += 1
-            add_note = partial(message.notes.add, f"offset-{offset}")
+            add_note = partial(self.message.notes.add, f"offset-{offset}")
 
             # track size
             field_size = len(name) + len(value)
@@ -81,7 +80,7 @@ class FieldSection:
                 add_note(FIELD_VALUE_ENCODING, field_name=str_name)
             self.text.append((str_name, str_value))
 
-            handler = self.get_handler(str_name, message)
+            handler = self.get_handler(str_name)
             field_add_note = partial(
                 add_note,
                 field_name=handler.canonical_name,
@@ -98,14 +97,14 @@ class FieldSection:
         # check each of the complete header values and get the parsed value
         for _, handler in list(self._handlers.items()):
             field_add_note = partial(
-                message.notes.add,
+                self.message.notes.add,
                 f"field-{handler.canonical_name.lower()}",
                 field_name=handler.canonical_name,
             )
-            handler.finish(message, field_add_note)
+            handler.finish(self.message, field_add_note)
             self.parsed[handler.norm_name] = handler.value
 
-    def get_handler(self, field_name: str, message: "HttpMessageLinter") -> HttpField:
+    def get_handler(self, field_name: str) -> HttpField:
         """
         If a handler has already been instantiated for field_name, return it;
         otherwise, instantiate and return a new one.
@@ -113,7 +112,7 @@ class FieldSection:
         norm_name = field_name.lower()
         if norm_name in self._handlers:
             return self._handlers[norm_name]
-        handler = self.find_handler(field_name)(field_name, message)
+        handler = self.find_handler(field_name)(field_name, self.message)
         self._handlers[norm_name] = handler
         return handler
 

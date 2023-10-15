@@ -38,8 +38,8 @@ class HttpMessageLinter:
 
         self.version: str = ""
         self.base_uri: str = ""
-        self.headers = FieldSection()
-        self.trailers = FieldSection()
+        self.headers = FieldSection(self)
+        self.trailers = FieldSection(self)
 
         self.content_sample: List[Tuple[int, bytes]] = []
         self.content_len: int = 0
@@ -64,7 +64,7 @@ class HttpMessageLinter:
         """
         Feed a list of (bytes name, bytes value) header tuples in and process them.
         """
-        self.headers.process(headers, self)
+        self.headers.process(headers)
 
     def feed_content(self, chunk: bytes) -> None:
         """
@@ -87,7 +87,7 @@ class HttpMessageLinter:
         self.complete = complete
         self.content_hash = self._hash_processor.digest()
         if trailers:
-            self.trailers.process(trailers, self)
+            self.trailers.process(trailers)
 
         for processor in self.content_processors:
             processor.finish_content()
