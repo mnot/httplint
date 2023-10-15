@@ -22,7 +22,7 @@ from httplint.fields._notes import (
 RE_FLAGS = re.VERBOSE | re.IGNORECASE
 
 
-def parse_date(value: str, add_note: AddNoteMethodType) -> int:
+def parse_http_date(value: str, add_note: AddNoteMethodType) -> int:
     """Parse a HTTP date. Raises ValueError if it's bad."""
     if not re.match(rf"^{rfc7231.HTTP_date}$", value, RE_FLAGS):
         add_note(BAD_DATE_SYNTAX)

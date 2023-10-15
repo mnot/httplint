@@ -3,7 +3,7 @@ from httplint.fields._test import FieldTest
 from httplint.syntax import rfc7232
 from httplint.types import AddNoteMethodType
 from httplint.fields._notes import BAD_DATE_SYNTAX
-from httplint.fields._utils import parse_date
+from httplint.fields._utils import parse_http_date
 
 
 class last_modified(HttpField):
@@ -19,7 +19,7 @@ representation was last modified."""
     valid_in_responses = True
 
     def parse(self, field_value: str, add_note: AddNoteMethodType) -> int:
-        return parse_date(field_value, add_note)
+        return parse_http_date(field_value, add_note)
 
 
 class BasicLMTest(FieldTest):

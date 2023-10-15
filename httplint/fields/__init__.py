@@ -25,7 +25,7 @@ from httplint.types import (
 )
 from httplint.util import f_num
 
-from httplint.fields._utils import RE_FLAGS, parse_date, split_string
+from httplint.fields._utils import RE_FLAGS, parse_http_date, split_string
 from httplint.fields._notes import *
 
 if TYPE_CHECKING:
