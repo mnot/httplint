@@ -4,9 +4,18 @@ VERSIONING = calver
 GITHUB_STEP_SUMMARY ?= throwaway
 
 .PHONY: test
-test: test/http-fields.xml venv
+test: test_syntax test_fields test_notes test_messages test_smoke
+
+.PHONY: test_syntax
+test_syntax: venv
 	PYTHONPATH=. $(VENV)/python test/test_syntax.py
+
+.PHONY: test_fields
+test_fields: test/http-fields.xml venv
 	PYTHONPATH=. $(VENV)/python test/test_fields.py test/http-fields.xml
+
+.PHONY: test_notes
+test_notes: venv
 	PYTHONPATH=. $(VENV)/python test/test_notes.py
 
 .PHONY: test_messages
@@ -14,8 +23,8 @@ test_messages: venv
 	PYTHONPATH=.:$(VENV) $(VENV)/pytest --md $(GITHUB_STEP_SUMMARY)
 	rm -f throwaway
 
-.PHONY: smoke
-smoke: venv
+.PHONY: test_smoke
+test_smoke: venv
 	PYTHONPATH=. $(VENV)/python test/smoke.py
 
 test/http-fields.xml:
