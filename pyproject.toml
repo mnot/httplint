@@ -1,10 +1,11 @@
 [project]
 name = "httplint"
-dynamic = ["version", "readme"]
+dynamic = ["version"]
 authors = [
     {name="Mark Nottingham", email="mnot@mnot.net"}
 ]
 description = "Lint for HTTP messages."
+readme = "README.md"
 requires-python = ">=3.9"
 license = {file = "LICENSE.md"}
 classifiers = [
@@ -42,7 +43,6 @@ build-backend = "setuptools.build_meta"
 
 [tool.setuptools.dynamic]
 version = {attr = "httplint.__version__"}
-readme = {file = ["README.md"], content-type = "text/markdown"}
 
 [tool.setuptools.packages.find]
 where = ["."]
