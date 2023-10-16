@@ -7,6 +7,10 @@ test: test/http-fields.xml venv
 	PYTHONPATH=. $(VENV)/python test/test_fields.py test/http-fields.xml
 	PYTHONPATH=. $(VENV)/python test/test_notes.py
 
+.PHONY: smoke
+smoke: venv
+	PYTHONPATH=. $(VENV)/python test/smoke.py
+
 test/http-fields.xml:
 	curl -o $@ https://www.iana.org/assignments/http-fields/http-fields.xml
 
