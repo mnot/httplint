@@ -1,6 +1,6 @@
 import binascii
 import hashlib
-from typing import List, Callable, TYPE_CHECKING
+from typing import List, Dict, Any, Callable, TYPE_CHECKING
 import zlib
 
 from httplint.note import Note, levels, categories
@@ -121,6 +121,16 @@ class ContentEncodingProcessor:
         if flag & gz_flags["FHCRC"]:
             content_l = content_l[2:]  # Read & discard the 16-bit header CRC
         return bytes(content_l)
+
+    def __getstate__(self) -> Dict[str, Any]:
+        state: Dict[str, Any] = self.__dict__.copy()
+        for key in [
+            "_hash_processor",
+            "_gzip_processor"
+        ]:
+            if key in state:
+                del state[key]
+        return state
 
 
 class BAD_GZIP(Note):
