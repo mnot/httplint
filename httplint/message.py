@@ -30,7 +30,10 @@ class HttpMessageLinter:
         notes: Notes = None,
         related: "HttpMessageLinter" = None,
     ) -> None:
-        self.notes = notes or Notes()
+        if notes is None:
+            self.notes = Notes()
+        else:
+            self.notes = notes
         self.related = related
         self.start_time: float = start_time
         self.finish_time: float
