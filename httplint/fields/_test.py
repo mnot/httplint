@@ -14,19 +14,10 @@ class TestMessageLinter(HttpResponseLinter):
     A dummy HTTP message, for testing.
     """
 
-    def __init__(self, add_note: AddNoteMethodType = None) -> None:
+    def __init__(self) -> None:
         HttpResponseLinter.__init__(self)
         self.base_uri = "http://www.example.com/foo/bar/baz.html?bat=bam"
         self.status_phrase = ""
-        self.note_list: List[Note] = []
-        self.note_classes: List[str] = []
-
-    def dummy_add_note(
-        self, subject: str, note: Type[Note], **kw: Union[str, int]
-    ) -> None:
-        "Record the classes of notes set."
-        self.note_list.append(note(subject, **kw))
-        self.note_classes.append(note.__name__)
 
 
 class FieldTest(unittest.TestCase):
@@ -47,16 +38,15 @@ class FieldTest(unittest.TestCase):
     def test_header(self) -> Any:
         "Test the header."
         if not self.name:
-            return self.skipTest("")
+            return self.skipTest("no name")
         name = self.name.encode("utf-8")
-        section = FieldSection(self.message)
-        section.process([(name, inp) for inp in self.inputs])
-        out = section.parsed.get(self.name.lower(), "HEADER HANDLER NOT FOUND")
+        self.message.headers.process([(name, val) for val in self.inputs])
+        out = self.message.headers.parsed.get(self.name.lower(), "HEADER HANDLER NOT FOUND")
         self.assertEqual(self.expected_out, out)
         diff = {n.__name__ for n in self.expected_notes}.symmetric_difference(
-            set(self.message.note_classes)
+            {n.__class__.__name__ for n in self.message.notes}
         )
-        for message in self.message.note_list:  # check formatting
+        for message in self.message.notes:  # check formatting
             message.vars.update({"field_name": self.name, "response": "response"})
             self.assertTrue(message.detail)
             self.assertTrue(message.summary)

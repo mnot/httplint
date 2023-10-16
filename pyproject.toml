@@ -96,3 +96,7 @@ min-public-methods=1
 
 [tool.pylint.similarities]
 min-similarity-lines = 10
+
+[tool.pytest.ini_options]
+python_classes = "*Test"
+python_files = ["message.py", "fields/*.py"]
