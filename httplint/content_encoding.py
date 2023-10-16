@@ -15,9 +15,6 @@ class ContentEncodingProcessor:
         self.message = message
         self.processors: List[Callable[[bytes], None]] = []
 
-        self.content_codings = self.message.headers.parsed.get("content-encoding", [])
-        self.content_codings.reverse()
-
         self.length: int = 0
         self.hash: bytes = None
         self._hash_processor = hashlib.new("md5")
@@ -31,8 +28,6 @@ class ContentEncodingProcessor:
     def feed_content(self, chunk: bytes) -> None:
         if self.decode_ok:
             decoded_chunk = self._process_content_codings(chunk)
-            self.length += len(decoded_chunk)
-            self._hash_processor.update(decoded_chunk)
             for processor in self.processors:
                 processor(decoded_chunk)
 
@@ -45,7 +40,9 @@ class ContentEncodingProcessor:
 
         Currently supports gzip.
         """
-        for coding in self.content_codings:
+        content_codings = self.message.headers.parsed.get("content-encoding", [])
+        content_codings.reverse()
+        for coding in content_codings:
             if coding in ["gzip", "x-gzip"]:
                 if not self._in_gzip:
                     self._gzip_header_buffer += chunk
@@ -78,6 +75,8 @@ class ContentEncodingProcessor:
                 # we can't handle other codecs, so punt on content processing.
                 self.decode_ok = False
                 return b""
+        self._hash_processor.update(chunk)
+        self.length += len(chunk)
         return chunk
 
     @staticmethod
