@@ -20,7 +20,7 @@ test_notes: venv
 
 .PHONY: test_messages
 test_messages: venv
-	PYTHONPATH=.:$(VENV) $(VENV)/pytest --md $(GITHUB_STEP_SUMMARY) -k "not FieldTest"
+	$(VENV)/pytest --md $(GITHUB_STEP_SUMMARY) -k "not FieldTest" --config-file pyproject.toml
 	rm -f throwaway
 
 .PHONY: test_smoke
