@@ -19,8 +19,8 @@ classifiers = [
 dependencies = [
     "Markdown",
     "MarkupSafe",
-    "typing_extensions",
-    "thor"
+    "thor",
+    "typing_extensions"
 ]
 
 [project.optional-dependencies]
