@@ -1,12 +1,8 @@
-from typing import Any, List, Type, Union
+from typing import Any, List, Type
 import unittest
 
-from httplint.field_section import FieldSection
 from httplint.note import Note
 from httplint.message import HttpResponseLinter, HttpMessageLinter
-from httplint.types import (
-    AddNoteMethodType,
-)
 
 
 class TestMessageLinter(HttpResponseLinter):
@@ -41,7 +37,9 @@ class FieldTest(unittest.TestCase):
             return self.skipTest("no name")
         name = self.name.encode("utf-8")
         self.message.headers.process([(name, val) for val in self.inputs])
-        out = self.message.headers.parsed.get(self.name.lower(), "HEADER HANDLER NOT FOUND")
+        out = self.message.headers.parsed.get(
+            self.name.lower(), "HEADER HANDLER NOT FOUND"
+        )
         self.assertEqual(self.expected_out, out)
         diff = {n.__name__ for n in self.expected_notes}.symmetric_difference(
             {n.__class__.__name__ for n in self.message.notes}
