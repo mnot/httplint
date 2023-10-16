@@ -30,28 +30,15 @@ KNOWN_CC = [
 
 class ResponseCacheChecker:
     def __init__(self, response: "HttpResponseLinter") -> None:
+        self._response = response
+        self._cc_dict: dict
+
         self.notes = response.notes
-        self.response_start_time = response.start_time
         self.request = cast("HttpRequestLinter", response.related)
         self.age: int
         self.freshness_lifetime: int
         self.store_shared: bool
         self.store_private: bool
-
-        self._status_code: int = response.status_code
-        self._vary_hdr = response.headers.parsed.get("vary", set())
-        self._lm_hdr = response.headers.parsed.get("last-modified", None)
-        self._date_hdr = response.headers.parsed.get("date", None)
-        self._expires_hdr_present = "expires" in [
-            n.lower() for (n, v) in response.headers.text
-        ]
-        self._expires_hdr = response.headers.parsed.get("expires", None)
-        self._etag_hdr = response.headers.parsed.get("etag", None)
-        self._age_hdr = response.headers.parsed.get("age", None)
-        self._cc_set = response.headers.parsed.get("cache-control", [])
-        self._cc_list = [k for (k, v) in self._cc_set]
-        self._cc_dict = dict(self._cc_set)
-        self._cc_keys = list(self._cc_dict.keys())
 
     def check(self) -> None:
         if not self.check_basic():
@@ -74,48 +61,54 @@ class ResponseCacheChecker:
             )
             return False
 
-        if "public" in self._cc_keys:
-            self.notes.add("header-cache-control", PUBLIC)
-
         return True
 
     def check_last_modified(self) -> bool:
-        if self._lm_hdr:
-            serv_date = self._date_hdr or self.response_start_time
+        date_hdr = self._response.headers.parsed.get("date", None)
+        lm_hdr = self._response.headers.parsed.get("last-modified", None)
+        if lm_hdr:
+            serv_date = date_hdr or self._response.start_time
             if not serv_date:
                 return True  # we don't know
-            if self._lm_hdr > serv_date:
+            if lm_hdr > serv_date:
                 self.notes.add("header-last-modified", LM_FUTURE)
             else:
                 self.notes.add(
                     "header-last-modified",
                     LM_PRESENT,
-                    last_modified_string=relative_time(self._lm_hdr, serv_date),
+                    last_modified_string=relative_time(lm_hdr, serv_date),
                 )
         return True
 
     def check_cache_control(self) -> bool:
-        for cc in self._cc_keys:
+        cc_set = self._response.headers.parsed.get("cache-control", [])
+        cc_list = [k for (k, v) in cc_set]
+        self._cc_dict = dict(cc_set)
+
+        for cc in self._cc_dict:
             if cc.lower() in KNOWN_CC and cc != cc.lower():
                 self.notes.add(
                     "header-cache-control", CC_MISCAP, cc_lower=cc.lower(), cc=cc
                 )
-            if cc in KNOWN_CC and self._cc_list.count(cc) > 1:
+            if cc in KNOWN_CC and cc_list.count(cc) > 1:
                 self.notes.add("header-cache-control", CC_DUP, cc=cc)
 
-        if "no-store" in self._cc_keys:
+        if "public" in self._cc_dict:
+            self.notes.add("header-cache-control", PUBLIC)
+
+        if "no-store" in self._cc_dict:
             self.store_shared = self.store_private = False
             self.notes.add("header-cache-control", NO_STORE)
             return False
 
-        if "private" in self._cc_keys:
+        if "private" in self._cc_dict:
             self.store_shared = False
             self.store_private = True
             self.notes.add("header-cache-control", PRIVATE_CC)
         elif (
             self.request
             and "authorization" in [k.lower() for k, v in self.request.headers.text]
-            and "public" not in self._cc_keys
+            and "public" not in self._cc_dict
         ):
             self.store_shared = False
             self.store_private = True
@@ -125,15 +118,17 @@ class ResponseCacheChecker:
             self.notes.add("header-cache-control", STORABLE)
 
         # no-cache?
-        if "no-cache" in self._cc_keys:
-            if self._lm_hdr is None and self._etag_hdr is None:
+        if "no-cache" in self._cc_dict:
+            etag_hdr = self._response.headers.parsed.get("etag", None)
+            lm_hdr = self._response.headers.parsed.get("last-modified", None)
+            if lm_hdr is None and etag_hdr is None:
                 self.notes.add("header-cache-control", NO_CACHE_NO_VALIDATOR)
             else:
                 self.notes.add("header-cache-control", NO_CACHE)
 
         # pre-check / post-check
-        if "pre-check" in self._cc_keys or "post-check" in self._cc_keys:
-            if "pre-check" not in self._cc_keys or "post-check" not in self._cc_keys:
+        if "pre-check" in self._cc_dict or "post-check" in self._cc_dict:
+            if "pre-check" not in self._cc_dict or "post-check" not in self._cc_dict:
                 self.notes.add("header-cache-control", CHECK_SINGLE)
             else:
                 pre_check = post_check = None
@@ -160,25 +155,32 @@ class ResponseCacheChecker:
         return True
 
     def check_vary(self) -> bool:
-        if "*" in self._vary_hdr:
+        vary_hdr = self._response.headers.parsed.get("vary", set())
+        if "*" in vary_hdr:
             self.notes.add("header-vary", VARY_ASTERISK)
             return False
-        if len(self._vary_hdr) > 3:
-            self.notes.add(
-                "header-vary", VARY_COMPLEX, vary_count=f_num(len(self._vary_hdr))
-            )
+        if len(vary_hdr) > 3:
+            self.notes.add("header-vary", VARY_COMPLEX, vary_count=f_num(len(vary_hdr)))
         else:
-            if "user-agent" in self._vary_hdr:
+            if "user-agent" in vary_hdr:
                 self.notes.add("header-vary", VARY_USER_AGENT)
-            if "host" in self._vary_hdr:
+            if "host" in vary_hdr:
                 self.notes.add("header-vary", VARY_HOST)
         return True
 
     def check_freshness(self) -> bool:
-        self.age = self._age_hdr or 0
+        expires_hdr_present = "expires" in [
+            n.lower() for (n, v) in self._response.headers.text
+        ]
+        expires_hdr = self._response.headers.parsed.get("expires", None)
+        lm_hdr = self._response.headers.parsed.get("last-modified", None)
+        age_hdr = self._response.headers.parsed.get("age", None)
+        date_hdr = self._response.headers.parsed.get("date", None)
+
+        self.age = age_hdr or 0
         age_str = relative_time(self.age, 0, 0)
-        if self.response_start_time and self._date_hdr and self._date_hdr > 0:
-            apparent_age = max(0, int(self.response_start_time) - self._date_hdr)
+        if self._response.start_time and date_hdr and date_hdr > 0:
+            apparent_age = max(0, int(self._response.start_time) - date_hdr)
         else:
             apparent_age = 0
         current_age = max(apparent_age, self.age)
@@ -186,14 +188,14 @@ class ResponseCacheChecker:
         if self.age >= 1:
             self.notes.add("header-age header-date", CURRENT_AGE, age=age_str)
 
-        if not self._date_hdr:
+        if not date_hdr:
             self.notes.add("", DATE_CLOCKLESS)
-            if self._expires_hdr or self._lm_hdr:
+            if expires_hdr or lm_hdr:
                 self.notes.add(
                     "header-expires header-last-modified", DATE_CLOCKLESS_BAD_HDR
                 )
-        elif self.response_start_time:
-            skew = self._date_hdr - int(self.response_start_time) + (self.age)
+        elif self._response.start_time:
+            skew = date_hdr - int(self._response.start_time) + (self.age)
             if self.age > MAX_CLOCK_SKEW > (current_age - skew):
                 self.notes.add("header-date header-age", AGE_PENALTY)
             elif abs(skew) > MAX_CLOCK_SKEW:
@@ -209,22 +211,22 @@ class ResponseCacheChecker:
         has_explicit_freshness = False
         has_cc_freshness = False
         freshness_hdrs = ["header-date"]
-        if "s-maxage" in self._cc_keys:
+        if "s-maxage" in self._cc_dict:
             self.freshness_lifetime = self._cc_dict["s-maxage"]
             freshness_hdrs.append("header-cache-control")
             has_explicit_freshness = True
             has_cc_freshness = True
-        elif "max-age" in self._cc_keys:
+        elif "max-age" in self._cc_dict:
             self.freshness_lifetime = self._cc_dict["max-age"]
             freshness_hdrs.append("header-cache-control")
             has_explicit_freshness = True
             has_cc_freshness = True
-        elif self._expires_hdr_present and self.response_start_time:
+        elif expires_hdr_present and self._response.start_time:
             # An invalid Expires header means it's automatically stale
             has_explicit_freshness = True
             freshness_hdrs.append("header-expires")
-            self.freshness_lifetime = (self._expires_hdr or 0) - (
-                self._date_hdr or int(self.response_start_time)
+            self.freshness_lifetime = (expires_hdr or 0) - (
+                date_hdr or int(self._response.start_time)
             )
 
         freshness_left = self.freshness_lifetime - current_age
@@ -258,17 +260,17 @@ class ResponseCacheChecker:
                     current_age=current_age_str,
                 )
         # can heuristic freshness be used?
-        elif self._status_code in HEURISTIC_CACHEABLE_STATUS:
+        elif self._response.status_code in HEURISTIC_CACHEABLE_STATUS:
             self.notes.add("header-last-modified", FRESHNESS_HEURISTIC)
         else:
             self.notes.add("", FRESHNESS_NONE)
 
-        if "must-revalidate" in self._cc_keys:
+        if "must-revalidate" in self._cc_dict:
             if fresh:
                 self.notes.add("header-cache-control", FRESH_MUST_REVALIDATE)
             elif has_explicit_freshness:
                 self.notes.add("header-cache-control", STALE_MUST_REVALIDATE)
-        elif "proxy-revalidate" in self._cc_keys or "s-maxage" in self._cc_keys:
+        elif "proxy-revalidate" in self._cc_dict or "s-maxage" in self._cc_dict:
             if fresh:
                 self.notes.add("header-cache-control", FRESH_PROXY_REVALIDATE)
             elif has_explicit_freshness:
