@@ -5,9 +5,9 @@ from httplint.note import Note
 from httplint.message import HttpResponseLinter, HttpMessageLinter
 
 
-class TestMessageLinter(HttpResponseLinter):
+class FakeMessageLinter(HttpResponseLinter):
     """
-    A dummy HTTP message, for testing.
+    A fake linter, for testing.
     """
 
     def __init__(self) -> None:
@@ -28,7 +28,7 @@ class FieldTest(unittest.TestCase):
 
     def setUp(self) -> None:
         "Test setup."
-        self.message = TestMessageLinter()
+        self.message = FakeMessageLinter()
         self.set_context(self.message)
 
     def test_header(self) -> Any:
