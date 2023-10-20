@@ -11,9 +11,9 @@ from httplint.fields._utils import unquote_string
 class cache_control(HttpField):
     canonical_name = "Cache-Control"
     description = """\
-The `Cache-Control` header is used to specify directives that must be obeyed by all caches along
-the request/response chain. Cache directives are unidirectional in that the presence of a directive
-in a request does not imply that the same directive is in effect in the response."""
+The `Cache-Control` header is used to specify required directives to all caches that
+handle the response. It can also occur in requests, but caches have the option of
+ignoring it there."""
     reference = f"{rfc7234.SPEC_URL}#header.cache-control"
     syntax = rfc7234.Cache_Control
     list_header = True
