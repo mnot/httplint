@@ -10,7 +10,9 @@ The `Connection` header allows senders to specify which headers are hop-by-hop; 
 are not forwarded by intermediaries.
 
 It also indicates options that are desired for this particular connection; e.g., `close` means that
-it should not be reused."""
+it should not be reused.
+
+Connection is only valid in HTTP/1.x; HTTP/2 and HTTP/3 forbit it."""
     reference = f"{rfc7230.SPEC_URL}#header.connection"
     syntax = rfc7230.Connection
     list_header = True
