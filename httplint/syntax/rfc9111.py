@@ -10,4 +10,3 @@ SPEC_URL = "http://httpwg.org/specs/rfc9111"
 #   cache-directive = token [ "=" ( token / quoted-string ) ]
 #
 #   delta-seconds = 1*DIGIT
-
