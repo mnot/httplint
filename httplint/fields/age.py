@@ -58,6 +58,7 @@ The `Age` header's value is greater than 2,147,483,648. Some implementations may
 using that value (which is over 68 years).
 """
 
+
 class AgeTest(FieldTest):
     name = "Age"
     inputs = [b"10"]
@@ -84,7 +85,8 @@ class NegAgeTest(FieldTest):
     expected_out = None
     expected_notes = [AGE_NEGATIVE]
 
-class NegAgeTest(FieldTest):
+
+class BigAgeTest(FieldTest):
     name = "Age"
     inputs = [b"2147483649"]
     expected_out = 2147483649
