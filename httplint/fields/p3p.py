@@ -4,7 +4,7 @@ from httplint.fields import HttpField
 class p3p(HttpField):
     canonical_name = "P3P"
     description = """\
-The `P3P` header field allows a server to describe its privacy policy in a
+The `P3P` response header allows a server to describe its privacy policy in a
 machine-readable way. It has been deprecated, because client support was poor.
 """
     reference = "http://www.w3.org/TR/P3P/#syntax_ext"

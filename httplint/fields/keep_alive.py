@@ -18,7 +18,7 @@ Some implementations (e.g., [Apache](http://httpd.apache.org/)) do generate a `K
 to convey how many requests they're willing to serve on a single connection, what the connection
 timeout is and other information. However, this isn't usually used by clients.
 
-It's safe to remove this header if you wish to save a few bytes in the response."""
+It's safe to remove this header if you wish to save a few bytes."""
     reference = "https://tools.ietf.org/html/rfc2068#section-19.7.1"
     syntax = rfc7230.list_rule(rfc7231.parameter)
     list_header = True

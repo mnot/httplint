@@ -4,7 +4,7 @@ from httplint.fields import HttpField
 class tcn(HttpField):
     canonical_name = "TCN"
     description = """\
-The `TCN` header field is part of an experimental transparent content negotiation scheme. It
+The `TCN` response header is part of an experimental transparent content negotiation scheme. It
 is not widely supported in clients.
 """
     reference = "https://tools.ietf.org/html/rfc2295"

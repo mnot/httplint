@@ -10,7 +10,7 @@ class pragma(HttpField):
     canonical_name = "Pragma"
     description = """\
 The `Pragma` header is used to include implementation-specific directives that might apply to any
-recipient along the request/response chain.
+recipient along the request chain.
 
 This header is deprecated, in favour of `Cache-Control`."""
     reference = f"{rfc7234.SPEC_URL}#header.pragma"

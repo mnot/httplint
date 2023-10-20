@@ -9,8 +9,9 @@ from httplint.types import AddNoteMethodType
 class content_range(HttpField):
     canonical_name = "Content-Range"
     description = """\
-The `Content-Range` header is sent with partial content to specify where in the full content the
-partial content should be applied."""
+The `Content-Range` response header is sent in a `206` (Partial Content) response to indicate
+where in the full response content the partial content is located. It is also used
+in `416` (Requested Range Not Satisfiable) responses."""
     reference = f"{rfc7233.SPEC_URL}#header.content_range"
     syntax = rfc7233.Content_Range
     list_header = False
@@ -35,10 +36,10 @@ class CONTENT_RANGE_MEANINGLESS(Note):
     level = levels.WARN
     _summary = "%(response)s shouldn't have a Content-Range header."
     _text = """\
-HTTP only defines meaning for the `Content-Range` header in responses with a `206 Partial Content`
-or `416 Requested Range Not Satisfiable` status code.
-
-Putting a `Content-Range` header in this response may confuse caches and clients."""
+HTTP only defines meaning for the `Content-Range` header in responses with a `206` (Partial Content)
+or `416` (Requested Range Not Satisfiable) status code.
+)
+Because the status code is neither of those, this `Content-Range` header may confuse caches and clients."""
 
 
 class ContentRangeTest(FieldTest):

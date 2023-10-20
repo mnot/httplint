@@ -13,12 +13,15 @@ class transfer_encoding(HttpField):
 The `Transfer-Encoding` header indicates what (if any) type of transformation has been applied to
 the message content.
 
-This differs from `Content-Encoding` in that transfer-codings are a property of the message, not of
-the representation; i.e., it will be removed by the next "hop", whereas content-codings are
+This differs from `Content-Encoding` in that transfer codings are a property of the message, not of
+the representation; i.e., it will be removed by the next "hop", whereas content codings are
 end-to-end.
 
-The most commonly used transfer-coding is `chunked`, which allows persistent connections to be used
-without knowing the content's length."""
+The most commonly used transfer coding is `chunked`, which allows HTTP/1.1 persistent connections
+to be used without knowing the content's length.
+
+Transfer codings can only be used in HTTP/1; HTTP/2 and HTTP/3 do not support them.
+"""
     reference = f"{rfc7230.SPEC_URL}#header.transfer-encoding"
     syntax = rfc7230.Transfer_Encoding
     list_header = True

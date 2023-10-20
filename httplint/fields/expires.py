@@ -9,7 +9,7 @@ from httplint.fields._utils import parse_http_date
 class expires(HttpField):
     canonical_name = "Expires"
     description = """\
-The `Expires` header gives a time after which the response is considered stale."""
+The `Expires` response header gives a time after which the response is considered stale by caches."""
     reference = f"{rfc7234.SPEC_URL}#header.expires"
     syntax = False  # rfc7234.Expires
     list_header = False

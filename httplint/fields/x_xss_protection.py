@@ -12,7 +12,7 @@ from httplint.fields._notes import BAD_SYNTAX
 class x_xss_protection(HttpField):
     canonical_name = "X-XSS-Protection"
     description = """\
-The `X-XSS-Protection` response header field can be sent by servers to control how
+The `X-XSS-Protection` response header can be sent by servers to control how
 older versions of Internet Explorer configure their Cross Site Scripting protection."""
     reference = (
         "https://blogs.msdn.microsoft.com/ieinternals/"

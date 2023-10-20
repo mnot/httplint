@@ -8,7 +8,10 @@ class upgrade(HttpField):
 The `Upgrade` header allows the client to specify what additional communication
 protocols it supports and would like to use if the server finds it appropriate
 to switch protocols. Servers use it to confirm upgrade to a specific
-protocol."""
+protocol.
+
+`Upgrade` cannot be used in HTTP/2 or HTTP/3.
+"""
     reference = f"{rfc7230.SPEC_URL}#header.upgrade"
     syntax = rfc7230.Upgrade
     list_header = True

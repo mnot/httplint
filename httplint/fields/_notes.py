@@ -145,7 +145,7 @@ specification](http://httpwg.org/specs/rfc7231.html#http.date) for more informat
 class REQUEST_HDR_IN_RESPONSE(Note):
     category = categories.GENERAL
     level = levels.BAD
-    _summary = '"%(field_name)s" is a request header field.'
+    _summary = '"%(field_name)s" is a request header.'
     _text = """\
 The %(field_name)s field isn't defined to have any meaning in responses."""
 
@@ -153,7 +153,7 @@ The %(field_name)s field isn't defined to have any meaning in responses."""
 class RESPONSE_HDR_IN_REQUEST(Note):
     category = categories.GENERAL
     level = levels.BAD
-    _summary = '"%(field_name)s" is a request header field.'
+    _summary = '"%(field_name)s" is a request header.'
     _text = """\
 The %(field_name)s field isn't defined to have any meaning in requests."""
 

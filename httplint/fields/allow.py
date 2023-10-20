@@ -6,7 +6,7 @@ from httplint.syntax import rfc7231
 class allow(HttpField):
     canonical_name = "Allow"
     description = """\
-The `Allow` header advertises the set of methods that are supported by the resource."""
+The `Allow` response header advertises the set of methods that are supported by the resource."""
     reference = f"{rfc7231.SPEC_URL}#header.allow"
     syntax = rfc7231.Allow
     list_header = True

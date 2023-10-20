@@ -6,7 +6,7 @@ from httplint.syntax import rfc7231
 class content_location(HttpField):
     canonical_name = "Content-Location"
     description = """\
-The `Content-Location` header can used to supply an address for the
+The `Content-Location` response header can used to supply an address for the
 representation when it is accessible from a location separate from the request
 URI."""
     reference = f"{rfc7231.SPEC_URL}#header.content_location"

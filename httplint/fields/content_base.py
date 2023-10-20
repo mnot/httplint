@@ -4,7 +4,7 @@ from httplint.fields import HttpField
 class content_base(HttpField):
     canonical_name = "Content-Base"
     description = """\
-The `Content-Base` header field established the base URI of the message. It has been
+The `Content-Base` header established the base URI of the message. It has been
 deprecated, because it was not implemented widely.
   """
     reference = "https://tools.ietf.org/html/rfc2068#section-14.11"

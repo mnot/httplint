@@ -6,8 +6,8 @@ from httplint.types import AddNoteMethodType
 class vary(HttpField):
     canonical_name = "Vary"
     description = """\
-The `Vary` header indicates the set of request headers that determines whether a cache is permitted
-to use the response to reply to a subsequent request without validation.
+The `Vary` response header indicates the set of request headers that determines whether a cache is
+permitted to use the response to reply to a subsequent request without validation.
 
 In uncacheable or stale responses, the Vary field value advises the user agent about the criteria
 that were used to select the representation."""

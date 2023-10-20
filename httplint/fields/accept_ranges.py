@@ -8,8 +8,7 @@ from httplint.types import AddNoteMethodType
 class accept_ranges(HttpField):
     canonical_name = "Accept-Ranges"
     description = """\
-The `Accept-Ranges` header allows the server to indicate that it accepts range requests for a
-resource."""
+The `Accept-Ranges` response header allows the server to indicate that it accepts range requests for a resource."""
     reference = f"{rfc7233.SPEC_URL}#header.accept-ranges"
     syntax = rfc7233.Accept_Ranges
     list_header = True

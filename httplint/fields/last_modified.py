@@ -9,7 +9,7 @@ from httplint.fields._utils import parse_http_date
 class last_modified(HttpField):
     canonical_name = "Last-Modified"
     description = """\
-The `Last-Modified` header indicates the time that the origin server believes the
+The `Last-Modified` response header indicates the time that the origin server believes the
 representation was last modified."""
     reference = f"{rfc7232.SPEC_URL}#header.last_modified"
     syntax = False  # rfc7232.Last_Modified

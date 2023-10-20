@@ -6,8 +6,7 @@ from httplint.syntax import rfc7231
 class content_language(HttpField):
     canonical_name = "Content-Language"
     description = """\
-The `Content-Language` header describes the natural language(s) of the intended audience. Note that
-this might not convey all of the languages used."""
+The `Content-Language` header describes the natural language(s) of the intended audience for the messsage. Note that this might not convey all of the languages used."""
     reference = f"{rfc7231.SPEC_URL}#header.content_language"
     syntax = rfc7231.Content_Language
     list_header = False
