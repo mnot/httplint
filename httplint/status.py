@@ -233,9 +233,9 @@ class StatusChecker:
 class NO_DATE_304(Note):
     category = categories.VALIDATION
     level = levels.WARN
-    _summary = "304 responses need to have a Date header field."
+    _summary = "304 responses need to have a Date header."
     _text = """\
-HTTP requires `304 (Not Modified)` responses to have a `Date` header field in all but the most unusual
+HTTP requires `304 (Not Modified)` responses to have a `Date` header in all but the most unusual
 circumstances."""
 
 
@@ -252,7 +252,7 @@ willing to process it, it will send a `100 (Continue)` status code to indicate t
 should continue.
 
 This response has a `100 (Continue)` status code, but the request did not ask for it using the
-`Expect` request header field. Sending this status code without it being requested can cause
+`Expect` request header. Sending this status code without it being requested can cause
 interoperability problems."""
 
 
@@ -261,7 +261,7 @@ class UPGRADE_NOT_REQUESTED(Note):
     level = levels.BAD
     _summary = "The protocol was upgraded without being requested."
     _text = """\
-HTTP defines the `Upgrade` header field as a means of negotiating a change of protocol; i.e., it
+HTTP defines the `Upgrade` header as a means of negotiating a change of protocol; i.e., it
 allows you to switch the protocol on a given connection from HTTP to something else.
 
 This response was upgraded, but the request did not contain an `Upgrade` heade field.
@@ -290,18 +290,18 @@ class CREATED_WITHOUT_LOCATION(Note):
     _text = """\
 The `201 (Created)` status code indicates that the request created a new resource.
 
-HTTP specifies that the URL of the new resource is to be indicated in the `Location` header field,
+HTTP specifies that the URL of the new resource is to be indicated in the `Location` header,
 but it isn't present in this response."""
 
 
 class PARTIAL_WITHOUT_RANGE(Note):
     category = categories.GENERAL
     level = levels.BAD
-    _summary = "%(response)s doesn't have a Content-Range header field."
+    _summary = "%(response)s doesn't have a Content-Range header."
     _text = """\
 The `206 (Partial Response)` status code indicates that the response content is only partial.
 
-However, for a response to be partial, it needs to have a `Content-Range` header field to indicate
+However, for a response to be partial, it needs to have a `Content-Range` header to indicate
 what part of the full response it carries. This response does not have one."""
 
 
@@ -312,16 +312,16 @@ class PARTIAL_NOT_REQUESTED(Note):
     _text = """\
 The `206 (Partial Response)` status code indicates that the response content is only partial.
 
-However, the client needs to ask for it with the `Range` header field, and the request did not
+However, the client needs to ask for it with the `Range` header, and the request did not
 include one."""
 
 
 class REDIRECT_WITHOUT_LOCATION(Note):
     category = categories.GENERAL
     level = levels.BAD
-    _summary = "Redirects need to have a Location header field."
+    _summary = "Redirects need to have a Location header."
     _text = """\
-The %(status)s status code redirects users to another URI. The `Location` header field is used to
+The %(status)s status code redirects users to another URI. The `Location` header is used to
 convey this URI, but a valid one isn't present in this response."""
 
 
