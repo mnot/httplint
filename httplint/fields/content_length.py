@@ -12,7 +12,8 @@ The `Content-Length` header indicates the size of the content, in number of byte
 the HEAD method, it indicates the size of the content that would have been sent had the request
 been a GET.
 
-If Content-Length is incorrect, HTTP/1.1 persistent connections will not work, and caches may not store the response (since they can't be sure if they have the whole response)."""
+If Content-Length is incorrect, HTTP/1.1 persistent connections will not work, and caches may not
+store the response (since they can't be sure if they have the whole response)."""
     reference = f"{rfc7230.SPEC_URL}#header.content_length"
     syntax = rfc7230.Content_Length
     list_header = False

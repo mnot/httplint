@@ -13,7 +13,9 @@ from httplint.fields._notes import BAD_SYNTAX, PARAM_REPEATS
 class link(HttpField):
     canonical_name = "Link"
     description = """\
-The `Link` header allows links related to the content to be conveyed. A link can be viewed as a statement of the form "[context IRI] has a [relation type] resource at [target IRI], which has [target attributes]."""
+The `Link` header allows links related to the content to be conveyed. A link can be viewed as a
+statement of the form "[context IRI] has a [relation type] resource at [target IRI], which has
+[target attributes]."""
     reference = f"{rfc5988.SPEC_URL}#header.link"
     syntax = rfc5988.Link
     list_header = True

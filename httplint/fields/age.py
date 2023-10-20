@@ -9,7 +9,8 @@ from httplint.fields._notes import SINGLE_HEADER_REPEAT
 class age(HttpField):
     canonical_name = "Age"
     description = """\
-The `Age` response header conveys the sender's estimate of the amount of time since the response (or its validation) was generated at the origin server."""
+The `Age` response header conveys the sender's estimate of the amount of time since the response
+(or its validation) was generated at the origin server."""
     reference = f"{rfc9111.SPEC_URL}#field.age"
     syntax = False  # rfc9111.Age
     list_header = False
