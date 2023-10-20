@@ -1,3 +1,6 @@
+SPEC_URL = "http://httpwg.org/specs/rfc9110"
+
+
 #   Accept = [ ( media-range [ weight ] ) *( OWS "," OWS ( media-range [ weight ] ) ) ]
 #   Accept-Charset = [ ( ( token / "*" ) [ weight ] )
 #                      *( OWS "," OWS ( ( token / "*" ) [ weight ] ) ) ]
