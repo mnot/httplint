@@ -46,9 +46,9 @@ class FieldSection:
 
     def __init__(self, message: "HttpMessageLinter") -> None:
         self.message = message
-        self.text: StrFieldListType = []  # unicode version of the field tuples
+        self.text: StrFieldListType = []  # unicode version of the field tuples as received
         self.parsed: FieldDictType = {}  # dictionary of parsed field values
-        self.size: int = 0
+        self.size: int = 0  # size of textual header block w/o delimiters, in bytes
         self._handlers: Dict[str, HttpField] = {}
 
     def process(self, raw_fields: RawFieldListType) -> None:
