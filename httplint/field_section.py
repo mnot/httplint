@@ -10,6 +10,7 @@ from typing import (
 )
 
 from httplint.fields import HttpField
+import httplint.fields._deprecated as deprecated
 from httplint.note import Note, categories, levels
 from httplint.types import (
     StrFieldListType,
@@ -130,6 +131,8 @@ class FieldSection:
         module = FieldSection.find_field_module(name_token)
         if module and hasattr(module, name_token):
             return getattr(module, name_token)  # type: ignore
+        if field_name.lower() in deprecated.field_lookup:
+            return deprecated.DeprecatedField
         if default:
             return UnknownHttpField
         return None
