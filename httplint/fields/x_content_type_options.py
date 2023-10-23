@@ -4,7 +4,11 @@ from httplint.types import AddNoteMethodType
 
 
 class x_content_type_options(HttpField):
+    reference = "https://fetch.spec.whatwg.org/#x-content-type-options-header"
+    description = """\
+Indicates that the client should not 'sniff' the `Content-Type` of the message from its content."""
     canonical_name = "X-Content-Type-Options"
+    syntax = "nosniff"
     list_header = True
     deprecated = False
     valid_in_requests = False
