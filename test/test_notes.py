@@ -30,7 +30,8 @@ def checkSubClasses(cls, check):
     Run a check(subclass) function on all subclasses of cls.
     """
     loadModules(['httplint'], 'httplint.')
-    loadModules(['httplint/fields'], 'httplint.fields.')
+    loadModules(['httplint/field'], 'httplint.field.')
+    loadModules(['httplint/field/parsers'], 'httplint.field.parsers.')
     count = 0
     for subcls in cls.__subclasses__():
         check(subcls)

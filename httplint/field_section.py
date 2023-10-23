@@ -1,8 +1,8 @@
 from functools import partial
 from typing import Dict, TYPE_CHECKING
 
-from httplint.fields import HttpField
-from httplint.fields._finder import HttpFieldFinder
+from httplint.field import HttpField
+from httplint.field.finder import HttpFieldFinder
 from httplint.note import Note, categories, levels
 from httplint.types import StrFieldListType, RawFieldListType, FieldDictType
 from httplint.util import f_num

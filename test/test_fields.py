@@ -8,9 +8,9 @@ import types
 import unittest
 import xml.etree.ElementTree as ET
 
-from httplint.fields import HttpField
-from httplint.fields._finder import HttpFieldFinder
-from httplint.fields._test import FakeMessageLinter
+from httplint.field import HttpField
+from httplint.field.finder import HttpFieldFinder
+from httplint.field.tests import FakeMessageLinter
 from httplint.syntax.rfc7230 import list_rule
 
 

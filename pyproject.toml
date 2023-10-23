@@ -99,4 +99,4 @@ min-similarity-lines = 10
 
 [tool.pytest.ini_options]
 python_classes = "*Test"
-python_files = ["message.py", "fields/*.py"]
+python_files = ["message.py", "field/parsers/*.py"]
