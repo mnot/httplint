@@ -9,7 +9,8 @@ import unittest
 import xml.etree.ElementTree as ET
 
 from httplint.fields import HttpField
-from httplint.field_section import FieldSection
+from httplint.fields._finder import HttpFieldFinder
+from httplint.fields._test import FakeMessageLinter
 from httplint.syntax.rfc7230 import list_rule
 
 
@@ -20,8 +21,10 @@ def checkRegistryCoverage(xml_file):
     """
     errors = 0
     unsupported = 0
+    message = FakeMessageLinter()
+    finder = HttpFieldFinder(message)
     for field_name in parseFieldRegistry(xml_file):
-        field_cls = FieldSection.find_handler(field_name, default=False)
+        field_cls = finder.find_handler_class(field_name, default=False)
         if field_cls is None:
             sys.stderr.write(f"* {field_name} unsupported\n")
             unsupported += 1
@@ -51,6 +54,7 @@ def checkFieldClass(field_cls, field_name):
     """
 
     errors = 0
+    message = FakeMessageLinter()
     field = field_cls(field_name, None)
     attrs = dir(field)
     checks = [
@@ -82,9 +86,10 @@ def checkFieldClass(field_cls, field_name):
 
     if field.no_coverage is False:
         loader = unittest.TestLoader()
-        field_mod = FieldSection.find_field_module(field_name)
+        finder = HttpFieldFinder(message)
+        field_mod = finder.find_module(field_name)
         tests = loader.loadTestsFromModule(field_mod)
-        if tests.countTestCases() == 0 and getattr(field, "no_coverage", True) == False:
+        if tests.countTestCases() == 0:
             sys.stderr.write(f"* {field_name} NO TESTS\n")
     return errors
 
