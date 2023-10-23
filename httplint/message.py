@@ -6,7 +6,7 @@ from typing_extensions import Unpack, NotRequired
 
 from httplint.cache import ResponseCacheChecker
 from httplint.content_encoding import ContentEncodingProcessor
-from httplint.field_section import FieldSection
+from httplint.field.section import FieldSection
 from httplint.note import Notes, Note, levels, categories
 from httplint.syntax import rfc3986
 from httplint.types import RawFieldListType

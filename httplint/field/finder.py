@@ -14,7 +14,7 @@ from httplint.types import AddNoteMethodType
 
 
 if TYPE_CHECKING:
-    from httplint.field_section import FieldSection
+    from httplint.field.section import FieldSection
     from httplint.message import HttpMessageLinter
 
 
