@@ -27,7 +27,7 @@ By contributing code, bugs or enhancements to this project (whether that be thro
 
 ## Coding Conventions
 
-We use [black](https://pypi.org/project/black/) for Python formatting, and [standard](https://standardjs.com) for JavaScript; both can be run with `make tidy`.
+We use [black](https://pypi.org/project/black/) for Python formatting, which can be run with `make tidy`.
 
 All Python functions and methods need to have type annotations. See `pyproject.toml` for specific pylint and mypy settings.
 
@@ -44,7 +44,7 @@ Helpful make targets include:
 * `make python` - start an interactive Python interpreter in the virtual environment
 * `make lint` - run pylint with REDbot-specific configuration
 * `make typecheck` - run mypy to check Python types
-* `make tidy` - format Python and JavaScript source
+* `make tidy` - format Python source
 * `make test` - run the tests
 
 
