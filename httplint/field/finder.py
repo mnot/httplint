@@ -109,3 +109,11 @@ class UnknownHttpField(HttpField):
 
     def evaluate(self, add_note: AddNoteMethodType) -> None:
         return
+
+
+def get_field_description(field_name: str) -> str:
+    """Return the description for the named field, or None if not found."""
+    handler_class = HttpFieldFinder.find_handler_class(field_name, False)
+    if handler_class is not None and handler_class.description:
+        return handler_class.description
+    return None

@@ -61,3 +61,15 @@ This response doesn't have a Date header.
 This response is fresh until 1 min from now.
 This response may still be served by a cache once it becomes stale.
 ~~~
+
+### Field Descriptions
+
+The description of any field can be found by calling `get_field_description`. For example:
+
+~~~ python
+>>> from httplint import get_field_description
+>>> get_field_description("Allow")
+'The `Allow` response header advertises the set of methods that are supported by the resource.'
+~~~
+
+If a description cannot be found it will return `None`.
