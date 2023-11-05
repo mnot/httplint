@@ -140,9 +140,9 @@ class HttpRequestLinter(HttpMessageLinter):
 
     def __init__(self, **kw: Unpack[HttpMessageParams]) -> None:
         HttpMessageLinter.__init__(self, **kw)
-        self.method: str
-        self.iri: str
-        self.uri: str
+        self.method: str = None
+        self.iri: str = None
+        self.uri: str = None
 
     def process_request_topline(
         self, method: bytes, iri: bytes, version: bytes
