@@ -78,7 +78,7 @@ class HttpFieldFinder:
         Return a module for the given field name, or None if it can't be found.
         """
         name_token = HttpFieldFinder.name_token(field_name)
-        if name_token[0] == "_":  # these are special
+        if name_token[0:1] == "_":  # these are special
             return None
         if name_token in HttpFieldFinder.field_aliases:
             name_token = HttpFieldFinder.field_aliases[name_token]
