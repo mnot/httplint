@@ -179,13 +179,13 @@ valid HTML; any variables you pass to it will be escaped for you before renderin
 Each field definition should also include tests, as subclasses of
 `httplint.field.tests.FieldTest`. It expects the following class properties:
 
- * `name` - the field field-name
- * `inputs` - a list of field field-values, one item per line.
-   E.g., `["foo", "foo, bar"]`
- * `expected_out` - the data structure that _parse_ should return, given
-   the inputs
- * `expected_notes` - a list of `redbot.speak.Note` classes that are expected
-   to be set with `add_note` when parsing the inputs
+* `name` - the field field-name
+* `inputs` - a list of field field-values, one item per line.
+    E.g., `["foo", "foo, bar"]`
+* `expected_out` - the data structure that _parse_ should return, given
+    the inputs
+* `expected_notes` - a list of `redbot.speak.Note` classes that are expected
+    to be set with `add_note` when parsing the inputs
 
 You can create any number of tests this way; they will be run automatically when
 _tests/test\_fields.py_ is run.

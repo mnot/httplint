@@ -5,7 +5,7 @@ These regex are directly derived from the collected ABNF in RFC5987.
 
 Well, not really; it's:
 
-  <http://httpwg.org/http-extensions/rfc5987bis.html>
+    <http://httpwg.org/http-extensions/rfc5987bis.html>
 
 They should be processed with re.VERBOSE.
 """

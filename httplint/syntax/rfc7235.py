@@ -3,7 +3,7 @@ Regex for RFC7235
 
 These regex are directly derived from the collected ABNF in RFC7235.
 
-  <http://httpwg.org/specs/rfc7235.html#collected.abnf>
+    <http://httpwg.org/specs/rfc7235.html#collected.abnf>
 
 They should be processed with re.VERBOSE.
 """
@@ -38,12 +38,12 @@ token68 = rf"(?: (?: {ALPHA} | {DIGIT} | \- | \. | _ | \~ | \+ | / )* =* )"
 
 challenge = rf"""(?: {auth_scheme}
                         (?: {SP}+
-                          (?: {token68} |
-                            (?:
-                                (?: , | {auth_param} )
-                                (?: {OWS} , (?: OWS {auth_param} )? )*
-                            )?
-                          )
+                            (?: {token68} |
+                                (?:
+                                    (?: , | {auth_param} )
+                                    (?: {OWS} , (?: OWS {auth_param} )? )*
+                                )?
+                            )
                         )?
 )"""
 
@@ -59,12 +59,12 @@ challenge = rf"""(?: {auth_scheme}
 
 credentials = rf"""(?: {auth_scheme}
                         (?: {SP}+
-                          (?: {token68} |
-                            (?:
-                                (?: , | {auth_param} )
-                                (?: {OWS} , (?: OWS {auth_param} )? )*
-                            )?
-                          )
+                            (?: {token68} |
+                                (?:
+                                    (?: , | {auth_param} )
+                                    (?: {OWS} , (?: OWS {auth_param} )? )*
+                                )?
+                            )
                         )?
 )"""
 

@@ -5,18 +5,18 @@
   <title>Hypertext Transfer Protocol (HTTP) Field Name Registry</title>
   <created>2021-10-01</created>
   <updated>2023-09-18</updated>
-  
+
   <registry id="field-names">
     <title>Hypertext Transfer Protocol (HTTP) Field Name Registry</title>
     <xref type="rfc" data="rfc9110"/>
     <registration_rule>Specification Required for Permanent registrations,
-Expert Review for Provisional registrations. 
+Expert Review for Provisional registrations.
     </registration_rule>
     <expert>Mark Nottingham, Roy Fielding</expert>
     <note>See Section 16.3 of <xref type="rfc" data="rfc9110"/> for more
 information on defining and registering new HTTP Fields.
     </note>
-    <note>New field names, along with changes to existing ones, can be 
+    <note>New field names, along with changes to existing ones, can be
 requested using the <xref type="uri" data="https://github.com/protocol-registries/http-fields">registry interface</xref> or the mailing list
 defined in <xref type="rfc" data="rfc9110"/>.
     </note>
@@ -307,7 +307,7 @@ defined in <xref type="rfc" data="rfc9110"/>.
     <record>
       <value>Content-Disposition</value>
       <status>permanent</status>
-      <xref type="rfc" data="rfc6266">RFC 6266: Use of the Content-Disposition Header Field in the 
+      <xref type="rfc" data="rfc6266">RFC 6266: Use of the Content-Disposition Header Field in the
         Hypertext Transfer Protocol (HTTP)</xref>
     </record>
     <record updated="2021-10-01">
@@ -583,7 +583,7 @@ defined in <xref type="rfc" data="rfc9110"/>.
     <record date="2018-07-13">
       <value>Include-Referred-Token-Binding-ID</value>
       <status>permanent</status>
-      <xref type="rfc" data="rfc8473">RFC 8473: Token Binding over HTTP</xref> 
+      <xref type="rfc" data="rfc8473">RFC 8473: Token Binding over HTTP</xref>
     </record>
     <record date="2020-01-14">
       <file type="template">prov/isolation</file>
@@ -1219,7 +1219,6 @@ defined in <xref type="rfc" data="rfc9110"/>.
       <comments>(reserved)</comments>
     </record>
   </registry>
-  
 
   <people>
     <person id="Chet_Ensign">

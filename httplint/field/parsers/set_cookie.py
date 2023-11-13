@@ -239,10 +239,10 @@ class SET_COOKIE_NO_VAL(Note):
     level = levels.BAD
     _summary = "%(response)s has a Set-Cookie header that can't be parsed."
     _text = """\
-  This `Set-Cookie` header can't be parsed into a name and a value; it must start with a `name=value`
-  structure.
+    This `Set-Cookie` header can't be parsed into a name and a value; it must start with a `name=value`
+    structure.
 
-  Browsers will ignore this cookie."""
+    Browsers will ignore this cookie."""
 
 
 class SET_COOKIE_NO_NAME(Note):
@@ -250,9 +250,9 @@ class SET_COOKIE_NO_NAME(Note):
     level = levels.BAD
     _summary = "%(response)s has a Set-Cookie header without a cookie-name."
     _text = """\
-  This `Set-Cookie` header has an empty name; there needs to be a name before the `=`.
+    This `Set-Cookie` header has an empty name; there needs to be a name before the `=`.
 
-  Browsers will ignore this cookie."""
+    Browsers will ignore this cookie."""
 
 
 class SET_COOKIE_BAD_DATE(Note):
@@ -260,8 +260,8 @@ class SET_COOKIE_BAD_DATE(Note):
     level = levels.WARN
     _summary = "The %(cookie_name)s Set-Cookie header has an invalid Expires date."
     _text = """\
-  The `expires` date on this `Set-Cookie` header isn't valid; see
-  [RFC6265](http://tools.ietf.org/html/rfc6265) for details of the correct format."""
+    The `expires` date on this `Set-Cookie` header isn't valid; see
+    [RFC6265](http://tools.ietf.org/html/rfc6265) for details of the correct format."""
 
 
 class SET_COOKIE_EMPTY_MAX_AGE(Note):
@@ -269,9 +269,9 @@ class SET_COOKIE_EMPTY_MAX_AGE(Note):
     level = levels.WARN
     _summary = "The %(cookie_name)s Set-Cookie header has an empty Max-Age."
     _text = """\
-  The `max-age` parameter on this `Set-Cookie` header doesn't have a value.
+    The `max-age` parameter on this `Set-Cookie` header doesn't have a value.
 
-  Browsers will ignore the `max-age` value as a result."""
+    Browsers will ignore the `max-age` value as a result."""
 
 
 class SET_COOKIE_LEADING_ZERO_MAX_AGE(Note):
@@ -281,9 +281,9 @@ class SET_COOKIE_LEADING_ZERO_MAX_AGE(Note):
         "The %(cookie_name)s Set-Cookie header has a Max-Age with a leading zero."
     )
     _text = """\
-  The `max-age` parameter on this `Set-Cookie` header has a leading zero.
+    The `max-age` parameter on this `Set-Cookie` header has a leading zero.
 
-  Browsers will ignore the `max-age` value as a result."""
+    Browsers will ignore the `max-age` value as a result."""
 
 
 class SET_COOKIE_NON_DIGIT_MAX_AGE(Note):
@@ -291,10 +291,9 @@ class SET_COOKIE_NON_DIGIT_MAX_AGE(Note):
     level = levels.WARN
     _summary = "The %(cookie_name)s Set-Cookie header has a non-numeric Max-Age."
     _text = """\
-  The `max-age` parameter on this `Set-Cookie` header isn't numeric.
+    The `max-age` parameter on this `Set-Cookie` header isn't numeric.
 
-
-  Browsers will ignore the `max-age` value as a result."""
+    Browsers will ignore the `max-age` value as a result."""
 
 
 class SET_COOKIE_EMPTY_DOMAIN(Note):
@@ -302,9 +301,9 @@ class SET_COOKIE_EMPTY_DOMAIN(Note):
     level = levels.WARN
     _summary = "The %(cookie_name)s Set-Cookie header has an empty domain."
     _text = """\
-  The `domain` parameter on this `Set-Cookie` header is empty.
+    The `domain` parameter on this `Set-Cookie` header is empty.
 
-  Browsers will probably ignore it as a result."""
+    Browsers will probably ignore it as a result."""
 
 
 class SET_COOKIE_NOT_SECURE(Note):
@@ -312,9 +311,9 @@ class SET_COOKIE_NOT_SECURE(Note):
     level = levels.WARN
     _summary = "The %(cookie_name)s Set-Cookie header is missing the Secure attribute."
     _text = """\
-  The `Secure` attribute on this `Set-Cookie` header is missing.
+    The `Secure` attribute on this `Set-Cookie` header is missing.
 
-  Browsers will ignore it."""
+    Browsers will ignore it."""
 
 
 class SET_COOKIE_UNKNOWN_ATTRIBUTE(Note):
@@ -322,9 +321,9 @@ class SET_COOKIE_UNKNOWN_ATTRIBUTE(Note):
     level = levels.WARN
     _summary = "The %(cookie_name)s Set-Cookie header has an unknown attribute, '%(attribute)s'."
     _text = """\
-  This `Set-Cookie` header has an extra parameter, "%(attribute)s".
+    This `Set-Cookie` header has an extra parameter, "%(attribute)s".
 
-  Browsers will ignore it."""
+    Browsers will ignore it."""
 
 
 class SET_COOKIE_UNKNOWN_ATTRIBUTE_VALUE(Note):
@@ -335,9 +334,9 @@ class SET_COOKIE_UNKNOWN_ATTRIBUTE_VALUE(Note):
         "'%(attribute_name)s' attribute value."
     )
     _text = """\
-  This `Set-Cookie` header has an unknown "%(attribute_name)s" attribute value, "%(attribute_value)s".
+    This `Set-Cookie` header has an unknown "%(attribute_name)s" attribute value, "%(attribute_value)s".
 
-  Browsers will probably ignore it as a result."""
+    Browsers will probably ignore it as a result."""
 
 
 class BasicSCTest(FieldTest):

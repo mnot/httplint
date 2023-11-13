@@ -11,7 +11,7 @@ reused.
 
 It takes this form because the most efficient way of assuring that clients don't see the header is
 to rearrange or change individual characters in its name.
-  """
+"""
     deprecated = False
     valid_in_requests = True
     valid_in_responses = True
