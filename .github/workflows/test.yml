@@ -9,16 +9,14 @@ on:
 
 jobs:
   test:
+    name: Tests on ${{ matrix.python-version }}
     runs-on: ubuntu-latest
     strategy:
-      max-parallel: 2
       matrix:
         python-version: ["3.9", "3.10", "3.11"]
     steps:
     - uses: actions/checkout@v4
-      with:
-        submodules: 'true'
-    - name: Set up Python ${{ matrix.python-version }}
+    - name: Set up Python
       uses: actions/setup-python@v4
       with:
         python-version: ${{ matrix.python-version }}
@@ -26,7 +24,7 @@ jobs:
       uses: actions/cache@v3
       with:
         path: .venv
-        key: ${{ runner.os }}-${{ matrix.python-version }}-venv-${{ hashFiles('**/requirements.txt') }}
+        key: ${{ runner.os }}-${{ matrix.python-version }}-venv-${{ hashFiles('pyproject.toml') }}
     - name: Set up venv
       run: make venv
     - name: Typecheck
