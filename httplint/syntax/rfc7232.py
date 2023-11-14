@@ -3,7 +3,7 @@ Regex for RFC7232
 
 These regex are directly derived from the collected ABNF in RFC7232.
 
-  <http://httpwg.org/specs/rfc7232.html#collected.abnf>
+    <http://httpwg.org/specs/rfc7232.html#collected.abnf>
 
 They should be processed with re.VERBOSE.
 """

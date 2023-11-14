@@ -16,9 +16,9 @@ serialized_origin = rf"""(?:
 """
 
 X_Frame_Options = rf"""(?:
-    DENY
-  | SAMEORIGIN
-  | (?: ALLOW-FROM {rfc7230.RWS} {serialized_origin} )
+      DENY
+    | SAMEORIGIN
+    | (?: ALLOW-FROM {rfc7230.RWS} {serialized_origin} )
 )"""
 
 
@@ -28,7 +28,7 @@ class x_frame_options(HttpField):
     description = """
 The X-Frame-Options response header declares a policy regarding whether the browser may display
 the transmitted content in frames that are part of other web pages.
-  """
+"""
     syntax = X_Frame_Options
     list_header = False
     deprecated = False
@@ -57,7 +57,7 @@ prevents this content from being rendered within a frame, which defends against 
 attacks.
 
 See [this blog entry](http://bit.ly/v5Bh5Q) for more information.
-     """
+"""
 
 
 class FRAME_OPTIONS_SAMEORIGIN(Note):
@@ -75,7 +75,7 @@ certain types of attacks.
 Currently this is supported by IE8 and Safari 4.
 
 See [this blog entry](http://bit.ly/v5Bh5Q) for more information.
-     """
+"""
 
 
 class FRAME_OPTIONS_UNKNOWN(Note):
@@ -87,7 +87,7 @@ Only two values are currently defined for this header, `DENY` and `SAMEORIGIN`. 
 here won't necessarily cause problems, but they probably won't have any effect either.
 
 See [this blog entry](http://bit.ly/v5Bh5Q) for more information.
-     """
+"""
 
 
 class DenyXFOTest(FieldTest):

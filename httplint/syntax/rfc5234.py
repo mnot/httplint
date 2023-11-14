@@ -3,7 +3,7 @@ Regex for ABNF
 
 These regex are directly derived from the core ABNF in RFC5234:
 
-  https://tools.ietf.org/html/rfc5234#appendix-B.1
+    https://tools.ietf.org/html/rfc5234#appendix-B.1
 
 They should be processed with re.VERBOSE.
 """

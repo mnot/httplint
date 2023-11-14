@@ -6,7 +6,7 @@ Regex for URIs
 
 These regex are directly derived from the collected ABNF in RFC3986:
 
-  https://tools.ietf.org/html/rfc3986#appendix-A
+    https://tools.ietf.org/html/rfc3986#appendix-A
 
 They should be processed with re.VERBOSE.
 """
@@ -28,7 +28,7 @@ gen_delims = r"(?: : | / | \? | \# | \[ | \] | @ )"
 #   sub-delims    = "!" / "$" / "&" / "'" / "(" / ")"
 #                 / "*" / "+" / "," / ";" / "="
 sub_delims = r"""(?: ! | \$ | & | ' | \( | \) |
-                     \* | \+ | , | ; | = )"""
+                    \* | \+ | , | ; | = )"""
 
 #   pchar         = unreserved / pct-encoded / sub-delims / ":" / "@"
 pchar = rf"(?: {unreserved} | {pct_encoded} | {sub_delims} | : | @ )"
@@ -76,16 +76,16 @@ ls32 = rf"(?: (?: {h16} : {h16} ) | {IPv4address} )"
 #                 / [ *4( h16 ":" ) h16 ] "::"              ls32
 #                 / [ *5( h16 ":" ) h16 ] "::"              h16
 #                 / [ *6( h16 ":" ) h16 ] "::"
-IPv6address = rf"""(?:                            (?: {h16} : ){{6}} {ls32} |
-                                              :: (?: {h16} : ){{5}} {ls32} |
-                                        {h16} :: (?: {h16} : ){{4}} {ls32} |
-                     (?: {h16} : )      {h16} :: (?: {h16} : ){{3}} {ls32} |
-                     (?: {h16} : ){{2}} {h16} :: (?: {h16} : ){{2}} {ls32} |
-                     (?: {h16} : ){{3}} {h16} ::     {h16} :        {ls32} |
-                     (?: {h16} : ){{4}} {h16} ::                    {ls32} |
-                     (?: {h16} : ){{5}} {h16} ::                    {h16}  |
-                     (?: {h16} : ){{6}} {h16} ::
-                  )
+IPv6address = rf"""(?:                              (?: {h16} : ){{6}} {ls32} |
+                                                 :: (?: {h16} : ){{5}} {ls32} |
+                                           {h16} :: (?: {h16} : ){{4}} {ls32} |
+                        (?: {h16} : )      {h16} :: (?: {h16} : ){{3}} {ls32} |
+                        (?: {h16} : ){{2}} {h16} :: (?: {h16} : ){{2}} {ls32} |
+                        (?: {h16} : ){{3}} {h16} ::     {h16} :        {ls32} |
+                        (?: {h16} : ){{4}} {h16} ::                    {ls32} |
+                        (?: {h16} : ){{5}} {h16} ::                    {h16}  |
+                        (?: {h16} : ){{6}} {h16} ::
+                    )
 """
 
 #   IPvFuture     = "v" 1*HEXDIG "." 1*( unreserved / sub-delims / ":" )
@@ -142,11 +142,11 @@ path_empty = rf"{pchar}{0}"
 #                 / path-noscheme   ; begins with a non-colon segment
 #                 / path-rootless   ; begins with a segment
 #                 / path-empty      ; zero characters
-path = rf"""(?: {path_abempty} |
-               {path_absolute} |
-               {path_noscheme} |
-               {path_rootless} |
-               {path_empty}
+path = rf"""(?:  {path_abempty} |
+                {path_absolute} |
+                {path_noscheme} |
+                {path_rootless} |
+                {path_empty}
             )
 """
 

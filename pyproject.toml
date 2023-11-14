@@ -25,8 +25,10 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-dev = ["mypy", "black", "pylint", "pytest", "pytest-md", "validate-pyproject", "build",
-       "types-Markdown"]
+dev = [
+    "mypy", "black", "pylint", "pytest", "pytest-md", "validate-pyproject", "build",
+    "types-Markdown"
+]
 
 [project.urls]
 homepage = "https://github.com/mnot/httplint/"
