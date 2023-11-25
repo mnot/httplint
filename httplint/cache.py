@@ -633,7 +633,7 @@ Microsoft Internet Explorer implements two `Cache-Control` extensions, `pre-chec
 directive, since it requires both to be present.
 
 See [this blog entry](http://bit.ly/rzT0um) for more information.
-     """
+"""
 
 
 class CHECK_NOT_INTEGER(Note):

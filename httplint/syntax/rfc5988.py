@@ -3,7 +3,7 @@ Regex for RFC5988
 
 These regex are directly derived from the collected ABNF in RFC5988.
 
-  <https://tools.ietf.org/html/rfc5988#section-5>
+    <https://tools.ietf.org/html/rfc5988#section-5>
 
 They should be processed with re.VERBOSE.
 """
@@ -93,14 +93,14 @@ relation_types = rf"""(?: {relation_type}
 #                 | ( link-extension ) )
 
 link_param = rf"""(?: (?: rel = {relation_types} )
-                   | (?: anchor = " {URI_reference} " )
-                   | (?: rev = {relation_types} )
-                   | (?: hreflang = {Language_Tag} )
-                   | (?: media = (?: {MediaDesc} | (?: " {MediaDesc} " ) ) )
-                   | (?: title = {quoted_string} )
-                   | (?: title\* = {ext_value} )
-                   | (?: type = (?: {media_type} | {quoted_mt} ) )
-                   | (?: {link_extension} ) )"""
+                    | (?: anchor = " {URI_reference} " )
+                    | (?: rev = {relation_types} )
+                    | (?: hreflang = {Language_Tag} )
+                    | (?: media = (?: {MediaDesc} | (?: " {MediaDesc} " ) ) )
+                    | (?: title = {quoted_string} )
+                    | (?: title\* = {ext_value} )
+                    | (?: type = (?: {media_type} | {quoted_mt} ) )
+                    | (?: {link_extension} ) )"""
 
 #  link-value     = "<" URI-Reference ">" *( ";" link-param )
 

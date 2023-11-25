@@ -137,12 +137,12 @@ privateuse = rf"x (?: \- {alphanum}{{1,8}} ){{1,}}"
 #                 ["-" privateuse]
 
 langtag = rf"""(?:
-  {language}
-  (?: \- {script} )?
-  (?: \- {region} )?
-  (?: \- {variant} )*
-  (?: \- {extension} )*
-  (?: \- {privateuse} )?
+    {language}
+    (?: \- {script} )?
+    (?: \- {region} )?
+    (?: \- {variant} )*
+    (?: \- {extension} )*
+    (?: \- {privateuse} )?
 )"""
 
 # Language-Tag  = langtag             ; normal language tags

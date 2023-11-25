@@ -31,9 +31,9 @@ class FieldSection:
     def process(self, raw_fields: RawFieldListType) -> None:
         """
         Given a list of (bytes name, bytes value) fields and:
-         - populate text and parsed
-         - calculate the total section size
-         - call msg.add_note as appropriate
+            - populate text and parsed
+            - calculate the total section size
+            - call msg.add_note as appropriate
         """
         offset = 0  # what number header we're on
 

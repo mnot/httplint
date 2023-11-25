@@ -358,7 +358,7 @@ class STATUS_BAD_REQUEST(Note):
     level = levels.WARN
     _summary = "The server didn't understand the request."
     _text = """\
- """
+"""
 
 
 class STATUS_FORBIDDEN(Note):
@@ -366,7 +366,7 @@ class STATUS_FORBIDDEN(Note):
     level = levels.INFO
     _summary = "The server has forbidden this request."
     _text = """\
- """
+"""
 
 
 class STATUS_NOT_FOUND(Note):
@@ -390,7 +390,7 @@ class STATUS_CONFLICT(Note):
     level = levels.INFO
     _summary = "The request conflicted with the state of the resource."
     _text = """\
- """
+"""
 
 
 class STATUS_GONE(Note):
@@ -422,7 +422,7 @@ class STATUS_UNSUPPORTED_MEDIA_TYPE(Note):
     level = levels.INFO
     _summary = "The resource doesn't support this media type in requests."
     _text = """\
- """
+"""
 
 
 class STATUS_IM_A_TEAPOT(Note):
@@ -446,7 +446,7 @@ class STATUS_INTERNAL_SERVICE_ERROR(Note):
     level = levels.INFO
     _summary = "There was a general server error."
     _text = """\
- """
+"""
 
 
 class STATUS_NOT_IMPLEMENTED(Note):
@@ -454,7 +454,7 @@ class STATUS_NOT_IMPLEMENTED(Note):
     level = levels.INFO
     _summary = "The server doesn't implement the request method."
     _text = """\
- """
+"""
 
 
 class STATUS_BAD_GATEWAY(Note):
@@ -462,7 +462,7 @@ class STATUS_BAD_GATEWAY(Note):
     level = levels.INFO
     _summary = "An intermediary encountered an error."
     _text = """\
- """
+"""
 
 
 class STATUS_SERVICE_UNAVAILABLE(Note):
@@ -470,7 +470,7 @@ class STATUS_SERVICE_UNAVAILABLE(Note):
     level = levels.INFO
     _summary = "The server is temporarily unavailable."
     _text = """\
- """
+"""
 
 
 class STATUS_GATEWAY_TIMEOUT(Note):
@@ -478,7 +478,7 @@ class STATUS_GATEWAY_TIMEOUT(Note):
     level = levels.INFO
     _summary = "An intermediary timed out."
     _text = """\
- """
+"""
 
 
 class STATUS_VERSION_NOT_SUPPORTED(Note):
@@ -486,4 +486,4 @@ class STATUS_VERSION_NOT_SUPPORTED(Note):
     level = levels.BAD
     _summary = "The request HTTP version isn't supported."
     _text = """\
- """
+"""
