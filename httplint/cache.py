@@ -35,8 +35,8 @@ class ResponseCacheChecker:
 
         self.notes = response.notes
         self.request = cast("HttpRequestLinter", response.related)
-        self.age: int
-        self.freshness_lifetime: int
+        self.age: int = None
+        self.freshness_lifetime: int = None
         self.store_shared: bool
         self.store_private: bool
 
