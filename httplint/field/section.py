@@ -86,7 +86,7 @@ class FieldSection:
 class FIELD_TOO_LARGE(Note):
     category = categories.GENERAL
     level = levels.WARN
-    _summary = "The %(field_name)s header is very large (%(header_size)s bytes)."
+    _summary = "The %(field_name)s header is very large (%(field_size)s bytes)."
     _text = """\
 Some implementations limit the size of any single header line."""
 
