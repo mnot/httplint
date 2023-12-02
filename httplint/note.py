@@ -32,10 +32,12 @@ class Notes(UserList):
     A list of notes.
     """
 
-    default_vars: Dict[str, VariableType] = {"response": "This response"}
+    def __init__(self, default_vars: Dict[str, VariableType]):
+        UserList.__init__(self)
+        self._default_vars = default_vars
 
     def add(self, subject: str, note: Type["Note"], **vrs: VariableType) -> None:
-        tmp_vars: MutableMapping[str, VariableType] = self.default_vars.copy()
+        tmp_vars: MutableMapping[str, VariableType] = self._default_vars.copy()
         tmp_vars.update(vrs)
         self.data.append(note(subject, **tmp_vars))
 

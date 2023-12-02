@@ -50,7 +50,7 @@ the transmitted content in frames that are part of other web pages.
 class FRAME_OPTIONS_DENY(Note):
     category = categories.SECURITY
     level = levels.INFO
-    _summary = "%(response)s prevents some browsers from rendering it within a frame."
+    _summary = "%(message)s prevents some browsers from rendering it within a frame."
     _text = """\
 The `X-Frame-Options` response header controls how IE8 handles HTML frames; the `DENY` value
 prevents this content from being rendered within a frame, which defends against certain types of
@@ -64,7 +64,7 @@ class FRAME_OPTIONS_SAMEORIGIN(Note):
     category = categories.SECURITY
     level = levels.INFO
     _summary = (
-        "%(response)s prevents some browsers from rendering it within a frame "
+        "%(message)s prevents some browsers from rendering it within a frame "
         "on another site."
     )
     _text = """\
@@ -81,7 +81,7 @@ See [this blog entry](http://bit.ly/v5Bh5Q) for more information.
 class FRAME_OPTIONS_UNKNOWN(Note):
     category = categories.SECURITY
     level = levels.WARN
-    _summary = "%(response)s contains an X-Frame-Options header with an unknown value."
+    _summary = "%(message)s contains an X-Frame-Options header with an unknown value."
     _text = """\
 Only two values are currently defined for this header, `DENY` and `SAMEORIGIN`. Using other values
 here won't necessarily cause problems, but they probably won't have any effect either.

@@ -62,9 +62,9 @@ You can remove this token to save a few bytes."""
 class TRANSFER_CODING_UNWANTED(Note):
     category = categories.CONNECTION
     level = levels.BAD
-    _summary = "%(response)s has unsupported transfer-coding."
+    _summary = "%(message)s has unsupported transfer-coding."
     _text = """\
-%(response)s's `Transfer-Encoding` header indicates it has transfer-codings applied, but the
+%(message)s's `Transfer-Encoding` header indicates it has transfer-codings applied, but the
 request didn't ask for it (or them) to be.
 
 They are: `%(unwanted_codings)s`
@@ -76,12 +76,12 @@ the client doesn't explicitly request can lead to interoperability problems."""
 class TRANSFER_CODING_PARAM(Note):
     category = categories.CONNECTION
     level = levels.WARN
-    _summary = "%(response)s had parameters on its transfer-codings."
+    _summary = "%(message)s had parameters on its transfer-codings."
     _text = """\
 HTTP allows transfer-codings in the `Transfer-Encoding` header to have optional parameters, but it
 doesn't define what they mean.
 
-%(response)s has encodings with such parameters; although they're technically allowed, they may
+%(message)s has encodings with such parameters; although they're technically allowed, they may
 cause interoperability problems. They should be removed."""
 
 

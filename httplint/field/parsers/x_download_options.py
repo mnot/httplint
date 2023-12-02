@@ -20,7 +20,7 @@ class x_download_options(HttpField):
 class DOWNLOAD_OPTIONS(Note):
     category = categories.SECURITY
     level = levels.INFO
-    _summary = "%(response)s can't be directly opened directly by IE when downloaded."
+    _summary = "%(message)s can't be directly opened directly by IE when downloaded."
     _text = """\
 When the `X-Download-Options` header is present with the value `noopen`, Internet Explorer users
 are prevented from directly opening a file download; instead, they must first save the file
@@ -36,7 +36,7 @@ class DOWNLOAD_OPTIONS_UNKNOWN(Note):
     category = categories.SECURITY
     level = levels.WARN
     _summary = (
-        "%(response)s contains an X-Download-Options header with an unknown value."
+        "%(message)s contains an X-Download-Options header with an unknown value."
     )
     _text = """\
 Only one value is currently defined for this header, `noopen`. Using other values here won't

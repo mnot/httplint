@@ -46,12 +46,12 @@ older versions of Internet Explorer configure their Cross Site Scripting protect
 class XSS_PROTECTION_ON(Note):
     category = categories.SECURITY
     level = levels.INFO
-    _summary = "%(response)s enables XSS filtering in IE8+."
+    _summary = "%(message)s enables XSS filtering in IE8+."
     _text = """\
 Recent versions of Internet Explorer have built-in Cross-Site Scripting (XSS) attack protection;
 they try to automatically filter requests that fit a particular profile.
 
-%(response)s has explicitly enabled this protection. If IE detects a Cross-site scripting attack,
+%(message)s has explicitly enabled this protection. If IE detects a Cross-site scripting attack,
 it will "sanitise" the page to prevent the attack. In other words, the page will still render.
 
 This header probably won't have any effect on other clients.
@@ -62,12 +62,12 @@ See [this blog entry](http://bit.ly/tJbICH) for more information."""
 class XSS_PROTECTION_OFF(Note):
     category = categories.SECURITY
     level = levels.INFO
-    _summary = "%(response)s disables XSS filtering in IE8+."
+    _summary = "%(message)s disables XSS filtering in IE8+."
     _text = """\
 Recent versions of Internet Explorer have built-in Cross-Site Scripting (XSS) attack protection;
 they try to automatically filter requests that fit a particular profile.
 
-%(response)s has explicitly disabled this protection. In some scenarios, this is useful to do, if
+%(message)s has explicitly disabled this protection. In some scenarios, this is useful to do, if
 the protection interferes with the application.
 
 This header probably won't have any effect on other clients.
@@ -78,13 +78,13 @@ See [this blog entry](http://bit.ly/tJbICH) for more information."""
 class XSS_PROTECTION_BLOCK(Note):
     category = categories.SECURITY
     level = levels.INFO
-    _summary = "%(response)s blocks XSS attacks in IE8+."
+    _summary = "%(message)s blocks XSS attacks in IE8+."
     _text = """\
 Recent versions of Internet Explorer have built-in Cross-Site Scripting (XSS) attack protection;
 they try to automatically filter requests that fit a particular profile.
 
 Usually, IE will rewrite the attacking HTML, so that the attack is neutralised, but the content can
-still be seen. %(response)s instructs IE to not show such pages at all, but rather to display an
+still be seen. %(message)s instructs IE to not show such pages at all, but rather to display an
 error.
 
 This header probably won't have any effect on other clients.

@@ -48,7 +48,7 @@ In `201` (Created) responses, it identifies a newly created resource."""
 class LOCATION_UNDEFINED(Note):
     category = categories.GENERAL
     level = levels.WARN
-    _summary = "%(response)s doesn't define any meaning for the Location header."
+    _summary = "%(message)s doesn't define any meaning for the Location header."
     _text = """\
 The `Location` header is used for specific purposes in HTTP; mostly to indicate the URI of another
 resource (e.g., in redirection, or when a new resource is created).

@@ -32,9 +32,9 @@ of its underlying media type; e.g., `gzip` and `deflate`."""
 class ENCODING_UNWANTED(Note):
     category = categories.CONNEG
     level = levels.WARN
-    _summary = "%(response)s contained unwanted content-codings."
+    _summary = "%(message)s contained unwanted content-codings."
     _text = """\
-%(response)s's `Content-Encoding` header indicates it has content-codings applied
+%(message)s's `Content-Encoding` header indicates it has content-codings applied
 (`%(unwanted_codings)s`) that the request didn't ask for.
 
 Normally, clients ask for the encodings they want in the `Accept-Encoding` request header. Using

@@ -237,7 +237,7 @@ def loose_date_parse(cookie_date: str) -> int:
 class SET_COOKIE_NO_VAL(Note):
     category = categories.GENERAL
     level = levels.BAD
-    _summary = "%(response)s has a Set-Cookie header that can't be parsed."
+    _summary = "%(message)s has a Set-Cookie header that can't be parsed."
     _text = """\
     This `Set-Cookie` header can't be parsed into a name and a value; it must start with a `name=value`
     structure.
@@ -248,7 +248,7 @@ class SET_COOKIE_NO_VAL(Note):
 class SET_COOKIE_NO_NAME(Note):
     category = categories.GENERAL
     level = levels.BAD
-    _summary = "%(response)s has a Set-Cookie header without a cookie-name."
+    _summary = "%(message)s has a Set-Cookie header without a cookie-name."
     _text = """\
     This `Set-Cookie` header has an empty name; there needs to be a name before the `=`.
 

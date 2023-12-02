@@ -290,7 +290,7 @@ class LM_FUTURE(Note):
     _summary = "The Last-Modified time is in the future."
     _text = """\
 The `Last-Modified` header indicates the last point in time that the resource has changed.
-%(response)s's `Last-Modified` time is in the future, which doesn't have any defined meaning in
+%(message)s's `Last-Modified` time is in the future, which doesn't have any defined meaning in
 HTTP."""
 
 
@@ -338,7 +338,7 @@ behaviour unpredictable."""
 class NO_STORE(Note):
     category = categories.CACHING
     level = levels.INFO
-    _summary = "%(response)s can't be stored by a cache."
+    _summary = "%(message)s can't be stored by a cache."
     _text = """\
 The `Cache-Control: no-store` directive indicates that this response can't be stored by a cache."""
 
@@ -346,7 +346,7 @@ The `Cache-Control: no-store` directive indicates that this response can't be st
 class PRIVATE_CC(Note):
     category = categories.CACHING
     level = levels.INFO
-    _summary = "%(response)s only allows a private cache to store it."
+    _summary = "%(message)s only allows a private cache to store it."
     _text = """\
 The `Cache-Control: private` directive indicates that the response can only be stored by caches
 that are specific to a single user; for example, a browser cache. Shared caches, such as those in
@@ -356,7 +356,7 @@ proxies, cannot store it."""
 class PRIVATE_AUTH(Note):
     category = categories.CACHING
     level = levels.INFO
-    _summary = "%(response)s only allows a private cache to store it."
+    _summary = "%(message)s only allows a private cache to store it."
     _text = """\
 Because the request was authenticated and this response doesn't contain a `Cache-Control: public`
 directive, this response can only be stored by caches that are specific to a single user; for
@@ -367,7 +367,7 @@ class STORABLE(Note):
     category = categories.CACHING
     level = levels.INFO
     _summary = """\
-%(response)s allows all caches to store it."""
+%(message)s allows all caches to store it."""
     _text = """\
 A cache can store this response; it may or may not be able to use it to satisfy a particular
 request."""
@@ -376,7 +376,7 @@ request."""
 class NO_CACHE(Note):
     category = categories.CACHING
     level = levels.INFO
-    _summary = "%(response)s cannot be served from cache without validation."
+    _summary = "%(message)s cannot be served from cache without validation."
     _text = """\
 The `Cache-Control: no-cache` directive means that while caches **can** store this
 response, they cannot use it to satisfy a request unless it has been validated (either with an
@@ -386,13 +386,13 @@ response, they cannot use it to satisfy a request unless it has been validated (
 class NO_CACHE_NO_VALIDATOR(Note):
     category = categories.CACHING
     level = levels.INFO
-    _summary = "%(response)s cannot be served from cache without validation."
+    _summary = "%(message)s cannot be served from cache without validation."
     _text = """\
 The `Cache-Control: no-cache` directive means that while caches **can** store this response, they
 cannot use it to satisfy a request unless it has been validated (either with an `If-None-Match` or
 `If-Modified-Since` conditional) for that request.
 
-%(response)s doesn't have a `Last-Modified` or `ETag` header, so it effectively can't be used by a
+%(message)s doesn't have a `Last-Modified` or `ETag` header, so it effectively can't be used by a
 cache."""
 
 
@@ -466,7 +466,7 @@ response "more cacheable", and only makes the response headers larger."""
 class CURRENT_AGE(Note):
     category = categories.CACHING
     level = levels.INFO
-    _summary = "%(response)s has been cached for %(age)s."
+    _summary = "%(message)s has been cached for %(age)s."
     _text = """\
 The `Age` header indicates the age of the response; i.e., how long it has been cached since it was
 generated. HTTP takes this as well as any apparent clock skew into account in computing how old the
@@ -476,7 +476,7 @@ response already is."""
 class FRESHNESS_FRESH(Note):
     category = categories.CACHING
     level = levels.GOOD
-    _summary = "%(response)s is fresh until %(freshness_left)s from now."
+    _summary = "%(message)s is fresh until %(freshness_left)s from now."
     _text = """\
 A response can be considered fresh when its age (here, %(current_age)s) is less than its freshness
 lifetime (in this case, %(freshness_lifetime)s)."""
@@ -485,7 +485,7 @@ lifetime (in this case, %(freshness_lifetime)s)."""
 class FRESHNESS_STALE_CACHE(Note):
     category = categories.CACHING
     level = levels.WARN
-    _summary = "%(response)s has been served stale by a cache."
+    _summary = "%(message)s has been served stale by a cache."
     _text = """\
 An HTTP response is stale when its age (here, %(current_age)s) is equal to or exceeds its freshness
 lifetime (in this case, %(freshness_lifetime)s).
@@ -498,7 +498,7 @@ has ignored the response's freshness directives."""
 class FRESHNESS_STALE_ALREADY(Note):
     category = categories.CACHING
     level = levels.INFO
-    _summary = "%(response)s is already stale."
+    _summary = "%(message)s is already stale."
     _text = """\
 A cache considers a HTTP response stale when its age (here, %(current_age)s) is equal to or exceeds
 its freshness lifetime (in this case, %(freshness_lifetime)s).
@@ -510,7 +510,7 @@ e.g., when they lose contact with the origin server."""
 class FRESHNESS_HEURISTIC(Note):
     category = categories.CACHING
     level = levels.WARN
-    _summary = "%(response)s allows a cache to assign its own freshness lifetime."
+    _summary = "%(message)s allows a cache to assign its own freshness lifetime."
     _text = """\
 When responses with certain status codes don't have explicit freshness information (like a `
 Cache-Control: max-age` directive, or `Expires` header), caches are allowed to estimate how fresh
@@ -528,10 +528,10 @@ class FRESHNESS_NONE(Note):
     category = categories.CACHING
     level = levels.INFO
     _summary = (
-        "%(response)s can only be served by a cache under exceptional circumstances."
+        "%(message)s can only be served by a cache under exceptional circumstances."
     )
     _text = """\
-%(response)s doesn't have explicit freshness information (like a ` Cache-Control: max-age`
+%(message)s doesn't have explicit freshness information (like a ` Cache-Control: max-age`
 directive, or `Expires` header), and this status code doesn't allow caches to calculate their own.
 
 Therefore, while caches may be allowed to store it, they can't use it, except in unusual
@@ -546,7 +546,7 @@ so."""
 class FRESH_SERVABLE(Note):
     category = categories.CACHING
     level = levels.INFO
-    _summary = "%(response)s may still be served by a cache once it becomes stale."
+    _summary = "%(message)s may still be served by a cache once it becomes stale."
     _text = """\
 HTTP allows stale responses to be served under some circumstances; for example, if the origin
 server can't be contacted, a stale response can be used (even if it doesn't have explicit freshness
@@ -558,7 +558,7 @@ This behaviour can be prevented by using the `Cache-Control: must-revalidate` re
 class STALE_SERVABLE(Note):
     category = categories.CACHING
     level = levels.INFO
-    _summary = "%(response)s can be served by a cache, even though it is stale."
+    _summary = "%(message)s can be served by a cache, even though it is stale."
     _text = """\
 HTTP allows stale responses to be served under some circumstances; for example, if the origin
 server can't be contacted, a stale response can be used (even if it doesn't have explicit freshness
@@ -570,7 +570,7 @@ This behaviour can be prevented by using the `Cache-Control: must-revalidate` re
 class FRESH_MUST_REVALIDATE(Note):
     category = categories.CACHING
     level = levels.INFO
-    _summary = "%(response)s cannot be served by a cache once it becomes stale."
+    _summary = "%(message)s cannot be served by a cache once it becomes stale."
     _text = """\
 The `Cache-Control: must-revalidate` directive forbids caches from using stale responses to satisfy
 requests.
@@ -582,7 +582,7 @@ this directive is present, they will return an error rather than a stale respons
 class STALE_MUST_REVALIDATE(Note):
     category = categories.CACHING
     level = levels.INFO
-    _summary = "%(response)s cannot be served by a cache, because it is stale."
+    _summary = "%(message)s cannot be served by a cache, because it is stale."
     _text = """\
 The `Cache-Control: must-revalidate` directive forbids caches from using stale responses to satisfy
 requests.
@@ -594,7 +594,7 @@ this directive is present, they will return an error rather than a stale respons
 class FRESH_PROXY_REVALIDATE(Note):
     category = categories.CACHING
     level = levels.INFO
-    _summary = "%(response)s cannot be served by a shared cache once it becomes stale."
+    _summary = "%(message)s cannot be served by a shared cache once it becomes stale."
     _text = """\
 The presence of the `Cache-Control: proxy-revalidate` and/or `s-maxage` directives forbids shared
 caches (e.g., proxy caches) from using stale responses to satisfy requests.
@@ -608,7 +608,7 @@ These directives do not affect private caches; for example, those in browsers.""
 class STALE_PROXY_REVALIDATE(Note):
     category = categories.CACHING
     level = levels.INFO
-    _summary = "%(response)s cannot be served by a shared cache, because it is stale."
+    _summary = "%(message)s cannot be served by a shared cache, because it is stale."
     _text = """\
 The presence of the `Cache-Control: proxy-revalidate` and/or `s-maxage` directives forbids shared
 caches (e.g., proxy caches) from using stale responses to satisfy requests.
@@ -629,7 +629,7 @@ class CHECK_SINGLE(Note):
 Microsoft Internet Explorer implements two `Cache-Control` extensions, `pre-check` and
 `post-check`, to give more control over how its cache stores responses.
 
-%(response)s uses only one of these directives; as a result, Internet Explorer will ignore the
+%(message)s uses only one of these directives; as a result, Internet Explorer will ignore the
 directive, since it requires both to be present.
 
 See [this blog entry](http://bit.ly/rzT0um) for more information.
@@ -658,7 +658,7 @@ class CHECK_ALL_ZERO(Note):
 Microsoft Internet Explorer implements two `Cache-Control` extensions, `pre-check` and
 `post-check`, to give more control over how its cache stores responses.
 
-%(response)s gives a value of "0" for both; as a result, Internet Explorer will ignore the
+%(message)s gives a value of "0" for both; as a result, Internet Explorer will ignore the
 directive, since it requires both to be present.
 
 In other words, setting these to zero has **no effect** (besides wasting bandwidth),
@@ -677,7 +677,7 @@ class CHECK_POST_BIGGER(Note):
 Microsoft Internet Explorer implements two `Cache-Control` extensions, `pre-check` and
 `post-check`, to give more control over how its cache stores responses.
 
-%(response)s assigns a higher value to `post-check` than to `pre-check`; this means that Internet
+%(message)s assigns a higher value to `post-check` than to `pre-check`; this means that Internet
 Explorer will treat `post-check` as if its value is the same as `pre-check`'s.
 
 See [this blog entry](http://bit.ly/rzT0um) for more information."""
@@ -691,7 +691,7 @@ class CHECK_POST_ZERO(Note):
 Microsoft Internet Explorer implements two `Cache-Control` extensions, `pre-check` and
 `post-check`, to give more control over how its cache stores responses.
 
-%(response)s assigns a value of "0" to `post-check`, which means that Internet Explorer will reload
+%(message)s assigns a value of "0" to `post-check`, which means that Internet Explorer will reload
 the content as soon as it enters the browser cache, effectively **doubling the load on the server**.
 
 See [this blog entry](http://bit.ly/rzT0um) for more information."""
@@ -700,7 +700,7 @@ See [this blog entry](http://bit.ly/rzT0um) for more information."""
 class CHECK_POST_PRE(Note):
     category = categories.CACHING
     level = levels.INFO
-    _summary = "%(response)s may be refreshed in the background by Internet Explorer."
+    _summary = "%(message)s may be refreshed in the background by Internet Explorer."
     _text = """\
 Microsoft Internet Explorer implements two `Cache-Control` extensions, `pre-check` and
 `post-check`, to give more control over how its cache stores responses.
@@ -761,7 +761,7 @@ See [this paper](http://j.mp/S7lPL4) for more information."""
 class DATE_CLOCKLESS(Note):
     category = categories.GENERAL
     level = levels.WARN
-    _summary = "%(response)s doesn't have a Date header."
+    _summary = "%(message)s doesn't have a Date header."
     _text = """\
 Although HTTP allows a server not to send a `Date` header if it doesn't have a local clock, this
 can make calculation of the response's age inexact."""

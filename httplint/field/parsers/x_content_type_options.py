@@ -24,7 +24,7 @@ Indicates that the client should not 'sniff' the `Content-Type` of the message f
 class CONTENT_TYPE_OPTIONS(Note):
     category = categories.SECURITY
     level = levels.INFO
-    _summary = "%(response)s instructs browsers not to 'sniff' its media type."
+    _summary = "%(message)s instructs browsers not to 'sniff' its media type."
     _text = """\
 Many Web browsers "sniff" the media type of responses to figure out whether they're HTML, RSS or
 another format, no matter what the `Content-Type` header says.
@@ -39,7 +39,7 @@ class CONTENT_TYPE_OPTIONS_UNKNOWN(Note):
     category = categories.SECURITY
     level = levels.WARN
     _summary = (
-        "%(response)s contains an X-Content-Type-Options header with an unknown value."
+        "%(message)s contains an X-Content-Type-Options header with an unknown value."
     )
     _text = """\
 Only one value is currently defined for this header, `nosniff`. Using other values here won't

@@ -297,7 +297,7 @@ but it isn't present in this response."""
 class PARTIAL_WITHOUT_RANGE(Note):
     category = categories.GENERAL
     level = levels.BAD
-    _summary = "%(response)s doesn't have a Content-Range header."
+    _summary = "%(message)s doesn't have a Content-Range header."
     _text = """\
 The `206 (Partial Response)` status code indicates that the response content is only partial.
 

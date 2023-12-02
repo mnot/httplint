@@ -38,7 +38,7 @@ class x_ua_compatible(HttpField):
 class UA_COMPATIBLE(Note):
     category = categories.GENERAL
     level = levels.INFO
-    _summary = "%(response)s explicitly sets a rendering mode for Internet Explorer."
+    _summary = "%(message)s explicitly sets a rendering mode for Internet Explorer."
     _text = """\
 Some versions ofInternet Explorer allow responses to explicitly set the rendering mode used for a
 given page (known a the "compatibility mode").
@@ -51,7 +51,7 @@ class UA_COMPATIBLE_REPEAT(Note):
     category = categories.GENERAL
     level = levels.BAD
     _summary = (
-        "%(response)s has multiple X-UA-Compatible directives targeted at the same UA."
+        "%(message)s has multiple X-UA-Compatible directives targeted at the same UA."
     )
     _text = """\
 Internet Explorer 8 allows responses to explicitly set the rendering mode used for a page.
