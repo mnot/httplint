@@ -34,7 +34,7 @@ the file, rather than display it."""
         param_dict = parse_params(param_str, add_note)
         if disposition not in ["inline", "attachment"]:
             add_note(DISPOSITION_UNKNOWN, disposition=disposition)
-        if "filename" not in param_dict:
+        if disposition == "attachment" and "filename" not in param_dict:
             add_note(DISPOSITION_OMITS_FILENAME)
         if "%" in param_dict.get("filename", ""):
             add_note(DISPOSITION_FILENAME_PERCENT)
@@ -60,8 +60,8 @@ class DISPOSITION_OMITS_FILENAME(Note):
     level = levels.WARN
     _summary = "The Content-Disposition header doesn't have a 'filename' parameter."
     _text = """\
-The `Content-Disposition` header suggests a filename for clients to use when saving the file
-locally.
+The `Content-Disposition` header with a disposition of `attachment` suggests a filename for clients
+to use when saving the file locally.
 
 It should always contain a `filename` parameter, even when the `filename*` parameter is used to
 carry an internationalised filename, so that browsers can fall back to an ASCII-only filename."""
