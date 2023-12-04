@@ -758,7 +758,7 @@ class DATE_CORRECT(Note):
     _summary = "The server's clock is correct."
     _text = """\
 HTTP's caching model assumes reasonable synchronisation between clocks on the server and client;
-using RED's local clock, the server's clock appears to be well-synchronised."""
+compared to the local clock, the server's clock appears to be well-synchronised."""
 
 
 class DATE_INCORRECT(Note):
@@ -766,7 +766,7 @@ class DATE_INCORRECT(Note):
     level = levels.BAD
     _summary = "The server's clock is %(clock_skew_string)s."
     _text = """\
-Using RED's local clock, the server's clock does not appear to be well-synchronised.
+Compared to the local clock, the server's clock does not appear to be well-synchronised.
 
 HTTP's caching model assumes reasonable synchronisation between clocks on the server and client;
 clock skew can cause responses that should be cacheable to be considered uncacheable (especially if
