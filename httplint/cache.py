@@ -36,9 +36,10 @@ class ResponseCacheChecker:
         self.notes = response.notes
         self.request = cast("HttpRequestLinter", response.related)
         self.age: int = None
-        self.freshness_lifetime: int = None
-        self.store_shared: bool
         self.store_private: bool
+        self.freshness_lifetime_private: int = None
+        self.store_shared: bool
+        self.freshness_lifetime_shared: int = None
 
     def check(self) -> None:
         if not self.check_basic():
@@ -93,9 +94,6 @@ class ResponseCacheChecker:
             if cc in KNOWN_CC and cc_list.count(cc) > 1:
                 self.notes.add("header-cache-control", CC_DUP, cc=cc)
 
-        if "public" in self._cc_dict:
-            self.notes.add("header-cache-control", PUBLIC)
-
         if "no-store" in self._cc_dict:
             self.store_shared = self.store_private = False
             self.notes.add("header-cache-control", NO_STORE)
@@ -105,17 +103,27 @@ class ResponseCacheChecker:
             self.store_shared = False
             self.store_private = True
             self.notes.add("header-cache-control", PRIVATE_CC)
-        elif (
-            self.request
-            and "authorization" in [k.lower() for k, v in self.request.headers.text]
-            and "public" not in self._cc_dict
-        ):
-            self.store_shared = False
-            self.store_private = True
-            self.notes.add("header-cache-control", PRIVATE_AUTH)
+
+            if "public" in self._cc_dict:
+                self.notes.add("header-cache-control", PRIVATE_PUBLIC_CONFLICT)
+
+        elif self.request and "authorization" in [
+            k.lower() for k, v in self.request.headers.text
+        ]:
+            if "public" in self._cc_dict:
+                self.store_shared = True
+                self.store_private = True
+                self.notes.add("header-cache-control", PUBLIC_AUTH)
+            else:
+                self.store_shared = False
+                self.store_private = True
+                self.notes.add("header-cache-control", PRIVATE_AUTH)
         else:
             self.store_shared = self.store_private = True
             self.notes.add("header-cache-control", STORABLE)
+
+            if "public" in self._cc_dict:
+                self.notes.add("header-cache-control", PUBLIC_UNNECESSARY)
 
         # no-cache?
         if "no-cache" in self._cc_dict:
@@ -207,31 +215,39 @@ class ResponseCacheChecker:
             else:
                 self.notes.add("header-date", DATE_CORRECT)
 
-        self.freshness_lifetime = 0
+        self.freshness_lifetime_private = 0
+        self.freshness_lifetime_shared = 0
         has_explicit_freshness = False
         has_cc_freshness = False
         freshness_hdrs = ["header-date"]
+        if "max-age" in self._cc_dict:
+            self.freshness_lifetime_private = self._cc_dict["max-age"]
+            self.freshness_lifetime_shared = self._cc_dict["max-age"]
+            freshness_hdrs.append("header-cache-control")
+            has_explicit_freshness = True
+            has_cc_freshness = True
         if "s-maxage" in self._cc_dict:
-            self.freshness_lifetime = self._cc_dict["s-maxage"]
+            self.freshness_lifetime_shared = self._cc_dict["s-maxage"]
             freshness_hdrs.append("header-cache-control")
             has_explicit_freshness = True
             has_cc_freshness = True
-        elif "max-age" in self._cc_dict:
-            self.freshness_lifetime = self._cc_dict["max-age"]
-            freshness_hdrs.append("header-cache-control")
-            has_explicit_freshness = True
-            has_cc_freshness = True
-        elif expires_hdr_present and self._response.start_time:
+        if expires_hdr_present and self._response.start_time:
             # An invalid Expires header means it's automatically stale
             has_explicit_freshness = True
             freshness_hdrs.append("header-expires")
-            self.freshness_lifetime = (expires_hdr or 0) - (
+            expires_lifetime = self.freshness_lifetime_shared = (expires_hdr or 0) - (
                 date_hdr or int(self._response.start_time)
             )
+            if not self.freshness_lifetime_private:
+                self.freshness_lifetime_private = expires_lifetime
+            if not self.freshness_lifetime_shared:
+                self.freshness_lifetime_shared = expires_lifetime
 
-        freshness_left = self.freshness_lifetime - current_age
+        freshness_left = self.freshness_lifetime_private - current_age
         freshness_left_str = relative_time(abs(int(freshness_left)), 0, 0)
-        freshness_lifetime_str = relative_time(int(self.freshness_lifetime), 0, 0)
+        freshness_lifetime_str = relative_time(
+            int(self.freshness_lifetime_private), 0, 0
+        )
 
         fresh = freshness_left > 0
         if has_explicit_freshness:
@@ -243,7 +259,7 @@ class ResponseCacheChecker:
                     freshness_left=freshness_left_str,
                     current_age=current_age_str,
                 )
-            elif has_cc_freshness and self.age > self.freshness_lifetime:
+            elif has_cc_freshness and self.age > self.freshness_lifetime_private:
                 self.notes.add(
                     " ".join(freshness_hdrs),
                     FRESHNESS_STALE_CACHE,
@@ -338,7 +354,7 @@ behaviour unpredictable."""
 class NO_STORE(Note):
     category = categories.CACHING
     level = levels.INFO
-    _summary = "%(message)s can't be stored by a cache."
+    _summary = "%(message)s can't be stored by caches."
     _text = """\
 The `Cache-Control: no-store` directive indicates that this response can't be stored by a cache."""
 
@@ -346,21 +362,57 @@ The `Cache-Control: no-store` directive indicates that this response can't be st
 class PRIVATE_CC(Note):
     category = categories.CACHING
     level = levels.INFO
-    _summary = "%(message)s only allows a private cache to store it."
+    _summary = "%(message)s only allows private caches to store it."
     _text = """\
 The `Cache-Control: private` directive indicates that the response can only be stored by caches
 that are specific to a single user; for example, a browser cache. Shared caches, such as those in
 proxies, cannot store it."""
 
 
+class PRIVATE_PUBLIC_CONFLICT(Note):
+    category = categories.CACHING
+    level = levels.BAD
+    _summary = (
+        "%(message)s contains both the `public` and `private` Cache-Control directives."
+    )
+    _text = """\
+`Cache-Control: public` and `Cache-Control: private` conflict; they should not occur on the same message.
+
+Conservative caches will ignore `public` and honor `private`, but this cannot be relied upon."""
+
+
 class PRIVATE_AUTH(Note):
     category = categories.CACHING
     level = levels.INFO
-    _summary = "%(message)s only allows a private cache to store it."
+    _summary = "%(message)s can only be stored by private caches, because the request was \
+authenticated."
     _text = """\
 Because the request was authenticated and this response doesn't contain a `Cache-Control: public`
 directive, this response can only be stored by caches that are specific to a single user; for
 example, a browser cache. Shared caches, such as those in proxies, cannot store it."""
+
+
+class PUBLIC_AUTH(Note):
+    category = categories.CACHING
+    level = levels.INFO
+    _summary = "%(message)s can be stored by all caches, even though the request was authenticated."
+    _text = """\
+Usually, responses to authenticated requests can't be stored by shared caches. However, because
+This response contains a `Cache-Control: public` directive, it can be stored by all caches,
+including shared caches (like those in proxies)."""
+
+
+class PUBLIC_UNNECESSARY(Note):
+    category = categories.CACHING
+    level = levels.WARN
+    _summary = "Cache-Control: public is rarely necessary."
+    _text = """\
+The `Cache-Control: public` directive makes a response cacheable even when the request had an
+`Authorization` header (i.e., HTTP authentication was in use). Therefore, HTTP-authenticated (NOT cookie-authenticated) resources _may_ have reason to use
+`public`.
+
+Other responses **do not need to contain `public`**; it does not make the
+response "more cacheable", and only makes the response headers larger."""
 
 
 class STORABLE(Note):
@@ -376,7 +428,7 @@ request."""
 class NO_CACHE(Note):
     category = categories.CACHING
     level = levels.INFO
-    _summary = "%(message)s cannot be served from cache without validation."
+    _summary = "%(message)s cannot be served from caches without validation."
     _text = """\
 The `Cache-Control: no-cache` directive means that while caches **can** store this
 response, they cannot use it to satisfy a request unless it has been validated (either with an
@@ -386,7 +438,7 @@ response, they cannot use it to satisfy a request unless it has been validated (
 class NO_CACHE_NO_VALIDATOR(Note):
     category = categories.CACHING
     level = levels.INFO
-    _summary = "%(message)s cannot be served from cache without validation."
+    _summary = "%(message)s cannot be served from caches without validation."
     _text = """\
 The `Cache-Control: no-cache` directive means that while caches **can** store this response, they
 cannot use it to satisfy a request unless it has been validated (either with an `If-None-Match` or
@@ -448,21 +500,6 @@ change, over; each listed header is another dimension.
 Varying by too many dimensions makes using this information impractical."""
 
 
-class PUBLIC(Note):
-    category = categories.CACHING
-    level = levels.WARN
-    _summary = "Cache-Control: public is rarely necessary."
-    _text = """\
-The `Cache-Control: public` directive makes a response cacheable even when the request had an
-`Authorization` header (i.e., HTTP authentication was in use).
-
-Therefore, HTTP-authenticated (NOT cookie-authenticated) resources _may_ have use for `public` to
-improve cacheability, if used judiciously.
-
-However, other responses **do not need to contain `public`**; it does not make the
-response "more cacheable", and only makes the response headers larger."""
-
-
 class CURRENT_AGE(Note):
     category = categories.CACHING
     level = levels.INFO
@@ -485,7 +522,7 @@ lifetime (in this case, %(freshness_lifetime)s)."""
 class FRESHNESS_STALE_CACHE(Note):
     category = categories.CACHING
     level = levels.WARN
-    _summary = "%(message)s has been served stale by a cache."
+    _summary = "%(message)s has been served stale by caches."
     _text = """\
 An HTTP response is stale when its age (here, %(current_age)s) is equal to or exceeds its freshness
 lifetime (in this case, %(freshness_lifetime)s).
@@ -510,7 +547,7 @@ e.g., when they lose contact with the origin server."""
 class FRESHNESS_HEURISTIC(Note):
     category = categories.CACHING
     level = levels.WARN
-    _summary = "%(message)s allows a cache to assign its own freshness lifetime."
+    _summary = "%(message)s allows caches to assign their own freshness lifetimes to it."
     _text = """\
 When responses with certain status codes don't have explicit freshness information (like a `
 Cache-Control: max-age` directive, or `Expires` header), caches are allowed to estimate how fresh
@@ -528,7 +565,7 @@ class FRESHNESS_NONE(Note):
     category = categories.CACHING
     level = levels.INFO
     _summary = (
-        "%(message)s can only be served by a cache under exceptional circumstances."
+        "%(message)s can only be served by caches under exceptional circumstances."
     )
     _text = """\
 %(message)s doesn't have explicit freshness information (like a ` Cache-Control: max-age`
@@ -546,7 +583,7 @@ so."""
 class FRESH_SERVABLE(Note):
     category = categories.CACHING
     level = levels.INFO
-    _summary = "%(message)s may still be served by a cache once it becomes stale."
+    _summary = "%(message)s may still be served by caches once it becomes stale."
     _text = """\
 HTTP allows stale responses to be served under some circumstances; for example, if the origin
 server can't be contacted, a stale response can be used (even if it doesn't have explicit freshness
@@ -558,7 +595,7 @@ This behaviour can be prevented by using the `Cache-Control: must-revalidate` re
 class STALE_SERVABLE(Note):
     category = categories.CACHING
     level = levels.INFO
-    _summary = "%(message)s can be served by a cache, even though it is stale."
+    _summary = "%(message)s can be served by caches, even though it is stale."
     _text = """\
 HTTP allows stale responses to be served under some circumstances; for example, if the origin
 server can't be contacted, a stale response can be used (even if it doesn't have explicit freshness
@@ -570,7 +607,7 @@ This behaviour can be prevented by using the `Cache-Control: must-revalidate` re
 class FRESH_MUST_REVALIDATE(Note):
     category = categories.CACHING
     level = levels.INFO
-    _summary = "%(message)s cannot be served by a cache once it becomes stale."
+    _summary = "%(message)s cannot be served by caches once it becomes stale."
     _text = """\
 The `Cache-Control: must-revalidate` directive forbids caches from using stale responses to satisfy
 requests.
@@ -582,7 +619,7 @@ this directive is present, they will return an error rather than a stale respons
 class STALE_MUST_REVALIDATE(Note):
     category = categories.CACHING
     level = levels.INFO
-    _summary = "%(message)s cannot be served by a cache, because it is stale."
+    _summary = "%(message)s cannot be served by caches, because it is stale."
     _text = """\
 The `Cache-Control: must-revalidate` directive forbids caches from using stale responses to satisfy
 requests.
