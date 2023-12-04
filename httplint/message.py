@@ -180,6 +180,7 @@ class HttpResponseLinter(HttpMessageLinter):
 
     def __init__(self, **kw: Unpack[HttpMessageParams]) -> None:
         HttpMessageLinter.__init__(self, **kw)
+        self.status_code_str: str = None
         self.status_code: int = None
         self.status_phrase: str = ""
         self.is_head_response = False
@@ -189,12 +190,11 @@ class HttpResponseLinter(HttpMessageLinter):
         self, version: bytes, status_code: bytes, status_phrase: bytes = None
     ) -> None:
         self.version = version.decode("ascii", "replace")
+        self.status_code_str = status_code.decode("ascii", "replace")
         try:
-            self.status_code = int(status_code.decode("ascii", "replace"))
-        except UnicodeDecodeError:
-            pass
+            self.status_code = int(self.status_code_str)
         except ValueError:
-            pass
+            self.notes.add("status", STATUS_CODE_NON_NUMERIC)
         try:
             self.status_phrase = status_phrase.decode("ascii", "strict")
         except UnicodeDecodeError:
@@ -249,6 +249,14 @@ class URI_BAD_SYNTAX(Note):
     _text = """\
 This isn't a valid URI. See
 [RFC3986](http://www.ietf.org/rfc/rfc3986.txt) for more information."""
+
+
+class STATUS_CODE_NON_NUMERIC(Note):
+    category = categories.GENERAL
+    level = levels.BAD
+    _summary = "The status code is not an integer."
+    _text = """\
+This isn't a valid status code; it needs to be an ASCII integer."""
 
 
 class STATUS_PHRASE_ENCODING(Note):
