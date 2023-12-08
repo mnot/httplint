@@ -5,6 +5,7 @@ from httplint.field.tests import FieldTest
 from httplint.note import Note, categories, levels
 from httplint.syntax import rfc7234
 from httplint.types import AddNoteMethodType
+from httplint.util import prose_list
 from httplint.field.utils import unquote_string
 
 
@@ -29,6 +30,11 @@ KNOWN_CC = {
     "stale-while-revalidate": (False, True, int),
     "pre-check": (False, True, int),
     "post-check": (False, True, int),
+}
+
+CONFLICTING_CC = {
+    "no-store": ["max-age", "s-maxage", "must-revalidate", "no-cache"],
+    "no-cache": ["max-age", "s-maxage", "must-revalidate"],
 }
 
 
@@ -64,8 +70,9 @@ ignoring it there."""
 
         if directive_name not in KNOWN_CC:
             pass
-        elif KNOWN_CC[directive_name][2] is None and directive_val is not None:
-            add_note(BAD_CC_SYNTAX, bad_directive=directive_name)
+        elif KNOWN_CC[directive_name][2] is None:
+            if directive_val is not None:
+                add_note(BAD_CC_SYNTAX, bad_directive=directive_name)
         else:
             try:
                 return (directive_name, KNOWN_CC[directive_name][2](directive_val))
@@ -77,9 +84,11 @@ ignoring it there."""
     def evaluate(self, add_note: AddNoteMethodType) -> None:
         cc_list = [d for (d, v) in self.value]
         for directive in set(cc_list):
+            # duplicate directives
             if directive in KNOWN_CC and cc_list.count(directive) > 1:
                 add_note(CC_DUP, directive=directive)
 
+            # wrong message type
             if (
                 self.message.message_type == "request"
                 and KNOWN_CC.get(directive, (True, True))[0] is False
@@ -100,6 +109,18 @@ ignoring it there."""
                     message="response",
                     other_message="request",
                 )
+
+            # conflicting directives
+            if directive in CONFLICTING_CC:
+                conflicts = list(
+                    set(cc_list).intersection(set(CONFLICTING_CC[directive]))
+                )
+                if len(conflicts) > 0:
+                    add_note(
+                        CC_CONFLICTING,
+                        directive=directive,
+                        conflicts=prose_list(conflicts),
+                    )
 
         # pre-check / post-check
         if "pre-check" in cc_list or "post-check" in cc_list:
@@ -152,6 +173,17 @@ once here, so implementations may use different instances (e.g., the first, or t
 making their behaviour unpredictable."""
 
 
+class CC_CONFLICTING(Note):
+    category = categories.CACHING
+    level = levels.WARN
+    _summary = "The %(directive)s cache directive overrides other directives present."
+    _text = """\
+The %(directive)s Cache-Control directive overrides or conflicts with %(conflicts)s.
+
+The conflicting directives will be ignored by caches, and can be safely omitted.
+    """
+
+
 class CC_WRONG_MESSAGE(Note):
     category = categories.CACHING
     level = levels.WARN
@@ -159,8 +191,8 @@ class CC_WRONG_MESSAGE(Note):
         "The %(directive)s Cache-Control directive has no meaning in a %(message)s."
     )
     _text = """\
-The %(directive)s Cache-Control directive is only defined to appear in %(other_message)
-messages; is has no defined meaning in a %(message)."""
+The %(directive)s Cache-Control directive is only defined to appear in %(other_message)s
+messages; is has no defined meaning in a %(message)s."""
 
 
 class CHECK_SINGLE(Note):
