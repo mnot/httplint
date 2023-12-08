@@ -184,7 +184,7 @@ class HttpResponseLinter(HttpMessageLinter):
         self.status_code: int = None
         self.status_phrase: str = ""
         self.is_head_response = False
-        self.caching = ResponseCacheChecker(self)
+        self.caching: ResponseCacheChecker
 
     def process_response_topline(
         self, version: bytes, status_code: bytes, status_phrase: bytes = None
@@ -209,7 +209,7 @@ class HttpResponseLinter(HttpMessageLinter):
         return True
 
     def post_checks(self) -> None:
-        self.caching.check()
+        self.caching = ResponseCacheChecker(self)
 
 
 class CL_CORRECT(Note):
