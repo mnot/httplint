@@ -12,7 +12,6 @@ if TYPE_CHECKING:
 ### configuration
 CACHEABLE_METHODS = ["GET"]
 HEURISTIC_CACHEABLE_STATUS = [200, 203, 206, 300, 301, 410]
-MAX_CLOCK_SKEW = 5  # seconds
 
 
 class ResponseCacheChecker:
@@ -131,26 +130,6 @@ class ResponseCacheChecker:
         expires_hdr_present = "expires" in [
             n.lower() for (n, v) in self._response.headers.text
         ]
-
-        if not self.date_value:
-            self.notes.add("", DATE_CLOCKLESS)
-            if self.expires_value or self.lm_value:
-                self.notes.add(
-                    "header-expires header-last-modified", DATE_CLOCKLESS_BAD_HDR
-                )
-        elif self.response_time:
-            skew = self.date_value - int(self.response_time) + (self.age_value)
-            if self.age_value > MAX_CLOCK_SKEW > (self.age_value - skew):
-                self.notes.add("header-date header-age", AGE_PENALTY)
-            elif abs(skew) > MAX_CLOCK_SKEW:
-                self.notes.add(
-                    "header-date",
-                    DATE_INCORRECT,
-                    clock_skew_string=relative_time(skew, 0, 2),
-                )
-            else:
-                self.notes.add("header-date", DATE_CORRECT)
-
         self.freshness_lifetime_private = 0
         self.freshness_lifetime_shared = 0
         has_explicit_freshness = False
@@ -499,65 +478,3 @@ For example, caches often use stale responses when they cannot connect to the or
 this directive is present, they will return an error rather than a stale response.
 
 These directives do not affect private caches; for example, those in browsers."""
-
-
-class DATE_CORRECT(Note):
-    category = categories.GENERAL
-    level = levels.GOOD
-    _summary = "The server's clock is correct."
-    _text = """\
-HTTP's caching model assumes reasonable synchronisation between clocks on the server and client;
-compared to the local clock, the server's clock appears to be well-synchronised."""
-
-
-class DATE_INCORRECT(Note):
-    category = categories.GENERAL
-    level = levels.BAD
-    _summary = "The server's clock is %(clock_skew_string)s."
-    _text = """\
-Compared to the local clock, the server's clock does not appear to be well-synchronised.
-
-HTTP's caching model assumes reasonable synchronisation between clocks on the server and client;
-clock skew can cause responses that should be cacheable to be considered uncacheable (especially if
-their freshness lifetime is short).
-
-Ask your server administrator to synchronise the clock, e.g., using
-[NTP](http://en.wikipedia.org/wiki/Network_Time_Protocol Network Time Protocol).
-
-Apparent clock skew can also be caused by caching the response without adjusting the `Age` header;
-e.g., in a reverse proxy or Content Delivery network. See [this
-paper](https://www.usenix.org/legacy/events/usits01/full_papers/cohen/cohen_html/index.html) for more information. """  # pylint: disable=line-too-long
-
-
-class AGE_PENALTY(Note):
-    category = categories.GENERAL
-    level = levels.WARN
-    _summary = "It appears that the Date header has been changed by an intermediary."
-    _text = """\
-It appears that this response has been cached by a reverse proxy or Content Delivery Network,
-because the `Age` header is present, but the `Date` header is more recent than it indicates.
-
-Generally, reverse proxies should either omit the `Age` header (if they have another means of
-determining how fresh the response is), or leave the `Date` header alone (i.e., act as a normal
-HTTP cache).
-
-See [this paper](http://j.mp/S7lPL4) for more information."""
-
-
-class DATE_CLOCKLESS(Note):
-    category = categories.GENERAL
-    level = levels.WARN
-    _summary = "%(message)s doesn't have a Date header."
-    _text = """\
-Although HTTP allows a server not to send a `Date` header if it doesn't have a local clock, this
-can make calculation of the response's age inexact."""
-
-
-class DATE_CLOCKLESS_BAD_HDR(Note):
-    category = categories.CACHING
-    level = levels.BAD
-    _summary = "Responses without a Date aren't allowed to have Expires or Last-Modified values."
-    _text = """\
-Because both the `Expires` and `Last-Modified` headers are date-based, it's necessary to know when
-the message was generated for them to be useful; otherwise, clock drift, transit times between
-nodes as well as caching could skew their application."""
