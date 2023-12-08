@@ -75,7 +75,7 @@ ignoring it there."""
         return (directive_name, directive_val)
 
     def evaluate(self, add_note: AddNoteMethodType) -> None:
-        cc_list = [d.lower() for (d, v) in self.value]
+        cc_list = [d for (d, v) in self.value]
         for directive in set(cc_list):
             if directive in KNOWN_CC and cc_list.count(directive) > 1:
                 add_note(CC_DUP, directive=directive)
@@ -100,6 +100,28 @@ ignoring it there."""
                     message="response",
                     other_message="request",
                 )
+
+        # pre-check / post-check
+        if "pre-check" in cc_list or "post-check" in cc_list:
+            if "pre-check" not in cc_list or "post-check" not in cc_list:
+                add_note(CHECK_SINGLE)
+            else:
+                pre_check = self.value["pre-check"]
+                post_check = self.value["post-check"]
+                if pre_check is not None and post_check is not None:
+                    if pre_check == 0 and post_check == 0:
+                        add_note(CHECK_ALL_ZERO)
+                    elif post_check > pre_check:
+                        add_note(CHECK_POST_BIGGER)
+                        post_check = pre_check
+                    elif post_check == 0:
+                        add_note(CHECK_POST_ZERO)
+                    else:
+                        add_note(
+                            CHECK_POST_PRE,
+                            pre_check=pre_check,
+                            post_check=post_check,
+                        )
 
 
 class BAD_CC_SYNTAX(Note):
@@ -139,6 +161,88 @@ class CC_WRONG_MESSAGE(Note):
     _text = """\
 The %(directive)s Cache-Control directive is only defined to appear in %(other_message)
 messages; is has no defined meaning in a %(message)."""
+
+
+class CHECK_SINGLE(Note):
+    category = categories.CACHING
+    level = levels.WARN
+    _summary = (
+        "Only one of the pre-check and post-check Cache-Control directives is present."
+    )
+    _text = """\
+Microsoft Internet Explorer implements two `Cache-Control` extensions, `pre-check` and
+`post-check`, to give more control over how its cache stores responses.
+
+%(message)s uses only one of these directives; as a result, Internet Explorer will ignore the
+directive, since it requires both to be present.
+
+See [this blog entry](http://bit.ly/rzT0um) for more information.
+"""
+
+
+class CHECK_ALL_ZERO(Note):
+    category = categories.CACHING
+    level = levels.WARN
+    _summary = "The pre-check and post-check Cache-Control directives are both '0'."
+    _text = """\
+Microsoft Internet Explorer implements two `Cache-Control` extensions, `pre-check` and
+`post-check`, to give more control over how its cache stores responses.
+
+%(message)s gives a value of "0" for both; as a result, Internet Explorer will ignore the
+directive, since it requires both to be present.
+
+In other words, setting these to zero has **no effect** (besides wasting bandwidth),
+and may trigger bugs in some beta versions of IE.
+
+See [this blog entry](http://bit.ly/rzT0um) for more information."""
+
+
+class CHECK_POST_BIGGER(Note):
+    category = categories.CACHING
+    level = levels.WARN
+    _summary = (
+        "The post-check Cache-control directive's value is larger than pre-check's."
+    )
+    _text = """\
+Microsoft Internet Explorer implements two `Cache-Control` extensions, `pre-check` and
+`post-check`, to give more control over how its cache stores responses.
+
+%(message)s assigns a higher value to `post-check` than to `pre-check`; this means that Internet
+Explorer will treat `post-check` as if its value is the same as `pre-check`'s.
+
+See [this blog entry](http://bit.ly/rzT0um) for more information."""
+
+
+class CHECK_POST_ZERO(Note):
+    category = categories.CACHING
+    level = levels.BAD
+    _summary = "The post-check Cache-control directive's value is '0'."
+    _text = """\
+Microsoft Internet Explorer implements two `Cache-Control` extensions, `pre-check` and
+`post-check`, to give more control over how its cache stores responses.
+
+%(message)s assigns a value of "0" to `post-check`, which means that Internet Explorer will reload
+the content as soon as it enters the browser cache, effectively **doubling the load on the server**.
+
+See [this blog entry](http://bit.ly/rzT0um) for more information."""
+
+
+class CHECK_POST_PRE(Note):
+    category = categories.CACHING
+    level = levels.INFO
+    _summary = "%(message)s may be refreshed in the background by Internet Explorer."
+    _text = """\
+Microsoft Internet Explorer implements two `Cache-Control` extensions, `pre-check` and
+`post-check`, to give more control over how its cache stores responses.
+
+Once it has been cached for more than %(post_check)s seconds, a new request will result in the
+cached response being served while it is refreshed in the background. However, if it has been
+cached for more than %(pre_check)s seconds, the browser will download a fresh response before
+showing it to the user.
+
+Note that these directives do not have any effect on other clients or caches.
+
+See [this blog entry](http://bit.ly/rzT0um) for more information."""
 
 
 class CacheControlTest(FieldTest):

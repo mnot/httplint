@@ -61,6 +61,7 @@ class ResponseCacheChecker:
 
         # Is Vary: * present?
         if "*" in self.vary_value:
+            self.store_shared = self.store_private = False
             return False
 
         return True
@@ -104,32 +105,6 @@ class ResponseCacheChecker:
             else:
                 self.notes.add("header-cache-control", NO_CACHE)
 
-        # pre-check / post-check
-        if "pre-check" in self.cc_dict or "post-check" in self.cc_dict:
-            if "pre-check" not in self.cc_dict or "post-check" not in self.cc_dict:
-                self.notes.add("header-cache-control", CHECK_SINGLE)
-            else:
-                pre_check = post_check = None
-                try:
-                    pre_check = int(self.cc_dict["pre-check"])
-                    post_check = int(self.cc_dict["post-check"])
-                except ValueError:
-                    self.notes.add("header-cache-control", CHECK_NOT_INTEGER)
-                if pre_check is not None and post_check is not None:
-                    if pre_check == 0 and post_check == 0:
-                        self.notes.add("header-cache-control", CHECK_ALL_ZERO)
-                    elif post_check > pre_check:
-                        self.notes.add("header-cache-control", CHECK_POST_BIGGER)
-                        post_check = pre_check
-                    elif post_check == 0:
-                        self.notes.add("header-cache-control", CHECK_POST_ZERO)
-                    else:
-                        self.notes.add(
-                            "header-cache-control",
-                            CHECK_POST_PRE,
-                            pre_check=pre_check,
-                            post_check=post_check,
-                        )
         return True
 
     def check_age(self) -> bool:
@@ -524,102 +499,6 @@ For example, caches often use stale responses when they cannot connect to the or
 this directive is present, they will return an error rather than a stale response.
 
 These directives do not affect private caches; for example, those in browsers."""
-
-
-class CHECK_SINGLE(Note):
-    category = categories.CACHING
-    level = levels.WARN
-    _summary = (
-        "Only one of the pre-check and post-check Cache-Control directives is present."
-    )
-    _text = """\
-Microsoft Internet Explorer implements two `Cache-Control` extensions, `pre-check` and
-`post-check`, to give more control over how its cache stores responses.
-
-%(message)s uses only one of these directives; as a result, Internet Explorer will ignore the
-directive, since it requires both to be present.
-
-See [this blog entry](http://bit.ly/rzT0um) for more information.
-"""
-
-
-class CHECK_NOT_INTEGER(Note):
-    category = categories.CACHING
-    level = levels.WARN
-    _summary = "One of the pre-check/post-check Cache-Control directives has a non-integer value."
-    _text = """\
-Microsoft Internet Explorer implements two `Cache-Control` extensions, `pre-check` and
-`post-check`, to give more control over how its cache stores responses.
-
-Their values are required to be integers, but here at least one is not. As a result, Internet
-Explorer will ignore the directive.
-
-See [this blog entry](http://bit.ly/rzT0um) for more information."""
-
-
-class CHECK_ALL_ZERO(Note):
-    category = categories.CACHING
-    level = levels.WARN
-    _summary = "The pre-check and post-check Cache-Control directives are both '0'."
-    _text = """\
-Microsoft Internet Explorer implements two `Cache-Control` extensions, `pre-check` and
-`post-check`, to give more control over how its cache stores responses.
-
-%(message)s gives a value of "0" for both; as a result, Internet Explorer will ignore the
-directive, since it requires both to be present.
-
-In other words, setting these to zero has **no effect** (besides wasting bandwidth),
-and may trigger bugs in some beta versions of IE.
-
-See [this blog entry](http://bit.ly/rzT0um) for more information."""
-
-
-class CHECK_POST_BIGGER(Note):
-    category = categories.CACHING
-    level = levels.WARN
-    _summary = (
-        "The post-check Cache-control directive's value is larger than pre-check's."
-    )
-    _text = """\
-Microsoft Internet Explorer implements two `Cache-Control` extensions, `pre-check` and
-`post-check`, to give more control over how its cache stores responses.
-
-%(message)s assigns a higher value to `post-check` than to `pre-check`; this means that Internet
-Explorer will treat `post-check` as if its value is the same as `pre-check`'s.
-
-See [this blog entry](http://bit.ly/rzT0um) for more information."""
-
-
-class CHECK_POST_ZERO(Note):
-    category = categories.CACHING
-    level = levels.BAD
-    _summary = "The post-check Cache-control directive's value is '0'."
-    _text = """\
-Microsoft Internet Explorer implements two `Cache-Control` extensions, `pre-check` and
-`post-check`, to give more control over how its cache stores responses.
-
-%(message)s assigns a value of "0" to `post-check`, which means that Internet Explorer will reload
-the content as soon as it enters the browser cache, effectively **doubling the load on the server**.
-
-See [this blog entry](http://bit.ly/rzT0um) for more information."""
-
-
-class CHECK_POST_PRE(Note):
-    category = categories.CACHING
-    level = levels.INFO
-    _summary = "%(message)s may be refreshed in the background by Internet Explorer."
-    _text = """\
-Microsoft Internet Explorer implements two `Cache-Control` extensions, `pre-check` and
-`post-check`, to give more control over how its cache stores responses.
-
-Once it has been cached for more than %(post_check)s seconds, a new request will result in the
-cached response being served while it is refreshed in the background. However, if it has been
-cached for more than %(pre_check)s seconds, the browser will download a fresh response before
-showing it to the user.
-
-Note that these directives do not have any effect on other clients or caches.
-
-See [this blog entry](http://bit.ly/rzT0um) for more information."""
 
 
 class DATE_CORRECT(Note):
