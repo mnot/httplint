@@ -6,7 +6,7 @@ This Python library _lints_ HTTP messages; it checks them for correctness and re
 It has been extracted from [REDbot](https://redbot.org/), which will eventually depend upon it. Unlike REDbot, it does not perform any 'active' checks by making requests to the network, and it does not have a Web user interface.
 
 
-## Using httplint
+## Using httplint as a Library
 
 httplint exposes two classes for linting: `HttpRequestLinter` and `HttpResponseLinter`. They expose the following methods for telling the linter about the HTTP message:
 
@@ -33,6 +33,21 @@ linter.feed_content(b'12345')
 linter.feed_content(b'67890')
 linter.finish_content(True)
 ~~~
+
+## Using httplint from the Command Line
+
+httplint can also be used from the command line. For example:
+
+~~~
+> curl -s -i --raw https://www.mnot.net/ | httplint -n
+* The Content-Length header is correct.
+* The resource last changed 8 days 6 hr ago.
+* This response allows all caches to store it.
+* The server's clock is correct.
+* This response is fresh until 3 hr from now.
+* This response may still be served by a cache once it becomes stale.
+~~~
+
 
 ### Interpreting Notes
 
