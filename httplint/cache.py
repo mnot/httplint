@@ -3,7 +3,7 @@
 from typing import TYPE_CHECKING, cast
 
 from httplint.note import Note, categories, levels
-from httplint.util import relative_time, f_num
+from httplint.util import relative_time
 
 if TYPE_CHECKING:
     from httplint.message import HttpRequestLinter, HttpResponseLinter
@@ -45,20 +45,22 @@ class ResponseCacheChecker:
             return
         if not self.check_cache_control():
             return
-        if not self.check_vary():
-            return
         if not self.check_age():
             return
         if not self.check_freshness():
             return
 
     def check_basic(self) -> bool:
-        # Who can store this?
+        # Is method cacheable?
         if self._request and self._request.method not in CACHEABLE_METHODS:
             self.store_shared = self.store_private = False
             self._request.notes.add(
                 "method", METHOD_UNCACHEABLE, method=self._request.method
             )
+            return False
+
+        # Is Vary: * present?
+        if "*" in self.vary_value:
             return False
 
         return True
@@ -128,21 +130,6 @@ class ResponseCacheChecker:
                             pre_check=pre_check,
                             post_check=post_check,
                         )
-        return True
-
-    def check_vary(self) -> bool:
-        if "*" in self.vary_value:
-            self.notes.add("header-vary", VARY_ASTERISK)
-            return False
-        if len(self.vary_value) > 3:
-            self.notes.add(
-                "header-vary", VARY_COMPLEX, vary_count=f_num(len(self.vary_value))
-            )
-        else:
-            if "user-agent" in self.vary_value:
-                self.notes.add("header-vary", VARY_USER_AGENT)
-            if "host" in self.vary_value:
-                self.notes.add("header-vary", VARY_HOST)
         return True
 
     def check_age(self) -> bool:
@@ -379,58 +366,6 @@ cannot use it to satisfy a request unless it has been validated (either with an 
 
 %(message)s doesn't have a `Last-Modified` or `ETag` header, so it effectively can't be used by a
 cache."""
-
-
-class VARY_ASTERISK(Note):
-    category = categories.CACHING
-    level = levels.WARN
-    _summary = "Vary: * effectively makes this response uncacheable."
-    _text = """\
-`Vary *` indicates that responses for this resource vary by some aspect that can't (or won't) be
-described by the server. This makes this response effectively uncacheable."""
-
-
-class VARY_USER_AGENT(Note):
-    category = categories.CACHING
-    level = levels.INFO
-    _summary = "Vary: User-Agent can cause cache inefficiency."
-    _text = """\
-Sending `Vary: User-Agent` requires caches to store a separate copy of the response for every
-`User-Agent` request header they see.
-
-Since there are so many different `User-Agent`s, this can "bloat" caches with many copies of the
-same thing, or cause them to give up on storing these responses at all.
-
-Consider having different URIs for the various versions of your content instead; this will give
-finer control over caching without sacrificing efficiency."""
-
-
-class VARY_HOST(Note):
-    category = categories.CACHING
-    level = levels.WARN
-    _summary = "Vary: Host is not necessary."
-    _text = """\
-Some servers (e.g., [Apache](http://httpd.apache.org/) with
-[mod_rewrite](http://httpd.apache.org/docs/2.4/mod/mod_rewrite.html)) will send `Host` in the
-`Vary` header, in the belief that since it affects how the server selects what to send back, this
-is necessary.
-
-This is not the case; HTTP specifies that the URI is the basis of the cache key, and the URI
-incorporates the `Host` header.
-
-The presence of `Vary: Host` may make some caches not store an otherwise cacheable response (since
-some cache implementations will not store anything that has a `Vary` header)."""
-
-
-class VARY_COMPLEX(Note):
-    category = categories.CACHING
-    level = levels.WARN
-    _summary = "This resource varies in %(vary_count)s ways."
-    _text = """\
-The `Vary` mechanism allows a resource to describe the dimensions that its responses vary, or
-change, over; each listed header is another dimension.
-
-Varying by too many dimensions makes using this information impractical."""
 
 
 class CURRENT_AGE(Note):
