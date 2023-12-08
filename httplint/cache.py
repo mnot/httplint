@@ -56,8 +56,6 @@ class ResponseCacheChecker:
 
         if not self.check_basic():
             return
-        if not self.check_last_modified():
-            return
         if not self.check_cache_control():
             return
         if not self.check_vary():
@@ -76,21 +74,6 @@ class ResponseCacheChecker:
             )
             return False
 
-        return True
-
-    def check_last_modified(self) -> bool:
-        if self.lm_value:
-            serv_date = self.date_value or self.response_time
-            if not serv_date:
-                return True  # we don't know
-            if self.lm_value > serv_date:
-                self.notes.add("header-last-modified", LM_FUTURE)
-            else:
-                self.notes.add(
-                    "header-last-modified",
-                    LM_PRESENT,
-                    last_modified_string=relative_time(self.lm_value, serv_date),
-                )
         return True
 
     def check_cache_control(self) -> bool:
@@ -314,27 +297,6 @@ class ResponseCacheChecker:
                 self.notes.add("header-cache-control", STALE_SERVABLE)
 
         return True
-
-
-class LM_FUTURE(Note):
-    category = categories.CACHING
-    level = levels.BAD
-    _summary = "The Last-Modified time is in the future."
-    _text = """\
-The `Last-Modified` header indicates the last point in time that the resource has changed.
-%(message)s's `Last-Modified` time is in the future, which doesn't have any defined meaning in
-HTTP."""
-
-
-class LM_PRESENT(Note):
-    category = categories.CACHING
-    level = levels.INFO
-    _summary = "The resource last changed %(last_modified_string)s."
-    _text = """\
-The `Last-Modified` header indicates the last point in time that the resource has changed. It is
-used in HTTP for validating cached responses, and for calculating heuristic freshness in caches.
-
-This resource last changed %(last_modified_string)s."""
 
 
 class METHOD_UNCACHEABLE(Note):

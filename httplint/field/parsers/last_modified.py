@@ -2,7 +2,8 @@ from httplint.field import HttpField
 from httplint.field.tests import FieldTest
 from httplint.syntax import rfc7232
 from httplint.types import AddNoteMethodType
-from httplint.field.notes import BAD_DATE_SYNTAX
+from httplint.util import relative_time
+from httplint.field.notes import Note, categories, levels, BAD_DATE_SYNTAX
 from httplint.field.utils import parse_http_date
 
 
@@ -20,6 +21,42 @@ representation was last modified."""
 
     def parse(self, field_value: str, add_note: AddNoteMethodType) -> int:
         return parse_http_date(field_value, add_note)
+
+    def evaluate(self, add_note: AddNoteMethodType) -> None:
+        date_value = self.message.headers.parsed.get("date", None)
+        lm_value = self.value
+        if lm_value:
+            serv_date = date_value or self.message.start_time
+            if not serv_date:
+                return  # we don't know
+            if lm_value > serv_date:
+                add_note(LM_FUTURE)
+            else:
+                add_note(
+                    LM_PRESENT,
+                    last_modified_string=relative_time(lm_value, serv_date),
+                )
+
+
+class LM_FUTURE(Note):
+    category = categories.GENERAL
+    level = levels.BAD
+    _summary = "The Last-Modified time is in the future."
+    _text = """\
+The `Last-Modified` header indicates the last point in time that the resource has changed.
+%(message)s's `Last-Modified` time is in the future, which doesn't have any defined meaning in
+HTTP."""
+
+
+class LM_PRESENT(Note):
+    category = categories.GENERAL
+    level = levels.INFO
+    _summary = "The resource last changed %(last_modified_string)s."
+    _text = """\
+The `Last-Modified` header indicates the last point in time that the resource has changed. It is
+used in HTTP for validating cached responses, and for calculating heuristic freshness in caches.
+
+This resource last changed %(last_modified_string)s."""
 
 
 class BasicLMTest(FieldTest):
