@@ -26,7 +26,10 @@ class HttpCliParser(HttpMessageHandler):
 
     def handle_input(self, inbytes: bytes) -> None:
         HttpMessageHandler.handle_input(self, inbytes)
-        if self._input_delimit == Delimiters.CLOSE:
+        if (
+            self._input_delimit == Delimiters.CLOSE
+            and self._input_state == States.HEADERS_DONE
+        ):
             self.input_end([])
 
     def input_start(
@@ -64,6 +67,7 @@ class HttpCliParser(HttpMessageHandler):
         self.linter.finish_content(True, trailers)
         for note in self.linter.notes:
             print(f"* {note}")
+        self._input_state = States.ERROR
 
     def input_error(self, err: HttpError, close: bool = True) -> None:
         "Indicate an error state."
