@@ -14,19 +14,6 @@ CACHEABLE_METHODS = ["GET"]
 HEURISTIC_CACHEABLE_STATUS = [200, 203, 206, 300, 301, 410]
 MAX_CLOCK_SKEW = 5  # seconds
 
-# known Cache-Control directives that don't allow duplicates
-KNOWN_CC = [
-    "max-age",
-    "no-store",
-    "s-maxage",
-    "public",
-    "private",
-    "pre-check",
-    "post-check",
-    "stale-while-revalidate",
-    "stale-if-error",
-]
-
 
 class ResponseCacheChecker:
     def __init__(self, response: "HttpResponseLinter") -> None:
@@ -77,16 +64,6 @@ class ResponseCacheChecker:
         return True
 
     def check_cache_control(self) -> bool:
-        cc_list = [k for (k, v) in self.cc_value]
-
-        for cc in self.cc_dict:
-            if cc.lower() in KNOWN_CC and cc != cc.lower():
-                self.notes.add(
-                    "header-cache-control", CC_MISCAP, cc_lower=cc.lower(), cc=cc
-                )
-            if cc in KNOWN_CC and cc_list.count(cc) > 1:
-                self.notes.add("header-cache-control", CC_DUP, cc=cc)
-
         if "no-store" in self.cc_dict:
             self.store_shared = self.store_private = False
             self.notes.add("header-cache-control", NO_STORE)
@@ -305,28 +282,6 @@ class METHOD_UNCACHEABLE(Note):
     _summary = "Responses to the %(method)s method can't be stored by caches."
     _text = """\
 """
-
-
-class CC_MISCAP(Note):
-    category = categories.CACHING
-    level = levels.WARN
-    _summary = "The %(cc)s Cache-Control directive appears to have incorrect \
-capitalisation."
-    _text = """\
-Cache-Control directive names are case-sensitive, and will not be recognised by most
-implementations if the capitalisation is wrong.
-
-Did you mean to use %(cc_lower)s instead of %(cc)s?"""
-
-
-class CC_DUP(Note):
-    category = categories.CACHING
-    level = levels.WARN
-    _summary = "The %(cc)s Cache-Control directive appears more than once."
-    _text = """\
-The %(cc)s Cache-Control directive is only defined to appear once; it is used more than once here,
-so implementations may use different instances (e.g., the first, or the last), making their
-behaviour unpredictable."""
 
 
 class NO_STORE(Note):
