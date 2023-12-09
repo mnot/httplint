@@ -126,9 +126,9 @@ ignoring it there."""
 
         # conflicting directives; all in responses
         if self.message.message_type == "response":
-            for directive, conflicts in CONFLICTING_CC:
+            for directive, potential_conflicts in CONFLICTING_CC:
                 if directive in cc_list:
-                    conflicts = list(set(cc_list).intersection(set(conflicts)))
+                    conflicts = list(set(cc_list).intersection(set(potential_conflicts)))
                     if len(conflicts) > 0:
                         add_note(
                             CC_CONFLICTING,
