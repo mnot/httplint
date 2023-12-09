@@ -33,7 +33,14 @@ KNOWN_CC = {
 }
 
 CONFLICTING_CC = {
-    "no-store": ["max-age", "s-maxage", "must-revalidate", "no-cache", "private", "public"],
+    "no-store": [
+        "max-age",
+        "s-maxage",
+        "must-revalidate",
+        "no-cache",
+        "private",
+        "public",
+    ],
     "no-cache": ["max-age", "s-maxage", "must-revalidate"],
 }
 
@@ -84,10 +91,6 @@ ignoring it there."""
     def evaluate(self, add_note: AddNoteMethodType) -> None:
         cc_list = [d for (d, v) in self.value]
         for directive in set(cc_list):
-            # duplicate directives
-            if directive in KNOWN_CC and cc_list.count(directive) > 1:
-                add_note(CC_DUP, directive=directive)
-
             # wrong message type
             if (
                 self.message.message_type == "request"
@@ -99,6 +102,7 @@ ignoring it there."""
                     message="request",
                     other_message="response",
                 )
+                continue
             if (
                 self.message.message_type == "response"
                 and KNOWN_CC.get(directive, (True, True))[1] is False
@@ -109,6 +113,11 @@ ignoring it there."""
                     message="response",
                     other_message="request",
                 )
+                continue
+
+            # duplicate directives
+            if directive in KNOWN_CC and cc_list.count(directive) > 1:
+                add_note(CC_DUP, directive=directive)
 
             # conflicting directives
             if directive in CONFLICTING_CC:
