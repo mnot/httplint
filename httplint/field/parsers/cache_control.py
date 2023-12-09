@@ -128,7 +128,9 @@ ignoring it there."""
         if self.message.message_type == "response":
             for directive, potential_conflicts in CONFLICTING_CC:
                 if directive in cc_list:
-                    conflicts = list(set(cc_list).intersection(set(potential_conflicts)))
+                    conflicts = list(
+                        set(cc_list).intersection(set(potential_conflicts))
+                    )
                     if len(conflicts) > 0:
                         add_note(
                             CC_CONFLICTING,
@@ -231,9 +233,7 @@ The conflicting directives will be ignored by caches, and can be safely omitted.
 class CC_WRONG_MESSAGE(Note):
     category = categories.CACHING
     level = levels.WARN
-    _summary = (
-        "The %(directive)s cache directive has no meaning in a %(message)s."
-    )
+    _summary = "The %(directive)s cache directive has no meaning in a %(message)s."
     _text = """\
 The `%(directive)s` cache directive is only defined to appear in %(other_message)s
 messages; is has no defined meaning in a %(message)s."""
@@ -242,9 +242,7 @@ messages; is has no defined meaning in a %(message)s."""
 class CHECK_SINGLE(Note):
     category = categories.CACHING
     level = levels.WARN
-    _summary = (
-        "Only one of the pre-check and post-check cache directives is present."
-    )
+    _summary = "Only one of the pre-check and post-check cache directives is present."
     _text = """\
 Microsoft Internet Explorer implements two `Cache-Control` extensions, `pre-check` and
 `post-check`, to give more control over how its cache stores responses.
@@ -276,9 +274,7 @@ See [this blog entry](http://bit.ly/rzT0um) for more information."""
 class CHECK_POST_BIGGER(Note):
     category = categories.CACHING
     level = levels.WARN
-    _summary = (
-        "The post-check cache directive's value is larger than pre-check's."
-    )
+    _summary = "The post-check cache directive's value is larger than pre-check's."
     _text = """\
 Microsoft Internet Explorer implements two `Cache-Control` extensions, `pre-check` and
 `post-check`, to give more control over how its cache stores responses.
