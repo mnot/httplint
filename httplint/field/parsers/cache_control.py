@@ -1,4 +1,4 @@
-from typing import Tuple, Union
+from typing import Tuple, Union, Dict, List, Callable
 
 from httplint.field import HttpField
 from httplint.field.tests import FieldTest
@@ -11,18 +11,18 @@ from httplint.field.utils import unquote_string
 
 # known Cache-Control directives; assumed to not allow duplicates
 # values are (valid_in_requests, valid_in_responses, value_type)
-KNOWN_CC = {
+KNOWN_CC: Dict[str, Tuple[bool, bool, Union[None, Callable]]] = {
     "immutable": (False, True, None),
     "max-age": (True, True, int),
     "max-stale": (True, False, int),
     "min-fresh": (True, False, int),
     "must-revalidate": (False, True, None),
     "must-understand": (False, True, None),
-    "no-cache": (True, True, None),  # should allow list of field names
+    "no-cache": (True, True, unquote_string),
     "no-store": (True, True, None),
     "no-transform": (True, True, None),
     "only-if-cached": (True, False, None),
-    "private": (False, True, None),  # should allow list of field names
+    "private": (False, True, unquote_string),
     "proxy-revalidate": (False, True, None),
     "public": (False, True, None),
     "s-maxage": (False, True, int),
@@ -34,7 +34,7 @@ KNOWN_CC = {
 
 # Cache-Control directives and those they override. Listed in order of
 # significance; only the first match will be shown.
-CONFLICTING_CC = [
+CONFLICTING_CC: List[Tuple[str, List[str]]] = [
     (
         "no-store",
         [
@@ -97,7 +97,6 @@ ignoring it there."""
     ) -> Tuple[str, Union[int, str]]:
         try:
             directive_name, directive_val = field_value.split("=", 1)
-            directive_val = unquote_string(directive_val)
         except ValueError:
             directive_name = field_value
             directive_val = None
@@ -337,8 +336,8 @@ class CacheControlCaseTest(FieldTest):
 
 class CacheControlQuotedTest(FieldTest):
     name = "Cache-Control"
-    inputs = [b'a="b,c", c=d']
-    expected_out = [("a", "b,c"), ("c", "d")]
+    inputs = [b'private="b,c", c=d']
+    expected_out = [("private", "b,c"), ("c", "d")]
 
 
 class CacheControlMaxAgeTest(FieldTest):
