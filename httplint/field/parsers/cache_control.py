@@ -33,7 +33,7 @@ KNOWN_CC = {
 }
 
 CONFLICTING_CC = {
-    "no-store": ["max-age", "s-maxage", "must-revalidate", "no-cache"],
+    "no-store": ["max-age", "s-maxage", "must-revalidate", "no-cache", "private", "public"],
     "no-cache": ["max-age", "s-maxage", "must-revalidate"],
 }
 
