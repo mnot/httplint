@@ -32,38 +32,51 @@ KNOWN_CC = {
     "post-check": (False, True, int),
 }
 
-CONFLICTING_CC = {
-    "no-store": [
-        "immutable",
-        "max-age",
-        "must-revalidate",
+# Cache-Control directives and those they override. Listed in order of
+# significance; only the first match will be shown.
+CONFLICTING_CC = [
+    (
+        "no-store",
+        [
+            "immutable",
+            "max-age",
+            "must-revalidate",
+            "no-cache",
+            "private",
+            "proxy-revalidate",
+            "public",
+            "s-maxage",
+            "stale-if-error",
+            "stale-while-revalidate",
+            "pre-check",
+            "post-check",
+        ],
+    ),
+    (
         "no-cache",
-        "private",
-        "proxy-revalidate",
-        "public",
-        "s-maxage",
-        "stale-if-error",
-        "stale-while-revalidate",
-    ],
-    "no-cache": [
-        "immutable",
-        "max-age",
+        [
+            "immutable",
+            "max-age",
+            "must-revalidate",
+            "proxy-revalidate",
+            "s-maxage",
+            "stale-if-error",
+            "stale-while-revalidate",
+            "pre-check",
+            "post-check",
+        ],
+    ),
+    (
         "must-revalidate",
-        "proxy-revalidate",
-        "s-maxage",
-        "stale-if-error",
-        "stale-while-revalidate",
-        "pre-check",
-        "post-check",
-    ],
-    "must-revalidate": [
-        "immutable",
-        "stale-if-error",
-        "stale-while-revalidate",
-        "pre-check",
-        "post-check",
-    ],
-}
+        [
+            "immutable",
+            "stale-if-error",
+            "stale-while-revalidate",
+            "pre-check",
+            "post-check",
+        ],
+    ),
+]
 
 
 class cache_control(HttpField):
@@ -111,6 +124,20 @@ ignoring it there."""
 
     def evaluate(self, add_note: AddNoteMethodType) -> None:
         cc_list = [d for (d, v) in self.value]
+
+        # conflicting directives; all in responses
+        if self.message.message_type == "response":
+            for directive, conflicts in CONFLICTING_CC:
+                if directive in cc_list:
+                    conflicts = list(set(cc_list).intersection(set(conflicts)))
+                    if len(conflicts) > 0:
+                        add_note(
+                            CC_CONFLICTING,
+                            directive=directive,
+                            conflicts=prose_list(conflicts),
+                        )
+                        break  # only show the first conflict
+
         for directive in set(cc_list):
             # wrong message type
             if (
@@ -123,7 +150,7 @@ ignoring it there."""
                     message="request",
                     other_message="response",
                 )
-                continue
+                continue  # don't run other checks
             if (
                 self.message.message_type == "response"
                 and KNOWN_CC.get(directive, (True, True))[1] is False
@@ -134,23 +161,11 @@ ignoring it there."""
                     message="response",
                     other_message="request",
                 )
-                continue
+                continue  # don't run other checks
 
             # duplicate directives
             if directive in KNOWN_CC and cc_list.count(directive) > 1:
                 add_note(CC_DUP, directive=directive)
-
-            # conflicting directives
-            if directive in CONFLICTING_CC:
-                conflicts = list(
-                    set(cc_list).intersection(set(CONFLICTING_CC[directive]))
-                )
-                if len(conflicts) > 0:
-                    add_note(
-                        CC_CONFLICTING,
-                        directive=directive,
-                        conflicts=prose_list(conflicts),
-                    )
 
         # pre-check / post-check
         if "pre-check" in cc_list or "post-check" in cc_list:
@@ -206,7 +221,7 @@ making their behaviour unpredictable."""
 class CC_CONFLICTING(Note):
     category = categories.CACHING
     level = levels.WARN
-    _summary = "The %(directive)s cache directive overrides other directives present."
+    _summary = "The %(directive)s Cache-Control directive overrides other directives."
     _text = """\
 The %(directive)s Cache-Control directive overrides or conflicts with %(conflicts)s.
 
