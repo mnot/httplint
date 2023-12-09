@@ -45,7 +45,7 @@ described by the server. This makes this response effectively uncacheable."""
 
 class VARY_USER_AGENT(Note):
     category = categories.CACHING
-    level = levels.INFO
+    level = levels.WARN
     _summary = "Vary: User-Agent can cause cache inefficiency."
     _text = """\
 Sending `Vary: User-Agent` requires caches to store a separate copy of the response for every
