@@ -53,18 +53,19 @@ def display_bytes(inbytes: bytes, encoding: str = "utf-8", truncate: int = 40) -
     return "".join(out)
 
 
-def prose_list(inlist: List[str]) -> str:
+def prose_list(inlist: List[str], markup:str = "") -> str:
     """
     Format a list of strings into prose.
     """
     length = len(inlist)
+    m = markup
     if length == 0:
         return "(none)"
     if length == 1:
-        return inlist[0]
+        return f"{m}{inlist[0]}{m}"
     if length == 2:
-        return f"{inlist[0]} and {inlist[1]}"
-    return f"{', '.join(inlist[:-1])}, and {inlist[-1]}"
+        return f"{m}{inlist[0]}{m} and {m}{inlist[1]}{m}"
+    return f"{', '.join([f'{m}{i}{m}' for i in inlist[:-1]])}, and {m}{inlist[-1]}{m}"
 
 
 def relative_time(utime: float, now: float = None, show_sign: int = 1) -> str:

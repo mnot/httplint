@@ -9,7 +9,7 @@ from httplint.util import prose_list
 from httplint.field.utils import unquote_string
 
 
-# known Cache-Control directives; assumed to not allow duplicates
+# known cache directives; assumed to not allow duplicates
 # values are (valid_in_requests, valid_in_responses, value_type)
 KNOWN_CC: Dict[str, Tuple[bool, bool, Union[None, Callable]]] = {
     "immutable": (False, True, None),
@@ -32,7 +32,7 @@ KNOWN_CC: Dict[str, Tuple[bool, bool, Union[None, Callable]]] = {
     "post-check": (False, True, int),
 }
 
-# Cache-Control directives and those they override. Listed in order of
+# cache directives and those they override. Listed in order of
 # significance; only the first match will be shown.
 CONFLICTING_CC: List[Tuple[str, List[str]]] = [
     (
@@ -133,7 +133,7 @@ ignoring it there."""
                         add_note(
                             CC_CONFLICTING,
                             directive=directive,
-                            conflicts=prose_list(conflicts),
+                            conflicts=prose_list(conflicts, markup="`"),
                         )
                         break  # only show the first conflict
 
@@ -192,27 +192,27 @@ ignoring it there."""
 class BAD_CC_SYNTAX(Note):
     category = categories.CACHING
     level = levels.BAD
-    _summary = "The %(bad_directive)s Cache-Control directive's syntax is incorrect."
+    _summary = "The %(bad_directive)s cache directive's syntax is incorrect."
     _text = "This value must be an integer."
 
 
 class CC_MISCAP(Note):
     category = categories.CACHING
     level = levels.WARN
-    _summary = "The %(directive)s Cache-Control directive has non-lowercase characters."
+    _summary = "The %(directive)s cache directive has non-lowercase characters."
     _text = """\
-Cache-Control directive names are case-insensitive, but some implementations don't
+cache directive names are case-insensitive, but some implementations don't
 recognize directives that aren't all-lowercase.
 
-Therefore, it's safest to use %(directive_lower)s instead of %(directive)s."""
+Therefore, it's safest to use `%(directive_lower)s` instead of `%(directive)s`."""
 
 
 class CC_DUP(Note):
     category = categories.CACHING
     level = levels.WARN
-    _summary = "The %(directive)s Cache-Control directive appears more than once."
+    _summary = "The %(directive)s cache directive appears more than once."
     _text = """\
-The %(directive)s Cache-Control directive is only defined to appear once; it is used more than
+The `%(directive)s` cache directive is only defined to appear once; it is used more than
 once here, so implementations may use different instances (e.g., the first, or the last),
 making their behaviour unpredictable."""
 
@@ -220,9 +220,9 @@ making their behaviour unpredictable."""
 class CC_CONFLICTING(Note):
     category = categories.CACHING
     level = levels.WARN
-    _summary = "The %(directive)s Cache-Control directive overrides other directives."
+    _summary = "The %(directive)s cache directive overrides other directives."
     _text = """\
-The %(directive)s Cache-Control directive overrides or conflicts with %(conflicts)s.
+The `%(directive)s` cache directive overrides or conflicts with %(conflicts)s.
 
 The conflicting directives will be ignored by caches, and can be safely omitted.
     """
@@ -232,10 +232,10 @@ class CC_WRONG_MESSAGE(Note):
     category = categories.CACHING
     level = levels.WARN
     _summary = (
-        "The %(directive)s Cache-Control directive has no meaning in a %(message)s."
+        "The %(directive)s cache directive has no meaning in a %(message)s."
     )
     _text = """\
-The %(directive)s Cache-Control directive is only defined to appear in %(other_message)s
+The `%(directive)s` cache directive is only defined to appear in %(other_message)s
 messages; is has no defined meaning in a %(message)s."""
 
 
@@ -243,7 +243,7 @@ class CHECK_SINGLE(Note):
     category = categories.CACHING
     level = levels.WARN
     _summary = (
-        "Only one of the pre-check and post-check Cache-Control directives is present."
+        "Only one of the pre-check and post-check cache directives is present."
     )
     _text = """\
 Microsoft Internet Explorer implements two `Cache-Control` extensions, `pre-check` and
@@ -259,7 +259,7 @@ See [this blog entry](http://bit.ly/rzT0um) for more information.
 class CHECK_ALL_ZERO(Note):
     category = categories.CACHING
     level = levels.WARN
-    _summary = "The pre-check and post-check Cache-Control directives are both '0'."
+    _summary = "The pre-check and post-check cache directives are both '0'."
     _text = """\
 Microsoft Internet Explorer implements two `Cache-Control` extensions, `pre-check` and
 `post-check`, to give more control over how its cache stores responses.
@@ -277,7 +277,7 @@ class CHECK_POST_BIGGER(Note):
     category = categories.CACHING
     level = levels.WARN
     _summary = (
-        "The post-check Cache-control directive's value is larger than pre-check's."
+        "The post-check cache directive's value is larger than pre-check's."
     )
     _text = """\
 Microsoft Internet Explorer implements two `Cache-Control` extensions, `pre-check` and
@@ -292,7 +292,7 @@ See [this blog entry](http://bit.ly/rzT0um) for more information."""
 class CHECK_POST_ZERO(Note):
     category = categories.CACHING
     level = levels.BAD
-    _summary = "The post-check Cache-control directive's value is '0'."
+    _summary = "The post-check cache directive's value is '0'."
     _text = """\
 Microsoft Internet Explorer implements two `Cache-Control` extensions, `pre-check` and
 `post-check`, to give more control over how its cache stores responses.
