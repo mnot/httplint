@@ -123,6 +123,7 @@ ignoring it there."""
 
     def evaluate(self, add_note: AddNoteMethodType) -> None:
         cc_list = [d for (d, v) in self.value]
+        cc_dict = dict(self.value)
 
         # conflicting directives; all in responses
         if self.message.message_type == "response":
@@ -173,8 +174,8 @@ ignoring it there."""
             if "pre-check" not in cc_list or "post-check" not in cc_list:
                 add_note(CHECK_SINGLE)
             else:
-                pre_check = self.value["pre-check"]
-                post_check = self.value["post-check"]
+                pre_check = cc_dict["pre-check"]
+                post_check = cc_dict["post-check"]
                 if pre_check is not None and post_check is not None:
                     if pre_check == 0 and post_check == 0:
                         add_note(CHECK_ALL_ZERO)
