@@ -105,24 +105,21 @@ def relative_time(utime: float, now: float = None, show_sign: int = 1) -> str:
         sign = signs[show_sign][0]
 
     arr = []
-    if yrs == 1:
-        arr.append(str(yrs) + " year")
-    elif yrs > 1:
-        arr.append(str(yrs) + " years")
-    if day == 1:
-        arr.append(str(day) + " day")
-    elif day > 1:
-        arr.append(str(day) + " days")
+    if yrs:
+        arr.append(f"{yrs} year{yrs > 1 and 's' or ''}")
+    if day:
+        arr.append(f"{day} day{day > 1 and 's' or ''}")
     if hrs:
-        arr.append(str(hrs) + " hr")
+        arr.append(f"{hrs} hour{hrs > 1 and 's' or ''}")
     if mnt:
-        arr.append(str(mnt) + " min")
+        arr.append(f"{mnt} minute{mnt > 1 and 's' or ''}")
     if sec:
-        arr.append(str(sec) + " sec")
+        arr.append(f"{sec} second{sec > 1 and 's' or ''}")
     arr = arr[:2]  # resolution
+    output = ", ".join(arr)
     if show_sign:
-        arr.append(sign)
-    return " ".join(arr)
+        return f"{output} {sign}"
+    return output
 
 
 class RelativeTimeTester(unittest.TestCase):
@@ -133,11 +130,11 @@ class RelativeTimeTester(unittest.TestCase):
     cases = [
         (+year, "1 year from now"),
         (-year, "1 year ago"),
-        (+year + 1, "1 year 1 sec from now"),
-        (+year + 0.9, "1 year 1 sec from now"),
-        (+year + day, "1 year 1 day from now"),
-        (+year + (10 * day), "1 year 10 days from now"),
-        (+year + (90 * day) + (3 * hour), "1 year 90 days from now"),
+        (+year + 1, "1 year, 1 second from now"),
+        (+year + 0.9, "1 year, 1 second from now"),
+        (+year + day, "1 year, 1 day from now"),
+        (+year + (10 * day), "1 year, 10 days from now"),
+        (+year + (90 * day) + (3 * hour), "1 year, 90 days from now"),
         (+(13 * day) - 0.4, "13 days from now"),
     ]
 
