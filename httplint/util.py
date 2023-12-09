@@ -63,7 +63,7 @@ def prose_list(inlist: List[str]) -> str:
     if length == 1:
         return inlist[0]
     if length == 2:
-        return f"{inlist[0] and inlist[1]}"
+        return f"{inlist[0]} and {inlist[1]}"
     return f"{', '.join(inlist[:-1])}, and {inlist[-1]}"
 
 
