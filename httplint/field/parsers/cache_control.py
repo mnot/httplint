@@ -34,14 +34,35 @@ KNOWN_CC = {
 
 CONFLICTING_CC = {
     "no-store": [
+        "immutable",
         "max-age",
-        "s-maxage",
         "must-revalidate",
         "no-cache",
         "private",
+        "proxy-revalidate",
         "public",
+        "s-maxage",
+        "stale-if-error",
+        "stale-while-revalidate",
     ],
-    "no-cache": ["max-age", "s-maxage", "must-revalidate"],
+    "no-cache": [
+        "immutable",
+        "max-age",
+        "must-revalidate",
+        "proxy-revalidate",
+        "s-maxage",
+        "stale-if-error",
+        "stale-while-revalidate",
+        "pre-check",
+        "post-check",
+    ],
+    "must-revalidate": [
+        "immutable",
+        "stale-if-error",
+        "stale-while-revalidate",
+        "pre-check",
+        "post-check",
+    ],
 }
 
 
