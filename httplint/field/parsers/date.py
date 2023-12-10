@@ -27,25 +27,26 @@ It is used by caches as input to expiration calculations, and to detect clock dr
         return parse_http_date(field_value, add_note)
 
     def evaluate(self, add_note: AddNoteMethodType) -> None:
-        text_fieldnames = [fn.lower() for (fn, fv) in self.message.headers.text]
-        if "date" not in text_fieldnames:
-            add_note(DATE_CLOCKLESS)
-            if "expires" in text_fieldnames or "last-modified" in text_fieldnames:
-                self.message.notes.add(
-                    "header-expires header-last-modified", DATE_CLOCKLESS_BAD_HDR
-                )
-        elif self.message.start_time:
-            age_value = self.message.headers.parsed.get("age", 0)
-            skew = self.value - int(self.message.start_time) + age_value
-            if age_value > MAX_CLOCK_SKEW > (age_value - skew):
-                self.message.notes.add("header-date header-age", AGE_PENALTY)
-            elif abs(skew) > MAX_CLOCK_SKEW:
-                add_note(
-                    DATE_INCORRECT,
-                    clock_skew_string=relative_time(skew, 0, 2),
-                )
-            else:
-                add_note(DATE_CORRECT)
+        if self.message.message_type == "response":
+            text_fieldnames = [fn.lower() for (fn, fv) in self.message.headers.text]
+            if "date" not in text_fieldnames:
+                add_note(DATE_CLOCKLESS)
+                if "expires" in text_fieldnames or "last-modified" in text_fieldnames:
+                    self.message.notes.add(
+                        "header-expires header-last-modified", DATE_CLOCKLESS_BAD_HDR
+                    )
+            elif self.message.start_time:
+                age_value = self.message.headers.parsed.get("age", 0)
+                skew = self.value - int(self.message.start_time) + age_value
+                if age_value > MAX_CLOCK_SKEW > (age_value - skew):
+                    self.message.notes.add("header-date header-age", AGE_PENALTY)
+                elif abs(skew) > MAX_CLOCK_SKEW:
+                    add_note(
+                        DATE_INCORRECT,
+                        clock_skew_string=relative_time(skew, 0, 2),
+                    )
+                else:
+                    add_note(DATE_CORRECT)
 
 
 class DATE_CORRECT(Note):
