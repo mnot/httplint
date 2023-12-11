@@ -330,7 +330,7 @@ request."""
 class NO_CACHE(Note):
     category = categories.CACHING
     level = levels.INFO
-    _summary = "%(message)s cannot be served from caches without validation."
+    _summary = "%(message)s cannot be served from cache without validation."
     _text = """\
 The `Cache-Control: no-cache` directive means that while caches **can** store this
 response, they cannot use it to satisfy a request unless it has been validated (either with an
@@ -340,7 +340,7 @@ response, they cannot use it to satisfy a request unless it has been validated (
 class NO_CACHE_NO_VALIDATOR(Note):
     category = categories.CACHING
     level = levels.INFO
-    _summary = "%(message)s cannot be served from caches without validation."
+    _summary = "%(message)s cannot be served from cache without validation."
     _text = """\
 The `Cache-Control: no-cache` directive means that while caches **can** store this response, they
 cannot use it to satisfy a request unless it has been validated (either with an `If-None-Match` or
@@ -372,12 +372,12 @@ lifetime (in this case, %(freshness_lifetime)s)."""
 class FRESHNESS_STALE_CACHE(Note):
     category = categories.CACHING
     level = levels.WARN
-    _summary = "%(message)s has been served stale by caches."
+    _summary = "%(message)s has been served stale by a cache."
     _text = """\
 An HTTP response is stale when its age (here, %(current_age)s) is equal to or exceeds its freshness
 lifetime (in this case, %(freshness_lifetime)s).
 
-HTTP allows caches to use stale responses to satisfy requests only under exceptional circumstances;
+HTTP allows caches to use stale responses to satisfy requests under exceptional circumstances;
 e.g., when they lose contact with the origin server. Either that has happened here, or the cache
 has ignored the response's freshness directives."""
 
@@ -417,7 +417,7 @@ class FRESHNESS_NONE(Note):
     category = categories.CACHING
     level = levels.INFO
     _summary = (
-        "%(message)s can only be served by caches under exceptional circumstances."
+        "%(message)s can only be served by a cache under exceptional circumstances."
     )
     _text = """\
 %(message)s doesn't have explicit freshness information (like a ` Cache-Control: max-age`
@@ -435,7 +435,7 @@ so."""
 class FRESH_SERVABLE(Note):
     category = categories.CACHING
     level = levels.INFO
-    _summary = "%(message)s may still be served by caches once it becomes stale."
+    _summary = "%(message)s can be served by a cache under exceptional circumstances once it becomes stale."
     _text = """\
 HTTP allows stale responses to be served under some circumstances; for example, if the origin
 server can't be contacted, a stale response can be used (even if it doesn't have explicit freshness
@@ -447,7 +447,7 @@ This behaviour can be prevented by using the `Cache-Control: must-revalidate` re
 class STALE_SERVABLE(Note):
     category = categories.CACHING
     level = levels.INFO
-    _summary = "%(message)s can be served by caches, even though it is stale."
+    _summary = "%(message)s can be served by a cache under exceptional circumstances, even though it is stale."
     _text = """\
 HTTP allows stale responses to be served under some circumstances; for example, if the origin
 server can't be contacted, a stale response can be used (even if it doesn't have explicit freshness
@@ -459,7 +459,7 @@ This behaviour can be prevented by using the `Cache-Control: must-revalidate` re
 class FRESH_MUST_REVALIDATE(Note):
     category = categories.CACHING
     level = levels.INFO
-    _summary = "%(message)s cannot be served by caches once it becomes stale."
+    _summary = "%(message)s cannot be served by a cache once it becomes stale."
     _text = """\
 The `Cache-Control: must-revalidate` directive forbids caches from using stale responses to satisfy
 requests.
@@ -471,7 +471,7 @@ this directive is present, they will return an error rather than a stale respons
 class STALE_MUST_REVALIDATE(Note):
     category = categories.CACHING
     level = levels.INFO
-    _summary = "%(message)s cannot be served by caches, because it is stale."
+    _summary = "%(message)s cannot be served by a cache, because it is stale."
     _text = """\
 The `Cache-Control: must-revalidate` directive forbids caches from using stale responses to satisfy
 requests.
