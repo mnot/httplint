@@ -435,7 +435,7 @@ so."""
 class FRESH_SERVABLE(Note):
     category = categories.CACHING
     level = levels.INFO
-    _summary = "%(message)s can be served by a cache under exceptional circumstances once it becomes stale."
+    _summary = "%(message)s can be served when stale by a cache under exceptional circumstances."
     _text = """\
 HTTP allows stale responses to be served under some circumstances; for example, if the origin
 server can't be contacted, a stale response can be used (even if it doesn't have explicit freshness
@@ -447,7 +447,7 @@ This behaviour can be prevented by using the `Cache-Control: must-revalidate` re
 class STALE_SERVABLE(Note):
     category = categories.CACHING
     level = levels.INFO
-    _summary = "%(message)s can be served by a cache under exceptional circumstances, even though it is stale."
+    _summary = "%(message)s is stale and can be served by a cache under exceptional circumstances."
     _text = """\
 HTTP allows stale responses to be served under some circumstances; for example, if the origin
 server can't be contacted, a stale response can be used (even if it doesn't have explicit freshness
