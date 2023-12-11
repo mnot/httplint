@@ -63,6 +63,15 @@ class ResponseCacheChecker:
             self.store_shared = self.store_private = False
             return False
 
+        # is Date present?
+        text_fieldnames = [fn.lower() for (fn, fv) in self._response.headers.text]
+        if "date" not in text_fieldnames:
+            self.notes.add("", DATE_CLOCKLESS)
+            if "expires" in text_fieldnames or "last-modified" in text_fieldnames:
+                self.notes.add(
+                    "header-expires header-last-modified", DATE_CLOCKLESS_BAD_HDR
+                )
+
         return True
 
     def check_cache_control(self) -> bool:
@@ -223,6 +232,25 @@ class METHOD_UNCACHEABLE(Note):
     _summary = "Responses to the %(method)s method can't be stored by caches."
     _text = """\
 """
+
+
+class DATE_CLOCKLESS(Note):
+    category = categories.GENERAL
+    level = levels.WARN
+    _summary = "%(message)s doesn't have a Date header."
+    _text = """\
+Although HTTP allows a server not to send a `Date` header in responses if it doesn't have a local
+clock, this can make calculation of a stored response's age inexact."""
+
+
+class DATE_CLOCKLESS_BAD_HDR(Note):
+    category = categories.CACHING
+    level = levels.BAD
+    _summary = "%(message)s has an Expires or Last-Modified header, but no Date."
+    _text = """\
+Because both the `Expires` and `Last-Modified` headers are date-based, it's necessary to send when
+the message was generated in `Date` for them to be useful; otherwise, clock drift, transit times
+between nodes as well as caching could skew their application."""
 
 
 class NO_STORE(Note):

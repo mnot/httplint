@@ -27,26 +27,22 @@ It is used by caches as input to expiration calculations, and to detect clock dr
         return parse_http_date(field_value, add_note)
 
     def evaluate(self, add_note: AddNoteMethodType) -> None:
-        if self.message.message_type == "response":
-            text_fieldnames = [fn.lower() for (fn, fv) in self.message.headers.text]
-            if "date" not in text_fieldnames:
-                add_note(DATE_CLOCKLESS)
-                if "expires" in text_fieldnames or "last-modified" in text_fieldnames:
-                    self.message.notes.add(
-                        "header-expires header-last-modified", DATE_CLOCKLESS_BAD_HDR
-                    )
-            elif self.message.start_time:
-                age_value = self.message.headers.parsed.get("age", 0)
-                skew = self.value - int(self.message.start_time) + age_value
-                if age_value > MAX_CLOCK_SKEW > (age_value - skew):
-                    self.message.notes.add("header-date header-age", AGE_PENALTY)
-                elif abs(skew) > MAX_CLOCK_SKEW:
-                    add_note(
-                        DATE_INCORRECT,
-                        clock_skew_string=relative_time(skew, 0, 2),
-                    )
-                else:
-                    add_note(DATE_CORRECT)
+        if (
+            self.message.message_type == "response"
+            and self.message.start_time
+            and self.value
+        ):
+            age_value = self.message.headers.parsed.get("age", 0) or 0
+            skew = self.value - int(self.message.start_time) + age_value
+            if age_value > MAX_CLOCK_SKEW > (age_value - skew):
+                self.message.notes.add("header-date header-age", AGE_PENALTY)
+            elif abs(skew) > MAX_CLOCK_SKEW:
+                add_note(
+                    DATE_INCORRECT,
+                    clock_skew_string=relative_time(skew, 0, 2),
+                )
+            else:
+                add_note(DATE_CORRECT)
 
 
 class DATE_CORRECT(Note):
@@ -90,25 +86,6 @@ determining how fresh the response is), or leave the `Date` header alone (i.e., 
 HTTP cache).
 
 See [this paper](http://j.mp/S7lPL4) for more information."""
-
-
-class DATE_CLOCKLESS(Note):
-    category = categories.GENERAL
-    level = levels.WARN
-    _summary = "%(message)s doesn't have a Date header."
-    _text = """\
-Although HTTP allows a server not to send a `Date` header if it doesn't have a local clock, this
-can make calculation of the response's age inexact."""
-
-
-class DATE_CLOCKLESS_BAD_HDR(Note):
-    category = categories.CACHING
-    level = levels.BAD
-    _summary = "Responses without a Date aren't allowed to have Expires or Last-Modified values."
-    _text = """\
-Because both the `Expires` and `Last-Modified` headers are date-based, it's necessary to know when
-the message was generated for them to be useful; otherwise, clock drift, transit times between
-nodes as well as caching could skew their application."""
 
 
 class BasicDateTest(FieldTest):
