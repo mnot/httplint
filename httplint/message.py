@@ -1,7 +1,7 @@
 import codecs
 import hashlib
 import re
-from typing import Any, Dict, TypedDict
+from typing import Optional, Any, Dict, TypedDict
 from typing_extensions import Unpack, NotRequired
 
 from httplint.cache import ResponseCacheChecker
@@ -29,9 +29,9 @@ class HttpMessageLinter:
 
     def __init__(
         self,
-        start_time: float = None,
-        message_ref: str = None,
-        related: "HttpMessageLinter" = None,
+        start_time: Optional[float] = None,
+        message_ref: Optional[str] = None,
+        related: Optional["HttpMessageLinter"] = None,
     ) -> None:
         self.notes = Notes({"message": message_ref or self.message_ref})
         self.related = related
@@ -58,7 +58,7 @@ class HttpMessageLinter:
         ...
 
     def process_response_topline(
-        self, version: bytes, status_code: bytes, status_phrase: bytes = None
+        self, version: bytes, status_code: bytes, status_phrase: Optional[bytes] = None
     ) -> None:
         ...
 
@@ -87,7 +87,7 @@ class HttpMessageLinter:
         self._hash_processor.update(chunk)
         self.decoded.feed_content(chunk)
 
-    def finish_content(self, complete: bool, trailers: RawFieldListType = None) -> None:
+    def finish_content(self, complete: bool, trailers: Optional[RawFieldListType] = None) -> None:
         """
         Signal that the content is done. Complete should be True if we
         know it's complete according to message framing.
@@ -190,7 +190,7 @@ class HttpResponseLinter(HttpMessageLinter):
         self.caching: ResponseCacheChecker
 
     def process_response_topline(
-        self, version: bytes, status_code: bytes, status_phrase: bytes = None
+        self, version: bytes, status_code: bytes, status_phrase: Optional[bytes] = None
     ) -> None:
         self.version = version.decode("ascii", "replace")
         self.status_code_str = status_code.decode("ascii", "replace")

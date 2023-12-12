@@ -35,7 +35,7 @@ class HttpFieldFinder:
     }
 
     def __init__(
-        self, message: "HttpMessageLinter", field_section: "FieldSection" = None
+        self, message: "HttpMessageLinter", field_section: Optional["FieldSection"] = None
     ) -> None:
         self.message = message
         self.field_section = field_section

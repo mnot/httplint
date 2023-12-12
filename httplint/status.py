@@ -1,7 +1,7 @@
 # pylint: disable=too-many-public-methods
 
 from functools import partial
-from typing import List
+from typing import Optional, List
 
 from httplint.message import HttpRequestLinter, HttpResponseLinter
 from httplint.note import Note, levels, categories
@@ -38,7 +38,7 @@ class StatusChecker:
     """
 
     def __init__(
-        self, response: HttpResponseLinter, request: HttpRequestLinter = None
+        self, response: HttpResponseLinter, request: Optional[HttpRequestLinter] = None
     ) -> None:
         self.request = request
         self.response = response

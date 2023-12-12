@@ -31,6 +31,7 @@ from .rfc3986 import (
     segment,
     host as uri_host,
 )
+from typing import Optional
 
 SPEC_URL = "http://httpwg.org/specs/rfc7230"
 
@@ -90,7 +91,7 @@ class list_rule:
     Uses the sender syntax, not the more lenient recipient syntax.
     """
 
-    def __init__(self, element: str, minimum: int = None) -> None:
+    def __init__(self, element: str, minimum: Optional[int] = None) -> None:
         self.element = element
         self.minimum = minimum
 

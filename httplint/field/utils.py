@@ -1,7 +1,7 @@
 import calendar
 from email.utils import parsedate as lib_parsedate
 import re
-from typing import Dict, List, Union
+from typing import Optional, Dict, List, Union
 
 from urllib.parse import unquote as urlunquote
 
@@ -92,7 +92,7 @@ def split_list_field(field_value: str) -> List[str]:
 def parse_params(
     instr: str,
     add_note: AddNoteMethodType,
-    nostar: Union[List[str], bool] = None,
+    nostar: Optional[Union[List[str], bool]] = None,
     delim: str = ";",
 ) -> Dict[str, str]:
     """
