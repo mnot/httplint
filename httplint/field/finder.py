@@ -98,6 +98,7 @@ class HttpFieldFinder:
 class UnknownHttpField(HttpField):
     """A HTTP field that we don't recognise."""
 
+    syntax = False
     list_header = True
     valid_in_requests = True
     valid_in_responses = True
