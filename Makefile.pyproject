@@ -54,7 +54,7 @@ clean_py: clean-venv
 
 .PHONY: tidy_py
 tidy_py: venv
-	$(VENV)/black $(PROJECT)
+	$(VENV)/black $(PROJECT) test
 
 .PHONY: lint_py
 lint_py: venv
