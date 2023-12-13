@@ -41,12 +41,13 @@ def parseFieldRegistry(xml_file):
     tree = ET.parse(xml_file)
     root = tree.getroot()
     result = []
-    for record in root.iter('{http://www.iana.org/assignments}record'):
-        result.append(record.find('{http://www.iana.org/assignments}value').text)
+    for record in root.iter("{http://www.iana.org/assignments}record"):
+        result.append(record.find("{http://www.iana.org/assignments}value").text)
     return result
 
 
 NOT_PRESENT = "not present"
+
 
 def checkFieldClass(field_cls, field_name):
     """
@@ -58,20 +59,23 @@ def checkFieldClass(field_cls, field_name):
     field = field_cls(field_name, None)
     attrs = dir(field)
     checks = [
-        ('canonical_name', [str], True),
-        ('reference', [str], True),
-        ('description', [str], True),
-        ('valid_in_requests', [bool, type(None)], True),
-        ('valid_in_responses', [bool, type(None)], True),
-        ('syntax', [str, list_rule], True),
-        ('list_header', [bool], True),
-        ('deprecated', [bool], False),
+        ("canonical_name", [str], True),
+        ("reference", [str], True),
+        ("description", [str], True),
+        ("valid_in_requests", [bool, type(None)], True),
+        ("valid_in_responses", [bool, type(None)], True),
+        ("syntax", [str, list_rule], True),
+        ("list_header", [bool], True),
+        ("deprecated", [bool], False),
     ]
-    for (attr_name, attr_types, attr_required) in checks:
+    for attr_name, attr_types, attr_required in checks:
         attr_value = getattr(field, attr_name, NOT_PRESENT)
-        if getattr(field, "no_coverage", False) and attr_name in ['syntax', 'list_header']:
+        if getattr(field, "no_coverage", False) and attr_name in [
+            "syntax",
+            "list_header",
+        ]:
             continue
-        if attr_name in ['syntax'] and attr_value is False:
+        if attr_name in ["syntax"] and attr_value is False:
             continue
         if attr_required and attr_value == NOT_PRESENT:
             sys.stderr.write(f"* {field_name} lacks {attr_name}\n")
@@ -92,6 +96,7 @@ def checkFieldClass(field_cls, field_name):
         if tests.countTestCases() == 0:
             sys.stderr.write(f"* {field_name} NO TESTS\n")
     return errors
+
 
 if __name__ == "__main__":
     print("## Checking Fields...")

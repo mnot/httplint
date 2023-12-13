@@ -22,16 +22,19 @@ def checkNote(note_cls):
 
 
 def loadModules(paths, prefix):
-    [ importlib.import_module(name) for finder, name, ispkg in pkgutil.iter_modules(paths, prefix=prefix) ]
+    [
+        importlib.import_module(name)
+        for finder, name, ispkg in pkgutil.iter_modules(paths, prefix=prefix)
+    ]
 
 
 def checkSubClasses(cls, check):
     """
     Run a check(subclass) function on all subclasses of cls.
     """
-    loadModules(['httplint'], 'httplint.')
-    loadModules(['httplint/field'], 'httplint.field.')
-    loadModules(['httplint/field/parsers'], 'httplint.field.parsers.')
+    loadModules(["httplint"], "httplint.")
+    loadModules(["httplint/field"], "httplint.field.")
+    loadModules(["httplint/field/parsers"], "httplint.field.parsers.")
     count = 0
     for subcls in cls.__subclasses__():
         check(subcls)

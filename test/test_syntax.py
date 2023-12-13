@@ -4,6 +4,7 @@ import sys
 
 from httplint import syntax
 
+
 def check_regex() -> None:
     """Grab all the regex in this module."""
     modules = 0
@@ -24,6 +25,7 @@ def check_regex() -> None:
                     errors += 1
                     print("*", module_name, attr_name, why)
     return count, modules, errors
+
 
 if __name__ == "__main__":
     print("Checking Syntax...")
