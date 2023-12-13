@@ -69,11 +69,6 @@ def checkFieldClass(field_cls):
     ]
     for attr_name, attr_types, attr_required in checks:
         attr_value = getattr(field, attr_name, NOT_PRESENT)
-        if getattr(field, "no_coverage", False) and attr_name in [
-            "syntax",
-            "list_header",
-        ]:
-            continue
         if attr_name in ["syntax"] and attr_value is False:
             continue
         if attr_required and attr_value == NOT_PRESENT:
