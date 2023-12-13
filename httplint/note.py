@@ -53,8 +53,8 @@ class Note:
     into it need to be escaped to be safe for use in HTML.
     """
 
-    category: categories = None
-    level: levels = None
+    category: categories
+    level: levels
     _summary = ""
     _text = ""
     _markdown = Markdown(output_format="html")

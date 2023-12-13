@@ -85,8 +85,6 @@ def relative_time(utime: float, now: Optional[float] = None, show_sign: int = 1)
         2: ("none", "behind", "ahead"),
     }
 
-    if utime is None:
-        return None
     if now is None:
         now = time.time()
     age = round(now - utime)

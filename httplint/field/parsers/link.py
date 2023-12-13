@@ -38,7 +38,7 @@ statement of the form "[context IRI] has a [relation type] resource at [target I
             pass
         if "rev" in param_dict:
             add_note(LINK_REV, link=link_value, rev=param_dict["rev"])
-        if "anchor" in param_dict:  # URI-Reference
+        if "anchor" in param_dict and param_dict["anchor"]:  # URI-Reference
             if not re.match(
                 rf"^\s*{rfc3986.URI_reference}\s*$", param_dict["anchor"], re.VERBOSE
             ):

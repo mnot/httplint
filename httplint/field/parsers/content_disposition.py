@@ -36,11 +36,11 @@ the file, rather than display it."""
             add_note(DISPOSITION_UNKNOWN, disposition=disposition)
         if disposition == "attachment" and "filename" not in param_dict:
             add_note(DISPOSITION_OMITS_FILENAME)
-        if "%" in param_dict.get("filename", ""):
+        filename = param_dict.get("filename", None)
+        filename_star = param_dict.get("filename*", None)
+        if filename and "%" in filename:
             add_note(DISPOSITION_FILENAME_PERCENT)
-        if "/" in param_dict.get("filename", "") or r"\\" in param_dict.get(
-            "filename*", ""
-        ):
+        if (filename and "/" in filename) or (filename_star and r"\\" in filename_star):
             add_note(DISPOSITION_FILENAME_PATH_CHAR)
         return disposition, param_dict
 

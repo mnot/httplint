@@ -94,7 +94,7 @@ ignoring it there."""
 
     def parse(
         self, field_value: str, add_note: AddNoteMethodType
-    ) -> Tuple[str, Union[int, str]]:
+    ) -> Tuple[str, Union[int, str, None]]:
         try:
             directive_name, directive_val = field_value.split("=", 1)
         except ValueError:
@@ -108,17 +108,17 @@ ignoring it there."""
             )
         directive_name = directive_name.lower()
 
-        if directive_name not in KNOWN_CC:
-            pass
-        elif KNOWN_CC[directive_name][2] is None:
-            if directive_val is not None:
-                add_note(BAD_CC_SYNTAX, bad_directive=directive_name)
-        else:
-            try:
-                return (directive_name, KNOWN_CC[directive_name][2](directive_val))
-            except (ValueError, TypeError):
-                add_note(BAD_CC_SYNTAX, bad_directive=directive_name)
-                raise ValueError  # pylint: disable=raise-missing-from
+        if directive_name in KNOWN_CC:
+            value_func = KNOWN_CC[directive_name][2]
+            if value_func is None:
+                if directive_val is not None:
+                    add_note(BAD_CC_SYNTAX, bad_directive=directive_name)
+            else:
+                try:
+                    return (directive_name, value_func(directive_val))
+                except (ValueError, TypeError):
+                    add_note(BAD_CC_SYNTAX, bad_directive=directive_name)
+                    raise ValueError  # pylint: disable=raise-missing-from
         return (directive_name, directive_val)
 
     def evaluate(self, add_note: AddNoteMethodType) -> None:

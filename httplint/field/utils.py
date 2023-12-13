@@ -1,12 +1,12 @@
 import calendar
 from email.utils import parsedate as lib_parsedate
 import re
-from typing import Optional, Dict, List, Union
+from typing import Optional, List, Union
 
 from urllib.parse import unquote as urlunquote
 
 from httplint.syntax import rfc7230, rfc7231
-from httplint.types import AddNoteMethodType
+from httplint.types import AddNoteMethodType, ParamDictType
 from httplint.field.notes import (
     PARAM_REPEATS,
     PARAM_SINGLE_QUOTED,
@@ -94,11 +94,11 @@ def parse_params(
     add_note: AddNoteMethodType,
     nostar: Optional[Union[List[str], bool]] = None,
     delim: str = ";",
-) -> Dict[str, str]:
+) -> ParamDictType:
     """
     Parse parameters into a dictionary.
     """
-    param_dict: Dict[str, str] = {}
+    param_dict: ParamDictType = {}
     for param in split_string(instr, rfc7231.parameter, rf"\s*{delim}\s*"):
         try:
             key, val = param.split("=", 1)

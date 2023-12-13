@@ -14,8 +14,8 @@ from httplint.util import iri_to_uri, f_num
 
 
 class HttpMessageParams(TypedDict):
-    start_time: NotRequired[float]
-    message_ref: NotRequired[str]
+    start_time: NotRequired[Optional[float]]
+    message_ref: NotRequired[Optional[str]]
     related: NotRequired["HttpMessageLinter"]
 
 
@@ -35,8 +35,8 @@ class HttpMessageLinter:
     ) -> None:
         self.notes = Notes({"message": message_ref or self.message_ref})
         self.related = related
-        self.start_time: float = start_time
-        self.finish_time: float
+        self.start_time = start_time
+        self.finish_time: Optional[float] = None
 
         self.version: str = ""
         self.base_uri: str = ""
@@ -44,10 +44,10 @@ class HttpMessageLinter:
         self.trailers = FieldSection(self)
 
         self.content_length: int = 0
-        self.content_hash: bytes = None
+        self.content_hash: Optional[bytes] = None
         self._hash_processor = hashlib.new("md5")
         self.decoded = ContentEncodingProcessor(self)
-        self.character_encoding: str = None
+        self.character_encoding: Optional[str] = None
 
         self.transfer_length: int = 0
         self.complete: bool = False
@@ -87,7 +87,9 @@ class HttpMessageLinter:
         self._hash_processor.update(chunk)
         self.decoded.feed_content(chunk)
 
-    def finish_content(self, complete: bool, trailers: Optional[RawFieldListType] = None) -> None:
+    def finish_content(
+        self, complete: bool, trailers: Optional[RawFieldListType] = None
+    ) -> None:
         """
         Signal that the content is done. Complete should be True if we
         know it's complete according to message framing.
@@ -142,9 +144,9 @@ class HttpRequestLinter(HttpMessageLinter):
 
     def __init__(self, **kw: Unpack[HttpMessageParams]) -> None:
         HttpMessageLinter.__init__(self, **kw)
-        self.method: str = None
-        self.iri: str = None
-        self.uri: str = None
+        self.method: Optional[str] = None
+        self.iri: Optional[str] = None
+        self.uri: Optional[str] = None
 
     def process_request_topline(
         self, method: bytes, iri: bytes, version: bytes
@@ -183,9 +185,9 @@ class HttpResponseLinter(HttpMessageLinter):
 
     def __init__(self, **kw: Unpack[HttpMessageParams]) -> None:
         HttpMessageLinter.__init__(self, **kw)
-        self.status_code_str: str = None
-        self.status_code: int = None
-        self.status_phrase: str = ""
+        self.status_code_str: Optional[str] = None
+        self.status_code: Optional[int] = None
+        self.status_phrase: Optional[str] = None
         self.is_head_response = False
         self.caching: ResponseCacheChecker
 
@@ -198,11 +200,12 @@ class HttpResponseLinter(HttpMessageLinter):
             self.status_code = int(self.status_code_str)
         except ValueError:
             self.notes.add("status", STATUS_CODE_NON_NUMERIC)
-        try:
-            self.status_phrase = status_phrase.decode("ascii", "strict")
-        except UnicodeDecodeError:
-            self.status_phrase = status_phrase.decode("ascii", "replace")
-            self.notes.add("status", STATUS_PHRASE_ENCODING)
+        if status_phrase:
+            try:
+                self.status_phrase = status_phrase.decode("ascii", "strict")
+            except UnicodeDecodeError:
+                self.status_phrase = status_phrase.decode("ascii", "replace")
+                self.notes.add("status", STATUS_PHRASE_ENCODING)
 
     def can_have_content(self) -> bool:
         if self.is_head_response:

@@ -35,7 +35,9 @@ class HttpFieldFinder:
     }
 
     def __init__(
-        self, message: "HttpMessageLinter", field_section: Optional["FieldSection"] = None
+        self,
+        message: "HttpMessageLinter",
+        field_section: Optional["FieldSection"] = None,
     ) -> None:
         self.message = message
         self.field_section = field_section
@@ -48,18 +50,16 @@ class HttpFieldFinder:
         norm_name = field_name.lower()
         if self.field_section and norm_name in self.field_section.handlers:
             return self.field_section.handlers[norm_name]
-        handler = self.find_handler_class(field_name)(field_name, self.message)
-        self.field_section.handlers[norm_name] = handler
+        handler_class = self.find_handler_class(field_name) or UnknownHttpField
+        handler = handler_class(field_name, self.message)
+        if self.field_section:
+            self.field_section.handlers[norm_name] = handler
         return handler
 
     @staticmethod
-    def find_handler_class(
-        field_name: str, default: bool = True
-    ) -> Optional[Type[HttpField]]:
+    def find_handler_class(field_name: str) -> Optional[Type[HttpField]]:
         """
-        Return a handler class for the given field name.
-
-        If default is true, return a dummy if one isn't found; otherwise, None.
+        Return a handler class for the given field name. Returns None if not found.
         """
 
         name_token = HttpFieldFinder.name_token(field_name)
@@ -68,8 +68,6 @@ class HttpFieldFinder:
             return getattr(module, name_token)  # type: ignore
         if field_name.lower() in deprecated.field_lookup:
             return deprecated.DeprecatedField
-        if default:
-            return UnknownHttpField
         return None
 
     @staticmethod
@@ -111,9 +109,9 @@ class UnknownHttpField(HttpField):
         return
 
 
-def get_field_description(field_name: str) -> str:
+def get_field_description(field_name: str) -> Optional[str]:
     """Return the description for the named field, or None if not found."""
-    handler_class = HttpFieldFinder.find_handler_class(field_name, False)
+    handler_class = HttpFieldFinder.find_handler_class(field_name)
     if handler_class is not None and handler_class.description:
         return handler_class.description
     return None

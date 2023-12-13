@@ -24,7 +24,7 @@ def checkRegistryCoverage(xml_file):
     message = FakeMessageLinter()
     finder = HttpFieldFinder(message)
     for field_name in parseFieldRegistry(xml_file):
-        field_cls = finder.find_handler_class(field_name, default=False)
+        field_cls = finder.find_handler_class(field_name)
         if field_cls is None:
             sys.stderr.write(f"* {field_name} unsupported\n")
             unsupported += 1

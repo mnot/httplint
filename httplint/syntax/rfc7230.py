@@ -10,6 +10,8 @@ They should be processed with re.VERBOSE.
 
 # pylint: disable=invalid-name, line-too-long
 
+from typing import Optional
+
 from .rfc5234 import (
     ALPHA,
     CRLF,
@@ -31,7 +33,6 @@ from .rfc3986 import (
     segment,
     host as uri_host,
 )
-from typing import Optional
 
 SPEC_URL = "http://httpwg.org/specs/rfc7230"
 
@@ -96,12 +97,12 @@ class list_rule:
         self.minimum = minimum
 
     def __str__(self) -> str:
-        if self.minimum == 1:
+        if self.minimum and self.minimum == 1:
             # 1#element => element *( OWS "," OWS element )
             return r"(?: {element} (?: {OWS} , {OWS} {element} )* )".format(
                 element=self.element, OWS=OWS
             )
-        if self.minimum > 1:
+        if self.minimum and self.minimum > 1:
             # <n>#<m>element => element <n-1>*<m-1>( OWS "," OWS element )
             adj_min = self.minimum - 1
             return (

@@ -67,16 +67,13 @@ field_lookup = {k.lower(): k for k in fields}
 class DeprecatedField(HttpField):
     syntax = False
     deprecated = True
-    valid_in_request = None
-    valid_in_responses = None
-    list_header = None
     no_coverage = True
 
     def __init__(self, wire_name: str, message: "HttpMessageLinter") -> None:
         HttpField.__init__(self, wire_name, message)
         assert self.norm_name in field_lookup
         self.canonical_name = field_lookup[self.norm_name]
-        self.reference = fields.get(field_lookup[self.norm_name])
+        self.reference = fields[field_lookup[self.norm_name]]
         self.description = f"""\
 The {self.canonical_name} field is deprecated; it is not actively used by HTTP software.
 It is safe to remove it from this message. For more information, see [here]({self.reference})."""

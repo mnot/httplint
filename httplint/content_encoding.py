@@ -1,6 +1,6 @@
 import binascii
 import hashlib
-from typing import List, Dict, Any, Callable, TYPE_CHECKING
+from typing import List, Dict, Any, Callable, Optional, TYPE_CHECKING
 import zlib
 
 from httplint.note import Note, levels, categories
@@ -16,7 +16,7 @@ class ContentEncodingProcessor:
         self.processors: List[Callable[[bytes], None]] = []
 
         self.length: int = 0
-        self.hash: bytes = None
+        self.hash: Optional[bytes] = None
         self._hash_processor = hashlib.new("md5")
 
         self.decode_ok: bool = True  # turn False if we have a problem

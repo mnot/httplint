@@ -1,7 +1,7 @@
 from calendar import timegm
 from re import match, split
 from urllib.parse import urlsplit
-from typing import List, Tuple, Union
+from typing import List, Tuple, Union, Optional
 
 from httplint.field import HttpField, RFC6265
 from httplint.field.tests import FieldTest
@@ -26,14 +26,13 @@ requests to the server."""
 
     def parse(self, field_value: str, add_note: AddNoteMethodType) -> CookieType:
         path = urlsplit(self.message.base_uri).path
-        start_time = self.message.start_time
-        return loose_parse(field_value, path, start_time, add_note)
+        return loose_parse(field_value, path, self.message.start_time, add_note)
 
 
 def loose_parse(  # pylint: disable=too-many-branches
     set_cookie_string: str,
     uri_path: str,
-    current_time: float,
+    current_time: Optional[float],
     add_note: AddNoteMethodType,
 ) -> CookieType:
     """
@@ -167,8 +166,12 @@ def loose_date_parse(cookie_date: str) -> int:
     Parse a date, as per RFC 6265, Section 5.1.1.
     """
     found_time = found_day_of_month = found_month = found_year = False
-    hour_value = minute_value = second_value = None
-    day_of_month_value = month_value = year_value = None
+    hour_value: int
+    minute_value: int
+    second_value: int
+    day_of_month_value: int
+    month_value: int
+    year_value: int
     date_tokens = split(DELIMITER, cookie_date)
     for date_token in date_tokens:
         re_match = None
@@ -211,7 +214,7 @@ def loose_date_parse(cookie_date: str) -> int:
         year_value += 1900
     if 69 >= year_value >= 0:
         year_value += 2000
-    if day_of_month_value < 1 or day_of_month_value > 31:
+    if not 1 <= day_of_month_value <= 31:
         raise ValueError(f"{day_of_month_value} is out of range for day_of_month")
     if year_value < 1601:
         raise ValueError(f"{year_value} is out of range for year")

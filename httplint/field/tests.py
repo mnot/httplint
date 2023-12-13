@@ -21,7 +21,7 @@ class FieldTest(unittest.TestCase):
     Testing machinery for headers.
     """
 
-    name: str = None
+    name: str
     inputs: List[bytes] = []
     expected_out: Any = []
     expected_notes: List[Type[Note]] = []

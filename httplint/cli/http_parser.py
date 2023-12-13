@@ -1,6 +1,6 @@
 from argparse import Namespace
 from enum import Enum
-from typing import List, Tuple
+from typing import List, Tuple, Optional
 
 from thor.http.common import HttpMessageHandler, States, Delimiters, no_body_status
 from thor.http.error import HttpError, StartLineError, HttpVersionError
@@ -18,7 +18,7 @@ class modes(Enum):
 class HttpCliParser(HttpMessageHandler):
     default_state = States.WAITING
 
-    def __init__(self, args: Namespace, start_time: float) -> None:
+    def __init__(self, args: Namespace, start_time: Optional[float] = None) -> None:
         self.start_time = start_time
         self.mode = args.mode
         self.linter: HttpMessageLinter

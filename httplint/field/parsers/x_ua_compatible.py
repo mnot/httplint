@@ -1,4 +1,4 @@
-from typing import Tuple, Dict
+from typing import Tuple, Dict, Union
 
 from httplint.field import HttpField
 from httplint.field.tests import FieldTest
@@ -16,7 +16,9 @@ class x_ua_compatible(HttpField):
     valid_in_requests = False
     valid_in_responses = True
 
-    def parse(self, field_value: str, add_note: AddNoteMethodType) -> Tuple[str, str]:
+    def parse(
+        self, field_value: str, add_note: AddNoteMethodType
+    ) -> Tuple[str, Union[str, None]]:
         try:
             attr, attr_value = field_value.split("=", 1)
         except ValueError:

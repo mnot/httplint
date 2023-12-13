@@ -19,11 +19,11 @@ class ResponseCacheChecker:
         self._response = response
         self._request = cast("HttpRequestLinter", response.related)
         self.notes = response.notes
-        self.age: int = None
-        self.store_private: bool
-        self.freshness_lifetime_private: int = None
-        self.store_shared: bool
-        self.freshness_lifetime_shared: int = None
+        self.age: int = 0
+        self.store_private = True
+        self.freshness_lifetime_private: int = 0
+        self.store_shared = True
+        self.freshness_lifetime_shared: int = 0
 
         self.age_value = response.headers.parsed.get("age", 0)
         self.date_value = response.headers.parsed.get("date", None)
@@ -51,7 +51,11 @@ class ResponseCacheChecker:
 
     def check_basic(self) -> bool:
         # Is method cacheable?
-        if self._request and self._request.method not in CACHEABLE_METHODS:
+        if (
+            self._request
+            and self._request.method
+            and self._request.method not in CACHEABLE_METHODS
+        ):
             self.store_shared = self.store_private = False
             self._request.notes.add(
                 "method", METHOD_UNCACHEABLE, method=self._request.method
@@ -82,7 +86,6 @@ class ResponseCacheChecker:
 
         if "private" in self.cc_dict:
             self.store_shared = False
-            self.store_private = True
             self.notes.add("header-cache-control", PRIVATE_CC)
 
             if "public" in self.cc_dict:
@@ -92,15 +95,11 @@ class ResponseCacheChecker:
             k.lower() for k, v in self._request.headers.text
         ]:
             if "public" in self.cc_dict:
-                self.store_shared = True
-                self.store_private = True
                 self.notes.add("header-cache-control", PUBLIC_AUTH)
             else:
                 self.store_shared = False
-                self.store_private = True
                 self.notes.add("header-cache-control", PRIVATE_AUTH)
         else:
-            self.store_shared = self.store_private = True
             self.notes.add("header-cache-control", STORABLE)
 
             if "public" in self.cc_dict:
@@ -139,8 +138,6 @@ class ResponseCacheChecker:
         expires_hdr_present = "expires" in [
             n.lower() for (n, v) in self._response.headers.text
         ]
-        self.freshness_lifetime_private = 0
-        self.freshness_lifetime_shared = 0
         has_explicit_freshness = False
         has_cc_freshness = False
         freshness_hdrs = ["header-date"]

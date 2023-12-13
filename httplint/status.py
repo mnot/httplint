@@ -172,7 +172,7 @@ class StatusChecker:
         self.add_note("", STATUS_REQUEST_ENTITY_TOO_LARGE)
 
     def status414(self) -> None:  # Request-URI Too Long
-        if self.request:
+        if self.request and self.request.uri:
             uri_len = f"({len(self.request.uri)} characters)"
         else:
             uri_len = ""

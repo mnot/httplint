@@ -51,24 +51,24 @@ MAX_TTL_HDR = 8 * 1000
 class HttpField:
     """A HTTP Field."""
 
-    canonical_name: str = None
-    description: str = None
-    reference: str = None
+    canonical_name: str
+    description: str
+    reference: str
     syntax: Union[
         str, rfc7230.list_rule, bool
-    ] = None  # Verbose regular expression to match.
-    list_header: bool = None  # Can be split into values on commas.
+    ]  # Verbose regular expression to match, or False to indicate no syntax
+    list_header: bool  # Can be split into values on commas.
+    valid_in_requests: bool
+    valid_in_responses: bool
     nonstandard_syntax: bool = False  # Don't check for a single value at the end.
-    deprecated: bool = None
-    valid_in_requests: bool = None
-    valid_in_responses: bool = None
+    deprecated: bool = False
     no_coverage: bool = False  # Turns off coverage checks.
 
     def __init__(self, wire_name: str, message: "HttpMessageLinter") -> None:
         self.wire_name = wire_name.strip()
         self.message = message
         self.norm_name = self.wire_name.lower()
-        if self.canonical_name is None:
+        if not hasattr(self, "canonical_name"):
             self.canonical_name = self.wire_name
         self.value: Any = []
 
