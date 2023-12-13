@@ -98,10 +98,13 @@ class HttpFieldFinder:
 class UnknownHttpField(HttpField):
     """A HTTP field that we don't recognise."""
 
+    description = "Unknown"
+    reference = "about:blank"
     syntax = False
     list_header = True
     valid_in_requests = True
     valid_in_responses = True
+    no_coverage = True
 
     def parse(self, field_value: str, add_note: AddNoteMethodType) -> Any:
         return field_value

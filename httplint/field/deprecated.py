@@ -61,7 +61,7 @@ OBSOLETED_FIELDS = {
 UNREGISGTERED_DEPRECATED_FIELDS = {
     "X-UA-Compatible": "https://learn.microsoft.com/en-us/openspecs/ie_standards/ms-iedoco/380e2488-f5eb-4457-a07a-0cb1b6e4b4b5",
     "X-Meta-MSSmartTagsPreventParsing": "https://web.archive.org/web/20120211140254/http://blogs.msdn.com/b/ieinternals/archive/2009/06/30/internet-explorer-custom-http-headers.aspx",
-        "X-Download-Options": "https://web.archive.org/web/20120211140254/http://blogs.msdn.com/b/ieinternals/archive/2009/06/30/internet-explorer-custom-http-headers.aspx"
+    "X-Download-Options": "https://web.archive.org/web/20120211140254/http://blogs.msdn.com/b/ieinternals/archive/2009/06/30/internet-explorer-custom-http-headers.aspx",
 }
 
 fields = {}
@@ -75,6 +75,8 @@ class DeprecatedField(HttpField):
     syntax = False
     deprecated = True
     no_coverage = True
+    valid_in_requests = True
+    valid_in_responses = True  # dont' want to complain about these
 
     def __init__(self, wire_name: str, message: "HttpMessageLinter") -> None:
         HttpField.__init__(self, wire_name, message)

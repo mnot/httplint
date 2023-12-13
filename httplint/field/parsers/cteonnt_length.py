@@ -13,3 +13,8 @@ message.
 It takes this form because the most efficient way of assuring that clients
 don't see the header is to rearrange or change individual characters in its
 name. """
+    reference = "https://bugzilla.mozilla.org/show_bug.cgi?id=868638"
+    syntax = False
+    list_header = False
+    valid_in_requests = True
+    valid_in_responses = True

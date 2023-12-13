@@ -11,7 +11,12 @@ class x_pad(HttpField):
 
     Since the affected browsers (specifically, Netscape 2.x, 3.x and 4.0 up to beta 2) are no longer
     widely used, it's safe to omit this header."""
+    reference = (
+        "https://www.oreilly.com/library/view/http-the-definitive/1565925092/re61.html"
+    )
+    syntax = False
     list_header = False
     deprecated = False
     valid_in_requests = False
     valid_in_responses = True
+    no_coverage = True
