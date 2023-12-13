@@ -13,13 +13,14 @@ from httplint.field.finder import HttpFieldFinder
 from httplint.field.tests import FakeMessageLinter
 from httplint.syntax.rfc7230 import list_rule
 
+from utils import checkSubClasses
+
 
 def checkRegistryCoverage(xml_file):
     """
     Given an XML file from <https://www.iana.org/assignments/http-fields/http-fields.xml>,
     See what fields are missing and check those remaining to see what they don't define.
     """
-    errors = 0
     unsupported = 0
     message = FakeMessageLinter()
     finder = HttpFieldFinder(message)
@@ -28,9 +29,7 @@ def checkRegistryCoverage(xml_file):
         if field_cls is None:
             sys.stderr.write(f"* {field_name} unsupported\n")
             unsupported += 1
-        else:
-            errors += checkFieldClass(field_cls, field_name)
-    return errors, unsupported
+    return unsupported
 
 
 def parseFieldRegistry(xml_file):
@@ -49,14 +48,14 @@ def parseFieldRegistry(xml_file):
 NOT_PRESENT = "not present"
 
 
-def checkFieldClass(field_cls, field_name):
+def checkFieldClass(field_cls):
     """
     Given a field class, make sure it's complete. Complain on STDERR if not.
     """
 
     errors = 0
     message = FakeMessageLinter()
-    field = field_cls(field_name, None)
+    field = field_cls("warning", None)
     attrs = dir(field)
     checks = [
         ("canonical_name", [str], True),
@@ -78,29 +77,30 @@ def checkFieldClass(field_cls, field_name):
         if attr_name in ["syntax"] and attr_value is False:
             continue
         if attr_required and attr_value == NOT_PRESENT:
-            sys.stderr.write(f"* {field_name} lacks {attr_name}\n")
+            sys.stderr.write(f"* {field_cls} lacks {attr_name}\n")
+            errors += 1
         elif True not in [isinstance(attr_value, t) for t in attr_types]:
-            sys.stderr.write(f"* {field_name} WRONG TYPE FOR {attr_name}\n")
+            sys.stderr.write(f"* {field_cls} WRONG TYPE FOR {attr_name}\n")
             errors += 1
 
     canonical_name = getattr(field, "canonical_name", None)
-    if canonical_name != field_name:
-        sys.stderr.write(f"* {field_name} CANONICAL MISMATCH ({canonical_name})\n")
-        errors += 1
 
-    if field.no_coverage is False:
+    if canonical_name and getattr(field, "no_coverage", False) is False:
         loader = unittest.TestLoader()
         finder = HttpFieldFinder(message)
-        field_mod = finder.find_module(field_name)
+        field_mod = finder.find_module(canonical_name)
         tests = loader.loadTestsFromModule(field_mod)
         if tests.countTestCases() == 0:
-            sys.stderr.write(f"* {field_name} NO TESTS\n")
+            sys.stderr.write(f"* {field_cls} NO TESTS\n")
     return errors
 
 
 if __name__ == "__main__":
     print("## Checking Fields...")
-    errors, unsupported = checkRegistryCoverage(sys.argv[1])
-    print(f"{errors} errors; {unsupported} unsupported.")
+    unsupported = checkRegistryCoverage(sys.argv[1])
+    count, errors = checkSubClasses(
+        HttpField, ["httplint/field/parsers"], checkFieldClass
+    )
+    print(f"{count} checked; {errors} errors; {unsupported} unsupported.")
     if errors > 0:
         sys.exit(1)
