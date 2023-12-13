@@ -38,7 +38,7 @@ class HttpCliParser(HttpMessageHandler):
         hdr_tuples: RawFieldListType,
         conn_tokens: List[bytes],
         transfer_codes: List[bytes],
-        content_length: int,
+        content_length: Optional[int],
     ) -> Tuple[bool, bool]:
         if self.mode == modes.REQUEST:
             self.linter = HttpRequestLinter(start_time=self.start_time)
