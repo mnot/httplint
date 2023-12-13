@@ -6,6 +6,7 @@ class set_cookie2(HttpField):
     description = """\
 The `Set-Cookie2` header has been deprecated; use `Set-Cookie` instead."""
     reference = RFC6265
+    syntax = False
     list_header = True
     deprecated = True
     valid_in_requests = False

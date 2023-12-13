@@ -73,6 +73,7 @@ field_lookup = {k.lower(): k for k in fields}
 
 class DeprecatedField(HttpField):
     syntax = False
+    list_header = False
     deprecated = True
     no_coverage = True
     valid_in_requests = True

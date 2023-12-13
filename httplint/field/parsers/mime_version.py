@@ -11,6 +11,7 @@ header to indicate what version of the MIME protocol was used to construct the m
 of the MIME-Version header indicates that the message is in full compliance with the MIME
 protocol."""
     reference = f"{RFC2616}#section-19.4.1"
+    syntax = False
     list_header = False
     deprecated = True
     valid_in_requests = True
