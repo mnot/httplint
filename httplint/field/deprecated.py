@@ -58,7 +58,12 @@ OBSOLETED_FIELDS = {
     "Warning": "https://www.rfc-editor.org/rfc/rfc9111.html#name-warning",
 }
 
+UNREGISGTERED_DEPRECATED_FIELDS = {
+    "X-UA-Compatible": "https://learn.microsoft.com/en-us/openspecs/ie_standards/ms-iedoco/380e2488-f5eb-4457-a07a-0cb1b6e4b4b5"
+}
+
 fields = {}
+fields.update(UNREGISGTERED_DEPRECATED_FIELDS)
 fields.update(DEPRECATED_FIELDS)
 fields.update(OBSOLETED_FIELDS)
 field_lookup = {k.lower(): k for k in fields}
