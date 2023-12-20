@@ -54,7 +54,7 @@ clean_py: clean-venv
 
 .PHONY: tidy_py
 tidy_py: venv
-	$(VENV)/black $(PROJECT) test
+	$(VENV)/black $(PROJECT)
 
 .PHONY: lint_py
 lint_py: venv
@@ -117,10 +117,10 @@ version: typecheck lint test bump-$(VERSIONING)
 build: venv
 	$(VENV)/python -m build
 
-.PHONY: changelog.md
 changelog.md:
-	$(eval PREV_RELEASE=$(shell git tag -l v* | tail -1))
-	$(shell git log --pretty="- %s (%h)" $(PREV_RELEASE)..HEAD --grep "^Changed:" --grep "^Fixed:" --grep "^Added:" --grep "^Changed:" --grep "^Removed:" --output=changelog.md)
+	$(eval PREV_RELEASE=$(shell git tag --sort=-taggerdate -l v* | head -1))
+	git --no-pager log --pretty="- %s" $(PREV_RELEASE)..HEAD --grep "^Changed:" --grep "^Fixed:" --grep "^Added:" --grep "^Changed:" --grep "^Removed:" --output=$@
+	sed -i "" -e "1s/^/\n\n/" $@
 
 # Manual pypi publication; no GitHub release
 .PHONY: pypi-pub
