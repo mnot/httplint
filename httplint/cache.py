@@ -432,7 +432,7 @@ so."""
 class FRESH_SERVABLE(Note):
     category = categories.CACHING
     level = levels.INFO
-    _summary = "%(message)s can be served when stale by a cache under exceptional circumstances."
+    _summary = "%(message)s can be served by a cache when stale under exceptional circumstances."
     _text = """\
 HTTP allows stale responses to be served under some circumstances; for example, if the origin
 server can't be contacted, a stale response can be used (even if it doesn't have explicit freshness
