@@ -33,6 +33,7 @@ OBSOLETED_FIELDS = {
     "Derived-From": "https://www.rfc-editor.org/rfc/rfc2616.html#section-19.6.3",
     "Differential-ID": "https://www.w3.org/TR/NOTE-drp",
     "Digest": "https://datatracker.ietf.org/doc/draft-ietf-httpbis-digest-headers/",
+    "Expect-CT": "https://mailarchive.ietf.org/arch/msg/httpbisa/XpAWZsIre5WAte3lXGTh6A77sok/",
     "Ext": "https://datatracker.ietf.org/doc/status-change-http-experiments-to-historic/",
     "GetProfile": "https://www.w3.org/TR/NOTE-OPS-OverHTTP",
     "HTTP2-Settings": "https://www.rfc-editor.org/rfc/rfc9113.html#name-http2-settings-header-field",
