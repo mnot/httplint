@@ -17,7 +17,7 @@ DEPRECATED_FIELDS = {
 }
 
 OBSOLETED_FIELDS = {
-    "Access-Control": "",
+    "Access-Control": "https://www.w3.org/TR/2007/WD-access-control-20071126/#access-control0",
     "C-Ext": "https://datatracker.ietf.org/doc/status-change-http-experiments-to-historic/",
     "C-Man": "https://datatracker.ietf.org/doc/status-change-http-experiments-to-historic/",
     "C-Opt": "https://datatracker.ietf.org/doc/status-change-http-experiments-to-historic/",
