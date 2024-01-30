@@ -1,4 +1,3 @@
-import importlib
 import sys
 
 from typing import (
@@ -82,9 +81,8 @@ class HttpFieldFinder:
             name_token = HttpFieldFinder.field_aliases[name_token]
         try:
             module_name = f"httplint.field.parsers.{name_token}"
-            importlib.import_module(module_name)
             return sys.modules[module_name]
-        except (ImportError, KeyError, TypeError):
+        except (KeyError, TypeError):
             return None
 
     @staticmethod
@@ -111,3 +109,6 @@ class UnknownHttpField(HttpField):
 
     def evaluate(self, add_note: AddNoteMethodType) -> None:
         return
+
+
+import httplint.field.parsers  # pylint: disable=wrong-import-position,unused-import
