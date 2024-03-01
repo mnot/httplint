@@ -1,7 +1,7 @@
 from binascii import b2a_hex
 import locale
 import time
-from typing import Optional, List
+from typing import List
 import unittest
 from urllib.parse import urlsplit, urlunsplit, quote as urlquote
 
@@ -70,7 +70,7 @@ def prose_list(inlist: List[str], markup: str = "") -> str:
     )
 
 
-def relative_time(utime: float, now: Optional[float] = None, show_sign: int = 1) -> str:
+def relative_time(utime: float, now: float, show_sign: int = 1) -> str:
     """
     Given two times, return a string that explains how far apart they are.
     show_sign can be:
@@ -85,8 +85,6 @@ def relative_time(utime: float, now: Optional[float] = None, show_sign: int = 1)
         2: ("none", "behind", "ahead"),
     }
 
-    if now is None:
-        now = time.time()
     age = round(now - utime)
     if age == 0:
         return signs[show_sign][0]
