@@ -81,7 +81,6 @@ def loose_parse(  # pylint: disable=too-many-branches
                 continue
             if attribute_value[0] == "0":
                 add_note(SET_COOKIE_LEADING_ZERO_MAX_AGE, cookie_name=cookie_name)
-                continue
             if not attribute_value.isdigit():
                 add_note(SET_COOKIE_NON_DIGIT_MAX_AGE, cookie_name=cookie_name)
                 continue
@@ -128,6 +127,7 @@ def loose_parse(  # pylint: disable=too-many-branches
                     attribute_name=attribute_name,
                     attribute_value=attribute_value,
                 )
+                continue
             cookie_attribute_list.append(("SameSite", cookie_samesite))
         else:
             add_note(
@@ -135,11 +135,11 @@ def loose_parse(  # pylint: disable=too-many-branches
                 cookie_name=cookie_name,
                 attribute=attribute_name,
             )
-        if ("SameSite", "None") in cookie_attribute_list and (
-            "Secure",
-            "",
-        ) not in cookie_attribute_list:
-            add_note(SET_COOKIE_NOT_SECURE, cookie_name=cookie_name)
+    if ("SameSite", "None") in cookie_attribute_list and (
+        "Secure",
+        "",
+    ) not in cookie_attribute_list:
+        add_note(SET_COOKIE_NOT_SECURE, cookie_name=cookie_name)
     return (cookie_name, cookie_value, cookie_attribute_list)
 
 
