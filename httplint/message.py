@@ -4,6 +4,8 @@ import re
 from typing import Optional, Any, Dict, TypedDict
 from typing_extensions import Unpack, NotRequired
 
+from magika import Magika  # type: ignore
+
 from httplint.cache import ResponseCacheChecker
 from httplint.content_encoding import ContentEncodingProcessor
 from httplint.field.section import FieldSection
@@ -26,6 +28,7 @@ class HttpMessageLinter:
 
     message_ref = "This message"
     message_type = "message"
+    magic = Magika()
 
     def __init__(
         self,
@@ -110,6 +113,23 @@ class HttpMessageLinter:
                         CL_INCORRECT,
                         content_length=f_num(self.content_length),
                     )
+            if "content-type" in self.headers.parsed:
+                content_type = self.headers.parsed["content-type"][0]
+                magic_type = self.magic.identify_bytes(
+                    self.decoded.magic_sample
+                ).output.mime_type
+                if content_type == magic_type:
+                    self.notes.add(
+                        "header-content-type", CT_CORRECT, content_type=content_type
+                    )
+                else:
+                    self.notes.add(
+                        "header-content-type",
+                        CT_INCORRECT,
+                        content_type=content_type,
+                        magic_type=magic_type,
+                    )
+
         self.post_checks()
 
     def can_have_content(self) -> bool:
@@ -230,13 +250,33 @@ the beginning of the next."""
 class CL_INCORRECT(Note):
     category = categories.GENERAL
     level = levels.BAD
-    _summary = "%(message)s's Content-Length header is incorrect."
+    _summary = "The Content-Length header is incorrect."
     _text = """\
 `Content-Length` is used by HTTP to delimit messages; that is, to mark the end of one message and
 the beginning of the next. An incorrect `Content-Length` can cause security and intereoperablity
 issues.
 
 The actual content size was %(content_length)s bytes."""
+
+
+class CT_CORRECT(Note):
+    category = categories.GENERAL
+    level = levels.GOOD
+    _summary = "The Content-Type header appears to be correct."
+    _text = """\
+`Content-Type` indicates the content's format, and is used to select the software that will handle the message. This content appears to be in the `%(content_type)s` format, based upon how it begins.
+
+Note that the format has not been validated.
+"""
+
+
+class CT_INCORRECT(Note):
+    category = categories.GENERAL
+    level = levels.BAD
+    _summary = "The Content-Type header appears to be incorrect."
+    _text = """\
+`Content-Type` indicates the content's format, and is used to select the software that will handle the message. This content does not appear to be in the `%(content_type)s` format, based upon how it begins; instead, it appears to be `%(magic_type)s` content. That may cause interoperability or security issues.
+"""
 
 
 class URI_TOO_LONG(Note):
