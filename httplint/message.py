@@ -54,13 +54,11 @@ class HttpMessageLinter:
 
     def process_request_topline(
         self, method: bytes, iri: bytes, version: bytes
-    ) -> None:
-        ...
+    ) -> None: ...
 
     def process_response_topline(
         self, version: bytes, status_code: bytes, status_phrase: Optional[bytes] = None
-    ) -> None:
-        ...
+    ) -> None: ...
 
     def process_headers(self, headers: RawFieldListType) -> None:
         """

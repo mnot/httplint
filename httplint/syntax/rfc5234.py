@@ -8,7 +8,6 @@ These regex are directly derived from the core ABNF in RFC5234:
 They should be processed with re.VERBOSE.
 """
 
-
 # ALPHA          =  %x41-5A / %x61-7A   ; A-Z / a-z
 
 ALPHA = r"[\x41-\x5A\x61-\x7A]"

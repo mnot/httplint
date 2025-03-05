@@ -68,7 +68,9 @@ class StatusChecker:
 
     def status201(self) -> None:  # Created
         if self.request and self.request.method in safe_methods:
-            self.add_note("status", CREATED_SAFE_METHOD, method=self.request.method or "")
+            self.add_note(
+                "status", CREATED_SAFE_METHOD, method=self.request.method or ""
+            )
         if "location" not in self.response.headers.parsed:
             self.add_note("header-location", CREATED_WITHOUT_LOCATION)
 

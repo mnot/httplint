@@ -11,6 +11,7 @@ from httplint.types import RawFieldListType
 
 class modes(Enum):
     "Parser modes."
+
     REQUEST = "request"
     RESPONSE = "response"
 

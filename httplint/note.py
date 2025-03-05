@@ -10,6 +10,7 @@ from httplint.types import VariableType
 
 class categories(Enum):
     "Note classifications."
+
     GENERAL = "General"
     SECURITY = "Security"
     CONNEG = "Content Negotiation"
@@ -21,6 +22,7 @@ class categories(Enum):
 
 class levels(Enum):
     "Note levels."
+
     GOOD = "good"
     WARN = "warning"
     BAD = "bad"
