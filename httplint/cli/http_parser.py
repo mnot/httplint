@@ -40,6 +40,7 @@ class HttpCliParser(HttpMessageHandler):
         transfer_codes: List[bytes],
         content_length: Optional[int],
     ) -> Tuple[bool, bool]:
+        allows_body: bool
         if self.mode == modes.REQUEST:
             self.linter = HttpRequestLinter(start_time=self.start_time)
             method, iri, version = self.request_topline(top_line)
