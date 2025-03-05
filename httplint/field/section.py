@@ -38,8 +38,8 @@ class FieldSection:
         offset = 0  # what number header we're on
 
         for name, value in raw_fields:
-            offset += 1
             add_note = partial(self.message.notes.add, f"offset-{offset}")
+            offset += 1
 
             # track size
             field_size = len(name) + len(value)
