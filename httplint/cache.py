@@ -123,8 +123,10 @@ class ResponseCacheChecker:
         if self.request_time and self.response_time:
             response_delay = self.response_time - self.request_time
             corrected_age_value = self.age_value + response_delay
-        else:
+        elif self.age_value is not None:
             corrected_age_value = self.age_value
+        else:
+            corrected_age_value = 0
 
         corrected_initial_age = max(apparent_age, corrected_age_value)
         self.age = corrected_initial_age
