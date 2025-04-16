@@ -9,11 +9,14 @@ from httplint.util import f_num, display_bytes
 if TYPE_CHECKING:
     from httplint.message import HttpMessageLinter
 
+MAGIC_SAMPLE_SIZE = 1024
+
 
 class ContentEncodingProcessor:
     def __init__(self, message: "HttpMessageLinter") -> None:
         self.message = message
         self.processors: List[Callable[[bytes], None]] = []
+        self.magic_sample = b""
 
         self.length: int = 0
         self.hash: Optional[bytes] = None
@@ -30,6 +33,10 @@ class ContentEncodingProcessor:
             decoded_chunk = self._process_content_codings(chunk)
             for processor in self.processors:
                 processor(decoded_chunk)
+            if len(self.magic_sample) < MAGIC_SAMPLE_SIZE:
+                self.magic_sample += decoded_chunk[
+                    : MAGIC_SAMPLE_SIZE - len(self.magic_sample)
+                ]
 
     def finish_content(self) -> None:
         self.hash = self._hash_processor.digest()
