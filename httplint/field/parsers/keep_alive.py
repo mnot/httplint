@@ -1,4 +1,4 @@
-from typing import Tuple
+from typing import Tuple, Optional
 
 from httplint.field import HttpField
 from httplint.field.tests import FieldTest
@@ -28,7 +28,7 @@ It's safe to remove this header if you wish to save a few bytes."""
 
     def parse(
         self, field_value: str, add_note: AddNoteMethodType
-    ) -> Tuple[str, str | None]:
+    ) -> Tuple[str, Optional[str]]:
         try:
             attr, attr_val = field_value.split("=", 1)
             attr_val = unquote_string(attr_val)
