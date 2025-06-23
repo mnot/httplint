@@ -26,7 +26,9 @@ It's safe to remove this header if you wish to save a few bytes."""
     valid_in_requests = True
     valid_in_responses = True
 
-    def parse(self, field_value: str, add_note: AddNoteMethodType) -> Tuple[str, str]:
+    def parse(
+        self, field_value: str, add_note: AddNoteMethodType
+    ) -> Tuple[str, str | None]:
         try:
             attr, attr_val = field_value.split("=", 1)
             attr_val = unquote_string(attr_val)
