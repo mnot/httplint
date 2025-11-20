@@ -1,6 +1,6 @@
 from httplint.field import HttpField
 from httplint.field.tests import FieldTest
-from httplint.syntax import rfc7230
+from httplint.syntax import rfc9110
 from httplint.types import AddNoteMethodType
 from httplint.field.notes import BAD_SYNTAX
 
@@ -14,8 +14,8 @@ been a GET.
 
 If Content-Length is incorrect, HTTP/1.1 persistent connections will not work, and caches may not
 store the response (since they can't be sure if they have the whole response)."""
-    reference = f"{rfc7230.SPEC_URL}#header.content_length"
-    syntax = rfc7230.Content_Length
+    reference = f"{rfc9110.SPEC_URL}#field.content-length"
+    syntax = rfc9110.Content_Length
     list_header = False
     deprecated = False
     valid_in_requests = True

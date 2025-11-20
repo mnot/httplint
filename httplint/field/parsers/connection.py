@@ -1,6 +1,6 @@
 from httplint.field import HttpField
 from httplint.field.tests import FieldTest
-from httplint.syntax import rfc7230
+from httplint.syntax import rfc9110
 
 
 class connection(HttpField):
@@ -13,8 +13,8 @@ It also indicates options that are desired for this particular connection; e.g.,
 it should not be reused.
 
 Connection is only valid in HTTP/1.x; HTTP/2 and HTTP/3 forbit it."""
-    reference = f"{rfc7230.SPEC_URL}#header.connection"
-    syntax = rfc7230.Connection
+    reference = f"{rfc9110.SPEC_URL}#field.connection"
+    syntax = rfc9110.Connection
     list_header = True
     deprecated = False
     valid_in_requests = True

@@ -3,7 +3,7 @@ from typing import Tuple
 from httplint.field import HttpField
 from httplint.field.tests import FieldTest
 from httplint.note import Note, categories, levels
-from httplint.syntax import rfc7231
+from httplint.syntax import rfc9110
 from httplint.types import AddNoteMethodType, ParamDictType
 from httplint.field.utils import parse_params
 from httplint.field.notes import SINGLE_HEADER_REPEAT, PARAM_STAR_QUOTED
@@ -16,8 +16,8 @@ The `Content-Disposition` header suggests a name to use when saving the file.
 
 When the disposition (the first value) is set to `attachment`, it also prompts browsers to download
 the file, rather than display it."""
-    reference = "https://tools.ietf.org/html/rfc6266"
-    syntax = rf"(?:{rfc7231.token}(?:\s*;\s*{rfc7231.parameter})*)"
+    reference = "https://www.rfc-editor.org/rfc/rfc6266.html"
+    syntax = rf"(?:{rfc9110.token}(?:\s*;\s*{rfc9110.parameter})*)"
     list_header = False
     deprecated = False
     valid_in_requests = True

@@ -5,7 +5,7 @@ from httplint.field import HttpField
 from httplint.field.tests import FieldTest
 from httplint.message import HttpMessageLinter, HttpResponseLinter
 from httplint.note import Note, categories, levels
-from httplint.syntax import rfc7231, rfc3986
+from httplint.syntax import rfc9110, rfc3986
 from httplint.types import AddNoteMethodType
 
 
@@ -16,8 +16,8 @@ The `Location` response header is used in `3xx` responses to redirect the recipi
 to complete the request.
 
 In `201` (Created) responses, it identifies a newly created resource."""
-    reference = f"{rfc7231.SPEC_URL}#header.location"
-    syntax = rfc7231.Location
+    reference = f"{rfc9110.SPEC_URL}#field.location"
+    syntax = rfc9110.Location
     list_header = False
     deprecated = False
     valid_in_requests = False

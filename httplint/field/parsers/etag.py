@@ -2,7 +2,7 @@ from typing import Tuple
 
 from httplint.field import HttpField
 from httplint.field.tests import FieldTest
-from httplint.syntax import rfc7232
+from httplint.syntax import rfc9110
 from httplint.types import AddNoteMethodType
 from httplint.field.utils import unquote_string
 from httplint.field.notes import BAD_SYNTAX
@@ -12,8 +12,8 @@ class etag(HttpField):
     canonical_name = "ETag"
     description = """\
 The `ETag` header provides an opaque identifier for the representation."""
-    reference = f"{rfc7232.SPEC_URL}#header.etag"
-    syntax = rfc7232.ETag
+    reference = f"{rfc9110.SPEC_URL}#field.etag"
+    syntax = rfc9110.ETag
     list_header = False
     deprecated = False
     valid_in_requests = True

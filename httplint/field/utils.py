@@ -5,7 +5,7 @@ from typing import Optional, List, Union
 
 from urllib.parse import unquote as urlunquote
 
-from httplint.syntax import rfc7230, rfc7231
+from httplint.syntax import rfc9110
 from httplint.types import AddNoteMethodType, ParamDictType
 from httplint.field.notes import (
     PARAM_REPEATS,
@@ -24,10 +24,10 @@ RE_FLAGS = re.VERBOSE | re.IGNORECASE
 
 def parse_http_date(value: str, add_note: AddNoteMethodType) -> int:
     """Parse a HTTP date. Raises ValueError if it's bad."""
-    if not re.match(rf"^{rfc7231.HTTP_date}$", value, RE_FLAGS):
+    if not re.match(rf"^{rfc9110.HTTP_date}$", value, RE_FLAGS):
         add_note(BAD_DATE_SYNTAX)
         raise ValueError
-    if re.match(rf"^{rfc7231.obs_date}$", value, RE_FLAGS):
+    if re.match(rf"^{rfc9110.obs_date}$", value, RE_FLAGS):
         add_note(DATE_OBSOLETE)
     date_tuple = lib_parsedate(value)
     if date_tuple is None:
@@ -81,7 +81,7 @@ def split_list_field(field_value: str) -> List[str]:
         f.strip()
         for f in re.findall(
             r'((?:[^",]|%s)+)(?=%s|\s*$)'
-            % (rfc7230.quoted_string, r"(?:\s*(?:,\s*)+)"),
+            % (rfc9110.quoted_string, r"(?:\s*(?:,\s*)+)"),
             field_value,
             RE_FLAGS,
         )
@@ -99,7 +99,7 @@ def parse_params(
     Parse parameters into a dictionary.
     """
     param_dict: ParamDictType = {}
-    for param in split_string(instr, rfc7231.parameter, rf"\s*{delim}\s*"):
+    for param in split_string(instr, rfc9110.parameter, rf"\s*{delim}\s*"):
         try:
             key, val = param.split("=", 1)
         except ValueError:

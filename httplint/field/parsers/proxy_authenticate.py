@@ -1,5 +1,6 @@
 from httplint.field import HttpField
-from httplint.syntax import rfc7235
+from httplint.syntax import rfc9110
+
 
 
 class proxy_authenticate(HttpField):
@@ -7,8 +8,8 @@ class proxy_authenticate(HttpField):
     description = """\
 The `Proxy-Authenticate` response header consists of a challenge that indicates the authentication
 scheme and parameters applicable to the proxy for this request-target."""
-    reference = f"{rfc7235.SPEC_URL}#header.proxy-authenticate"
-    syntax = rfc7235.Proxy_Authenticate
+    reference = f"{rfc9110.SPEC_URL}#field.proxy-authenticate"
+    syntax = rfc9110.Proxy_Authenticate
     list_header = True
     deprecated = False
     valid_in_requests = False

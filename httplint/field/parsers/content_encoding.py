@@ -1,7 +1,7 @@
 from httplint.field import HttpField
 from httplint.field.tests import FieldTest
 from httplint.note import Note, categories, levels
-from httplint.syntax import rfc7231
+from httplint.syntax import rfc9110
 from httplint.types import AddNoteMethodType
 
 
@@ -14,8 +14,8 @@ media-type referenced by the Content-Type header.
 
 Content-Encoding is primarily used to allow a document to be compressed without losing the identity
 of its underlying media type; e.g., `gzip` and `deflate`."""
-    reference = f"{rfc7231.SPEC_URL}#header.content_encoding"
-    syntax = rfc7231.Content_Encoding
+    reference = f"{rfc9110.SPEC_URL}#field.content-encoding"
+    syntax = rfc9110.Content_Encoding
     list_header = True
     deprecated = False
     valid_in_requests = True

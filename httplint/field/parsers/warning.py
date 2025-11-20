@@ -1,7 +1,8 @@
 from httplint.field import HttpField
 from httplint.field.notes import FIELD_DEPRECATED
 from httplint.field.tests import FieldTest
-from httplint.syntax import rfc7234
+
+from httplint.syntax import rfc9111
 
 
 class warning(HttpField):
@@ -9,8 +10,8 @@ class warning(HttpField):
     description = """\
 The `Warning` response header was used to carry additional information about the status or
 transformation of a message that might not be reflected in it. It has been deprecated."""
-    reference = f"{rfc7234.SPEC_URL}#header.warning"
-    syntax = rfc7234.Warning_
+    reference = f"{rfc9111.SPEC_URL}#field.warning"
+    syntax = rfc9111.Warning_
     list_header = True
     deprecated = True
     valid_in_requests = False

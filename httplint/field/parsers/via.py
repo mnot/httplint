@@ -1,7 +1,7 @@
 from httplint.field import HttpField
 from httplint.field.tests import FieldTest
 from httplint.note import Note, categories, levels
-from httplint.syntax import rfc7230
+from httplint.syntax import rfc9110
 from httplint.types import AddNoteMethodType
 
 
@@ -11,8 +11,8 @@ class via(HttpField):
 The `Via` header is added to requests and responses by proxies and other HTTP intermediaries. It
 can be used to help avoid request loops and identify the protocol capabilities of all senders along
 the request/response chain."""
-    reference = f"{rfc7230.SPEC_URL}#header.Via"
-    syntax = rfc7230.Via
+    reference = f"{rfc9110.SPEC_URL}#field.via"
+    syntax = rfc9110.Via
     list_header = True
     deprecated = False
     valid_in_requests = True

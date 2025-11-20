@@ -1,7 +1,7 @@
 from httplint.field import HttpField
 from httplint.field.tests import FieldTest
 from httplint.note import Note, categories, levels
-from httplint.syntax import rfc7234
+from httplint.syntax import rfc9111
 from httplint.types import AddNoteMethodType
 from httplint.field.notes import FIELD_DEPRECATED
 
@@ -13,8 +13,8 @@ The `Pragma` header is used to include implementation-specific directives that m
 recipient along the request chain.
 
 This header is deprecated, in favour of `Cache-Control`."""
-    reference = f"{rfc7234.SPEC_URL}#header.pragma"
-    syntax = rfc7234.Pragma
+    reference = f"{rfc9111.SPEC_URL}#field.pragma"
+    syntax = rfc9111.Pragma
     list_header = True
     deprecated = True
     valid_in_requests = False

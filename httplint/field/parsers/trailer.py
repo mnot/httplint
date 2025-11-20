@@ -1,5 +1,6 @@
 from httplint.field import HttpField
-from httplint.syntax import rfc7230
+
+from httplint.syntax import rfc9110
 
 
 class trailer(HttpField):
@@ -7,8 +8,8 @@ class trailer(HttpField):
     description = """\
 The `Trailer` header indicates that the given set of headers will be
 present in the trailer of the message, after the content."""
-    reference = f"{rfc7230.SPEC_URL}#header.trailer"
-    syntax = rfc7230.Trailer
+    reference = f"{rfc9110.SPEC_URL}#field.trailer"
+    syntax = rfc9110.Trailer
     list_header = True
     deprecated = False
     valid_in_requests = True

@@ -1,5 +1,5 @@
 from httplint.field import HttpField
-from httplint.syntax import rfc7230
+from httplint.syntax import rfc9110
 
 
 class te(HttpField):
@@ -12,8 +12,8 @@ The most common transfer-coding, `chunked`, doesn't need to be listed in `TE`.
 
 `TE` can only be used with the value `trailers` in HTTP/2 and HTTP/3.
 """
-    reference = f"{rfc7230.SPEC_URL}#header.te"
-    syntax = rfc7230.TE
+    reference = f"{rfc9110.SPEC_URL}#field.te"
+    syntax = rfc9110.TE
     list_header = True
     deprecated = False
     valid_in_requests = True

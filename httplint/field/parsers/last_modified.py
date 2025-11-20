@@ -1,6 +1,6 @@
 from httplint.field import HttpField
 from httplint.field.tests import FieldTest
-from httplint.syntax import rfc7232
+from httplint.syntax import rfc9110
 from httplint.types import AddNoteMethodType
 from httplint.util import relative_time
 from httplint.field.notes import Note, categories, levels, BAD_DATE_SYNTAX
@@ -12,8 +12,8 @@ class last_modified(HttpField):
     description = """\
 The `Last-Modified` response header indicates the time that the origin server believes the
 representation was last modified."""
-    reference = f"{rfc7232.SPEC_URL}#header.last_modified"
-    syntax = False  # rfc7232.Last_Modified
+    reference = f"{rfc9110.SPEC_URL}#field.last-modified"
+    syntax = False  # rfc9110.Last_Modified
     list_header = False
     deprecated = False
     valid_in_requests = False

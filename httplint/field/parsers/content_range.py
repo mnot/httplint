@@ -2,7 +2,7 @@ from httplint.field import HttpField
 from httplint.field.tests import FieldTest
 from httplint.message import HttpMessageLinter, HttpResponseLinter
 from httplint.note import Note, categories, levels
-from httplint.syntax import rfc7233
+from httplint.syntax import rfc9110
 from httplint.types import AddNoteMethodType
 
 
@@ -12,8 +12,8 @@ class content_range(HttpField):
 The `Content-Range` response header is sent in a `206` (Partial Content) response to indicate
 where in the full response content the partial content is located. It is also used
 in `416` (Requested Range Not Satisfiable) responses."""
-    reference = f"{rfc7233.SPEC_URL}#header.content_range"
-    syntax = rfc7233.Content_Range
+    reference = f"{rfc9110.SPEC_URL}#field.content-range"
+    syntax = rfc9110.Content_Range
     list_header = False
     deprecated = False
     valid_in_requests = False

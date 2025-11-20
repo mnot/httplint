@@ -1,7 +1,7 @@
 from httplint.field import HttpField
 from httplint.field.tests import FieldTest
 from httplint.note import Note, categories, levels
-from httplint.syntax import rfc3986, rfc7230
+from httplint.syntax import rfc3986, rfc9110
 from httplint.types import AddNoteMethodType
 from httplint.field.notes import BAD_SYNTAX
 
@@ -18,7 +18,7 @@ serialized_origin = rf"""(?:
 X_Frame_Options = rf"""(?:
       DENY
     | SAMEORIGIN
-    | (?: ALLOW-FROM {rfc7230.RWS} {serialized_origin} )
+    | (?: ALLOW-FROM {rfc9110.RWS} {serialized_origin} )
 )"""
 
 

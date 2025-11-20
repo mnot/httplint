@@ -1,6 +1,6 @@
 from httplint.field import HttpField
 from httplint.field.tests import FieldTest
-from httplint.syntax import rfc7231
+from httplint.syntax import rfc9110
 
 
 class server(HttpField):
@@ -8,8 +8,8 @@ class server(HttpField):
     description = """\
 The `Server` response header contains information about the software used by the origin server to
 handle the request."""
-    reference = f"{rfc7231.SPEC_URL}#header.server"
-    syntax = rfc7231.Server
+    reference = f"{rfc9110.SPEC_URL}#field.server"
+    syntax = rfc9110.Server
     list_header = True
     deprecated = False
     valid_in_requests = False

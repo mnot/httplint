@@ -1,5 +1,5 @@
 from httplint.field import HttpField
-from httplint.syntax import rfc7231
+from httplint.syntax import rfc9110
 
 
 class retry_after(HttpField):
@@ -9,8 +9,8 @@ The `Retry-After` response header can be used with a `503` (Service Unavailable)
 indicate how long the service is expected to be unavailable to the requesting client.
 
 The value of this field can be either a date or an integer number of seconds."""
-    reference = f"{rfc7231.SPEC_URL}#header.retry-after"
-    syntax = rfc7231.Retry_After
+    reference = f"{rfc9110.SPEC_URL}#field.retry-after"
+    syntax = rfc9110.Retry_After
     list_header = False
     deprecated = False
     valid_in_requests = False

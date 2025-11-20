@@ -1,6 +1,6 @@
 from httplint.field import HttpField
 from httplint.field.tests import FieldTest
-from httplint.syntax import rfc7231
+from httplint.syntax import rfc9110
 from httplint.types import AddNoteMethodType
 from httplint.util import relative_time
 from httplint.field.notes import Note, categories, levels, BAD_DATE_SYNTAX
@@ -16,8 +16,8 @@ The `Date` header represents the time when the message was generated, regardless
 happened since.
 
 It is used by caches as input to expiration calculations, and to detect clock drift."""
-    reference = f"{rfc7231.SPEC_URL}#header.date"
-    syntax = False  # rfc7231.Date
+    reference = f"{rfc9110.SPEC_URL}#field.date"
+    syntax = False  # rfc9110.Date
     list_header = False
     deprecated = False
     valid_in_requests = True

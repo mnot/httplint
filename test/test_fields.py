@@ -11,7 +11,7 @@ import xml.etree.ElementTree as ET
 from httplint.field import HttpField
 from httplint.field.finder import HttpFieldFinder
 from httplint.field.tests import FakeMessageLinter
-from httplint.syntax.rfc7230 import list_rule
+from httplint.syntax.rfc9110 import list_rule
 
 from utils import checkSubClasses
 

@@ -15,8 +15,9 @@ from .rfc3986 import URI_reference, URI
 from .rfc5234 import ALPHA, DIGIT, SP
 from .rfc5646 import Language_Tag
 from .rfc5987 import ext_value
-from .rfc7230 import list_rule, OWS, quoted_string, token
-from .rfc7231 import _type as type_name, subtype as subtype_name
+from .rfc9110 import list_rule, OWS, quoted_string, token, subtype as subtype_name
+
+type_name = token
 
 MediaDesc = r"(?: {token} (?: {SP}+ {token} )* )"
 parmname = token

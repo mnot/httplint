@@ -1,7 +1,7 @@
 from httplint.field import HttpField
 from httplint.field.tests import FieldTest
 from httplint.note import Note, categories, levels
-from httplint.syntax import rfc7230
+from httplint.syntax import rfc9112
 from httplint.types import AddNoteMethodType
 from httplint.field.utils import parse_params
 from httplint.field.notes import BAD_SYNTAX
@@ -22,8 +22,8 @@ to be used without knowing the content's length.
 
 Transfer codings can only be used in HTTP/1; HTTP/2 and HTTP/3 do not support them.
 """
-    reference = f"{rfc7230.SPEC_URL}#header.transfer-encoding"
-    syntax = rfc7230.Transfer_Encoding
+    reference = f"{rfc9112.SPEC_URL}#field.transfer-encoding"
+    syntax = rfc9112.Transfer_Encoding
     list_header = True
     deprecated = False
     valid_in_requests = True

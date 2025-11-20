@@ -3,7 +3,7 @@ from typing import Tuple
 from httplint.field import HttpField
 from httplint.field.tests import FieldTest
 from httplint.note import Note, categories, levels
-from httplint.syntax import rfc7231
+from httplint.syntax import rfc9110
 from httplint.types import AddNoteMethodType, ParamDictType
 from httplint.field.utils import parse_params
 from httplint.field.notes import BAD_SYNTAX
@@ -18,7 +18,7 @@ older versions of Internet Explorer configure their Cross Site Scripting protect
         "https://blogs.msdn.microsoft.com/ieinternals/"
         "2011/01/31/controlling-the-xss-filter/"
     )
-    syntax = rf"(?:[10](?:\s*;\s*{rfc7231.parameter})*)"
+    syntax = rf"(?:[10](?:\s*;\s*{rfc9110.parameter})*)"
     list_header = False
     deprecated = False
     valid_in_requests = False

@@ -2,7 +2,7 @@ from typing import Tuple, Optional
 
 from httplint.field import HttpField
 from httplint.field.tests import FieldTest
-from httplint.syntax import rfc7230, rfc7231
+from httplint.syntax import rfc9110
 from httplint.types import AddNoteMethodType
 from httplint.field.utils import unquote_string
 from httplint.field.notes import FIELD_DEPRECATED
@@ -19,8 +19,8 @@ to convey how many requests they're willing to serve on a single connection, wha
 timeout is and other information. However, this isn't usually used by clients.
 
 It's safe to remove this header if you wish to save a few bytes."""
-    reference = "https://tools.ietf.org/html/rfc2068#section-19.7.1"
-    syntax = rfc7230.list_rule(rfc7231.parameter)
+    reference = "https://www.rfc-editor.org/rfc/rfc2068.html#section-19.7.1"
+    syntax = rfc9110.list_rule(rfc9110.parameter)
     list_header = True
     deprecated = True
     valid_in_requests = True

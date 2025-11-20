@@ -18,7 +18,7 @@ import unittest
 import http_sf
 
 # from httplint.message import HttpRequest
-from httplint.syntax import rfc7230, rfc7231
+from httplint.syntax import rfc9110
 from httplint.types import (
     StrFieldListType,
     RawFieldListType,
@@ -57,7 +57,7 @@ class HttpField:
     description: str
     reference: str
     syntax: Union[
-        str, rfc7230.list_rule, bool
+        str, rfc9110.list_rule, bool
     ]  # Verbose regular expression to match, or False to indicate no syntax.
     # If structured_field is True, this is ignored.
     list_header: bool  # Can be split into values on commas.
@@ -108,7 +108,7 @@ class HttpField:
             if self.syntax:
                 element_syntax = (
                     self.syntax.element
-                    if isinstance(self.syntax, rfc7230.list_rule)
+                    if isinstance(self.syntax, rfc9110.list_rule)
                     else self.syntax
                 )
                 if not re.match(rf"^\s*(?:{element_syntax})\s*$", value, RE_FLAGS):
@@ -125,7 +125,7 @@ class HttpField:
         """
 
         # check field name syntax
-        if not re.match(f"^{rfc7230.token}$", self.wire_name, RE_FLAGS):
+        if not re.match(f"^{rfc9110.token}$", self.wire_name, RE_FLAGS):
             add_note(FIELD_NAME_BAD_SYNTAX)
 
         if self.structured_field:

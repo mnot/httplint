@@ -11,7 +11,7 @@ They should be processed with re.VERBOSE.
 # pylint: disable=invalid-name
 
 from .rfc5234 import DIGIT, SP
-from .rfc7230 import OWS
+from .rfc9110 import OWS
 
 # sf-integer = ["-"] 1*15DIGIT
 sf_integer = rf"-?{DIGIT}{{1,15}}"

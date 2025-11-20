@@ -1,6 +1,6 @@
 from httplint.field import HttpField
 from httplint.field.tests import FieldTest
-from httplint.syntax import rfc7230
+from httplint.syntax import rfc9110
 
 
 class upgrade(HttpField):
@@ -13,8 +13,8 @@ protocol.
 
 `Upgrade` cannot be used in HTTP/2 or HTTP/3.
 """
-    reference = f"{rfc7230.SPEC_URL}#header.upgrade"
-    syntax = rfc7230.Upgrade
+    reference = f"{rfc9110.SPEC_URL}#field.upgrade"
+    syntax = rfc9110.Upgrade
     list_header = True
     deprecated = False
     valid_in_requests = True

@@ -1,7 +1,7 @@
 from httplint.field import HttpField
 from httplint.field.tests import FieldTest
 from httplint.note import Note, categories, levels
-from httplint.syntax import rfc7231
+from httplint.syntax import rfc9110
 from httplint.types import AddNoteMethodType
 from httplint.util import f_num
 
@@ -14,8 +14,8 @@ permitted to use the response to reply to a subsequent request without validatio
 
 In uncacheable or stale responses, the Vary field value advises the user agent about the criteria
 that were used to select the representation."""
-    reference = f"{rfc7231.SPEC_URL}#header.vary"
-    syntax = rfc7231.Vary
+    reference = f"{rfc9110.SPEC_URL}#field.vary"
+    syntax = rfc9110.Vary
     list_header = True
     deprecated = False
     valid_in_requests = False

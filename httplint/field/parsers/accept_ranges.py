@@ -1,7 +1,7 @@
 from httplint.field import HttpField
 from httplint.field.tests import FieldTest
 from httplint.note import Note, categories, levels
-from httplint.syntax import rfc7233
+from httplint.syntax import rfc9110
 from httplint.types import AddNoteMethodType
 
 
@@ -10,8 +10,8 @@ class accept_ranges(HttpField):
     description = """\
 The `Accept-Ranges` response header allows the server to indicate that it accepts range requests
 for a resource."""
-    reference = f"{rfc7233.SPEC_URL}#header.accept-ranges"
-    syntax = rfc7233.Accept_Ranges
+    reference = f"{rfc9110.SPEC_URL}#field.accept-ranges"
+    syntax = rfc9110.Accept_Ranges
     list_header = True
     deprecated = False
     valid_in_requests = False

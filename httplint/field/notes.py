@@ -127,7 +127,7 @@ HTTP dates have specific syntax, and sending an invalid date can cause a number 
 especially with caching. Common problems include sending "1 May" instead of "01 May" (the month
 is a fixed-width field), and sending a date in a timezone other than GMT.
 
-See [the HTTP specification](http://www.w3.org/Protocols/rfc2616/rfc2616-sec3.html#sec3.3) for more
+See [the HTTP specification](https://www.rfc-editor.org/rfc/rfc9110.html#name-date-time-formats) for more
 information."""
 
 
@@ -138,7 +138,7 @@ class DATE_OBSOLETE(Note):
     _text = """\
 HTTP has a number of defined date formats for historical reasons. This header is using an old
 format that are now obsolete. See [the
-specification](http://httpwg.org/specs/rfc7231.html#http.date) for more information.
+specification](https://www.rfc-editor.org/rfc/rfc9110.html#name-obsolete-date-formats) for more information.
 """
 
 

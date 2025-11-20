@@ -3,7 +3,7 @@ from typing import Tuple, Union, Dict, List, Callable
 from httplint.field import HttpField
 from httplint.field.tests import FieldTest
 from httplint.note import Note, categories, levels
-from httplint.syntax import rfc7234
+from httplint.syntax import rfc9111
 from httplint.types import AddNoteMethodType
 from httplint.util import prose_list
 from httplint.field.utils import unquote_string
@@ -85,8 +85,8 @@ class cache_control(HttpField):
 The `Cache-Control` header is used to specify required directives to all caches that
 handle the response. It can also occur in requests, but caches have the option of
 ignoring it there."""
-    reference = f"{rfc7234.SPEC_URL}#header.cache-control"
-    syntax = rfc7234.Cache_Control
+    reference = f"{rfc9111.SPEC_URL}#field.cache-control"
+    syntax = rfc9111.Cache_Control
     list_header = True
     deprecated = False
     valid_in_requests = True

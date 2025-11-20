@@ -2,7 +2,7 @@ from typing import Tuple
 
 from httplint.field import HttpField
 from httplint.field.tests import FieldTest
-from httplint.syntax import rfc7231
+from httplint.syntax import rfc9110
 from httplint.types import AddNoteMethodType, ParamDictType
 from httplint.field.utils import parse_params
 
@@ -13,8 +13,8 @@ class content_type(HttpField):
 The `Content-Type` header indicates the media type of the content sent to the recipient or, in the
 case of responses to the HEAD method, the media type that would have been sent had the request been
 a GET."""
-    reference = f"{rfc7231.SPEC_URL}#header.content_type"
-    syntax = rfc7231.Content_Type
+    reference = f"{rfc9110.SPEC_URL}#field.content-type"
+    syntax = rfc9110.Content_Type
     list_header = False
     deprecated = False
     valid_in_requests = True

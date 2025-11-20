@@ -1,6 +1,7 @@
 from httplint.field import HttpField
 from httplint.field.tests import FieldTest
-from httplint.syntax import rfc7231
+from httplint.syntax import rfc9110
+
 
 
 class content_language(HttpField):
@@ -8,8 +9,8 @@ class content_language(HttpField):
     description = """\
 The `Content-Language` header describes the natural language(s) of the intended audience for the
 messsage. Note that this might not convey all of the languages used."""
-    reference = f"{rfc7231.SPEC_URL}#header.content_language"
-    syntax = rfc7231.Content_Language
+    reference = f"{rfc9110.SPEC_URL}#field.content-language"
+    syntax = rfc9110.Content_Language
     list_header = False
     deprecated = False
     valid_in_requests = True
