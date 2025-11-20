@@ -32,7 +32,7 @@ pct_encoded = rf"(?: % {HEXDIG} {HEXDIG} )"
 
 attr_char = rf"""(?:
                   {ALPHA} | {DIGIT}
-                | !  | #  | \$ | &  | \+ | -  | .
+                | !  | #  | \$ | &  | \+ | -  | \.
                 | \^ | _  | `  | \| | ~
 )"""
 

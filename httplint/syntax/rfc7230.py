@@ -184,7 +184,7 @@ protocol_version = token
 
 # protocol = protocol-name [ "/" protocol-version ]
 
-protocol = rf"(?: {protocol_name} (?: {protocol_version} )? )"
+protocol = rf"(?: {protocol_name} (?: / {protocol_version} )? )"
 
 # Upgrade = 1#protocol
 

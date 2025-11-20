@@ -91,11 +91,11 @@ suffix_length = rf"{DIGIT}+"
 
 # suffix-byte-range-spec = "-" suffix-length
 
-suffix_byte_range_spec = rf"(?: \- {suffix_length} )+"
+suffix_byte_range_spec = rf"(?: \- {suffix_length} )"
 
 # byte-range-spec = first-byte-pos "-" [ last-byte-pos ]
 
-byte_range_spec = rf"(?: {first_byte_pos} \- {last_byte_pos} )+"
+byte_range_spec = rf"(?: {first_byte_pos} \- {last_byte_pos}? )"
 
 # byte-range-set = 1#( byte-range-spec / suffix-byte-range-spec )
 
@@ -103,7 +103,7 @@ byte_range_set = list_rule(rf"(?: {byte_range_spec} | {suffix_byte_range_spec} )
 
 # byte-ranges-specifier = bytes-unit "=" byte-range-set
 
-byte_ranges_specifier = rf"(?: {bytes_unit} = {byte_range_set} )+"
+byte_ranges_specifier = rf"(?: {bytes_unit} = {byte_range_set} )"
 
 # other-range-set = 1*VCHAR
 
@@ -111,7 +111,7 @@ other_range_set = rf"{VCHAR}+"
 
 # other-ranges-specifier = other-range-unit "=" other-range-set
 
-other_ranges_specifier = rf"(?: {other_range_unit} = {other_range_set} )+"
+other_ranges_specifier = rf"(?: {other_range_unit} = {other_range_set} )"
 
 # Range = byte-ranges-specifier / other-ranges-specifier
 

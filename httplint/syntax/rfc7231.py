@@ -36,7 +36,7 @@ parameter = rf"(?: {token} = (?: {token} | {quoted_string} ) )"
 
 # qvalue = ( "0" [ "." *3DIGIT ] ) / ( "1" [ "." *3"0" ] )
 
-qvalue = rf"(?: (?: 0 (: \. {DIGIT}{{,3}} ) ) | (?: 1 (: \. [0]{{,3}} ) ) )"
+qvalue = rf"(?: (?: 0 (?: \. {DIGIT}{{,3}} ) ) | (?: 1 (?: \. [0]{{,3}} ) ) )"
 
 
 ## Dates

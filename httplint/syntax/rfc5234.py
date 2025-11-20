@@ -89,4 +89,4 @@ WSP = rf"(?: {SP} | {HTAB} )"
 #                     ;  headers and use with caution in
 #                     ;  other contexts.
 
-LWSP = rf"(?: {WSP} | (?: {CRLF} {WSP} ) )"
+LWSP = rf"(?: {WSP} | (?: {CRLF} {WSP} ) )*"

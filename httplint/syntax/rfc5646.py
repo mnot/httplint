@@ -111,7 +111,7 @@ region = rf"(?: {ALPHA}{{2}} | {DIGIT}{{3}} )"
 # variant       = 5*8alphanum         ; registered variants
 #               / (DIGIT 3alphanum)
 
-variant = rf"(?: {alphanum}{{3}} | (?: {DIGIT} {alphanum}{{3}} ) )"
+variant = rf"(?: {alphanum}{{5,8}} | (?: {DIGIT} {alphanum}{{3}} ) )"
 
 # singleton     = DIGIT               ; 0 - 9
 #               / %x41-57             ; A - W

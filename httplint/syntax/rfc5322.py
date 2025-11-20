@@ -59,7 +59,7 @@ quoted_string = rf"(?: {CFWS}? \" (?: {FWS}? {qcontent} )* \" {CFWS}? )"
 #                    "|" / "}" /
 #                    "~"
 
-atext = rf"(?: {ALPHA} | {DIGIT} | [!#$%&'*+-/=?^_`{{|}}~] )"
+atext = rf"(?: {ALPHA} | {DIGIT} | [!#$%&'*+\-/=?^_`{{|}}~] )"
 
 # atom            =   [CFWS] 1*atext [CFWS]
 
