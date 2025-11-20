@@ -1,4 +1,5 @@
 from httplint.field import HttpField
+from httplint.field.tests import FieldTest
 from httplint.syntax import rfc7235
 
 
@@ -13,3 +14,10 @@ indicates the authentication scheme(s) and parameters applicable."""
     deprecated = False
     valid_in_requests = False
     valid_in_responses = True
+
+
+class WWWAuthenticateTest(FieldTest):
+    name = "WWW-Authenticate"
+    inputs = [b'Basic realm="WallyWorld"']
+    expected_out = ['Basic realm="WallyWorld"']
+    expected_notes = []

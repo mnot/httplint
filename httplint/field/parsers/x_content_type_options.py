@@ -1,4 +1,6 @@
 from httplint.field import HttpField
+from httplint.field.notes import BAD_SYNTAX
+from httplint.field.tests import FieldTest
 from httplint.note import Note, categories, levels
 from httplint.types import AddNoteMethodType
 
@@ -46,3 +48,10 @@ Only one value is currently defined for this header, `nosniff`. Using other valu
 necessarily cause problems, but they probably won't have any effect either.
 
 See [this blog entry](http://bit.ly/t1UHW2) for more information about this header."""
+
+
+class XContentTypeOptionsTest(FieldTest):
+    name = "X-Content-Type-Options"
+    inputs = [b"nosniff", b"foo"]
+    expected_out = ["nosniff", "foo"]
+    expected_notes = [CONTENT_TYPE_OPTIONS, BAD_SYNTAX]

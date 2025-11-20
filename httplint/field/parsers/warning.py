@@ -1,4 +1,6 @@
 from httplint.field import HttpField
+from httplint.field.notes import FIELD_DEPRECATED
+from httplint.field.tests import FieldTest
 from httplint.syntax import rfc7234
 
 
@@ -13,3 +15,10 @@ transformation of a message that might not be reflected in it. It has been depre
     deprecated = True
     valid_in_requests = False
     valid_in_responses = True
+
+
+class WarningTest(FieldTest):
+    name = "Warning"
+    inputs = [b'110 - "Response is stale"', b'299 - "Miscellaneous warning"']
+    expected_out = ['110 - "Response is stale"', '299 - "Miscellaneous warning"']
+    expected_notes = [FIELD_DEPRECATED]

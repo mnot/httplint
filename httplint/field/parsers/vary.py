@@ -1,4 +1,5 @@
 from httplint.field import HttpField
+from httplint.field.tests import FieldTest
 from httplint.note import Note, categories, levels
 from httplint.syntax import rfc7231
 from httplint.types import AddNoteMethodType
@@ -84,3 +85,10 @@ The `Vary` mechanism allows a resource to describe the dimensions that its respo
 change, over; each listed header is another dimension.
 
 Varying by too many dimensions makes using this information impractical."""
+
+
+class VaryTest(FieldTest):
+    name = "Vary"
+    inputs = [b"Accept-Encoding", b"*, User-Agent", b"Host"]
+    expected_out = ["accept-encoding", "*", "user-agent", "host"]
+    expected_notes = [VARY_ASTERISK, VARY_USER_AGENT, VARY_HOST, VARY_COMPLEX]
