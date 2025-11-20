@@ -24,7 +24,7 @@ auth_scheme = token
 
 # token68 = 1*( ALPHA / DIGIT / "-" / "." / "_" / "~" / "+" / "/" ) *"="
 
-token68 = rf"(?: (?: {ALPHA} | {DIGIT} | \- | \. | _ | \~ | \+ | / )* =* )"
+token68 = rf"(?: (?: {ALPHA} | {DIGIT} | \- | \. | _ | \~ | \+ | / )+ =* )"
 
 # challenge = auth-scheme
 #             [ 1*SP
@@ -41,7 +41,7 @@ challenge = rf"""(?: {auth_scheme}
                             (?: {token68} |
                                 (?:
                                     (?: , | {auth_param} )
-                                    (?: {OWS} , (?: OWS {auth_param} )? )*
+                                    (?: {OWS} , (?: {OWS} {auth_param} )? )*
                                 )?
                             )
                         )?
@@ -62,7 +62,7 @@ credentials = rf"""(?: {auth_scheme}
                             (?: {token68} |
                                 (?:
                                     (?: , | {auth_param} )
-                                    (?: {OWS} , (?: OWS {auth_param} )? )*
+                                    (?: {OWS} , (?: {OWS} {auth_param} )? )*
                                 )?
                             )
                         )?
