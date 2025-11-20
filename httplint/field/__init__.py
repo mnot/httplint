@@ -15,6 +15,8 @@ from typing import (
 )
 import unittest
 
+import http_sf
+
 # from httplint.message import HttpRequest
 from httplint.syntax import rfc7230, rfc7231
 from httplint.types import (
@@ -56,13 +58,16 @@ class HttpField:
     reference: str
     syntax: Union[
         str, rfc7230.list_rule, bool
-    ]  # Verbose regular expression to match, or False to indicate no syntax
+    ]  # Verbose regular expression to match, or False to indicate no syntax.
+    # If structured_field is True, this is ignored.
     list_header: bool  # Can be split into values on commas.
     valid_in_requests: bool
     valid_in_responses: bool
     nonstandard_syntax: bool = False  # Don't check for a single value at the end.
     deprecated: bool = False
     no_coverage: bool = False  # Turns off coverage checks.
+    structured_field: bool = False
+    sf_type: str = "item"  # item, list, dict
 
     def __init__(self, wire_name: str, message: "HttpMessageLinter") -> None:
         self.wire_name = wire_name.strip()
@@ -87,6 +92,11 @@ class HttpField:
         """
         Basic input processing on a new field value.
         """
+
+        # handle structured fields separately during finish
+        if self.structured_field:
+            self.value.append(field_value)
+            return
 
         # split before processing if a list field
         if self.list_header:
@@ -117,10 +127,36 @@ class HttpField:
         # check field name syntax
         if not re.match(f"^{rfc7230.token}$", self.wire_name, RE_FLAGS):
             add_note(FIELD_NAME_BAD_SYNTAX)
+
+        if self.structured_field:
+            combined_value = ", ".join(self.value)
+            parsed_value: Any = None
+            try:
+                if self.sf_type == "list":
+                    _, parsed_value = http_sf.parse_list(combined_value.encode("utf-8"))
+                elif self.sf_type == "dictionary":
+                    _, parsed_value = http_sf.parse_dictionary(
+                        combined_value.encode("utf-8")
+                    )
+                elif self.sf_type == "item":
+                    _, parsed_value = http_sf.parse_item(combined_value.encode("utf-8"))
+                else:
+                    raise ValueError(f"Unknown sf_type: {self.sf_type}")
+                self.value = parsed_value
+            except ValueError as why:
+                add_note(BAD_SYNTAX, f"Structured Field parse error: {why}")
+                self.value = None
+            except Exception as why:  # pylint: disable=broad-except
+                add_note(BAD_SYNTAX, f"Structured Field parse error: {why}")
+                self.value = None
         if self.deprecated:
             deprecation_ref = getattr(self, "deprecation_ref", self.reference)
             add_note(FIELD_DEPRECATED, deprecation_ref=deprecation_ref)
-        if not self.list_header and not self.nonstandard_syntax:
+        if (
+            not self.list_header
+            and not self.nonstandard_syntax
+            and not self.structured_field
+        ):
             if not self.value:
                 self.value = None
             elif len(self.value) == 1:

@@ -13,6 +13,8 @@ FIXME
     reference = None
     syntax = False
     list_header = False
+    structured_field = False
+    structured_field_type = FIXME
     deprecated = False
     valid_in_requests = False
     valid_in_responses = True

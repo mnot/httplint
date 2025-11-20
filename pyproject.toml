@@ -21,7 +21,8 @@ dependencies = [
     "Markdown",
     "MarkupSafe",
     "thor",
-    "typing_extensions"
+    "typing_extensions",
+    "http-sf"
 ]
 
 [project.optional-dependencies]
