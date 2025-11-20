@@ -9,7 +9,7 @@ def main() -> None:
     args = getargs()
     start_time = time.time() if args.now else None
     parser = HttpCliParser(args, start_time)
-    parser.handle_input(sys.stdin.read().encode("utf-8"))
+    parser.handle_input(sys.stdin.read().encode("utf-8", "replace"))
 
 
 def getargs() -> Namespace:
