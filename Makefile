@@ -42,6 +42,8 @@ typecheck: typecheck_py
 .PHONY: tidy
 tidy: tidy_py
 
+.PHONY: run
+run: lint typecheck tidy
 
 
 include Makefile.pyproject
