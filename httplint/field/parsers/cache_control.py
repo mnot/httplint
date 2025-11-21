@@ -169,6 +169,12 @@ ignoring it there."""
             if directive in KNOWN_CC and cc_list.count(directive) > 1:
                 add_note(CC_DUP, directive=directive)
 
+        if "stale-if-error" in cc_list:
+            add_note(STALE_IF_ERROR)
+
+        if "stale-while-revalidate" in cc_list:
+            add_note(STALE_WHILE_REVALIDATE)
+
         # pre-check / post-check
         if "pre-check" in cc_list or "post-check" in cc_list:
             if "pre-check" not in cc_list or "post-check" not in cc_list:
@@ -319,6 +325,30 @@ showing it to the user.
 Note that these directives do not have any effect on other clients or caches."""
 
 
+class STALE_IF_ERROR(Note):
+    category = categories.CACHING
+    level = levels.INFO
+    _summary = "%(message)s may be served by a cache when an error occurs."
+    _text = """\
+The `stale-if-error` cache directive allows a cache to return a stale response when an error
+(e.g., a 500 Internal Server Error, or a network timeout) is encountered while attempting to
+revalidate it.
+
+See [RFC 5861](https://www.rfc-editor.org/rfc/rfc5861) for more information."""
+
+
+class STALE_WHILE_REVALIDATE(Note):
+    category = categories.CACHING
+    level = levels.INFO
+    _summary = "%(message)s may be served by a cache while it is being revalidated."
+    _text = """\
+The `stale-while-revalidate` cache directive allows a cache to serve a stale response while a
+revalidation request is happening in the background.
+
+See [RFC 5861](https://www.rfc-editor.org/rfc/rfc5861) for more information."""
+
+
+
 class CacheControlTest(FieldTest):
     name = "Cache-Control"
     inputs = [b"a=b, c=d", b"e=f", b"g"]
@@ -348,3 +378,17 @@ class CacheControlBadMaxAgeTest(FieldTest):
     name = "Cache-Control"
     inputs = [b"max-age=foo"]
     expected_notes = [BAD_CC_SYNTAX]
+
+
+class StaleIfErrorTest(FieldTest):
+    name = "Cache-Control"
+    inputs = [b"stale-if-error=60"]
+    expected_out = [("stale-if-error", 60)]
+    expected_notes = [STALE_IF_ERROR]
+
+
+class StaleWhileRevalidateTest(FieldTest):
+    name = "Cache-Control"
+    inputs = [b"stale-while-revalidate=60"]
+    expected_out = [("stale-while-revalidate", 60)]
+    expected_notes = [STALE_WHILE_REVALIDATE]
