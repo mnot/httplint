@@ -430,7 +430,9 @@ class SET_COOKIE_LIFETIME_TOO_LONG(Note):
 class SET_COOKIE_PREFIX_SECURE_MISSING(Note):
     category = categories.GENERAL
     level = levels.BAD
-    _summary = "The %(cookie_name)s Set-Cookie header has a prefix that requires the Secure attribute."
+    _summary = (
+        "The %(cookie_name)s Set-Cookie header has a prefix that requires the Secure attribute."
+    )
     _text = """\
     The `Set-Cookie` header has a prefix (e.g., `__Secure-` or `__Host-`) that requires the `Secure`
     attribute.
