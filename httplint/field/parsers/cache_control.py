@@ -3,6 +3,7 @@ from typing import Tuple, Union, Dict, List, Callable
 from httplint.field import HttpField
 from httplint.field.tests import FieldTest
 from httplint.note import Note, categories, levels
+
 from httplint.syntax import rfc9111
 from httplint.types import AddNoteMethodType
 from httplint.util import prose_list
@@ -115,7 +116,10 @@ ignoring it there."""
                     add_note(BAD_CC_SYNTAX, bad_directive=directive_name)
             else:
                 try:
-                    return (directive_name, value_func(directive_val))
+                    val = value_func(directive_val)
+                    if isinstance(val, int) and val > 2147483648:
+                        add_note(CC_MAX_AGE_TOO_LARGE, directive=directive_name)
+                    return (directive_name, val)
                 except (ValueError, TypeError):
                     add_note(BAD_CC_SYNTAX, bad_directive=directive_name)
                     raise ValueError  # pylint: disable=raise-missing-from
@@ -203,6 +207,15 @@ class BAD_CC_SYNTAX(Note):
     level = levels.BAD
     _summary = "The %(bad_directive)s cache directive's syntax is incorrect."
     _text = "This value must be an integer."
+
+
+class CC_MAX_AGE_TOO_LARGE(Note):
+    category = categories.CACHING
+    level = levels.WARN
+    _summary = "The %(directive)s cache directive is very large."
+    _text = """\
+The `%(directive)s` cache directive's value is greater than 2^31-1. Some implementations may not be
+able to handle values this large."""
 
 
 class CC_MISCAP(Note):
@@ -391,3 +404,10 @@ class StaleWhileRevalidateTest(FieldTest):
     inputs = [b"stale-while-revalidate=60"]
     expected_out = [("stale-while-revalidate", 60)]
     expected_notes = [STALE_WHILE_REVALIDATE]
+
+
+class CacheControlBigTest(FieldTest):
+    name = "Cache-Control"
+    inputs = [b"max-age=2147483649"]
+    expected_out = [("max-age", 2147483649)]
+    expected_notes = [CC_MAX_AGE_TOO_LARGE]

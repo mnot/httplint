@@ -3,6 +3,7 @@ from httplint.field.tests import FieldTest
 from httplint.syntax import rfc9110
 from httplint.types import AddNoteMethodType
 from httplint.field.notes import BAD_SYNTAX
+from httplint.note import Note, categories, levels
 
 
 class content_length(HttpField):
@@ -22,7 +23,19 @@ store the response (since they can't be sure if they have the whole response).""
     valid_in_responses = True
 
     def parse(self, field_value: str, add_note: AddNoteMethodType) -> int:
-        return int(field_value)
+        value = int(field_value)
+        if value > 9223372036854775807:  # 2^63-1
+            add_note(CL_TOO_LARGE)
+        return value
+
+
+class CL_TOO_LARGE(Note):
+    category = categories.GENERAL
+    level = levels.WARN
+    _summary = "The Content-Length header is very large."
+    _text = """\
+The `Content-Length` header's value is greater than 2^63-1. Some implementations may not be able to
+handle values this large."""
 
 
 class ContentLengthTest(FieldTest):
@@ -55,3 +68,4 @@ class ContentLengthBigTest(FieldTest):
     name = "Content-Length"
     inputs = [b"9" * 999]
     expected_out = int("9" * 999)
+    expected_notes = [CL_TOO_LARGE]

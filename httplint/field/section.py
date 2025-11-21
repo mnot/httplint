@@ -17,6 +17,7 @@ class FieldSection:
     """
 
     max_field_size = 8 * 1024
+    max_total_size = 32 * 1024
 
     def __init__(self, message: "HttpMessageLinter") -> None:
         self.message = message
@@ -72,6 +73,13 @@ class FieldSection:
                     field_size=f_num(field_size),
                 )
 
+        if self.size > self.max_total_size:
+            self.message.notes.add(
+                "header-block",
+                TOTAL_HEADER_SIZE_TOO_LARGE,
+                header_size=f_num(self.size),
+            )
+
         # check each of the complete header values and get the parsed value
         for _, handler in list(self.handlers.items()):
             field_add_note = partial(
@@ -89,6 +97,15 @@ class FIELD_TOO_LARGE(Note):
     _summary = "The %(field_name)s header is very large (%(field_size)s bytes)."
     _text = """\
 Some implementations limit the size of any single header line."""
+
+
+class TOTAL_HEADER_SIZE_TOO_LARGE(Note):
+    category = categories.GENERAL
+    level = levels.WARN
+    _summary = "The total size of the headers is very large (%(header_size)s bytes)."
+    _text = """\
+Some implementations limit the total size of the header block. 32KB is a reasonable
+upper limit."""
 
 
 class FIELD_NAME_ENCODING(Note):

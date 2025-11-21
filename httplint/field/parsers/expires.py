@@ -40,3 +40,9 @@ class BlankExpiresTest(FieldTest):
     inputs = [b""]
     expected_out = None
     expected_notes = [BAD_DATE_SYNTAX]
+
+
+class ExpiresYearBigTest(FieldTest):
+    name = "Expires"
+    inputs = [b"Fri, 31 Dec 9999 23:59:59 GMT"]
+    expected_out = 253402300799
