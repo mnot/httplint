@@ -404,9 +404,8 @@ When responses with certain status codes don't have explicit freshness informati
 Cache-Control: max-age` directive, or `Expires` header), caches are allowed to estimate how fresh
 it is using a heuristic.
 
-Usually, but not always, this is done using the `Last-Modified` header. For example, if your
-response was last modified a week ago, a cache might decide to consider the response fresh for a
-day.
+This is often done using the `Last-Modified` header. For example, if a response was last modified a
+week ago, a cache might consider it fresh for a day.
 
 Consider adding a `Cache-Control` header; otherwise, it may be cached for longer or shorter than
 you'd like."""

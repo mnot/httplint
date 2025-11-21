@@ -71,7 +71,7 @@ class DISPOSITION_FILENAME_PERCENT(Note):
     category = categories.GENERAL
     level = levels.WARN
     _summary = (
-        "The 'filename' parameter on the Content-Disposition header"
+        "The 'filename' parameter on the Content-Disposition header "
         "contains a '%%' character."
     )
     _text = """\
@@ -97,7 +97,7 @@ class DISPOSITION_FILENAME_PATH_CHAR(Note):
 The `Content-Disposition` header suggests a filename for clients to use when saving the file
 locally, using the `filename` and `filename*` parameters.
 
-One of these parameters contains a path character ("\" or "/"), used to navigate between
+One of these parameters contains a path character ("\\" or "/"), used to navigate between
 directories on common operating systems.
 
 Because this can be used to attach the browser's host operating system (e.g., by saving a file to a

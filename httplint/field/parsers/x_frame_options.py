@@ -51,12 +51,14 @@ class FRAME_OPTIONS_DENY(Note):
     category = categories.SECURITY
     level = levels.INFO
     _summary = "%(message)s prevents some browsers from rendering it within a frame."
+    # Original URL:
+    # http://blogs.msdn.com/b/ie/archive/2009/01/27/ie8-security-part-vii-clickjacking-defenses.aspx
     _text = """\
 The `X-Frame-Options` response header controls how IE8 handles HTML frames; the `DENY` value
 prevents this content from being rendered within a frame, which defends against certain types of
 attacks.
 
-See [this blog entry](http://bit.ly/v5Bh5Q) for more information.
+See [MDN](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-Frame-Options) for more information.
 """
 
 
@@ -67,6 +69,8 @@ class FRAME_OPTIONS_SAMEORIGIN(Note):
         "%(message)s prevents some browsers from rendering it within a frame "
         "on another site."
     )
+    # Original URL:
+    # http://blogs.msdn.com/b/ie/archive/2009/01/27/ie8-security-part-vii-clickjacking-defenses.aspx
     _text = """\
 The `X-Frame-Options` response header controls how IE8 handles HTML frames; the `DENY` value
 prevents this content from being rendered within a frame on another site, which defends against
@@ -74,7 +78,7 @@ certain types of attacks.
 
 Currently this is supported by IE8 and Safari 4.
 
-See [this blog entry](http://bit.ly/v5Bh5Q) for more information.
+See [MDN](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-Frame-Options) for more information.
 """
 
 
@@ -82,11 +86,13 @@ class FRAME_OPTIONS_UNKNOWN(Note):
     category = categories.SECURITY
     level = levels.WARN
     _summary = "%(message)s contains an X-Frame-Options header with an unknown value."
+    # Original URL:
+    # http://blogs.msdn.com/b/ie/archive/2009/01/27/ie8-security-part-vii-clickjacking-defenses.aspx
     _text = """\
 Only two values are currently defined for this header, `DENY` and `SAMEORIGIN`. Using other values
 here won't necessarily cause problems, but they probably won't have any effect either.
 
-See [this blog entry](http://bit.ly/v5Bh5Q) for more information.
+See [MDN](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-Frame-Options) for more information.
 """
 
 

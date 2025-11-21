@@ -27,6 +27,8 @@ class CONTENT_TYPE_OPTIONS(Note):
     category = categories.SECURITY
     level = levels.INFO
     _summary = "%(message)s instructs browsers not to 'sniff' its media type."
+    # Original URL:
+    # http://blogs.msdn.com/b/ie/archive/2008/09/02/ie8-security-part-vi-beta-2-update.aspx
     _text = """\
 Many Web browsers "sniff" the media type of responses to figure out whether they're HTML, RSS or
 another format, no matter what the `Content-Type` header says.
@@ -34,7 +36,8 @@ another format, no matter what the `Content-Type` header says.
 This header instructs browsers not to do this, but to always respect the
 Content-Type header. It probably won't have any effect in other clients.
 
-See [this blog entry](http://bit.ly/t1UHW2) for more information about this header."""
+See [MDN](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-Content-Type-Options)
+for more information about this header."""
 
 
 class CONTENT_TYPE_OPTIONS_UNKNOWN(Note):
@@ -43,11 +46,14 @@ class CONTENT_TYPE_OPTIONS_UNKNOWN(Note):
     _summary = (
         "%(message)s contains an X-Content-Type-Options header with an unknown value."
     )
+    # Original URL:
+    # http://blogs.msdn.com/b/ie/archive/2008/09/02/ie8-security-part-vi-beta-2-update.aspx
     _text = """\
 Only one value is currently defined for this header, `nosniff`. Using other values here won't
 necessarily cause problems, but they probably won't have any effect either.
 
-See [this blog entry](http://bit.ly/t1UHW2) for more information about this header."""
+See [MDN](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-Content-Type-Options)
+for more information about this header."""
 
 
 class XContentTypeOptionsTest(FieldTest):

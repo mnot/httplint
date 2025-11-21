@@ -244,14 +244,14 @@ class CHECK_SINGLE(Note):
     category = categories.CACHING
     level = levels.WARN
     _summary = "Only one of the pre-check and post-check cache directives is present."
+    # Original URL:
+    # http://blogs.msdn.com/b/ie/archive/2005/07/12/internet-explorer-cache-control-extensions.aspx
     _text = """\
 Microsoft Internet Explorer implements two `Cache-Control` extensions, `pre-check` and
 `post-check`, to give more control over how its cache stores responses.
 
 %(message)s uses only one of these directives; as a result, Internet Explorer will ignore the
 directive, since it requires both to be present.
-
-See [this blog entry](http://bit.ly/rzT0um) for more information.
 """
 
 
@@ -259,6 +259,8 @@ class CHECK_ALL_ZERO(Note):
     category = categories.CACHING
     level = levels.WARN
     _summary = "The pre-check and post-check cache directives are both '0'."
+    # Original URL:
+    # http://blogs.msdn.com/b/ie/archive/2005/07/12/internet-explorer-cache-control-extensions.aspx
     _text = """\
 Microsoft Internet Explorer implements two `Cache-Control` extensions, `pre-check` and
 `post-check`, to give more control over how its cache stores responses.
@@ -267,43 +269,44 @@ Microsoft Internet Explorer implements two `Cache-Control` extensions, `pre-chec
 directive, since it requires both to be present.
 
 In other words, setting these to zero has **no effect** (besides wasting bandwidth),
-and may trigger bugs in some beta versions of IE.
-
-See [this blog entry](http://bit.ly/rzT0um) for more information."""
+and may trigger bugs in some beta versions of IE."""
 
 
 class CHECK_POST_BIGGER(Note):
     category = categories.CACHING
     level = levels.WARN
     _summary = "The post-check cache directive's value is larger than pre-check's."
+    # Original URL:
+    # http://blogs.msdn.com/b/ie/archive/2005/07/12/internet-explorer-cache-control-extensions.aspx
     _text = """\
 Microsoft Internet Explorer implements two `Cache-Control` extensions, `pre-check` and
 `post-check`, to give more control over how its cache stores responses.
 
 %(message)s assigns a higher value to `post-check` than to `pre-check`; this means that Internet
-Explorer will treat `post-check` as if its value is the same as `pre-check`'s.
-
-See [this blog entry](http://bit.ly/rzT0um) for more information."""
+Explorer will treat `post-check` as if its value is the same as `pre-check`'s."""
 
 
 class CHECK_POST_ZERO(Note):
     category = categories.CACHING
     level = levels.BAD
     _summary = "The post-check cache directive's value is '0'."
+    # Original URL:
+    # http://blogs.msdn.com/b/ie/archive/2005/07/12/internet-explorer-cache-control-extensions.aspx
     _text = """\
 Microsoft Internet Explorer implements two `Cache-Control` extensions, `pre-check` and
 `post-check`, to give more control over how its cache stores responses.
 
 %(message)s assigns a value of "0" to `post-check`, which means that Internet Explorer will reload
-the content as soon as it enters the browser cache, effectively **doubling the load on the server**.
-
-See [this blog entry](http://bit.ly/rzT0um) for more information."""
+the content as soon as it enters the browser cache, effectively **doubling the load on the
+server**."""
 
 
 class CHECK_POST_PRE(Note):
     category = categories.CACHING
     level = levels.INFO
     _summary = "%(message)s may be refreshed in the background by Internet Explorer."
+    # Original URL:
+    # http://blogs.msdn.com/b/ie/archive/2005/07/12/internet-explorer-cache-control-extensions.aspx
     _text = """\
 Microsoft Internet Explorer implements two `Cache-Control` extensions, `pre-check` and
 `post-check`, to give more control over how its cache stores responses.
@@ -313,9 +316,7 @@ cached response being served while it is refreshed in the background. However, i
 cached for more than %(pre_check)s seconds, the browser will download a fresh response before
 showing it to the user.
 
-Note that these directives do not have any effect on other clients or caches.
-
-See [this blog entry](http://bit.ly/rzT0um) for more information."""
+Note that these directives do not have any effect on other clients or caches."""
 
 
 class CacheControlTest(FieldTest):

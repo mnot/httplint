@@ -21,7 +21,7 @@ class FIELD_NAME_BAD_SYNTAX(Note):
     _summary = '"%(field_name)s" is not a valid field name.'
     _text = """\
 Field names are limited to the `token` production in HTTP; i.e., they can't contain parenthesis,
-angle brackes (<>), ampersands (@), commas, semicolons, colons, backslashes (\\), forward
+angle brackets (<>), ampersands (@), commas, semicolons, colons, backslashes (\\), forward
 slashes (/), quotes, square brackets ([]), question marks, equals signs (=), curly brackets ({})
 spaces or tabs."""
 

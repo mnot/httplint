@@ -47,6 +47,8 @@ class XSS_PROTECTION_ON(Note):
     category = categories.SECURITY
     level = levels.INFO
     _summary = "%(message)s enables XSS filtering in IE8+."
+    # Original URL:
+    # http://blogs.msdn.com/b/ieinternals/archive/2011/01/31/controlling-the-internet-explorer-xss-filter-with-the-x-xss-protection-http-header.aspx
     _text = """\
 Recent versions of Internet Explorer have built-in Cross-Site Scripting (XSS) attack protection;
 they try to automatically filter requests that fit a particular profile.
@@ -56,13 +58,16 @@ it will "sanitise" the page to prevent the attack. In other words, the page will
 
 This header probably won't have any effect on other clients.
 
-See [this blog entry](http://bit.ly/tJbICH) for more information."""
+See [MDN](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-XSS-Protection)
+for more information."""
 
 
 class XSS_PROTECTION_OFF(Note):
     category = categories.SECURITY
     level = levels.INFO
     _summary = "%(message)s disables XSS filtering in IE8+."
+    # Original URL:
+    # http://blogs.msdn.com/b/ieinternals/archive/2011/01/31/controlling-the-internet-explorer-xss-filter-with-the-x-xss-protection-http-header.aspx
     _text = """\
 Recent versions of Internet Explorer have built-in Cross-Site Scripting (XSS) attack protection;
 they try to automatically filter requests that fit a particular profile.
@@ -72,13 +77,16 @@ the protection interferes with the application.
 
 This header probably won't have any effect on other clients.
 
-See [this blog entry](http://bit.ly/tJbICH) for more information."""
+See [MDN](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-XSS-Protection)
+for more information."""
 
 
 class XSS_PROTECTION_BLOCK(Note):
     category = categories.SECURITY
     level = levels.INFO
     _summary = "%(message)s blocks XSS attacks in IE8+."
+    # Original URL:
+    # http://blogs.msdn.com/b/ieinternals/archive/2011/01/31/controlling-the-internet-explorer-xss-filter-with-the-x-xss-protection-http-header.aspx
     _text = """\
 Recent versions of Internet Explorer have built-in Cross-Site Scripting (XSS) attack protection;
 they try to automatically filter requests that fit a particular profile.
@@ -89,7 +97,8 @@ error.
 
 This header probably won't have any effect on other clients.
 
-See [this blog entry](http://bit.ly/tJbICH) for more information."""
+See [MDN](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-XSS-Protection)
+for more information."""
 
 
 class OneXXSSTest(FieldTest):

@@ -66,8 +66,7 @@ class VARY_HOST(Note):
     _text = """\
 Some servers (e.g., [Apache](http://httpd.apache.org/) with
 [mod_rewrite](http://httpd.apache.org/docs/2.4/mod/mod_rewrite.html)) will send `Host` in the
-`Vary` header, in the belief that since it affects how the server selects what to send back, this
-is necessary.
+`Vary` header, in the belief that this is necessary.
 
 This is not the case; HTTP specifies that the URI is the basis of the cache key, and the URI
 incorporates the `Host` header.

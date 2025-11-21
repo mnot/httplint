@@ -85,7 +85,8 @@ Generally, reverse proxies should either omit the `Age` header (if they have ano
 determining how fresh the response is), or leave the `Date` header alone (i.e., act as a normal
 HTTP cache).
 
-See [this paper](http://j.mp/S7lPL4) for more information."""
+See [this paper](https://www.usenix.org/legacy/events/usits01/full_papers/cohen/cohen_html/index.html)
+for more information."""
 
 
 class BasicDateTest(FieldTest):

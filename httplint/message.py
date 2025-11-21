@@ -231,7 +231,7 @@ class CL_INCORRECT(Note):
     _summary = "%(message)s's Content-Length header is incorrect."
     _text = """\
 `Content-Length` is used by HTTP to delimit messages; that is, to mark the end of one message and
-the beginning of the next. An incorrect `Content-Length` can cause security and intereoperablity
+the beginning of the next. An incorrect `Content-Length` can cause security and interoperability
 issues.
 
 The actual content size was %(content_length)s bytes."""

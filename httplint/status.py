@@ -266,7 +266,7 @@ class UPGRADE_NOT_REQUESTED(Note):
 HTTP defines the `Upgrade` header as a means of negotiating a change of protocol; i.e., it
 allows you to switch the protocol on a given connection from HTTP to something else.
 
-This response was upgraded, but the request did not contain an `Upgrade` heade field.
+This response was upgraded, but the request did not contain an `Upgrade` header field.
 """
 
 
@@ -434,7 +434,7 @@ class STATUS_IM_A_TEAPOT(Note):
         "The server returned 418 (I'm a Teapot), an easter egg defined in RFC 2324."
     )
     _text = """\
-RFC 2324 was an April 1 RFC that lampooned the various ways HTTP was abused; one such abuse
+RFC 2324 was an April Fools' Day RFC that lampooned the various ways HTTP was abused; one such abuse
 was the definition of the application-specific `418 (I'm a Teapot)` status code. In the
 intervening years, this status code has been sometimes implemented as an "easter egg".
 
