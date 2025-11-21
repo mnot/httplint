@@ -38,7 +38,6 @@ def loose_parse(  # pylint: disable=too-many-branches
     """
     Parse a Set-Cookie string, as per RFC6265, Section 5.2.
     """
-    name = "Set-Cookie"
     if ";" in set_cookie_string:
         name_value_pair, unparsed_attributes = set_cookie_string.split(";", 1)
     else:
@@ -178,7 +177,6 @@ def loose_parse(  # pylint: disable=too-many-branches
         add_note(SET_COOKIE_PARTITIONED_NO_SECURE, cookie_name=cookie_name)
 
     check_prefixes(cookie_name, cookie_attribute_list, add_note)
-
     return (cookie_name, cookie_value, cookie_attribute_list)
 
 
@@ -430,9 +428,7 @@ class SET_COOKIE_LIFETIME_TOO_LONG(Note):
 class SET_COOKIE_PREFIX_SECURE_MISSING(Note):
     category = categories.GENERAL
     level = levels.BAD
-    _summary = (
-        "The %(cookie_name)s Set-Cookie header has a prefix that requires the Secure attribute."
-    )
+    _summary = "The %(cookie_name)s Set-Cookie header requires the Secure attribute."
     _text = """\
     The `Set-Cookie` header has a prefix (e.g., `__Secure-` or `__Host-`) that requires the `Secure`
     attribute.
