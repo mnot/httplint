@@ -178,7 +178,16 @@ class StatusChecker:
         pass
 
     def status412(self) -> None:  # Precondition Failed
-        pass
+        if self.request:
+            match_headers = [
+                "if-match",
+                "if-none-match",
+                "if-modified-since",
+                "if-unmodified-since",
+                "if-range",
+            ]
+            if not any(get_header(self.request.headers.text, h) for h in match_headers):
+                self.add_note("", STATUS_412_WITHOUT_PRECONDITION)
 
     def status413(self) -> None:  # Request Entity Too Large
         self.add_note("", STATUS_REQUEST_ENTITY_TOO_LARGE)
@@ -194,10 +203,16 @@ class StatusChecker:
         self.add_note("", STATUS_UNSUPPORTED_MEDIA_TYPE)
 
     def status416(self) -> None:  # Requested Range Not Satisfiable
-        pass
+        if self.request and not get_header(self.request.headers.text, "range"):
+            self.add_note("", STATUS_416_WITHOUT_RANGE)
 
     def status417(self) -> None:  # Expectation Failed
-        pass
+        if self.request:
+            expect_headers = get_header(self.request.headers.text, "expect")
+            if not expect_headers:
+                self.add_note("", STATUS_417_WITHOUT_EXPECT)
+            elif "100-continue" in expect_headers:
+                self.add_note("", STATUS_417_WITH_100_CONTINUE)
 
     def status418(self) -> None:
         self.add_note("", STATUS_IM_A_TEAPOT)
@@ -512,3 +527,49 @@ class STATUS_VERSION_NOT_SUPPORTED(Note):
     _summary = "The request HTTP version isn't supported."
     _text = """\
 """
+
+
+class STATUS_412_WITHOUT_PRECONDITION(Note):
+    category = categories.GENERAL
+    level = levels.WARN
+    _summary = "The request didn't have any preconditions."
+    _text = """\
+The `412 (Precondition Failed)` status code indicates that one or more conditions given in the
+request header fields evaluated to false when tested on the server.
+
+However, this request didn't contain any conditional headers (such as `If-Match`, `If-None-Match`,
+`If-Modified-Since`, `If-Unmodified-Since`, or `If-Range`)."""
+
+
+class STATUS_416_WITHOUT_RANGE(Note):
+    category = categories.GENERAL
+    level = levels.WARN
+    _summary = "The request didn't have a Range header."
+    _text = """\
+The `416 (Range Not Satisfiable)` status code indicates that the set of ranges in the request's
+`Range` header field overlap the current extent of the selected resource.
+
+However, this request didn't contain a `Range` header."""
+
+
+class STATUS_417_WITHOUT_EXPECT(Note):
+    category = categories.GENERAL
+    level = levels.WARN
+    _summary = "The request didn't have an Expect header."
+    _text = """\
+The `417 (Expectation Failed)` status code indicates that the expectation given in the request's
+`Expect` header field could not be met by at least one of the inbound servers.
+
+However, this request didn't contain an `Expect` header."""
+
+
+class STATUS_417_WITH_100_CONTINUE(Note):
+    category = categories.GENERAL
+    level = levels.INFO
+    _summary = "The server couldn't meet the 100-continue expectation."
+    _text = """\
+The `417 (Expectation Failed)` status code indicates that the expectation given in the request's
+`Expect` header field could not be met by at least one of the inbound servers.
+
+In this case, the client requested `100-continue`, but the server (or an intermediary) couldn't
+satisfy it."""
