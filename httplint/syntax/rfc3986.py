@@ -6,7 +6,7 @@ Regex for URIs
 
 These regex are directly derived from the collected ABNF in RFC3986:
 
-    https://tools.ietf.org/html/rfc3986#appendix-A
+    https://www.rfc-editor.org/rfc/rfc3986#appendix-A
 
 They should be processed with re.VERBOSE.
 """

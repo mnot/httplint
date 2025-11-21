@@ -24,7 +24,7 @@ X_Frame_Options = rf"""(?:
 
 class x_frame_options(HttpField):
     canonical_name = "X-Frame-Options"
-    reference = "https://tools.ietf.org/html/rfc7034"
+    reference = "https://www.rfc-editor.org/rfc/rfc7034"
     description = """
 The X-Frame-Options response header declares a policy regarding whether the browser may display
 the transmitted content in frames that are part of other web pages.

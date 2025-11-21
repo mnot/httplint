@@ -78,7 +78,7 @@ class DISPOSITION_FILENAME_PERCENT(Note):
 The `Content-Disposition` header suggests a filename for clients to use when saving the file
 locally, using the `filename` parameter.
 
-[RFC6266](http://tools.ietf.org/html/rfc6266) specifies how to carry non-ASCII characters in this
+[RFC6266](https://www.rfc-editor.org/rfc/rfc6266) specifies how to carry non-ASCII characters in this
 parameter. However, historically some (but not all) browsers have also decoded %%-encoded
 characters in the `filename` parameter, which means that they'll be treated differently depending
 on the browser you're using.

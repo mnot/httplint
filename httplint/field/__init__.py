@@ -41,9 +41,9 @@ if TYPE_CHECKING:
     )
 
 # base URLs for references
-RFC2616 = "http://tools.ietf.org/html/rfc2616.html#%s"
-RFC6265 = "http://tools.ietf.org/html/rfc6265.html#%s"
-RFC6266 = "http://tools.ietf.org/html/rfc6266.html#section-4"
+RFC2616 = "https://www.rfc-editor.org/rfc/rfc2616.html#%s"
+RFC6265 = "https://www.rfc-editor.org/rfc/rfc6265.html#%s"
+RFC6266 = "https://www.rfc-editor.org/rfc/rfc6266.html#section-4"
 
 ### configuration
 MAX_HDR_SIZE = 4 * 1024

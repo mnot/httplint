@@ -51,7 +51,7 @@ class LINK_REV(Note):
     level = levels.WARN
     _summary = "The 'rev' parameter on the Link header is deprecated."
     _text = """\
-The `Link` header, defined by [RFC5988](http://tools.ietf.org/html/rfc5988#section-5), uses the
+The `Link` header, defined by [RFC5988](https://www.rfc-editor.org/rfc/rfc5988#section-5), uses the
 `rel` parameter to communicate the type of a link. `rev` is deprecated by that specification
 because it is often confusing.
 
@@ -63,7 +63,7 @@ class LINK_BAD_ANCHOR(Note):
     level = levels.WARN
     _summary = "The 'anchor' parameter on the %(link)s Link header isn't a URI."
     _text = """\
-The `Link` header, defined by [RFC5988](http://tools.ietf.org/html/rfc5988#section-5), uses the
+The `Link` header, defined by [RFC5988](https://www.rfc-editor.org/rfc/rfc5988#section-5), uses the
 `anchor` parameter to define the context URI for the link.
 
 This parameter can be an absolute or relative URI; however, `%(anchor)s` is neither."""

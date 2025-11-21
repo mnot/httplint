@@ -264,7 +264,7 @@ class SET_COOKIE_BAD_DATE(Note):
     _summary = "The %(cookie_name)s Set-Cookie header has an invalid Expires date."
     _text = """\
     The `expires` date on this `Set-Cookie` header isn't valid; see
-    [RFC6265](http://tools.ietf.org/html/rfc6265) for details of the correct format."""
+    [RFC6265](https://www.rfc-editor.org/rfc/rfc6265) for details of the correct format."""
 
 
 class SET_COOKIE_EMPTY_MAX_AGE(Note):

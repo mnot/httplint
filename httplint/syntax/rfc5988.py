@@ -3,7 +3,7 @@ Regex for RFC5988
 
 These regex are directly derived from the collected ABNF in RFC5988.
 
-    <https://tools.ietf.org/html/rfc5988#section-5>
+    <https://www.rfc-editor.org/rfc/rfc5988#section-5>
 
 They should be processed with re.VERBOSE.
 """

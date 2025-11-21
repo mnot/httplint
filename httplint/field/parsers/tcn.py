@@ -7,7 +7,7 @@ class tcn(HttpField):
 The `TCN` response header is part of an experimental transparent content negotiation scheme. It
 is not widely supported in clients.
 """
-    reference = "https://tools.ietf.org/html/rfc2295"
+    reference = "https://www.rfc-editor.org/rfc/rfc2295"
     syntax = False
     list_header = True
     deprecated = False

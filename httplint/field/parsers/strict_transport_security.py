@@ -19,7 +19,7 @@ class strict_transport_security(HttpField):
     description = """\
 The `Strict-Transport-Security` response header (often abbreviated as HSTS) lets a web site tell
 browsers that it should only be communicated with using HTTPS, instead of using HTTP."""
-    reference = "https://tools.ietf.org/html/rfc6797"
+    reference = "https://www.rfc-editor.org/rfc/rfc6797"
     syntax = rf"(?: {sts_directive} (?: {rfc9110.OWS} ; {rfc9110.OWS} {sts_directive} )* )"
     list_header = False
     nonstandard_syntax = True

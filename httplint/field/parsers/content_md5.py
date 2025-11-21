@@ -11,7 +11,7 @@ integrity check (MIC).
 
 Note that while a MIC is good for detecting accidental modification of content in transit, it is
 not proof against malicious attacks."""
-    reference = "https://tools.ietf.org/html/rfc1864"
+    reference = "https://www.rfc-editor.org/rfc/rfc1864"
     syntax = r"(?: [A-Za-z0-9+/]{22} ={2} )"
     list_header = False
     deprecated = True

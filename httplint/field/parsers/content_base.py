@@ -7,7 +7,7 @@ class content_base(HttpField):
 The `Content-Base` header established the base URI of the message. It has been
 deprecated, because it was not implemented widely.
 """
-    reference = "https://tools.ietf.org/html/rfc2068#section-14.11"
+    reference = "https://www.rfc-editor.org/rfc/rfc2068#section-14.11"
     syntax = False
     list_header = False
     deprecated = True
