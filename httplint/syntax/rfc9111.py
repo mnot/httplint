@@ -5,7 +5,15 @@ Regex for RFC9111
 # pylint: disable=invalid-name
 
 from .rfc5234 import DIGIT, DQUOTE, SP
-from .rfc9110 import list_rule, pseudonym, quoted_string, token, HTTP_date, uri_host, port
+from .rfc9110 import (
+    list_rule,
+    pseudonym,
+    quoted_string,
+    token,
+    HTTP_date,
+    uri_host,
+    port,
+)
 
 SPEC_URL = "http://httpwg.org/specs/rfc9111"
 

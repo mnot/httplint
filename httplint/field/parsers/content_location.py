@@ -3,7 +3,6 @@ from httplint.field.tests import FieldTest
 from httplint.syntax import rfc9110
 
 
-
 class content_location(HttpField):
     canonical_name = "Content-Location"
     description = """\

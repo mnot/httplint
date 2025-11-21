@@ -143,7 +143,9 @@ media_type = rf"(?: {_type} / {subtype} {parameters} )"
 
 #   media-range = ( "*/*" / ( type "/*" ) / ( type "/" subtype ) ) parameters
 
-media_range = rf"(?: (?: \*/\* | (?: {_type} /\* ) | (?: {_type} / {subtype} ) ) {parameters} )"
+media_range = (
+    rf"(?: (?: \*/\* | (?: {_type} /\* ) | (?: {_type} / {subtype} ) ) {parameters} )"
+)
 
 #   Accept = [ ( media-range [ weight ] ) *( OWS "," OWS ( media-range [ weight ] ) ) ]
 
@@ -660,15 +662,11 @@ field_value = rf"(?: {field_content} )*"
 
 #   http-URI = "http://" authority path-abempty [ "?" query ]
 
-http_URI = (
-    rf"(?: http:// {authority} {path_abempty} (?: \? {query} )? )"
-)
+http_URI = rf"(?: http:// {authority} {path_abempty} (?: \? {query} )? )"
 
 #   https-URI = "https://" authority path-abempty [ "?" query ]
 
-https_URI = (
-    rf"(?: https:// {authority} {path_abempty} (?: \? {query} )? )"
-)
+https_URI = rf"(?: https:// {authority} {path_abempty} (?: \? {query} )? )"
 
 #   path-abempty = <path-abempty, see [URI], Section 3.3>
 

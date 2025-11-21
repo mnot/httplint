@@ -3,7 +3,6 @@ from httplint.field.tests import FieldTest
 from httplint.syntax import rfc9110
 
 
-
 class www_authenticate(HttpField):
     canonical_name = "WWW-Authenticate"
     description = """\

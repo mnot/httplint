@@ -348,7 +348,6 @@ revalidation request is happening in the background.
 See [RFC 5861](https://www.rfc-editor.org/rfc/rfc5861) for more information."""
 
 
-
 class CacheControlTest(FieldTest):
     name = "Cache-Control"
     inputs = [b"a=b, c=d", b"e=f", b"g"]

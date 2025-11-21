@@ -9,9 +9,7 @@ from httplint.syntax import rfc9110
 from httplint.types import AddNoteMethodType
 
 
-sts_directive = (
-    rf"(?: {rfc9110.token} (?: {rfc9110.BWS} = {rfc9110.BWS} {rfc9110.parameter_value} )? )"
-)
+sts_dir = rf"(?: {rfc9110.token} (?: {rfc9110.BWS} = {rfc9110.BWS} {rfc9110.parameter_value} )? )"
 
 
 class strict_transport_security(HttpField):
@@ -20,7 +18,7 @@ class strict_transport_security(HttpField):
 The `Strict-Transport-Security` response header (often abbreviated as HSTS) lets a web site tell
 browsers that it should only be communicated with using HTTPS, instead of using HTTP."""
     reference = "https://www.rfc-editor.org/rfc/rfc6797"
-    syntax = rf"(?: {sts_directive} (?: {rfc9110.OWS} ; {rfc9110.OWS} {sts_directive} )* )"
+    syntax = rf"(?: {sts_dir} (?: {rfc9110.OWS} ; {rfc9110.OWS} {sts_dir} )* )"
     list_header = False
     nonstandard_syntax = True
     deprecated = False

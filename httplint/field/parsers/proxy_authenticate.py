@@ -2,7 +2,6 @@ from httplint.field import HttpField
 from httplint.syntax import rfc9110
 
 
-
 class proxy_authenticate(HttpField):
     canonical_name = "Proxy-Authenticate"
     description = """\
