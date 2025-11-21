@@ -1,7 +1,7 @@
 import codecs
 import hashlib
 import re
-from typing import Optional, Any, Dict, TypedDict
+from typing import Optional, Any, Dict, TypedDict, cast
 from typing_extensions import Unpack, NotRequired
 
 from httplint.cache import ResponseCacheChecker
@@ -11,6 +11,7 @@ from httplint.note import Notes, Note, levels, categories
 from httplint.syntax import rfc3986
 from httplint.types import RawFieldListType
 from httplint.util import iri_to_uri, f_num
+from httplint.status import StatusChecker
 
 
 class HttpMessageParams(TypedDict):
@@ -187,7 +188,9 @@ class HttpResponseLinter(HttpMessageLinter):
         self.status_code: Optional[int] = None
         self.status_phrase: Optional[str] = None
         self.is_head_response = False
+        self.is_head_response = False
         self.caching: ResponseCacheChecker
+        self.status_checker: StatusChecker
 
     def process_response_topline(
         self, version: bytes, status_code: bytes, status_phrase: Optional[bytes] = None
@@ -214,6 +217,9 @@ class HttpResponseLinter(HttpMessageLinter):
 
     def post_checks(self) -> None:
         self.caching = ResponseCacheChecker(self)
+        self.status_checker = StatusChecker(
+            self, cast(Optional[HttpRequestLinter], self.related)
+        )
 
 
 class CL_CORRECT(Note):

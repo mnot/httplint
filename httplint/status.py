@@ -1,11 +1,13 @@
 # pylint: disable=too-many-public-methods
 
 from functools import partial
-from typing import Optional, List
+from typing import Optional, List, TYPE_CHECKING
 
-from httplint.message import HttpRequestLinter, HttpResponseLinter
 from httplint.note import Note, levels, categories
 from httplint.types import StrFieldListType
+
+if TYPE_CHECKING:
+    from httplint.message import HttpRequestLinter, HttpResponseLinter
 
 safe_methods = [b"GET", b"HEAD", b"OPTIONS", b"TRACE"]
 
@@ -38,7 +40,9 @@ class StatusChecker:
     """
 
     def __init__(
-        self, response: HttpResponseLinter, request: Optional[HttpRequestLinter] = None
+        self,
+        response: "HttpResponseLinter",
+        request: Optional["HttpRequestLinter"] = None,
     ) -> None:
         self.request = request
         self.response = response
@@ -116,6 +120,12 @@ class StatusChecker:
     def status304(self) -> None:  # Not Modified
         if "date" not in self.response.headers.parsed:
             self.add_note("status", NO_DATE_304)
+
+        for header in ["content-type", "content-encoding", "content-language"]:
+            if header in self.response.headers.parsed:
+                self.add_note(
+                    f"header-{header}", HEADER_SHOULD_NOT_BE_IN_304, header=header
+                )
 
     def status305(self) -> None:  # Use Proxy
         self.add_note("", STATUS_DEPRECATED)
@@ -238,7 +248,20 @@ class NO_DATE_304(Note):
     _summary = "304 responses need to have a Date header."
     _text = """\
 HTTP requires `304 (Not Modified)` responses to have a `Date` header in all but the most unusual
+HTTP requires `304 (Not Modified)` responses to have a `Date` header in all but the most unusual
 circumstances."""
+
+
+class HEADER_SHOULD_NOT_BE_IN_304(Note):
+    category = categories.GENERAL
+    level = levels.WARN
+    _summary = "The %(header)s header should not be sent in a 304 response."
+    _text = """\
+The `%(header)s` header is representation metadata that should not be sent in a 304 response unless
+it is being used to guide cache updates.
+
+See [RFC 9110 Section 15.4.5](https://www.rfc-editor.org/rfc/rfc9110.html#section-15.4.5) for
+more information."""
 
 
 class UNEXPECTED_CONTINUE(Note):
