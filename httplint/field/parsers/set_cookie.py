@@ -37,8 +37,7 @@ requests to the server."""
                 if name in seen:
                     duplicates.add(name)
                 seen.add(name)
-            for name in duplicates:
-                add_note(SET_COOKIE_NAME_DUP, cookie_name=name)
+            add_note(SET_COOKIE_NAME_DUP, cookie_names=", ".join(sorted(duplicates)))
 
 
 def loose_parse(  # pylint: disable=too-many-branches
@@ -518,9 +517,9 @@ class SET_COOKIE_ATTRIBUTE_DUP(Note):
 class SET_COOKIE_NAME_DUP(Note):
     category = categories.GENERAL
     level = levels.WARN
-    _summary = "The %(cookie_name)s cookie is set more than once."
+    _summary = "%(message)s sets duplicate cookies."
     _text = """\
-    The `%(cookie_name)s` cookie is set more than once in this response.
+    The following cookies are set more than once in this response: %(cookie_names)s.
 
     Browsers will likely accept all of them, but the order of application
     may vary or be confusing."""
