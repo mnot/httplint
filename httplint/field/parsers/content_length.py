@@ -2,7 +2,7 @@ from httplint.field import HttpField
 from httplint.field.tests import FieldTest
 from httplint.syntax import rfc9110
 from httplint.types import AddNoteMethodType
-from httplint.field.notes import BAD_SYNTAX
+from httplint.field.notes import BAD_SYNTAX, SINGLE_HEADER_REPEAT
 from httplint.note import Note, categories, levels
 
 
@@ -69,3 +69,31 @@ class ContentLengthBigTest(FieldTest):
     inputs = [b"9" * 999]
     expected_out = int("9" * 999)
     expected_notes = [CL_TOO_LARGE]
+
+
+class ContentLengthDuplicateTest(FieldTest):
+    name = "Content-Length"
+    inputs = [b"1", b"1"]
+    expected_out = 1
+    expected_notes = [SINGLE_HEADER_REPEAT]
+
+
+class ContentLengthCommaTest(FieldTest):
+    name = "Content-Length"
+    inputs = [b"1, 1"]
+    expected_out = None
+    expected_notes = [BAD_SYNTAX]
+
+
+class ContentLengthDiffTest(FieldTest):
+    name = "Content-Length"
+    inputs = [b"1", b"2"]
+    expected_out = 2
+    expected_notes = [SINGLE_HEADER_REPEAT]
+
+
+class ContentLengthDiffCommaTest(FieldTest):
+    name = "Content-Length"
+    inputs = [b"1, 2"]
+    expected_out = None
+    expected_notes = [BAD_SYNTAX]
