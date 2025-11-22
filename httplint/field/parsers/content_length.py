@@ -1,9 +1,14 @@
+from typing import TYPE_CHECKING
+
 from httplint.field import HttpField
 from httplint.field.tests import FieldTest
 from httplint.syntax import rfc9110
 from httplint.types import AddNoteMethodType
 from httplint.field.notes import BAD_SYNTAX, SINGLE_HEADER_REPEAT
 from httplint.note import Note, categories, levels
+
+if TYPE_CHECKING:
+    from httplint.message import HttpMessageLinter
 
 
 class content_length(HttpField):
@@ -27,6 +32,21 @@ store the response (since they can't be sure if they have the whole response).""
         if value > 9223372036854775807:  # 2^63-1
             add_note(CL_TOO_LARGE)
         return value
+
+    def evaluate(self, add_note: AddNoteMethodType) -> None:
+        if "transfer-encoding" in self.message.headers.parsed:
+            add_note(CL_AND_TE_PRESENT)
+
+
+class CL_AND_TE_PRESENT(Note):
+    category = categories.GENERAL
+    level = levels.BAD
+    _summary = "Content-Length and Transfer-Encoding should not be present together."
+    _text = """\
+RFC 9110 Section 8.6:
+> A sender MUST NOT send a Content-Length header field in any message that contains a Transfer-Encoding header field.
+
+This is because `Transfer-Encoding` overrides `Content-Length`."""
 
 
 class CL_TOO_LARGE(Note):
@@ -97,3 +117,13 @@ class ContentLengthDiffCommaTest(FieldTest):
     inputs = [b"1, 2"]
     expected_out = None
     expected_notes = [BAD_SYNTAX]
+
+
+class ContentLengthTEPresentTest(FieldTest):
+    name = "Content-Length"
+    inputs = [b"1"]
+    expected_out = 1
+    expected_notes = [CL_AND_TE_PRESENT]
+
+    def set_context(self, message: "HttpMessageLinter") -> None:
+        message.headers.parsed["transfer-encoding"] = "chunked"
