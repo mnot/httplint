@@ -2,7 +2,6 @@ from typing import Any
 
 from httplint.field import HttpField
 from httplint.field.tests import FieldTest
-from httplint.field.notes import BAD_SYNTAX
 from httplint.message import HttpMessageLinter
 from httplint.note import Note, categories, levels
 from httplint.syntax import rfc9110
@@ -47,17 +46,15 @@ browsers that it should only be communicated with using HTTPS, instead of using 
                 try:
                     parsed["max-age"] = int(value)  # type: ignore
                 except (ValueError, TypeError):
-                    add_note(BAD_SYNTAX, f"Invalid max-age value: {value}")
+                    add_note(HSTS_BAD_MAX_AGE, max_age=value)
             elif name == "includesubdomains":
                 parsed["includesubdomains"] = True
                 if value is not None:
-                    add_note(
-                        BAD_SYNTAX, "includeSubDomains directive must not have a value"
-                    )
+                    add_note(HSTS_VALUE_NOT_ALLOWED, directive="includeSubDomains")
             elif name == "preload":
                 parsed["preload"] = True
                 if value is not None:
-                    add_note(BAD_SYNTAX, "preload directive must not have a value")
+                    add_note(HSTS_VALUE_NOT_ALLOWED, directive="preload")
             else:
                 # Unknown directive, ignore
                 pass
@@ -152,6 +149,24 @@ class HSTS_MULTIPLE_HEADERS(Note):
     _text = """\
 A response should only contain a single `Strict-Transport-Security` header.
 User agents are required to process only the first one and ignore the rest."""
+
+
+class HSTS_BAD_MAX_AGE(Note):
+    category = categories.SECURITY
+    level = levels.BAD
+    _summary = "The max-age directive in the HSTS header is invalid."
+    _text = """\
+The `max-age` directive in the `Strict-Transport-Security` header must be a non-negative
+integer. The value "%(max_age)s" is not valid."""
+
+
+class HSTS_VALUE_NOT_ALLOWED(Note):
+    category = categories.SECURITY
+    level = levels.BAD
+    _summary = "The %(directive)s directive in the HSTS header must not have a value."
+    _text = """\
+The `%(directive)s` directive in the `Strict-Transport-Security` header is a valueless
+directive. It should not have an associated value."""
 
 
 class HSTSTest(FieldTest):

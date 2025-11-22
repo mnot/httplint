@@ -144,10 +144,10 @@ class HttpField:
                     raise ValueError(f"Unknown sf_type: {self.sf_type}")
                 self.value = parsed_value
             except ValueError as why:
-                add_note(BAD_SYNTAX, f"Structured Field parse error: {why}")
+                add_note(STRUCTURED_FIELD_PARSE_ERROR, error=f"{why}")
                 self.value = None
             except Exception as why:  # pylint: disable=broad-except
-                add_note(BAD_SYNTAX, f"Structured Field parse error: {why}")
+                add_note(STRUCTURED_FIELD_PARSE_ERROR, error=f"{why}")
                 self.value = None
         if self.deprecated:
             deprecation_ref = getattr(self, "deprecation_ref", self.reference)
