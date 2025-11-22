@@ -61,6 +61,6 @@ endif
 
 .PHONY: url
 url: venv
-	curl -si $(URL_ARGS) | $(VENV)/httplint
+	curl -si $(URL_ARGS) | $(VENV)/httplint --now
 
 include Makefile.pyproject
