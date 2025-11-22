@@ -53,5 +53,14 @@ tidy: tidy_py
 .PHONY: run
 run: lint typecheck tidy
 
+# Pass arguments to the url target
+ifeq (url,$(firstword $(MAKECMDGOALS)))
+  URL_ARGS := $(wordlist 2,$(words $(MAKECMDGOALS)),$(MAKECMDGOALS))
+  .DEFAULT: ; @:
+endif
+
+.PHONY: url
+url: venv
+	curl -si $(URL_ARGS) | $(VENV)/httplint
 
 include Makefile.pyproject
