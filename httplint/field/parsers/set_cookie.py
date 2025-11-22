@@ -28,6 +28,18 @@ requests to the server."""
         path = urlsplit(self.message.base_uri).path
         return loose_parse(field_value, path, self.message.start_time, add_note)
 
+    def evaluate(self, add_note: AddNoteMethodType) -> None:
+        cookie_names = [c[0] for c in self.value]
+        if len(cookie_names) != len(set(cookie_names)):
+            seen = set()
+            duplicates = set()
+            for name in cookie_names:
+                if name in seen:
+                    duplicates.add(name)
+                seen.add(name)
+            for name in duplicates:
+                add_note(SET_COOKIE_NAME_DUP, cookie_name=name)
+
 
 def loose_parse(  # pylint: disable=too-many-branches
     set_cookie_string: str,
@@ -59,6 +71,7 @@ def loose_parse(  # pylint: disable=too-many-branches
 
     cookie_name, cookie_value = name, value
     cookie_attribute_list: List[Tuple[str, Union[str, int]]] = []
+    seen_attributes: set[str] = set()
     lifetime_note_added = False
 
     while unparsed_attributes != "":
@@ -76,93 +89,24 @@ def loose_parse(  # pylint: disable=too-many-branches
         attribute_value = attribute_value.strip()
         case_norm_attribute_name = attribute_name.lower()
 
-        if case_norm_attribute_name == "expires":
-            try:
-                expiry_time = loose_date_parse(attribute_value)
-            except ValueError as why:
-                add_note(SET_COOKIE_BAD_DATE, why=why, cookie_name=cookie_name)
-                continue
-            cookie_attribute_list.append(("Expires", expiry_time))
-            if (
-                current_time
-                and expiry_time > current_time + 34560000
-                and not lifetime_note_added
-            ):
-                add_note(SET_COOKIE_LIFETIME_TOO_LONG, cookie_name=cookie_name)
-                lifetime_note_added = True
-
-        elif case_norm_attribute_name == "max-age":
-            if attribute_value == "":
-                add_note(SET_COOKIE_EMPTY_MAX_AGE, cookie_name=cookie_name)
-                continue
-            if attribute_value[0] == "0":
-                add_note(SET_COOKIE_LEADING_ZERO_MAX_AGE, cookie_name=cookie_name)
-            if not attribute_value.isdigit():
-                add_note(SET_COOKIE_NON_DIGIT_MAX_AGE, cookie_name=cookie_name)
-                continue
-            delta_seconds = int(attribute_value)
-            cookie_attribute_list.append(("Max-Age", delta_seconds))
-            if delta_seconds > 34560000 and not lifetime_note_added:
-                add_note(SET_COOKIE_LIFETIME_TOO_LONG, cookie_name=cookie_name)
-                lifetime_note_added = True
-
-        elif case_norm_attribute_name == "domain":
-            if attribute_value == "":
-                add_note(SET_COOKIE_EMPTY_DOMAIN, cookie_name=cookie_name)
-                continue
-            if attribute_value[0] == ".":
-                cookie_domain = attribute_value[1:]
-            else:
-                cookie_domain = attribute_value
-            cookie_attribute_list.append(("Domain", cookie_domain))
-
-        elif case_norm_attribute_name == "path":
-            if attribute_value == "" or attribute_value[0] != "/":
-                # use default path
-                if uri_path == "" or uri_path[0] != "/":
-                    cookie_path = "/"
-                if uri_path.count("/") < 2:
-                    cookie_path = "/"
-                else:
-                    cookie_path = uri_path[: uri_path.rindex("/")]
-            else:
-                cookie_path = attribute_value
-            cookie_attribute_list.append(("Path", cookie_path))
-
-        elif case_norm_attribute_name == "secure":
-            cookie_attribute_list.append(("Secure", ""))
-
-        elif case_norm_attribute_name == "httponly":
-            cookie_attribute_list.append(("HttpOnly", ""))
-
-        elif case_norm_attribute_name == "samesite":
-            case_norm_attribute_value = attribute_value.lower()
-            if case_norm_attribute_value == "strict":
-                cookie_samesite = "Strict"
-            elif case_norm_attribute_value == "none":
-                cookie_samesite = "None"
-            elif case_norm_attribute_value in ("lax", ""):
-                cookie_samesite = "Lax"
-            else:
-                cookie_samesite = attribute_value
-                add_note(
-                    SET_COOKIE_UNKNOWN_ATTRIBUTE_VALUE,
-                    cookie_name=cookie_name,
-                    attribute_name=attribute_name,
-                    attribute_value=attribute_value,
-                )
-                continue
-            cookie_attribute_list.append(("SameSite", cookie_samesite))
-
-        elif case_norm_attribute_name == "partitioned":
-            cookie_attribute_list.append(("Partitioned", ""))
-
-        else:
+        if case_norm_attribute_name in seen_attributes:
             add_note(
-                SET_COOKIE_UNKNOWN_ATTRIBUTE,
+                SET_COOKIE_ATTRIBUTE_DUP,
                 cookie_name=cookie_name,
                 attribute=attribute_name,
             )
+        seen_attributes.add(case_norm_attribute_name)
+
+        lifetime_note_added = _process_cookie_attribute(
+            attribute_name,
+            attribute_value,
+            cookie_name,
+            cookie_attribute_list,
+            uri_path,
+            current_time,
+            add_note,
+            lifetime_note_added,
+        )
 
     if ("SameSite", "None") in cookie_attribute_list and (
         "Secure",
@@ -178,6 +122,109 @@ def loose_parse(  # pylint: disable=too-many-branches
 
     check_prefixes(cookie_name, cookie_attribute_list, add_note)
     return (cookie_name, cookie_value, cookie_attribute_list)
+
+
+def _process_cookie_attribute(  # pylint: disable=too-many-branches,too-many-arguments
+    attribute_name: str,
+    attribute_value: str,
+    cookie_name: str,
+    cookie_attribute_list: List[Tuple[str, Union[str, int]]],
+    uri_path: str,
+    current_time: Optional[float],
+    add_note: AddNoteMethodType,
+    lifetime_note_added: bool,
+) -> bool:
+    case_norm_attribute_name = attribute_name.lower()
+
+    if case_norm_attribute_name == "expires":
+        try:
+            expiry_time = loose_date_parse(attribute_value)
+        except ValueError as why:
+            add_note(SET_COOKIE_BAD_DATE, why=why, cookie_name=cookie_name)
+            return lifetime_note_added
+        cookie_attribute_list.append(("Expires", expiry_time))
+        if (
+            current_time
+            and expiry_time > current_time + 34560000
+            and not lifetime_note_added
+        ):
+            add_note(SET_COOKIE_LIFETIME_TOO_LONG, cookie_name=cookie_name)
+            lifetime_note_added = True
+
+    elif case_norm_attribute_name == "max-age":
+        if attribute_value == "":
+            add_note(SET_COOKIE_EMPTY_MAX_AGE, cookie_name=cookie_name)
+            return lifetime_note_added
+        if attribute_value[0] == "0":
+            add_note(SET_COOKIE_LEADING_ZERO_MAX_AGE, cookie_name=cookie_name)
+        if not attribute_value.isdigit():
+            add_note(SET_COOKIE_NON_DIGIT_MAX_AGE, cookie_name=cookie_name)
+            return lifetime_note_added
+        delta_seconds = int(attribute_value)
+        cookie_attribute_list.append(("Max-Age", delta_seconds))
+        if delta_seconds > 34560000 and not lifetime_note_added:
+            add_note(SET_COOKIE_LIFETIME_TOO_LONG, cookie_name=cookie_name)
+            lifetime_note_added = True
+
+    elif case_norm_attribute_name == "domain":
+        if attribute_value == "":
+            add_note(SET_COOKIE_EMPTY_DOMAIN, cookie_name=cookie_name)
+            return lifetime_note_added
+        if attribute_value[0] == ".":
+            cookie_domain = attribute_value[1:]
+        else:
+            cookie_domain = attribute_value
+        cookie_attribute_list.append(("Domain", cookie_domain))
+
+    elif case_norm_attribute_name == "path":
+        if attribute_value == "" or attribute_value[0] != "/":
+            # use default path
+            if uri_path == "" or uri_path[0] != "/":
+                cookie_path = "/"
+            if uri_path.count("/") < 2:
+                cookie_path = "/"
+            else:
+                cookie_path = uri_path[: uri_path.rindex("/")]
+        else:
+            cookie_path = attribute_value
+        cookie_attribute_list.append(("Path", cookie_path))
+
+    elif case_norm_attribute_name == "secure":
+        cookie_attribute_list.append(("Secure", ""))
+
+    elif case_norm_attribute_name == "httponly":
+        cookie_attribute_list.append(("HttpOnly", ""))
+
+    elif case_norm_attribute_name == "samesite":
+        case_norm_attribute_value = attribute_value.lower()
+        if case_norm_attribute_value == "strict":
+            cookie_samesite = "Strict"
+        elif case_norm_attribute_value == "none":
+            cookie_samesite = "None"
+        elif case_norm_attribute_value in ("lax", ""):
+            cookie_samesite = "Lax"
+        else:
+            cookie_samesite = attribute_value
+            add_note(
+                SET_COOKIE_UNKNOWN_ATTRIBUTE_VALUE,
+                cookie_name=cookie_name,
+                attribute_name=attribute_name,
+                attribute_value=attribute_value,
+            )
+            return lifetime_note_added
+        cookie_attribute_list.append(("SameSite", cookie_samesite))
+
+    elif case_norm_attribute_name == "partitioned":
+        cookie_attribute_list.append(("Partitioned", ""))
+
+    else:
+        add_note(
+            SET_COOKIE_UNKNOWN_ATTRIBUTE,
+            cookie_name=cookie_name,
+            attribute=attribute_name,
+        )
+
+    return lifetime_note_added
 
 
 def check_prefixes(
@@ -458,6 +505,27 @@ class SET_COOKIE_PREFIX_HOST_BAD_PATH(Note):
     Browsers will reject this cookie."""
 
 
+class SET_COOKIE_ATTRIBUTE_DUP(Note):
+    category = categories.GENERAL
+    level = levels.WARN
+    _summary = "The %(cookie_name)s Set-Cookie header has duplicate '%(attribute)s' attributes."
+    _text = """\
+    The `%(attribute)s` attribute appears more than once in this `Set-Cookie` header.
+
+    Browsers will only use the last occurrence."""
+
+
+class SET_COOKIE_NAME_DUP(Note):
+    category = categories.GENERAL
+    level = levels.WARN
+    _summary = "The %(cookie_name)s cookie is set more than once."
+    _text = """\
+    The `%(cookie_name)s` cookie is set more than once in this response.
+
+    Browsers will likely accept all of them, but the order of application
+    may vary or be confusing."""
+
+
 class BasicSCTest(FieldTest):
     name = "Set-Cookie"
     inputs = [b"SID=31d4d96e407aad42"]
@@ -615,3 +683,17 @@ class LifetimeTooLongBothSCTest(FieldTest):
     inputs = [b"lang=en-US; Max-Age=34560001; Expires=Wed, 09 Jun 2021 10:18:14 GMT"]
     expected_out = [("lang", "en-US", [("Max-Age", 34560001), ("Expires", 1623233894)])]
     expected_notes = [SET_COOKIE_LIFETIME_TOO_LONG]
+
+
+class SetCookieAttributeDupTest(FieldTest):
+    name = "Set-Cookie"
+    inputs = [b"a=b; Path=/; Path=/foo"]
+    expected_out = [("a", "b", [("Path", "/"), ("Path", "/foo")])]
+    expected_notes = [SET_COOKIE_ATTRIBUTE_DUP]
+
+
+class SetCookieNameDupTest(FieldTest):
+    name = "Set-Cookie"
+    inputs = [b"a=1; Path=/", b"a=2; Path=/"]
+    expected_out = [("a", "1", [("Path", "/")]), ("a", "2", [("Path", "/")])]
+    expected_notes = [SET_COOKIE_NAME_DUP]
