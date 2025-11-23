@@ -9,6 +9,7 @@ from httplint.cache import (
     FRESHNESS_NONE,
 )
 
+
 class TestCacheFreshness(unittest.TestCase):
     def test_same_freshness(self):
         linter = HttpResponseLinter()
@@ -23,7 +24,7 @@ class TestCacheFreshness(unittest.TestCase):
         )
         linter.feed_content(b"1234567890")
         linter.finish_content(True)
-        
+
         notes = [n.__class__ for n in linter.notes]
         self.assertIn(FRESHNESS_FRESH, notes)
         self.assertNotIn(FRESHNESS_SHARED_PRIVATE, notes)
@@ -41,7 +42,7 @@ class TestCacheFreshness(unittest.TestCase):
         )
         linter.feed_content(b"1234567890")
         linter.finish_content(True)
-        
+
         notes = [n.__class__ for n in linter.notes]
         self.assertIn(FRESHNESS_SHARED_PRIVATE, notes)
         self.assertNotIn(FRESHNESS_FRESH, notes)
@@ -59,7 +60,7 @@ class TestCacheFreshness(unittest.TestCase):
         )
         linter.feed_content(b"1234567890")
         linter.finish_content(True)
-        
+
         notes = [n.__class__ for n in linter.notes]
         self.assertIn(FRESHNESS_FRESH, notes)
         self.assertNotIn(FRESHNESS_SHARED_PRIVATE, notes)
@@ -77,11 +78,12 @@ class TestCacheFreshness(unittest.TestCase):
         )
         linter.feed_content(b"1234567890")
         linter.finish_content(True)
-        
+
         notes = [n.__class__ for n in linter.notes]
         self.assertIn(FRESHNESS_SHARED_PRIVATE, notes)
         self.assertNotIn(FRESHNESS_FRESH, notes)
         self.assertNotIn(FRESHNESS_STALE_ALREADY, notes)
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     unittest.main()
