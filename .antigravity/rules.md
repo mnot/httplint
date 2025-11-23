@@ -27,7 +27,9 @@ For each code change:
 3. Test by running `make test`
 4. Format by running `make tidy` (this can fix line length issues and trailing whitespace)
 
-If you need to run a Python interpreter, use `make python` or the python in `.venv/`. Note that `make` targets automatically use the virtual environment, so you don't need to activate it explicitly.
+If you need to run a Python interpreter, use `.venv/bin/python`.
+
+Note that `make` targets automatically use the virtual environment, so you don't need to activate it explicitly.
 
 ## Notes
 
