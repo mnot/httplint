@@ -348,9 +348,9 @@ class SET_COOKIE_NO_NAME(Note):
     level = levels.BAD
     _summary = "%(message)s has a Set-Cookie header without a cookie-name."
     _text = """\
-    This `Set-Cookie` header has an empty name; there needs to be a name before the `=`.
+This `Set-Cookie` header has an empty name; there needs to be a name before the `=`.
 
-    Browsers will ignore this cookie."""
+Browsers will ignore this cookie."""
 
 
 class SET_COOKIE_BAD_DATE(Note):
@@ -358,8 +358,8 @@ class SET_COOKIE_BAD_DATE(Note):
     level = levels.WARN
     _summary = "The %(cookie_name)s Set-Cookie header has an invalid Expires date."
     _text = """\
-    The `expires` date on this `Set-Cookie` header isn't valid; see
-    [RFC6265](https://www.rfc-editor.org/rfc/rfc6265) for details of the correct format."""
+The `expires` date on this `Set-Cookie` header isn't valid; see
+[RFC6265](https://www.rfc-editor.org/rfc/rfc6265) for details of the correct format."""
 
 
 class SET_COOKIE_EMPTY_MAX_AGE(Note):
@@ -367,9 +367,9 @@ class SET_COOKIE_EMPTY_MAX_AGE(Note):
     level = levels.WARN
     _summary = "The %(cookie_name)s Set-Cookie header has an empty Max-Age."
     _text = """\
-    The `max-age` parameter on this `Set-Cookie` header doesn't have a value.
+The `max-age` parameter on this `Set-Cookie` header doesn't have a value.
 
-    Browsers will ignore the `max-age` value as a result."""
+Browsers will ignore the `max-age` value as a result."""
 
 
 class SET_COOKIE_LEADING_ZERO_MAX_AGE(Note):
@@ -379,9 +379,9 @@ class SET_COOKIE_LEADING_ZERO_MAX_AGE(Note):
         "The %(cookie_name)s Set-Cookie header has a Max-Age with a leading zero."
     )
     _text = """\
-    The `max-age` parameter on this `Set-Cookie` header has a leading zero.
+The `max-age` parameter on this `Set-Cookie` header has a leading zero.
 
-    Browsers will ignore the `max-age` value as a result."""
+Browsers will ignore the `max-age` value as a result."""
 
 
 class SET_COOKIE_NON_DIGIT_MAX_AGE(Note):
@@ -389,9 +389,9 @@ class SET_COOKIE_NON_DIGIT_MAX_AGE(Note):
     level = levels.WARN
     _summary = "The %(cookie_name)s Set-Cookie header has a non-numeric Max-Age."
     _text = """\
-    The `max-age` parameter on this `Set-Cookie` header isn't numeric.
+The `max-age` parameter on this `Set-Cookie` header isn't numeric.
 
-    Browsers will ignore the `max-age` value as a result."""
+Browsers will ignore the `max-age` value as a result."""
 
 
 class SET_COOKIE_EMPTY_DOMAIN(Note):
@@ -399,9 +399,9 @@ class SET_COOKIE_EMPTY_DOMAIN(Note):
     level = levels.WARN
     _summary = "The %(cookie_name)s Set-Cookie header has an empty domain."
     _text = """\
-    The `domain` parameter on this `Set-Cookie` header is empty.
+The `domain` parameter on this `Set-Cookie` header is empty.
 
-    Browsers will probably ignore it as a result."""
+Browsers will probably ignore it as a result."""
 
 
 class SET_COOKIE_NOT_SECURE(Note):
@@ -409,9 +409,9 @@ class SET_COOKIE_NOT_SECURE(Note):
     level = levels.WARN
     _summary = "The %(cookie_name)s Set-Cookie header is missing the Secure attribute."
     _text = """\
-    The `Secure` attribute on this `Set-Cookie` header is missing.
+The `Secure` attribute on this `Set-Cookie` header is missing.
 
-    Browsers will ignore it."""
+Browsers will ignore it."""
 
 
 class SET_COOKIE_UNKNOWN_ATTRIBUTE(Note):
@@ -419,9 +419,9 @@ class SET_COOKIE_UNKNOWN_ATTRIBUTE(Note):
     level = levels.WARN
     _summary = "The %(cookie_name)s Set-Cookie header has an unknown attribute, '%(attribute)s'."
     _text = """\
-    This `Set-Cookie` header has an extra parameter, "%(attribute)s".
+This `Set-Cookie` header has an extra parameter, "%(attribute)s".
 
-    Browsers will ignore it."""
+Browsers will ignore it."""
 
 
 class SET_COOKIE_UNKNOWN_ATTRIBUTE_VALUE(Note):
@@ -432,9 +432,9 @@ class SET_COOKIE_UNKNOWN_ATTRIBUTE_VALUE(Note):
         "'%(attribute_name)s' attribute value."
     )
     _text = """\
-    This `Set-Cookie` header has an unknown "%(attribute_name)s" attribute value, "%(attribute_value)s".
+This `Set-Cookie` header has an unknown "%(attribute_name)s" attribute value, "%(attribute_value)s".
 
-    Browsers will probably ignore it as a result."""
+Browsers will probably ignore it as a result."""
 
 
 class SET_COOKIE_PARTITIONED_NO_SECURE(Note):
@@ -445,10 +445,10 @@ class SET_COOKIE_PARTITIONED_NO_SECURE(Note):
         "but is missing the Secure attribute."
     )
     _text = """\
-    The `Partitioned` attribute on this `Set-Cookie` header is present, but the `Secure` attribute is
-    missing.
+The `Partitioned` attribute on this `Set-Cookie` header is present, but the `Secure` attribute is
+missing.
 
-    Browsers will ignore the `Partitioned` attribute as a result."""
+Browsers will ignore the `Partitioned` attribute as a result."""
 
 
 class SET_COOKIE_TOO_LARGE(Note):
@@ -456,9 +456,9 @@ class SET_COOKIE_TOO_LARGE(Note):
     level = levels.BAD
     _summary = "The %(cookie_name)s Set-Cookie header is too large."
     _text = """\
-    The `Set-Cookie` header is larger than 4096 bytes.
+The `Set-Cookie` header is larger than 4096 bytes.
 
-    Browsers will ignore this cookie."""
+Browsers will ignore this cookie."""
 
 
 class SET_COOKIE_LIFETIME_TOO_LONG(Note):
@@ -466,9 +466,9 @@ class SET_COOKIE_LIFETIME_TOO_LONG(Note):
     level = levels.WARN
     _summary = "The %(cookie_name)s Set-Cookie header has a lifetime that is too long."
     _text = """\
-    The `Set-Cookie` header has a lifetime (Max-Age or Expires) that is greater than 400 days.
+The `Set-Cookie` header has a lifetime (Max-Age or Expires) that is greater than 400 days.
 
-    Browsers will cap the lifetime to 400 days."""
+Browsers will cap the lifetime to 400 days."""
 
 
 class SET_COOKIE_PREFIX_SECURE_MISSING(Note):
@@ -476,10 +476,10 @@ class SET_COOKIE_PREFIX_SECURE_MISSING(Note):
     level = levels.BAD
     _summary = "The %(cookie_name)s Set-Cookie header requires the Secure attribute."
     _text = """\
-    The `Set-Cookie` header has a prefix (e.g., `__Secure-` or `__Host-`) that requires the `Secure`
-    attribute.
+The `Set-Cookie` header has a prefix (e.g., `__Secure-` or `__Host-`) that requires the `Secure`
+attribute.
 
-    Browsers will reject this cookie."""
+Browsers will reject this cookie."""
 
 
 class SET_COOKIE_PREFIX_HOST_BAD_DOMAIN(Note):
@@ -489,9 +489,9 @@ class SET_COOKIE_PREFIX_HOST_BAD_DOMAIN(Note):
         "The %(cookie_name)s Set-Cookie header has a __Host- prefix but sets a Domain."
     )
     _text = """\
-    The `Set-Cookie` header has a `__Host-` prefix, but it sets a `Domain` attribute.
+The `Set-Cookie` header has a `__Host-` prefix, but it sets a `Domain` attribute.
 
-    Browsers will reject this cookie."""
+Browsers will reject this cookie."""
 
 
 class SET_COOKIE_PREFIX_HOST_BAD_PATH(Note):
@@ -499,9 +499,9 @@ class SET_COOKIE_PREFIX_HOST_BAD_PATH(Note):
     level = levels.BAD
     _summary = "The %(cookie_name)s Set-Cookie header has a __Host- prefix but does not set Path=/."
     _text = """\
-    The `Set-Cookie` header has a `__Host-` prefix, but it does not set `Path=/`.
+The `Set-Cookie` header has a `__Host-` prefix, but it does not set `Path=/`.
 
-    Browsers will reject this cookie."""
+Browsers will reject this cookie."""
 
 
 class SET_COOKIE_ATTRIBUTE_DUP(Note):
@@ -509,9 +509,9 @@ class SET_COOKIE_ATTRIBUTE_DUP(Note):
     level = levels.WARN
     _summary = "The %(cookie_name)s Set-Cookie header has duplicate '%(attribute)s' attributes."
     _text = """\
-    The `%(attribute)s` attribute appears more than once in this `Set-Cookie` header.
+The `%(attribute)s` attribute appears more than once in this `Set-Cookie` header.
 
-    Browsers will only use the last occurrence."""
+Browsers will only use the last occurrence."""
 
 
 class SET_COOKIE_NAME_DUP(Note):
@@ -519,10 +519,10 @@ class SET_COOKIE_NAME_DUP(Note):
     level = levels.WARN
     _summary = "%(message)s sets duplicate cookies."
     _text = """\
-    The following cookies are set more than once in this response: %(cookie_names)s.
+The following cookies are set more than once in this response: %(cookie_names)s.
 
-    Browsers will likely accept all of them, but the order of application
-    may vary or be confusing."""
+Browsers will likely accept all of them, but the order of application
+may vary or be confusing."""
 
 
 class BasicSCTest(FieldTest):

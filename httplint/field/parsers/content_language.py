@@ -36,9 +36,9 @@ class CONTENT_LANGUAGE_DUP(Note):
     level = levels.INFO
     _summary = "The %(lang)s language tag appears more than once."
     _text = """\
-    The `%(lang)s` language tag is used more than once in the `Content-Language` header.
+The `%(lang)s` language tag is used more than once in the `Content-Language` header.
 
-    Recipients will likely ignore duplicates."""
+Recipients will likely ignore duplicates."""
 
 
 class ContentLanguageTest(FieldTest):
