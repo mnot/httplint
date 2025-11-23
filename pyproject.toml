@@ -22,7 +22,8 @@ dependencies = [
     "MarkupSafe",
     "thor",
     "typing_extensions",
-    "http-sf"
+    "http-sf",
+    "sniffpy==1.0.0"
 ]
 
 [project.optional-dependencies]
@@ -103,4 +104,4 @@ min-similarity-lines = 10
 
 [tool.pytest.ini_options]
 python_classes = "*Test"
-python_files = ["message.py", "util.py", "field/parsers/*.py"]
+python_files = ["message.py", "util.py", "field/parsers/*.py", "content_type.py"]
