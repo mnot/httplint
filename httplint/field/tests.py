@@ -1,8 +1,8 @@
-from typing import Any, List, Type
+from typing import Any, List, Tuple, Type
 import unittest
 
 from httplint.note import Note
-from httplint.message import HttpResponseLinter, HttpMessageLinter
+from httplint.message import HttpResponseLinter, HttpMessageLinter, HttpRequestLinter
 
 
 class FakeMessageLinter(HttpResponseLinter):
@@ -16,6 +16,28 @@ class FakeMessageLinter(HttpResponseLinter):
         self.status_phrase = ""
 
 
+class FakeRequestLinter(HttpRequestLinter):
+    """
+    A fake request linter, for testing.
+    """
+
+    def __init__(self) -> None:
+        HttpRequestLinter.__init__(self)
+        self.base_uri = "http://www.example.com/foo/bar/baz.html?bat=bam"
+        self.method = "GET"
+
+
+class FakeHeaders:
+    def __init__(self) -> None:
+        self.text: List[Tuple[str, str]] = []
+
+
+class FakeRequest:
+    def __init__(self) -> None:
+        self.headers = FakeHeaders()
+        self.method = "GET"
+
+
 class FieldTest(unittest.TestCase):
     """
     Testing machinery for headers.
@@ -25,6 +47,7 @@ class FieldTest(unittest.TestCase):
     inputs: List[bytes] = []
     expected_out: Any = []
     expected_notes: List[Type[Note]] = []
+    message: HttpMessageLinter
 
     def setUp(self) -> None:
         "Test setup."
@@ -53,3 +76,12 @@ class FieldTest(unittest.TestCase):
 
     def set_context(self, message: "HttpMessageLinter") -> None:
         pass
+
+    def assert_note(
+        self, input_bytes: bytes, note: Type[Note], expected_out: Any = None
+    ) -> None:
+        self.inputs = [input_bytes]
+        self.expected_notes = [note]
+        self.expected_out = expected_out
+        self.setUp()
+        self.test_header()
