@@ -5,11 +5,18 @@ You are writing a Python library for linting HTTP messages. Adherence to the rel
 
 ## Code Style
 
-- PEP8 style Python with 100 charcter line lengths.
-
+- Target all currently supported versions of Python.
+- PEP8 style Python.
+- 100 characters on a line, max.
+- all imports need to be at the top of each file.
 - All code should have type declarations.
 
-- All code additions and changes should have tests, using existing infrastructure where possible. Tests shoudl reside in the same file as the code unless it is used in multiple files, in which case it should be separate. New test files in `test/` should be added as a target in the Makefile and invoked by `make test`.
+
+## Tests
+
+- All code additions and changes should have tests, using existing infrastructure where possible.
+- Tests should reside in the same file as the code unless it is used in multiple files, in which case it should be separate.
+- New test files in `test/` should be added as a target in the Makefile and invoked by `make test`.
 
 ## Workflow
 
