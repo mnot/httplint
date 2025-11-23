@@ -27,11 +27,19 @@ For each code change:
 3. Test by running `make test`
 4. Format by running `make tidy` (this can fix line length issues and trailing whitespace)
 
+These MUST be run after each code change.
+
 If you need to run a Python interpreter, use `.venv/bin/python`.
 
 Note that `make` targets automatically use the virtual environment, so you don't need to activate it explicitly.
 
+## Fields
+
+Many of the things that are checked for are HTTP fields. See `CONTRIBUTING.md` for guidance.
+
 ## Notes
+
+The output of the program is created in terms of a Note object.
 
 - Common notes used by multiple fields should be in `httplint/field/notes.py`.
 - Field-specific notes should be defined in the parser file for that field (e.g., `httplint/field/parsers/cache_control.py`).
