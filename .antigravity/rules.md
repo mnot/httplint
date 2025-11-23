@@ -35,7 +35,7 @@ Note that `make` targets automatically use the virtual environment, so you don't
 
 ## Fields
 
-Many of the things that are checked for are HTTP fields. See `CONTRIBUTING.md` for guidance.
+Many of the things that are checked for are HTTP fields, using the HttpField class. See `CONTRIBUTING.md` for guidance.
 
 ## Notes
 
