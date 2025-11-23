@@ -26,3 +26,5 @@ If you need to run a Python interpreter, use `make python` or the python in `.ve
 
 - Common notes used by multiple fields should be in `httplint/field/notes.py`.
 - Field-specific notes should be defined in the parser file for that field (e.g., `httplint/field/parsers/cache_control.py`).
+- The _summary field of a Note is plain text and should be reasonably short.
+- The _text field of a Note is markdown. That means it should NOT be indented.
