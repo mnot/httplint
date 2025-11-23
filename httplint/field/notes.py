@@ -40,9 +40,13 @@ class STRUCTURED_FIELD_PARSE_ERROR(Note):
     level = levels.BAD
     _summary = "The %(field_name)s field value isn't a valid Structured Field."
     _text = """\
-The value for this field isn't a valid
-[Structured Field](https://www.rfc-editor.org/rfc/rfc9651.html):
-%(error)s."""
+The %(field_name)s field is defined as a
+[Structured Field](https://www.rfc-editor.org/rfc/rfc9651.html),
+but its value can't be parsed as one. As a result, this field is likely
+to be ignored.
+
+The parser reports this error:
+    %(error)s."""
 
 
 class PARAM_STAR_QUOTED(Note):
