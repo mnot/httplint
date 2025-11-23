@@ -11,6 +11,9 @@ from httplint.types import AddNoteMethodType
 CookieType = Tuple[str, str, List[Tuple[str, Union[str, int]]]]
 
 
+MAX_SET_COOKIE_VALUE_LENGTH = 128
+
+
 class set_cookie(HttpField):
     canonical_name = "Set-Cookie"
     description = """\
@@ -67,6 +70,13 @@ def loose_parse(  # pylint: disable=too-many-branches
 
     if len(name) + len(value) > 4096:
         add_note(SET_COOKIE_TOO_LARGE, cookie_name=name)
+
+    if len(value) > MAX_SET_COOKIE_VALUE_LENGTH:
+        add_note(
+            SET_COOKIE_VALUE_TOO_LARGE,
+            cookie_name=name,
+            set_cookie_value_length=f"{len(value):,} bytes",
+        )
 
     cookie_name, cookie_value = name, value
     cookie_attribute_list: List[Tuple[str, Union[str, int]]] = []
@@ -461,6 +471,23 @@ The `Set-Cookie` header is larger than 4096 bytes.
 Browsers will ignore this cookie."""
 
 
+class SET_COOKIE_VALUE_TOO_LARGE(Note):
+    category = categories.GENERAL
+    level = levels.INFO
+    _summary = "The %(cookie_name)s Set-Cookie value is large."
+    _text = """\
+The `Set-Cookie` value is %(set_cookie_value_length)s long.
+
+This may be wasteful."""
+
+
+class ValueTooLargeSCTest(FieldTest):
+    name = "Set-Cookie"
+    inputs = [b"foo=" + b"a" * (MAX_SET_COOKIE_VALUE_LENGTH + 1)]
+    expected_out = [("foo", "a" * (MAX_SET_COOKIE_VALUE_LENGTH + 1), [])]
+    expected_notes = [SET_COOKIE_VALUE_TOO_LARGE]
+
+
 class SET_COOKIE_LIFETIME_TOO_LONG(Note):
     category = categories.GENERAL
     level = levels.WARN
@@ -625,7 +652,7 @@ class TooLargeSCTest(FieldTest):
     name = "Set-Cookie"
     inputs = [b"foo=" + b"a" * 4094]
     expected_out = [("foo", "a" * 4094, [])]
-    expected_notes = [SET_COOKIE_TOO_LARGE]
+    expected_notes = [SET_COOKIE_TOO_LARGE, SET_COOKIE_VALUE_TOO_LARGE]
 
 
 class SecurePrefixSCTest(FieldTest):

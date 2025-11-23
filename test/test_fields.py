@@ -78,7 +78,7 @@ def checkFieldClass(field_cls):
         if attr_name in ["syntax"] and attr_value is False:
             continue
         if attr_required and attr_value == NOT_PRESENT:
-            jprint(f"* {field_cls} lacks {attr_name}")
+            print(f"* {field_cls} lacks {attr_name}")
             errors += 1
         elif True not in [isinstance(attr_value, t) for t in attr_types]:
             print(f"* {field_cls} WRONG TYPE FOR {attr_name}")

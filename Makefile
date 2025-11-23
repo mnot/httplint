@@ -4,7 +4,7 @@ VERSIONING = calver
 GITHUB_STEP_SUMMARY ?= throwaway
 
 .PHONY: test
-test: test_syntax test_fields test_notes test_messages test_status test_cache test_smoke
+test: test_syntax test_fields test_notes test_messages test_status test_cache test_unnecessary test_smoke
 
 .PHONY: test_syntax
 test_syntax: venv
@@ -30,6 +30,10 @@ test_status: venv
 .PHONY: test_cache
 test_cache: venv
 	PYTHONPATH=. $(VENV)/python test/test_cache.py
+
+.PHONY: test_unnecessary
+test_unnecessary: venv
+	PYTHONPATH=. $(VENV)/python test/test_unnecessary.py
 
 .PHONY: test_smoke
 test_smoke: venv

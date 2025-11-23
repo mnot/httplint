@@ -33,6 +33,8 @@ that were used to select the representation."""
             add_note(VARY_USER_AGENT)
         if "host" in self.value:
             add_note(VARY_HOST)
+        if "negotiate" in self.value:
+            add_note(VARY_NEGOTIATE)
 
 
 class VARY_ASTERISK(Note):
@@ -75,6 +77,18 @@ The presence of `Vary: Host` may make some caches not store an otherwise cacheab
 some cache implementations will not store anything that has a `Vary` header)."""
 
 
+class VARY_NEGOTIATE(Note):
+    category = categories.CACHING
+    level = levels.WARN
+    _summary = "Vary: Negotiate is not necessary."
+    _text = """\
+The `Vary: Negotiate` header value is not necessary, as 
+[Transparent Content Negotiation](https://www.rfc-editor.org/rfc/rfc2295.html)
+is not widely supported.
+
+Consider removing it."""
+
+
 class VARY_COMPLEX(Note):
     category = categories.CACHING
     level = levels.WARN
@@ -91,3 +105,10 @@ class VaryTest(FieldTest):
     inputs = [b"Accept-Encoding", b"*, User-Agent", b"Host"]
     expected_out = ["accept-encoding", "*", "user-agent", "host"]
     expected_notes = [VARY_ASTERISK, VARY_USER_AGENT, VARY_HOST, VARY_COMPLEX]
+
+
+class VaryNegotiateTest(FieldTest):
+    name = "Vary"
+    inputs = [b"Negotiate"]
+    expected_out = ["negotiate"]
+    expected_notes = [VARY_NEGOTIATE]

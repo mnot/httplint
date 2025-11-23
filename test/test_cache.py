@@ -84,6 +84,20 @@ class TestCacheFreshness(unittest.TestCase):
         self.assertNotIn(FRESHNESS_FRESH, notes)
         self.assertNotIn(FRESHNESS_STALE_ALREADY, notes)
 
+    def test_cc_and_expires(self):
+        from httplint.cache import CC_AND_EXPIRES
+        linter = HttpResponseLinter()
+        linter.process_response_topline(b"HTTP/1.1", b"200", b"OK")
+        linter.process_headers([
+            (b"Cache-Control", b"max-age=60"),
+            (b"Expires", b"Thu, 01 Dec 1994 16:00:00 GMT"),
+            (b"Date", b"Thu, 01 Dec 1994 16:00:00 GMT"),
+        ])
+        linter.finish_content(True)
+
+        notes = [n.__class__ for n in linter.notes]
+        self.assertIn(CC_AND_EXPIRES, notes)
+
 
 if __name__ == "__main__":
     unittest.main()

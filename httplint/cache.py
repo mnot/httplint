@@ -149,6 +149,8 @@ class ResponseCacheChecker:
             freshness_hdrs.append("header-cache-control")
             has_explicit_freshness = True
             has_cc_freshness = True
+            if expires_hdr_present:
+                self.notes.add("header-expires header-cache-control", CC_AND_EXPIRES)
         if "s-maxage" in self.cc_dict:
             self.freshness_lifetime_shared = self.cc_dict["s-maxage"]
             freshness_hdrs.append("header-cache-control")
@@ -538,3 +540,13 @@ For example, caches often use stale responses when they cannot connect to the or
 this directive is present, they will return an error rather than a stale response.
 
 These directives do not affect private caches; for example, those in browsers."""
+
+
+class CC_AND_EXPIRES(Note):
+    category = categories.CACHING
+    level = levels.INFO
+    _summary = "Cache-Control: max-age and Expires are both present."
+    _text = """\
+The `Cache-Control: max-age` directive and the `Expires` header are both present.
+
+`max-age` takes precedence over `Expires`, so `Expires` is redundant and can be removed."""
