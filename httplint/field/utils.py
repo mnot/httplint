@@ -1,12 +1,13 @@
 import calendar
 from email.utils import parsedate as lib_parsedate
 import re
-from typing import Optional, List, Union
+from typing import Optional, List, Union, Dict, Any, Type
 
 from urllib.parse import unquote as urlunquote
 
 from httplint.syntax import rfc9110
 from httplint.types import AddNoteMethodType, ParamDictType
+from httplint.note import Note
 from httplint.field.notes import (
     PARAM_REPEATS,
     PARAM_SINGLE_QUOTED,
@@ -140,3 +141,61 @@ def parse_params(
         else:
             param_dict[k_norm] = unquote_string(val)
     return param_dict
+
+
+def check_sf_params(
+    params: Dict[str, Any],
+    known_params: Dict[str, Dict[str, Any]],
+    add_note: AddNoteMethodType,
+    unknown_param_note: Type[Note],
+    bad_param_val_note: Type[Note],
+) -> str:
+    """
+    Format parameters for a clause, checking validity against known_params.
+    """
+    param_list = []
+    for param_name, param_value in params.items():
+        if param_name not in known_params:
+            add_note(unknown_param_note, param=param_name)
+            param_list.append(f"* `{param_name}`: `{param_value}`")
+        else:
+            expected_type = known_params[param_name].get("type")
+            if expected_type and not isinstance(param_value, expected_type):
+                add_note(
+                    bad_param_val_note,
+                    param=param_name,
+                    value=param_value,
+                )
+                param_list.append(f"* `{param_name}`: `{param_value}`")
+                continue
+
+            allowed_values = known_params[param_name].get("values")
+            if allowed_values and param_value not in allowed_values:
+                add_note(
+                    bad_param_val_note,
+                    param=param_name,
+                    value=param_value,
+                )
+                param_list.append(f"* `{param_name}`: `{param_value}`")
+                continue
+
+            if "value_desc" in known_params[param_name]:
+                desc = known_params[param_name]["value_desc"].get(param_value)
+                if desc:
+                    param_list.append(f"* {desc}")
+                else:
+                    param_list.append(f"* `{param_name}`: `{param_value}`")
+            elif "desc" in known_params[param_name]:
+                if param_value is True:
+                    param_list.append(f"* {known_params[param_name]['desc']}")
+                else:
+                    param_list.append(
+                        f"* {known_params[param_name]['desc'] % param_value}"
+                    )
+            else:
+                if param_value is True:
+                    param_list.append(f"* `{param_name}`")
+                else:
+                    param_list.append(f"* `{param_name}`: `{param_value}`")
+
+    return "\n".join(param_list)
