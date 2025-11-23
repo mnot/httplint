@@ -25,6 +25,13 @@ def verify_content_type(linter: "HttpMessageLinter") -> None:
     if not linter.content_hash:
         return
 
+    # Don't verify content type for responses that don't carry a full representation
+    status_code = getattr(linter, "status_code", None)
+    if status_code in [204, 205, 304, 206] + list(range(100, 199)):
+        return
+    if getattr(linter, "is_head_response", False):
+        return
+
     # Get the declared content type
     if "content-type" not in linter.headers.parsed:
         return
@@ -48,11 +55,13 @@ def verify_content_type(linter: "HttpMessageLinter") -> None:
 
 
 class MockLinter:
-    def __init__(self) -> None:
+    def __init__(self, status_code: int = 200) -> None:
         self.content_hash: bytes = b"hash"
         self.headers = MockHeaders()
         self.content_sample: bytes = b""
         self.notes = MockNotes()
+        self.status_code = status_code
+        self.is_head_response = False
 
 
 class MockHeaders:
@@ -112,6 +121,36 @@ class TestVerifyContentType(unittest.TestCase):
         linter.content_sample = b"a" * 2048
         verify_content_type(linter)  # type: ignore[arg-type]
         self.assertIn(CONTENT_TYPE_MISMATCH, linter.notes)
+
+    def test_304_not_modified(self) -> None:
+        linter = MockLinter(status_code=304)
+        linter.headers.parsed["content-type"] = ("image/png", {})
+        linter.content_sample = b""
+        verify_content_type(linter)  # type: ignore[arg-type]
+        self.assertNotIn(CONTENT_TYPE_MISMATCH, linter.notes)
+
+    def test_206_partial_content(self) -> None:
+        linter = MockLinter(status_code=206)
+        linter.headers.parsed["content-type"] = ("image/png", {})
+        # Partial content might look like anything
+        linter.content_sample = b"some partial content"
+        verify_content_type(linter)  # type: ignore[arg-type]
+        self.assertNotIn(CONTENT_TYPE_MISMATCH, linter.notes)
+
+    def test_204_no_content(self) -> None:
+        linter = MockLinter(status_code=204)
+        linter.headers.parsed["content-type"] = ("image/png", {})
+        linter.content_sample = b""
+        verify_content_type(linter)  # type: ignore[arg-type]
+        self.assertNotIn(CONTENT_TYPE_MISMATCH, linter.notes)
+
+    def test_head_request(self) -> None:
+        linter = MockLinter()
+        linter.is_head_response = True
+        linter.headers.parsed["content-type"] = ("image/png", {})
+        linter.content_sample = b""
+        verify_content_type(linter)  # type: ignore[arg-type]
+        self.assertNotIn(CONTENT_TYPE_MISMATCH, linter.notes)
 
     def test_mimesniff_types(self) -> None:
         """
