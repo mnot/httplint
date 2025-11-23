@@ -24,11 +24,12 @@ def checkRegistryCoverage(xml_file):
     unsupported = 0
     message = FakeMessageLinter()
     finder = HttpFieldFinder(message)
-    for field_name in parseFieldRegistry(xml_file):
+    for field_name, field_status in parseFieldRegistry(xml_file):
         field_cls = finder.find_handler_class(field_name)
         if field_cls is None:
-            sys.stderr.write(f"* {field_name} unsupported\n")
+            print(f"* {field_name} ({field_status})")
             unsupported += 1
+    print()
     return unsupported
 
 
@@ -41,7 +42,12 @@ def parseFieldRegistry(xml_file):
     root = tree.getroot()
     result = []
     for record in root.iter("{http://www.iana.org/assignments}record"):
-        result.append(record.find("{http://www.iana.org/assignments}value").text)
+        result.append(
+            (
+                record.find("{http://www.iana.org/assignments}value").text,
+                record.find("{http://www.iana.org/assignments}status").text,
+            )
+        )
     return result
 
 
@@ -72,10 +78,10 @@ def checkFieldClass(field_cls):
         if attr_name in ["syntax"] and attr_value is False:
             continue
         if attr_required and attr_value == NOT_PRESENT:
-            sys.stderr.write(f"* {field_cls} lacks {attr_name}\n")
+            jprint(f"* {field_cls} lacks {attr_name}")
             errors += 1
         elif True not in [isinstance(attr_value, t) for t in attr_types]:
-            sys.stderr.write(f"* {field_cls} WRONG TYPE FOR {attr_name}\n")
+            print(f"* {field_cls} WRONG TYPE FOR {attr_name}")
             errors += 1
 
     canonical_name = getattr(field, "canonical_name", None)
@@ -86,16 +92,18 @@ def checkFieldClass(field_cls):
         field_mod = finder.find_module(canonical_name)
         tests = loader.loadTestsFromModule(field_mod)
         if tests.countTestCases() == 0:
-            sys.stderr.write(f"* {field_cls} NO TESTS\n")
+            print(f"* {field_cls.__name__} NO TESTS")
     return errors
 
 
 if __name__ == "__main__":
-    print("## Checking Fields...")
+    print("# Checking Fields...")
+    print("## Listing Unsupported Fields")
     unsupported = checkRegistryCoverage(sys.argv[1])
+    print("## Checking Field Definitions")
     count, errors = checkSubClasses(
         HttpField, ["httplint/field/parsers"], checkFieldClass
     )
-    print(f"{count} checked; {errors} errors; {unsupported} unsupported.")
+    print(f"{count} fields checked; {errors} errors; {unsupported} unsupported.")
     if errors > 0:
         sys.exit(1)
