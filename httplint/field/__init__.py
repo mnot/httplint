@@ -129,7 +129,7 @@ class HttpField:
             add_note(FIELD_NAME_BAD_SYNTAX)
 
         if self.structured_field:
-            combined_value = ", ".join(self.value)
+            combined_value = ", ".join(self.value).strip()
             parsed_value: Any = None
             try:
                 if self.sf_type == "list":
