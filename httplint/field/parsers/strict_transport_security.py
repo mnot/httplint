@@ -46,7 +46,7 @@ browsers that it should only be communicated with using HTTPS, instead of using 
                 try:
                     parsed["max-age"] = int(value)  # type: ignore
                 except (ValueError, TypeError):
-                    add_note(HSTS_BAD_MAX_AGE, max_age=value)
+                    add_note(HSTS_BAD_MAX_AGE, max_age=str(value))
             elif name == "includesubdomains":
                 parsed["includesubdomains"] = True
                 if value is not None:

@@ -33,7 +33,7 @@ such as the camera, microphone, or geolocation, in its own frame, and in iframes
                         if str(i_val) not in ["self", "src"]:
                             add_note(
                                 PERMISSIONS_POLICY_UNKNOWN_TOKEN,
-                                token=i_val,
+                                token=str(i_val),
                                 feature=feature,
                             )
                     elif isinstance(i_val, str):
@@ -46,7 +46,7 @@ such as the camera, microphone, or geolocation, in its own frame, and in iframes
                     else:
                         add_note(
                             PERMISSIONS_POLICY_INVALID_ITEM_TYPE,
-                            item=i_val,
+                            item=str(i_val),
                             feature=feature,
                         )
             elif isinstance(val, Token):

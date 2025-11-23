@@ -139,7 +139,7 @@ def _process_cookie_attribute(  # pylint: disable=too-many-branches,too-many-arg
         try:
             expiry_time = loose_date_parse(attribute_value)
         except ValueError as why:
-            add_note(SET_COOKIE_BAD_DATE, why=why, cookie_name=cookie_name)
+            add_note(SET_COOKIE_BAD_DATE, why=str(why), cookie_name=cookie_name)
             return lifetime_note_added
         cookie_attribute_list.append(("Expires", expiry_time))
         if (
