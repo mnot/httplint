@@ -1,3 +1,4 @@
+from typing import Any
 from http_sf import Token
 
 from httplint.field import HttpField
@@ -58,26 +59,26 @@ or `unsafe-none`.
 class CrossOriginOpenerPolicySameOriginTest(FieldTest):
     name = "Cross-Origin-Opener-Policy"
     inputs = [b"same-origin"]
-    expected_out = (Token("same-origin"), {})
+    expected_out: Any = (Token("same-origin"), {})
     expected_notes = [CROSS_ORIGIN_OPENER_POLICY]
 
 
 class CrossOriginOpenerPolicySameOriginAllowPopupsTest(FieldTest):
     name = "Cross-Origin-Opener-Policy"
     inputs = [b"same-origin-allow-popups"]
-    expected_out = (Token("same-origin-allow-popups"), {})
+    expected_out: Any = (Token("same-origin-allow-popups"), {})
     expected_notes = [CROSS_ORIGIN_OPENER_POLICY]
 
 
 class CrossOriginOpenerPolicyUnsafeNoneTest(FieldTest):
     name = "Cross-Origin-Opener-Policy"
     inputs = [b"unsafe-none"]
-    expected_out = (Token("unsafe-none"), {})
+    expected_out: Any = (Token("unsafe-none"), {})
     expected_notes = [CROSS_ORIGIN_OPENER_POLICY]
 
 
 class CrossOriginOpenerPolicyBadValueTest(FieldTest):
     name = "Cross-Origin-Opener-Policy"
     inputs = [b"foo"]
-    expected_out = (Token("foo"), {})
+    expected_out: Any = (Token("foo"), {})
     expected_notes = [CROSS_ORIGIN_OPENER_POLICY_BAD_VALUE]

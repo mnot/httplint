@@ -1,3 +1,4 @@
+from typing import Any
 from http_sf import Token
 
 from httplint.field import HttpField
@@ -54,26 +55,26 @@ The `Cross-Origin-Embedder-Policy` header must be one of `require-corp`, `creden
 class CrossOriginEmbedderPolicyRequireCorpTest(FieldTest):
     name = "Cross-Origin-Embedder-Policy"
     inputs = [b"require-corp"]
-    expected_out = (Token("require-corp"), {})
+    expected_out: Any = (Token("require-corp"), {})
     expected_notes = [CROSS_ORIGIN_EMBEDDER_POLICY]
 
 
 class CrossOriginEmbedderPolicyCredentiallessTest(FieldTest):
     name = "Cross-Origin-Embedder-Policy"
     inputs = [b"credentialless"]
-    expected_out = (Token("credentialless"), {})
+    expected_out: Any = (Token("credentialless"), {})
     expected_notes = [CROSS_ORIGIN_EMBEDDER_POLICY]
 
 
 class CrossOriginEmbedderPolicyUnsafeNoneTest(FieldTest):
     name = "Cross-Origin-Embedder-Policy"
     inputs = [b"unsafe-none"]
-    expected_out = (Token("unsafe-none"), {})
+    expected_out: Any = (Token("unsafe-none"), {})
     expected_notes = [CROSS_ORIGIN_EMBEDDER_POLICY]
 
 
 class CrossOriginEmbedderPolicyBadValueTest(FieldTest):
     name = "Cross-Origin-Embedder-Policy"
     inputs = [b"foo"]
-    expected_out = (Token("foo"), {})
+    expected_out: Any = (Token("foo"), {})
     expected_notes = [CROSS_ORIGIN_EMBEDDER_POLICY_BAD_VALUE]
