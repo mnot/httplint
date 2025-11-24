@@ -10,5 +10,6 @@ served from cache; if it contains `HIT`, it was."""
     syntax = False
     list_header = True
     deprecated = False
+    no_coverage = True
     valid_in_requests = False
     valid_in_responses = True

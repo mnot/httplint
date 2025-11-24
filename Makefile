@@ -4,7 +4,7 @@ VERSIONING = calver
 GITHUB_STEP_SUMMARY ?= throwaway
 
 .PHONY: test
-test: test_syntax test_fields test_notes test_messages test_status test_smoke
+test: test_syntax test_fields test_notes test_messages test_status test_cache test_unnecessary test_smoke
 
 .PHONY: test_syntax
 test_syntax: venv
@@ -26,6 +26,14 @@ test_messages: venv
 .PHONY: test_status
 test_status: venv
 	PYTHONPATH=. $(VENV)/python test/test_status.py
+
+.PHONY: test_cache
+test_cache: venv
+	PYTHONPATH=. $(VENV)/python test/test_cache.py
+
+.PHONY: test_unnecessary
+test_unnecessary: venv
+	PYTHONPATH=. $(VENV)/python test/test_unnecessary.py
 
 .PHONY: test_smoke
 test_smoke: venv
@@ -49,5 +57,14 @@ tidy: tidy_py
 .PHONY: run
 run: lint typecheck tidy
 
+# Pass arguments to the url target
+ifeq (url,$(firstword $(MAKECMDGOALS)))
+  URL_ARGS := $(wordlist 2,$(words $(MAKECMDGOALS)),$(MAKECMDGOALS))
+  .DEFAULT: ; @:
+endif
+
+.PHONY: url
+url: venv
+	curl -si $(URL_ARGS) | $(VENV)/httplint --now
 
 include Makefile.pyproject

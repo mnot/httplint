@@ -42,7 +42,7 @@ Helpful make targets include:
 
 * `make shell` - start a shell in the Python virtual environment
 * `make python` - start an interactive Python interpreter in the virtual environment
-* `make lint` - run pylint with REDbot-specific configuration
+* `make lint` - run pylint with httplint-specific configuration
 * `make typecheck` - run mypy to check Python types
 * `make tidy` - format Python source
 * `make test` - run the tests
@@ -77,12 +77,7 @@ For example, if your field's name is `Foo-Example`, the appropriate filename is 
 
 If your field name doesn't work with this convention, please raise an issue.
 
-The easiest way to get started is to run (from redbot's root):
-
-> make httplint/field/parsers/my_field_name.py
-
-That will give you a skeleton to start working with.
-
+The easiest way to get started is to copy `httplint/field/parsers/field.tpl` to your new file.
 
 #### The _HttpField_ Class
 
@@ -94,11 +89,13 @@ Each file should define exactly one `fields.HttpField` class, whose name is the 
 * `description` - unicode string, general description of the field. Markdown formatting. _required_
 * `reference` - unicode string, URL to the most recent definition of the field.
 * `syntax` - string, regular expression for the field's syntax (evaluated with `re.VERBOSE` and `re.IGNORECASE`). _required_
-* `list_field` - boolean, indicates whether the field supports list syntax (see `parse`). _required_
+* `list_header` - boolean, indicates whether the field supports list syntax (see `parse`). _required_
 * `deprecated` - boolean, indicates whether the field has been deprecated.
 * `valid_in_requests` - boolean, indicates whether the field is valid in HTTP requests. _required_
 * `valid_in_responses` - boolean, indicates whether the field is valid in HTTP responses. _required_
 * `no_coverage` - boolean, turns off coverage checks for trivial fields.
+* `structured_field` - boolean, indicates whether the field is a Structured Field.
+* `structured_field_type` - string, the type of Structured Field (`item`, `list`, or `dictionary`).
 
 For example, `Age` starts with:
 
@@ -131,13 +128,13 @@ Baz: "def, ghi"
 _parse_ will be called twice for `Foo` (once with the `field_value` _a_ and once with _b_) and once
 for `Bar` and once for `Baz` (with the `field_value`s _1, 2, 3_ and _"def, ghi"_ respectively).
 
-However, if the `list_field` class variable is `True`, this is altered; _parse_ will be called for
+However, if the `list_header` class variable is `True`, this is altered; _parse_ will be called for
 each _value_, after separating on commas (excepting those inside quoted strings). In the example
 above, _parse_ would be called three times for `Bar` (with the `field_value`s _1_, _2_, and _3_),
 but still only once for `Baz`.
 
 Note that `syntax` is checked against the `field_value` before _parse_ is called, subject to
-`list_field` processing.
+`list_header` processing.
 
 `add_note` is a function that can be called with the appropriate _Note_, when it's necessary to
 communicate something about the field_value.
@@ -155,14 +152,14 @@ _evaluate_ is called once all of the field fields are processed, to enable the e
 field field's values to be considered. To access the parsed value(s), use the _value_ instance
 variable.
 
-When _list_field_ is `True`, _value_ is a list of the results of calling _parse_. When it is
+When _list_header_ is `True`, _value_ is a list of the results of calling _parse_. When it is
 `False`, it is a single value, representing the most recent call to _parse_.
 
 
 #### The _message_ instance variable
 
 Some checks may need to access other parts of the message; for example, the HTTP status code. You
-can access the `redbot.message` instance that the field is part of using the _message_ instance
+can access the `httplint.message` instance that the field is part of using the _message_ instance
 variable.
 
 
@@ -171,7 +168,9 @@ variable.
 Field definitions should also include field specific _Note_ classes.
 
 When writing new notes, it's important to keep in mind that the `text` field is expected to contain
-valid HTML; any variables you pass to it will be escaped for you before rendering.
+valid Markdown; any variables you pass to it will be escaped for you before rendering.
+
+Common notes used by multiple fields should be in `httplint/field/notes.py`.
 
 
 #### Writing Tests
@@ -181,10 +180,10 @@ Each field definition should also include tests, as subclasses of
 
 * `name` - the field field-name
 * `inputs` - a list of field field-values, one item per line.
-    E.g., `["foo", "foo, bar"]`
+    E.g., `[b"foo", b"foo, bar"]`
 * `expected_out` - the data structure that _parse_ should return, given
     the inputs
-* `expected_notes` - a list of `redbot.speak.Note` classes that are expected
+* `expected_notes` - a list of `httplint.note.Note` classes that are expected
     to be set with `add_note` when parsing the inputs
 
 You can create any number of tests this way; they will be run automatically when

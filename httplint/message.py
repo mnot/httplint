@@ -12,6 +12,7 @@ from httplint.syntax import rfc3986
 from httplint.types import RawFieldListType
 from httplint.util import iri_to_uri, f_num
 from httplint.status import StatusChecker
+from httplint.content_type import verify_content_type
 
 
 class HttpMessageParams(TypedDict):
@@ -48,7 +49,9 @@ class HttpMessageLinter:
         self.content_hash: Optional[bytes] = None
         self._hash_processor = hashlib.new("md5")
         self.decoded = ContentEncodingProcessor(self)
+        self.decoded.processors.append(self._content_sample_processor)
         self.character_encoding: Optional[str] = None
+        self.content_sample: bytes = b""
 
         self.transfer_length: int = 0
         self.complete: bool = False
@@ -117,6 +120,13 @@ class HttpMessageLinter:
 
     def post_checks(self) -> None:
         "Post-parsing checks to perform."
+
+    def _content_sample_processor(self, chunk: bytes) -> None:
+        """
+        Capture a sample of the decoded content.
+        """
+        if len(self.content_sample) < 1024:
+            self.content_sample += chunk[: 1024 - len(self.content_sample)]
 
     def __repr__(self) -> str:
         status = [self.__class__.__module__ + "." + self.__class__.__name__]
@@ -220,6 +230,7 @@ class HttpResponseLinter(HttpMessageLinter):
         self.status_checker = StatusChecker(
             self, cast(Optional[HttpRequestLinter], self.related)
         )
+        verify_content_type(self)
 
 
 class CL_CORRECT(Note):

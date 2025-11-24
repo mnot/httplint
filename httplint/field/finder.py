@@ -8,7 +8,7 @@ from typing import (
 )
 
 from httplint.field import HttpField
-from httplint.field import deprecated
+from httplint.field import deprecated, unnecessary
 from httplint.types import AddNoteMethodType
 
 
@@ -56,7 +56,7 @@ class HttpFieldFinder:
         return handler
 
     @staticmethod
-    def find_handler_class(field_name: str) -> Optional[Type[HttpField]]:
+    def find_handler_class(field_name: str) -> Type[HttpField] | None:
         """
         Return a handler class for the given field name. Returns None if not found.
         """
@@ -67,6 +67,8 @@ class HttpFieldFinder:
             return getattr(module, name_token)  # type: ignore
         if field_name.lower() in deprecated.field_lookup:
             return deprecated.DeprecatedField
+        if field_name.lower() in unnecessary.UNNECESSARY_FIELDS:
+            return unnecessary.UnnecessaryField
         return None
 
     @staticmethod

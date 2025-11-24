@@ -149,6 +149,8 @@ class ResponseCacheChecker:
             freshness_hdrs.append("header-cache-control")
             has_explicit_freshness = True
             has_cc_freshness = True
+            if expires_hdr_present:
+                self.notes.add("header-expires header-cache-control", CC_AND_EXPIRES)
         if "s-maxage" in self.cc_dict:
             self.freshness_lifetime_shared = self.cc_dict["s-maxage"]
             freshness_hdrs.append("header-cache-control")
@@ -172,18 +174,35 @@ class ResponseCacheChecker:
             int(self.freshness_lifetime_private), 0, 0
         )
 
+        shared_freshness_left = self.freshness_lifetime_shared - self.age
+        shared_freshness_left_str = relative_time(abs(int(shared_freshness_left)), 0, 0)
+        shared_freshness_lifetime_str = relative_time(
+            int(self.freshness_lifetime_shared), 0, 0
+        )
+
         fresh = freshness_left > 0
+        shared_fresh = shared_freshness_left > 0
         current_age_str = relative_time(self.age, 0, 0)
 
         if has_explicit_freshness:
-            if fresh:
-                self.notes.add(
-                    " ".join(freshness_hdrs),
-                    FRESHNESS_FRESH,
-                    freshness_lifetime=freshness_lifetime_str,
-                    freshness_left=freshness_left_str,
-                    current_age=current_age_str,
-                )
+            if fresh or shared_fresh:
+                if self.freshness_lifetime_shared != self.freshness_lifetime_private:
+                    self.notes.add(
+                        " ".join(freshness_hdrs),
+                        FRESHNESS_SHARED_PRIVATE,
+                        fresh_lifetime=freshness_lifetime_str,
+                        fresh_left=freshness_left_str,
+                        share_lifetime=shared_freshness_lifetime_str,
+                        share_left=shared_freshness_left_str,
+                    )
+                else:
+                    self.notes.add(
+                        " ".join(freshness_hdrs),
+                        FRESHNESS_FRESH,
+                        freshness_lifetime=freshness_lifetime_str,
+                        freshness_left=freshness_left_str,
+                        current_age=current_age_str,
+                    )
             elif has_cc_freshness and self.age > self.freshness_lifetime_private:
                 self.notes.add(
                     " ".join(freshness_hdrs),
@@ -368,6 +387,23 @@ A response can be considered fresh when its age (here, %(current_age)s) is less 
 lifetime (in this case, %(freshness_lifetime)s)."""
 
 
+class FRESHNESS_SHARED_PRIVATE(Note):
+    category = categories.CACHING
+    level = levels.GOOD
+    _summary = (
+        "%(message)s is fresh for %(fresh_left)s (%(share_left)s in shared caches)."
+    )
+    _text = """\
+This response has different freshness lifetimes for private (e.g., browser) and shared (e.g., proxy)
+caches.
+
+Private caches can consider it fresh for %(fresh_lifetime)s (until %(fresh_left)s from
+now).
+
+Shared caches can consider it fresh for %(share_lifetime)s (until %(share_left)s from now).
+"""
+
+
 class FRESHNESS_STALE_CACHE(Note):
     category = categories.CACHING
     level = levels.WARN
@@ -504,3 +540,13 @@ For example, caches often use stale responses when they cannot connect to the or
 this directive is present, they will return an error rather than a stale response.
 
 These directives do not affect private caches; for example, those in browsers."""
+
+
+class CC_AND_EXPIRES(Note):
+    category = categories.CACHING
+    level = levels.INFO
+    _summary = "Cache-Control: max-age and Expires are both present."
+    _text = """\
+The `Cache-Control: max-age` directive and the `Expires` header are both present.
+
+`max-age` takes precedence over `Expires`, so `Expires` is redundant and can be removed."""

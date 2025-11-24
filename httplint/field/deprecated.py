@@ -51,6 +51,8 @@ OBSOLETED_FIELDS = {
     "Proxy-Features": "https://www.w3.org/TR/WD-proxy.html",
     "Proxy-Instruction": "https://www.w3.org/TR/WD-proxy.html",
     "Public": "https://www.rfc-editor.org/rfc/rfc2616.html#section-19.6.3",
+    "Public-Key-Pins": "https://www.rfc-editor.org/rfc/rfc7469.html",
+    "Public-Key-Pins-Report-Only": "https://www.rfc-editor.org/rfc/rfc7469.html",
     "Referer-Root": "https://www.w3.org/TR/2007/WD-access-control-20071126/#referer-root",
     "Safe": "https://datatracker.ietf.org/doc/status-change-http-experiments-to-historic/",
     "Security-Scheme": "https://datatracker.ietf.org/doc/status-change-http-experiments-to-historic/",

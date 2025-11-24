@@ -411,3 +411,17 @@ class CacheControlBigTest(FieldTest):
     inputs = [b"max-age=2147483649"]
     expected_out = [("max-age", 2147483649)]
     expected_notes = [CC_MAX_AGE_TOO_LARGE]
+
+
+class CacheControlDupTest(FieldTest):
+    name = "Cache-Control"
+    inputs = [b"max-age=5, max-age=10"]
+    expected_out = [("max-age", 5), ("max-age", 10)]
+    expected_notes = [CC_DUP]
+
+
+class CacheControlUnknownDupTest(FieldTest):
+    name = "Cache-Control"
+    inputs = [b"foo=1, foo=2"]
+    expected_out = [("foo", "1"), ("foo", "2")]
+    expected_notes = []
