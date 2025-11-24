@@ -5,6 +5,8 @@ from typing import Optional, List, Union, Dict, Any, Type
 
 from urllib.parse import unquote as urlunquote
 
+from http_sf import Token
+
 from httplint.syntax import rfc9110
 from httplint.types import AddNoteMethodType, ParamDictType
 from httplint.note import Note
@@ -199,3 +201,26 @@ def check_sf_params(
                     param_list.append(f"* `{param_name}`: `{param_value}`")
 
     return "\n".join(param_list)
+
+
+def check_sf_item_token(
+    field_value: Any,
+    valid_tokens: List[Token],
+    add_note: AddNoteMethodType,
+    valid_note: Type[Note],
+    invalid_note: Type[Note],
+) -> None:
+    """
+    Check if a Structured Field Item is a Token and one of the valid tokens.
+    """
+    if isinstance(field_value, tuple):
+        val = field_value[0]
+        if isinstance(val, Token):
+            if val in valid_tokens:
+                add_note(valid_note, value=val)
+            else:
+                add_note(invalid_note, value=val)
+        else:
+            add_note(invalid_note, value=val)
+    else:
+        add_note(invalid_note, value=field_value)
