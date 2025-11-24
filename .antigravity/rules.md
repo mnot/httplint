@@ -27,7 +27,7 @@ For each code change:
 3. Test by running `make test`
 4. Format by running `make tidy` (this can fix line length issues and trailing whitespace)
 
-These MUST be run after each code change.
+These MUST be run after each code change, and MUST all succeed before presenting something to the user.
 
 If you need to run a Python interpreter, use `.venv/bin/python`.
 
