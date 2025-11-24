@@ -67,6 +67,12 @@ class StatusChecker:
     def status102(self) -> None:  # Processing
         pass
 
+    def status103(self) -> None:  # Early Hints
+        self.add_note("", STATUS_EARLY_HINTS)
+
+    def status104(self) -> None:  # Upload Resumption Supported
+        self.add_note("", STATUS_UPLOAD_RESUMPTION_SUPPORTED)
+
     def status200(self) -> None:  # OK
         pass
 
@@ -98,6 +104,9 @@ class StatusChecker:
 
     def status207(self) -> None:  # Multi-Status
         pass
+
+    def status208(self) -> None:  # Already Reported
+        self.add_note("", STATUS_ALREADY_REPORTED)
 
     def status226(self) -> None:  # IM Used
         pass
@@ -217,6 +226,9 @@ class StatusChecker:
     def status418(self) -> None:
         self.add_note("", STATUS_IM_A_TEAPOT)
 
+    def status421(self) -> None:  # Misdirected Request
+        self.add_note("", STATUS_MISDIRECTED_REQUEST)
+
     def status422(self) -> None:  # Unprocessable Entity
         pass
 
@@ -226,8 +238,23 @@ class StatusChecker:
     def status424(self) -> None:  # Failed Dependency
         pass
 
+    def status425(self) -> None:  # Too Early
+        self.add_note("", STATUS_TOO_EARLY)
+
     def status426(self) -> None:  # Upgrade Required
         pass
+
+    def status428(self) -> None:  # Precondition Required
+        self.add_note("", STATUS_PRECONDITION_REQUIRED)
+
+    def status429(self) -> None:  # Too Many Requests
+        self.add_note("", STATUS_TOO_MANY_REQUESTS)
+
+    def status431(self) -> None:  # Request Header Fields Too Large
+        self.add_note("", STATUS_REQUEST_HEADER_FIELDS_TOO_LARGE)
+
+    def status451(self) -> None:  # Unavailable For Legal Reasons
+        self.add_note("", STATUS_UNAVAILABLE_FOR_LEGAL_REASONS)
 
     def status500(self) -> None:  # Internal Server Error
         self.add_note("", STATUS_INTERNAL_SERVICE_ERROR)
@@ -253,8 +280,14 @@ class StatusChecker:
     def status507(self) -> None:  # Insufficient Storage
         pass
 
+    def status508(self) -> None:  # Loop Detected
+        self.add_note("", STATUS_LOOP_DETECTED)
+
     def status510(self) -> None:  # Not Extended
         pass
+
+    def status511(self) -> None:  # Network Authentication Required
+        self.add_note("", STATUS_NETWORK_AUTHENTICATION_REQUIRED)
 
 
 class NO_DATE_304(Note):
@@ -573,3 +606,104 @@ The `417 (Expectation Failed)` status code indicates that the expectation given 
 
 In this case, the client requested `100-continue`, but the server (or an intermediary) couldn't
 satisfy it."""
+
+
+class STATUS_EARLY_HINTS(Note):
+    category = categories.GENERAL
+    level = levels.INFO
+    _summary = "The server sent early hints."
+    _text = """\
+The `103 (Early Hints)` status code allows the server to send some headers before the final response,
+typically to help the client start fetching resources earlier."""
+
+
+class STATUS_UPLOAD_RESUMPTION_SUPPORTED(Note):
+    category = categories.GENERAL
+    level = levels.INFO
+    _summary = "The server supports upload resumption."
+    _text = """\
+The `104 (Upload Resumption Supported)` status code indicates that the server supports resumable
+uploads."""
+
+
+class STATUS_ALREADY_REPORTED(Note):
+    category = categories.GENERAL
+    level = levels.INFO
+    _summary = "The members of a DAV binding have already been enumerated."
+    _text = """\
+The `208 (Already Reported)` status code can be used inside a DAV: propstat response element to
+avoid enumerating the internal members of multiple bindings to the same collection repeatedly."""
+
+
+class STATUS_MISDIRECTED_REQUEST(Note):
+    category = categories.GENERAL
+    level = levels.INFO
+    _summary = "The request was directed at a server that is not able to produce a response."
+    _text = """\
+The `421 (Misdirected Request)` status code indicates that the request was directed at a server
+that is not able to produce a response. This can happen when a connection is reused."""
+
+
+class STATUS_TOO_EARLY(Note):
+    category = categories.GENERAL
+    level = levels.INFO
+    _summary = "The server is unwilling to risk processing a request that might be replayed."
+    _text = """\
+The `425 (Too Early)` status code indicates that the server is unwilling to risk processing a
+request that might be replayed."""
+
+
+class STATUS_PRECONDITION_REQUIRED(Note):
+    category = categories.GENERAL
+    level = levels.INFO
+    _summary = "The origin server requires the request to be conditional."
+    _text = """\
+The `428 (Precondition Required)` status code indicates that the origin server requires the request
+to be conditional."""
+
+
+class STATUS_TOO_MANY_REQUESTS(Note):
+    category = categories.GENERAL
+    level = levels.INFO
+    _summary = "The client has sent too many requests in a given amount of time."
+    _text = """\
+The `429 (Too Many Requests)` status code indicates that the client has sent too many requests in a
+given amount of time ("rate limiting")."""
+
+
+class STATUS_REQUEST_HEADER_FIELDS_TOO_LARGE(Note):
+    category = categories.GENERAL
+    level = levels.INFO
+    _summary = (
+        "The server is unwilling to process the request because its header fields are too large."
+    )
+    _text = """\
+The `431 (Request Header Fields Too Large)` status code indicates that the server is unwilling to
+process the request because its header fields are too large."""
+
+
+class STATUS_UNAVAILABLE_FOR_LEGAL_REASONS(Note):
+    category = categories.GENERAL
+    level = levels.INFO
+    _summary = "The resource is unavailable for legal reasons."
+    _text = """\
+The `451 (Unavailable For Legal Reasons)` status code indicates that the server is denying access to
+the resource as a consequence of a legal demand."""
+
+
+class STATUS_LOOP_DETECTED(Note):
+    category = categories.GENERAL
+    level = levels.INFO
+    _summary = "The server terminated an operation because it encountered an infinite loop."
+    _text = """\
+The `508 (Loop Detected)` status code indicates that the server terminated an operation because it
+encountered an infinite loop while processing a request with "Depth: infinity"."""
+
+
+class STATUS_NETWORK_AUTHENTICATION_REQUIRED(Note):
+    category = categories.GENERAL
+    level = levels.INFO
+    _summary = "The client needs to authenticate to gain network access."
+    _text = """\
+The `511 (Network Authentication Required)` status code indicates that the client needs to
+authenticate to gain network access."""
