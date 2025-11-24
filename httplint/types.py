@@ -19,7 +19,7 @@ ParamDictType = Dict[str, Union[str, None]]
 
 
 class AddNoteMethodType(Protocol):
-    def __call__(self, note: Type["Note"], **vrs: Union[str, int]) -> None: ...
+    def __call__(self, note: Type["Note"], **vrs: Union[str, int, None]) -> None: ...
 
 
-VariableType = Union[str, int]
+VariableType = Union[str, int, None]
