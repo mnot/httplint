@@ -61,7 +61,7 @@ class Note:
     _text = ""
     _markdown = Markdown(output_format="html")
 
-    def __init__(self, subject: str, **vrs: Union[str, int]) -> None:
+    def __init__(self, subject: str, **vrs: Union[str, int, None]) -> None:
         self.subject = subject
         self.vars = vrs or {}
 
