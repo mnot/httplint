@@ -185,24 +185,25 @@ class ResponseCacheChecker:
         current_age_str = relative_time(self.age, 0, 0)
 
         if has_explicit_freshness:
-            if fresh or shared_fresh:
-                if self.freshness_lifetime_shared != self.freshness_lifetime_private:
-                    self.notes.add(
-                        " ".join(freshness_hdrs),
-                        FRESHNESS_SHARED_PRIVATE,
-                        fresh_lifetime=freshness_lifetime_str,
-                        fresh_left=freshness_left_str,
-                        share_lifetime=shared_freshness_lifetime_str,
-                        share_left=shared_freshness_left_str,
-                    )
-                else:
-                    self.notes.add(
-                        " ".join(freshness_hdrs),
-                        FRESHNESS_FRESH,
-                        freshness_lifetime=freshness_lifetime_str,
-                        freshness_left=freshness_left_str,
-                        current_age=current_age_str,
-                    )
+            if self.freshness_lifetime_shared != self.freshness_lifetime_private:
+                self.notes.add(
+                    " ".join(freshness_hdrs),
+                    FRESHNESS_SHARED_PRIVATE,
+                    fresh_lifetime=freshness_lifetime_str,
+                    fresh_left=freshness_left_str,
+                    share_lifetime=shared_freshness_lifetime_str,
+                    share_left=shared_freshness_left_str,
+                    private_status="fresh" if fresh else "stale",
+                    shared_status="fresh" if shared_fresh else "stale",
+                )
+            elif fresh or shared_fresh:
+                self.notes.add(
+                    " ".join(freshness_hdrs),
+                    FRESHNESS_FRESH,
+                    freshness_lifetime=freshness_lifetime_str,
+                    freshness_left=freshness_left_str,
+                    current_age=current_age_str,
+                )
             elif has_cc_freshness and self.age > self.freshness_lifetime_private:
                 self.notes.add(
                     " ".join(freshness_hdrs),
@@ -231,7 +232,7 @@ class ResponseCacheChecker:
             elif has_explicit_freshness:
                 self.notes.add("header-cache-control", STALE_MUST_REVALIDATE)
         elif "proxy-revalidate" in self.cc_dict or "s-maxage" in self.cc_dict:
-            if fresh:
+            if shared_fresh:
                 self.notes.add("header-cache-control", FRESH_PROXY_REVALIDATE)
             elif has_explicit_freshness:
                 self.notes.add("header-cache-control", STALE_PROXY_REVALIDATE)
@@ -328,8 +329,8 @@ class PUBLIC_UNNECESSARY(Note):
     _summary = "Cache-Control: public is rarely necessary."
     _text = """\
 The `Cache-Control: public` directive makes a response cacheable even when the request had an
-`Authorization` header (i.e., HTTP authentication was in use). Therefore, HTTP-authenticated (NOT cookie-authenticated) resources _may_ have reason to use
-`public`.
+`Authorization` header (i.e., HTTP authentication was in use). Therefore, HTTP-authenticated 
+(NOT cookie-authenticated) resources _may_ have reason to use `public`.
 
 Other responses **do not need to contain `public`**; it does not make the
 response "more cacheable", and only makes the response headers larger."""
@@ -391,7 +392,8 @@ class FRESHNESS_SHARED_PRIVATE(Note):
     category = categories.CACHING
     level = levels.GOOD
     _summary = (
-        "%(message)s is fresh for %(fresh_left)s (%(share_left)s in shared caches)."
+        "%(message)s is %(private_status)s for %(fresh_left)s "
+        "(%(shared_status)s for %(share_left)s in shared caches)."
     )
     _text = """\
 This response has different freshness lifetimes for private (e.g., browser) and shared (e.g., proxy)
