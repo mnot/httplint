@@ -17,7 +17,6 @@ import unittest
 
 import http_sf
 
-# from httplint.message import HttpRequest
 from httplint.syntax import rfc9110
 from httplint.types import (
     StrFieldListType,
@@ -149,9 +148,11 @@ class HttpField:
             except Exception as why:  # pylint: disable=broad-except
                 add_note(STRUCTURED_FIELD_PARSE_ERROR, error=f"{why}")
                 self.value = None
+
         if self.deprecated:
             deprecation_ref = getattr(self, "deprecation_ref", self.reference)
             add_note(FIELD_DEPRECATED, deprecation_ref=deprecation_ref)
+
         if (
             not self.list_header
             and not self.nonstandard_syntax
@@ -164,10 +165,11 @@ class HttpField:
             elif len(self.value) > 1:
                 add_note(SINGLE_HEADER_REPEAT)
                 self.value = self.value[-1]
-        #        if isinstance(message, HttpRequest):
-        #            if not self.valid_in_requests:
-        #                add_note(RESPONSE_HDR_IN_REQUEST)
-        #        else:
-        #            if not self.valid_in_responses:
-        #                add_note(REQUEST_HDR_IN_RESPONSE)
+
+        if self.message.message_type == "request":
+            if not self.valid_in_requests:
+                add_note(RESPONSE_HDR_IN_REQUEST)
+        else:
+            if not self.valid_in_responses:
+                add_note(REQUEST_HDR_IN_RESPONSE)
         self.evaluate(add_note)

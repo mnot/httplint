@@ -10,7 +10,7 @@ import xml.etree.ElementTree as ET
 
 from httplint.field import HttpField
 from httplint.field.finder import HttpFieldFinder
-from httplint.field.tests import FakeMessageLinter
+from httplint.field.tests import FakeResponseLinter
 from httplint.syntax.rfc9110 import list_rule
 
 from utils import checkSubClasses
@@ -22,7 +22,7 @@ def checkRegistryCoverage(xml_file):
     See what fields are missing and check those remaining to see what they don't define.
     """
     unsupported = 0
-    message = FakeMessageLinter()
+    message = FakeResponseLinter()
     finder = HttpFieldFinder(message)
     for field_name, field_status in parseFieldRegistry(xml_file):
         field_cls = finder.find_handler_class(field_name)
@@ -60,7 +60,7 @@ def checkFieldClass(field_cls):
     """
 
     errors = 0
-    message = FakeMessageLinter()
+    message = FakeResponseLinter()
     field = field_cls("warning", None)
     attrs = dir(field)
     checks = [
@@ -94,6 +94,45 @@ def checkFieldClass(field_cls):
         if tests.countTestCases() == 0:
             print(f"* {field_cls.__name__} NO TESTS")
     return errors
+
+
+class TestFieldFinder(unittest.TestCase):
+    def setUp(self) -> None:
+        self.finder = FieldFinder()
+
+    def test_find_handler(self) -> None:
+        handler = self.finder.find_handler("Content-Type")
+        self.assertEqual(handler.canonical_name, "Content-Type")
+
+    def test_find_handler_case_insensitive(self) -> None:
+        handler = self.finder.find_handler("cOnTeNt-TyPe")
+        self.assertEqual(handler.canonical_name, "Content-Type")
+
+    def test_find_unknown_handler(self) -> None:
+        handler = self.finder.find_handler("Unknown-Header")
+        self.assertEqual(handler.canonical_name, "Unknown-Header")
+
+
+class TestFieldProcessor(unittest.TestCase):
+    def setUp(self) -> None:
+        self.message = FakeResponseLinter()
+        self.processor = FieldProcessor(self.message)
+
+    def test_process(self) -> None:
+        headers = [(b"Content-Type", b"text/plain")]
+        self.processor.process(headers)
+        self.assertIn("content-type", self.message.headers.parsed)
+
+    def test_process_multiple(self) -> None:
+        headers = [(b"Content-Type", b"text/plain"), (b"Content-Length", b"10")]
+        self.processor.process(headers)
+        self.assertIn("content-type", self.message.headers.parsed)
+        self.assertIn("content-length", self.message.headers.parsed)
+
+
+class TestFieldSection(unittest.TestCase):
+    def setUp(self) -> None:
+        self.message = FakeResponseLinter()
 
 
 if __name__ == "__main__":

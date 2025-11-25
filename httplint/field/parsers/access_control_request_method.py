@@ -1,4 +1,4 @@
-from typing import List, Tuple
+from typing import List, Tuple, cast
 
 from httplint.field import HttpField
 from httplint.field.cors import (
@@ -6,8 +6,8 @@ from httplint.field.cors import (
     CORS_PREFLIGHT_REQ_METHOD_WRONG,
     CORS_PREFLIGHT_REQ_NO_ORIGIN,
 )
-from httplint.field.tests import FieldTest, FakeRequestLinter
-from httplint.message import HttpMessageLinter
+from httplint.field.tests import FieldTest
+from httplint.message import HttpMessageLinter, HttpRequestLinter
 from httplint.syntax import rfc9110
 from httplint.types import AddNoteMethodType
 
@@ -34,6 +34,12 @@ class AccessControlRequestMethodTest(FieldTest):
     inputs = [b"POST"]
     expected_out = "POST"
 
+    def set_context(self, message: HttpMessageLinter) -> None:
+        request = cast(HttpRequestLinter, message)
+        request.method = "OPTIONS"
+        # Manually populate parsed headers to avoid triggering notes on context headers
+        message.headers.parsed["origin"] = "http://example.com"
+
 
 class AccessControlRequestMethodPreflightTest(FieldTest):
     name = "Access-Control-Request-Method"
@@ -43,9 +49,8 @@ class AccessControlRequestMethodPreflightTest(FieldTest):
     request_headers: List[Tuple[bytes, bytes]]
 
     def set_context(self, message: HttpMessageLinter) -> None:
-        # Override message with a request linter
-        self.message = FakeRequestLinter()
-        self.message.method = getattr(self, "request_method", "OPTIONS")
+        request = cast(HttpRequestLinter, self.message)
+        request.method = getattr(self, "request_method", "OPTIONS")
         headers = getattr(self, "request_headers", [(b"Origin", b"http://example.com")])
         self.message.headers.process(headers)
 

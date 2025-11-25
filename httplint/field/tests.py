@@ -5,25 +5,25 @@ from httplint.note import Note
 from httplint.message import HttpResponseLinter, HttpMessageLinter, HttpRequestLinter
 
 
-class FakeMessageLinter(HttpResponseLinter):
+class FakeResponseLinter(HttpResponseLinter):
     """
-    A fake linter, for testing.
+    A fake response linter for testing.
     """
 
     def __init__(self) -> None:
         HttpResponseLinter.__init__(self)
-        self.base_uri = "http://www.example.com/foo/bar/baz.html?bat=bam"
+        self.base_uri = "http://example.com/foo/bar"
         self.status_phrase = ""
 
 
 class FakeRequestLinter(HttpRequestLinter):
     """
-    A fake request linter, for testing.
+    A fake request linter for testing.
     """
 
     def __init__(self) -> None:
         HttpRequestLinter.__init__(self)
-        self.base_uri = "http://www.example.com/foo/bar/baz.html?bat=bam"
+        self.base_uri = "http://example.com/foo/bar"
         self.method = "GET"
 
 
@@ -43,15 +43,22 @@ class FieldTest(unittest.TestCase):
     Testing machinery for headers.
     """
 
-    name: str
+    name: str = ""
     inputs: List[bytes] = []
     expected_out: Any = []
     expected_notes: List[Type[Note]] = []
     message: HttpMessageLinter
 
+    linter_class: Type[HttpMessageLinter] = FakeResponseLinter
+
     def setUp(self) -> None:
         "Test setup."
-        self.message = FakeMessageLinter()
+        if self.name:
+            # pylint: disable=protected-access
+            handler = self.linter_class().headers._finder.find_handler(self.name)
+            if handler.valid_in_requests and not handler.valid_in_responses:
+                self.linter_class = FakeRequestLinter
+        self.message = self.linter_class()
         self.set_context(self.message)
 
     def test_header(self) -> Any:
