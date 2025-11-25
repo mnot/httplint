@@ -10,6 +10,7 @@ import xml.etree.ElementTree as ET
 
 from httplint.field import HttpField
 from httplint.field.finder import HttpFieldFinder
+from httplint.field.section import FieldSection
 from httplint.field.tests import FakeResponseLinter
 from httplint.syntax.rfc9110 import list_rule
 
@@ -98,7 +99,8 @@ def checkFieldClass(field_cls):
 
 class TestFieldFinder(unittest.TestCase):
     def setUp(self) -> None:
-        self.finder = FieldFinder()
+        self.message = FakeResponseLinter()
+        self.finder = HttpFieldFinder(self.message)
 
     def test_find_handler(self) -> None:
         handler = self.finder.find_handler("Content-Type")
@@ -113,26 +115,24 @@ class TestFieldFinder(unittest.TestCase):
         self.assertEqual(handler.canonical_name, "Unknown-Header")
 
 
-class TestFieldProcessor(unittest.TestCase):
-    def setUp(self) -> None:
-        self.message = FakeResponseLinter()
-        self.processor = FieldProcessor(self.message)
-
-    def test_process(self) -> None:
-        headers = [(b"Content-Type", b"text/plain")]
-        self.processor.process(headers)
-        self.assertIn("content-type", self.message.headers.parsed)
-
-    def test_process_multiple(self) -> None:
-        headers = [(b"Content-Type", b"text/plain"), (b"Content-Length", b"10")]
-        self.processor.process(headers)
-        self.assertIn("content-type", self.message.headers.parsed)
-        self.assertIn("content-length", self.message.headers.parsed)
-
-
 class TestFieldSection(unittest.TestCase):
     def setUp(self) -> None:
         self.message = FakeResponseLinter()
+        self.section = FieldSection(self.message)
+
+    def test_process(self) -> None:
+        headers = [(b"Content-Type", b"text/plain")]
+        self.section.process(headers)
+        self.assertIn("content-type", self.section.parsed)
+
+    def test_process_multiple(self) -> None:
+        headers = [(b"Content-Type", b"text/plain"), (b"Content-Length", b"10")]
+        self.section.process(headers)
+        self.assertIn("content-type", self.section.parsed)
+        self.assertIn("content-length", self.section.parsed)
+
+
+
 
 
 if __name__ == "__main__":
