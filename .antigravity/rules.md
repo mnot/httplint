@@ -33,6 +33,8 @@ If you need to run a Python interpreter, use `.venv/bin/python`.
 
 Note that `make` targets automatically use the virtual environment, so you don't need to activate it explicitly.
 
+You will NOT make edits to large numbers of files without explaining your plan and giving the user an opportunity to intervene.
+
 ## Fields
 
 Many of the things that are checked for are HTTP fields, using the HttpField class. See `CONTRIBUTING.md` for guidance.
