@@ -21,6 +21,7 @@ it doesn't have a reference to the opener's window object."""
     valid_in_responses = True
     structured_field = True
     sf_type = "item"
+    report_only_string = ""
 
     def evaluate(self, add_note: AddNoteMethodType) -> None:
         check_sf_item_token(
@@ -33,25 +34,26 @@ it doesn't have a reference to the opener's window object."""
             add_note,
             CROSS_ORIGIN_OPENER_POLICY,
             CROSS_ORIGIN_OPENER_POLICY_BAD_VALUE,
+            report_only=self.report_only_string,
         )
 
 
 class CROSS_ORIGIN_OPENER_POLICY(Note):
     category = categories.SECURITY
-    level = levels.INFO
-    _summary = "Cross-Origin-Opener-Policy is set to '%(value)s'."
+    level = levels.GOOD
+    _summary = "%(message)s sets a cross-origin opener policy%(report_only)s."
     _text = """\
-The `Cross-Origin-Opener-Policy` header controls whether the document shares a browsing context
+The `%(field_name)s` header controls whether the document shares a browsing context
 group with other documents.
 """
 
 
 class CROSS_ORIGIN_OPENER_POLICY_BAD_VALUE(Note):
     category = categories.SECURITY
-    level = levels.WARN
-    _summary = "Cross-Origin-Opener-Policy has an invalid value '%(value)s'."
+    level = levels.BAD
+    _summary = "%(field_name)s's %(message)s has an invalid value."
     _text = """\
-The `Cross-Origin-Opener-Policy` header must be one of `same-origin`, `same-origin-allow-popups`,
+The `%(field_name)s` header must be one of `same-origin`, `same-origin-allow-popups`,
 or `unsafe-none`.
 """
 

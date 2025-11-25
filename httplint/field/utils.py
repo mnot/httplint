@@ -209,6 +209,7 @@ def check_sf_item_token(
     add_note: AddNoteMethodType,
     valid_note: Type[Note],
     invalid_note: Type[Note],
+    **kwargs: Any,
 ) -> None:
     """
     Check if a Structured Field Item is a Token and one of the valid tokens.
@@ -217,10 +218,10 @@ def check_sf_item_token(
         val = field_value[0]
         if isinstance(val, Token):
             if val in valid_tokens:
-                add_note(valid_note, value=val)
+                add_note(valid_note, value=val, **kwargs)
             else:
-                add_note(invalid_note, value=val)
+                add_note(invalid_note, value=val, **kwargs)
         else:
-            add_note(invalid_note, value=val)
+            add_note(invalid_note, value=val, **kwargs)
     else:
-        add_note(invalid_note, value=field_value)
+        add_note(invalid_note, value=field_value, **kwargs)

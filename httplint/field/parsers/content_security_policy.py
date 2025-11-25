@@ -26,11 +26,14 @@ sources of content that browsers are allowed to load on a page."""
     deprecated = False
     valid_in_requests = False
     valid_in_responses = True
+    report_only_string = ""
 
     def parse(self, field_value: str, add_note: AddNoteMethodType) -> str:
         return field_value
 
     def evaluate(self, add_note: AddNoteMethodType) -> None:
+        if self.value:
+            add_note(CONTENT_SECURITY_POLICY, report_only=self.report_only_string)
         for policy in self.value:
             parsed_directives = {}
             directives = [d.strip() for d in policy.split(";")]
@@ -65,12 +68,21 @@ sources of content that browsers are allowed to load on a page."""
                         add_note(CSP_HTTP_URI)
 
 
+class CONTENT_SECURITY_POLICY(Note):
+    category = categories.SECURITY
+    level = levels.GOOD
+    _summary = "%(message)s sets a content security policy%(report_only)s."
+    _text = """\
+The `%(field_name)s` header allows web site administrators to declare approved
+sources of content that browsers are allowed to load on a page."""
+
+
 class CSP_UNSAFE_INLINE(Note):
     category = categories.SECURITY
     level = levels.WARN
-    _summary = "%(message)s's CSP policy allows inline scripts."
+    _summary = "%(message)s's %(field_name)s allows inline scripts."
     _text = """\
-Using `'unsafe-inline'` in `Content-Security-Policy` allows the execution of inline scripts and
+Using `'unsafe-inline'` in `%(field_name)s` allows the execution of inline scripts and
 event handlers, which significantly reduces the protection provided by CSP against Cross-Site
 Scripting (XSS) attacks."""
 
@@ -78,34 +90,34 @@ Scripting (XSS) attacks."""
 class CSP_UNSAFE_EVAL(Note):
     category = categories.SECURITY
     level = levels.WARN
-    _summary = "%(message)s's CSP policy allows unsafe evaluation."
+    _summary = "%(message)s's %(field_name)s allows unsafe evaluation."
     _text = """\
-Using `'unsafe-eval'` in `Content-Security-Policy` allows the use of string-to-code mechanisms like
+Using `'unsafe-eval'` in `%(field_name)s` allows the use of string-to-code mechanisms like
 `eval()`, which can make it easier for attackers to execute malicious code."""
 
 
 class CSP_HTTP_URI(Note):
     category = categories.SECURITY
     level = levels.WARN
-    _summary = "%(message)s's CSP policy allows insecure HTTP sources."
+    _summary = "%(message)s's %(field_name)s allows insecure HTTP sources."
     _text = """\
-Allowing `http:` sources in `Content-Security-Policy` can allow attackers to intercept and modify
+Allowing `http:` sources in `%(field_name)s` can allow attackers to intercept and modify
 content loaded by the page, potentially bypassing security controls."""
 
 
 class CSP_DUPLICATE_DIRECTIVE(Note):
     category = categories.SECURITY
     level = levels.WARN
-    _summary = "%(message)s's CSP policy contains a duplicate directive."
+    _summary = "%(message)s's %(field_name)s contains a duplicate directive."
     _text = """\
-The `%(directive)s` directive appears more than once in the `Content-Security-Policy` header.
+The `%(directive)s` directive appears more than once in the `%(field_name)s` header.
 Directives must only appear once; subsequent occurrences are ignored."""
 
 
 class CSP_DEPRECATED_REPORT_URI(Note):
     category = categories.SECURITY
     level = levels.INFO
-    _summary = "%(message)s's CSP policy uses the deprecated report-uri directive."
+    _summary = "%(message)s's %(field_name)s uses the deprecated report-uri directive."
     _text = """\
 The `report-uri` directive is deprecated in favor of `report-to`. It is recommended to use `report-to`
 for reporting violations, although `report-uri` may still be supported for backward
@@ -115,7 +127,7 @@ compatibility."""
 class CSP_WIDE_OPEN(Note):
     category = categories.SECURITY
     level = levels.WARN
-    _summary = "%(message)s's CSP policy allows all sources for %(directive)s."
+    _summary = "%(message)s's %(field_name)s allows all sources one or more directives."
     _text = """\
 Using `*` in `%(directive)s` allows resources to be loaded from any origin, which significantly
 reduces the protection provided by CSP."""
@@ -125,32 +137,32 @@ class CSPTest(FieldTest):
     name = "Content-Security-Policy"
     inputs = [b"default-src 'self'; script-src 'unsafe-inline'"]
     expected_out = ["default-src 'self'; script-src 'unsafe-inline'"]
-    expected_notes = [CSP_UNSAFE_INLINE]
+    expected_notes = [CONTENT_SECURITY_POLICY, CSP_UNSAFE_INLINE]
 
 
 class CSPMultipleTest(FieldTest):
     name = "Content-Security-Policy"
     inputs = [b"default-src 'self'", b"script-src 'unsafe-eval'"]
     expected_out = ["default-src 'self'", "script-src 'unsafe-eval'"]
-    expected_notes = [CSP_UNSAFE_EVAL]
+    expected_notes = [CONTENT_SECURITY_POLICY, CSP_UNSAFE_EVAL]
 
 
 class CSPDuplicateTest(FieldTest):
     name = "Content-Security-Policy"
     inputs = [b"default-src 'self'; default-src 'none'"]
     expected_out = ["default-src 'self'; default-src 'none'"]
-    expected_notes = [CSP_DUPLICATE_DIRECTIVE]
+    expected_notes = [CONTENT_SECURITY_POLICY, CSP_DUPLICATE_DIRECTIVE]
 
 
 class CSPReportUriTest(FieldTest):
     name = "Content-Security-Policy"
     inputs = [b"report-uri /csp-report"]
     expected_out = ["report-uri /csp-report"]
-    expected_notes = [CSP_DEPRECATED_REPORT_URI]
+    expected_notes = [CONTENT_SECURITY_POLICY, CSP_DEPRECATED_REPORT_URI]
 
 
 class CSPWideOpenTest(FieldTest):
     name = "Content-Security-Policy"
     inputs = [b"script-src *"]
     expected_out = ["script-src *"]
-    expected_notes = [CSP_WIDE_OPEN]
+    expected_notes = [CONTENT_SECURITY_POLICY, CSP_WIDE_OPEN]

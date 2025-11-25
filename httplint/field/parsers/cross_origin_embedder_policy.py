@@ -21,6 +21,7 @@ resources that don't explicitly grant the document permission (using CORP or COR
     valid_in_responses = True
     structured_field = True
     sf_type = "item"
+    report_only_string = ""
 
     def evaluate(self, add_note: AddNoteMethodType) -> None:
         check_sf_item_token(
@@ -29,25 +30,26 @@ resources that don't explicitly grant the document permission (using CORP or COR
             add_note,
             CROSS_ORIGIN_EMBEDDER_POLICY,
             CROSS_ORIGIN_EMBEDDER_POLICY_BAD_VALUE,
+            report_only=self.report_only_string,
         )
 
 
 class CROSS_ORIGIN_EMBEDDER_POLICY(Note):
     category = categories.SECURITY
-    level = levels.INFO
-    _summary = "Cross-Origin-Embedder-Policy is set to '%(value)s'."
+    level = levels.GOOD
+    _summary = "%(message)s sets a cross-origin embedder policy%(report_only)s."
     _text = """\
-The `Cross-Origin-Embedder-Policy` header controls whether the document can load cross-origin
+The `%(field_name)s` header controls whether the document can load cross-origin
 resources.
 """
 
 
 class CROSS_ORIGIN_EMBEDDER_POLICY_BAD_VALUE(Note):
     category = categories.SECURITY
-    level = levels.WARN
-    _summary = "Cross-Origin-Embedder-Policy has an invalid value '%(value)s'."
+    level = levels.BAD
+    _summary = "%(message)s's %(field_name)s has an invalid value."
     _text = """\
-The `Cross-Origin-Embedder-Policy` header must be one of `require-corp`, `credentialless`, or
+The `%(field_name)s` header must be one of `require-corp`, `credentialless`, or
 `unsafe-none`.
 """
 
