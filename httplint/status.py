@@ -638,7 +638,9 @@ avoid enumerating the internal members of multiple bindings to the same collecti
 class STATUS_MISDIRECTED_REQUEST(Note):
     category = categories.GENERAL
     level = levels.INFO
-    _summary = "The request was directed at a server that is not able to produce a response."
+    _summary = (
+        "The request was directed at a server that is not able to produce a response."
+    )
     _text = """\
 The `421 (Misdirected Request)` status code indicates that the request was directed at a server
 that is not able to produce a response. This can happen when a connection is reused."""
@@ -647,7 +649,9 @@ that is not able to produce a response. This can happen when a connection is reu
 class STATUS_TOO_EARLY(Note):
     category = categories.GENERAL
     level = levels.INFO
-    _summary = "The server is unwilling to risk processing a request that might be replayed."
+    _summary = (
+        "The server is unwilling to risk processing a request that might be replayed."
+    )
     _text = """\
 The `425 (Too Early)` status code indicates that the server is unwilling to risk processing a
 request that might be replayed."""
@@ -674,9 +678,7 @@ given amount of time ("rate limiting")."""
 class STATUS_REQUEST_HEADER_FIELDS_TOO_LARGE(Note):
     category = categories.GENERAL
     level = levels.INFO
-    _summary = (
-        "The server is unwilling to process the request because its header fields are too large."
-    )
+    _summary = "The server is unwilling to process the request because its headers are too large."
     _text = """\
 The `431 (Request Header Fields Too Large)` status code indicates that the server is unwilling to
 process the request because its header fields are too large."""
@@ -694,7 +696,9 @@ the resource as a consequence of a legal demand."""
 class STATUS_LOOP_DETECTED(Note):
     category = categories.GENERAL
     level = levels.INFO
-    _summary = "The server terminated an operation because it encountered an infinite loop."
+    _summary = (
+        "The server terminated an operation because it encountered an infinite loop."
+    )
     _text = """\
 The `508 (Loop Detected)` status code indicates that the server terminated an operation because it
 encountered an infinite loop while processing a request with "Depth: infinity"."""
