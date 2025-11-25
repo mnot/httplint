@@ -150,7 +150,7 @@ class HttpRequestLinter(HttpMessageLinter):
 
     max_uri_chars = 8000
     message_ref = "This request"
-    messsage_type = "request"
+    message_type = "request"
 
     def __init__(self, **kw: Unpack[HttpMessageParams]) -> None:
         HttpMessageLinter.__init__(self, **kw)
