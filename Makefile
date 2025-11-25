@@ -3,37 +3,20 @@ VERSIONING = calver
 
 GITHUB_STEP_SUMMARY ?= throwaway
 
-.PHONY: test
-test: test_syntax test_fields test_notes test_messages test_status test_cache test_unnecessary test_smoke
+TEST_SCRIPTS = $(wildcard test/test_*.py)
+TEST_TARGETS = $(patsubst test/%.py,%,$(TEST_SCRIPTS))
 
-.PHONY: test_syntax
-test_syntax: venv
-	PYTHONPATH=. $(VENV)/python test/test_syntax.py
+.PHONY: test
+test: $(TEST_TARGETS) test_smoke
+
+test_%: venv
+	PYTHONPATH=. $(VENV)/python test/$@.py
 
 .PHONY: test_fields
 test_fields: test/http-fields.xml venv
 	PYTHONPATH=. $(VENV)/python test/test_fields.py test/http-fields.xml
-
-.PHONY: test_notes
-test_notes: venv
-	PYTHONPATH=. $(VENV)/python test/test_notes.py
-
-.PHONY: test_messages
-test_messages: venv
-	$(VENV)/pytest --md $(GITHUB_STEP_SUMMARY) -k "not FieldTest" --config-file pyproject.toml
+	PYTHONPATH=. $(VENV)/pytest --md $(GITHUB_STEP_SUMMARY) -k "not FieldTest" --config-file pyproject.toml
 	rm -f throwaway
-
-.PHONY: test_status
-test_status: venv
-	PYTHONPATH=. $(VENV)/python test/test_status.py
-
-.PHONY: test_cache
-test_cache: venv
-	PYTHONPATH=. $(VENV)/python test/test_cache.py
-
-.PHONY: test_unnecessary
-test_unnecessary: venv
-	PYTHONPATH=. $(VENV)/python test/test_unnecessary.py
 
 .PHONY: test_smoke
 test_smoke: venv
