@@ -9,14 +9,17 @@ TEST_TARGETS = $(patsubst test/%.py,%,$(TEST_SCRIPTS))
 .PHONY: test
 test: $(TEST_TARGETS) test_smoke
 
-test_%: venv
-	PYTHONPATH=. $(VENV)/python test/$@.py
-
 .PHONY: test_fields
 test_fields: test/http-fields.xml venv
 	PYTHONPATH=. $(VENV)/python test/test_fields.py test/http-fields.xml
 	PYTHONPATH=. $(VENV)/pytest --md $(GITHUB_STEP_SUMMARY) -k "not FieldTest" --config-file pyproject.toml
 	rm -f throwaway
+
+test_field_%: venv
+	PYTHONPATH=. $(VENV)/pytest -k "not FieldTest" httplint/field/parsers/$*.py
+
+test_%: venv
+	PYTHONPATH=. $(VENV)/python test/$@.py
 
 .PHONY: test_smoke
 test_smoke: venv

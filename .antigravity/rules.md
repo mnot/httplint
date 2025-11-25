@@ -37,6 +37,8 @@ Note that `make` targets automatically use the virtual environment, so you don't
 
 Many of the things that are checked for are HTTP fields, using the HttpField class. See `CONTRIBUTING.md` for guidance.
 
+You can run the tests in an individual `field/parsers/foo_bar.py` file by running `make test_field_foo_bar`.
+
 ## Notes
 
 The output of the program is created in terms of a Note object.
