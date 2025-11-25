@@ -16,6 +16,9 @@ the effects of a content security policy without enforcing it."""
     valid_in_requests = False
     valid_in_responses = True
     report_only_string = " for reporting only"
+    report_only_text = (
+        "\n\nBrowsers will only report violations of this policy, not enforce it."
+    )
 
 
 class CSPROTest(FieldTest):

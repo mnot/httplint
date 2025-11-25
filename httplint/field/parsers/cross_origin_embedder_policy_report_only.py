@@ -4,7 +4,7 @@ from http_sf import Token
 from httplint.field.tests import FieldTest
 from httplint.field.parsers.cross_origin_embedder_policy import (
     cross_origin_embedder_policy,
-    CROSS_ORIGIN_EMBEDDER_POLICY,
+    COEP_REQUIRE_CORP,
     CROSS_ORIGIN_EMBEDDER_POLICY_BAD_VALUE,
 )
 
@@ -15,14 +15,17 @@ class cross_origin_embedder_policy_report_only(cross_origin_embedder_policy):
 The `Cross-Origin-Embedder-Policy-Report-Only` header field allows a document to report on
 potential violations of its Cross-Origin Embedder Policy without enforcing them."""
     reference = "https://html.spec.whatwg.org/multipage/origin.html#coep"
-    report_only_string = " for reporting only"
+    report_only_string = " (for reporting only)"
+    report_only_text = (
+        "\n\nBrowsers will only report violations of this policy, not enforce it."
+    )
 
 
 class CrossOriginEmbedderPolicyReportOnlyRequireCorpTest(FieldTest):
     name = "Cross-Origin-Embedder-Policy-Report-Only"
     inputs = [b"require-corp"]
     expected_out: Any = (Token("require-corp"), {})
-    expected_notes = [CROSS_ORIGIN_EMBEDDER_POLICY]
+    expected_notes = [COEP_REQUIRE_CORP]
 
 
 class CrossOriginEmbedderPolicyReportOnlyBadValueTest(FieldTest):

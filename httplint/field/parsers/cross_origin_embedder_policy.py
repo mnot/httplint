@@ -4,7 +4,6 @@ from http_sf import Token
 from httplint.field import HttpField
 from httplint.field.tests import FieldTest
 from httplint.note import Note, categories, levels
-from httplint.field.utils import check_sf_item_token
 from httplint.types import AddNoteMethodType
 
 
@@ -22,26 +21,89 @@ resources that don't explicitly grant the document permission (using CORP or COR
     structured_field = True
     sf_type = "item"
     report_only_string = ""
+    report_only_text = ""
 
     def evaluate(self, add_note: AddNoteMethodType) -> None:
-        check_sf_item_token(
-            self.value,
-            [Token("require-corp"), Token("credentialless"), Token("unsafe-none")],
-            add_note,
-            CROSS_ORIGIN_EMBEDDER_POLICY,
-            CROSS_ORIGIN_EMBEDDER_POLICY_BAD_VALUE,
-            report_only=self.report_only_string,
-        )
+        if isinstance(self.value, tuple):
+            val = self.value[0]
+            if isinstance(val, Token):
+                if val == "require-corp":
+                    add_note(
+                        COEP_REQUIRE_CORP,
+                        report_only=self.report_only_string,
+                        report_only_text=self.report_only_text,
+                    )
+                elif val == "credentialless":
+                    add_note(
+                        COEP_CREDENTIALLESS,
+                        report_only=self.report_only_string,
+                        report_only_text=self.report_only_text,
+                    )
+                elif val == "unsafe-none":
+                    add_note(
+                        COEP_UNSAFE_NONE,
+                        report_only=self.report_only_string,
+                        report_only_text=self.report_only_text,
+                    )
+                else:
+                    add_note(
+                        CROSS_ORIGIN_EMBEDDER_POLICY_BAD_VALUE,
+                        value=val,
+                        report_only=self.report_only_string,
+                    )
+            else:
+                add_note(
+                    CROSS_ORIGIN_EMBEDDER_POLICY_BAD_VALUE,
+                    value=val,
+                    report_only=self.report_only_string,
+                )
+        else:
+            add_note(
+                CROSS_ORIGIN_EMBEDDER_POLICY_BAD_VALUE,
+                value=self.value,
+                report_only=self.report_only_string,
+            )
 
 
-class CROSS_ORIGIN_EMBEDDER_POLICY(Note):
+class COEP_REQUIRE_CORP(Note):
     category = categories.SECURITY
     level = levels.GOOD
-    _summary = "%(message)s sets a cross-origin embedder policy%(report_only)s."
+    _summary = "%(message)s requires resources to have a CORP header%(report_only)s."
     _text = """\
-The `%(field_name)s` header controls whether the document can load cross-origin
-resources.
-"""
+The `require-corp`
+[Cross Origin Embedder Policy](https://fetch.spec.whatwg.org/#cross-origin-embedder-policy-header)
+requires that all cross-origin resources must explicitly grant permission to be loaded via a
+`Cross-Origin-Resource-Policy` header, in supporting browsers.%(report_only_text)s"""
+
+
+class COEP_CREDENTIALLESS(Note):
+    category = categories.SECURITY
+    level = levels.GOOD
+    _summary = (
+        "%(message)s loads cross-origin resources without credentials%(report_only)s."
+    )
+    _text = """\
+The `credentialless`
+[Cross-Origin Embedder Policy](https://fetch.spec.whatwg.org/#cross-origin-embedder-policy-header)
+allows loading cross-origin resources without explicit permission in supporting browsers, but
+requests for them will not include credentials (cookies, client certificates,
+etc.).%(report_only_text)s"""
+
+
+class COEP_UNSAFE_NONE(Note):
+    category = categories.SECURITY
+    level = levels.WARN
+    _summary = (
+        "%(message)s allows loading cross-origin resources without restriction"
+        "%(report_only)s."
+    )
+    _text = """\
+The `unsafe-none`
+[Cross-Origin Embedder Policy](https://fetch.spec.whatwg.org/#cross-origin-embedder-policy-header)
+is the default behavior, allowing cross-origin resources to be loaded
+without explicit permission in supporting browsers.
+
+This does not provide cross-origin isolation.%(report_only_text)s"""
 
 
 class CROSS_ORIGIN_EMBEDDER_POLICY_BAD_VALUE(Note):
@@ -58,21 +120,21 @@ class CrossOriginEmbedderPolicyRequireCorpTest(FieldTest):
     name = "Cross-Origin-Embedder-Policy"
     inputs = [b"require-corp"]
     expected_out: Any = (Token("require-corp"), {})
-    expected_notes = [CROSS_ORIGIN_EMBEDDER_POLICY]
+    expected_notes = [COEP_REQUIRE_CORP]
 
 
 class CrossOriginEmbedderPolicyCredentiallessTest(FieldTest):
     name = "Cross-Origin-Embedder-Policy"
     inputs = [b"credentialless"]
     expected_out: Any = (Token("credentialless"), {})
-    expected_notes = [CROSS_ORIGIN_EMBEDDER_POLICY]
+    expected_notes = [COEP_CREDENTIALLESS]
 
 
 class CrossOriginEmbedderPolicyUnsafeNoneTest(FieldTest):
     name = "Cross-Origin-Embedder-Policy"
     inputs = [b"unsafe-none"]
     expected_out: Any = (Token("unsafe-none"), {})
-    expected_notes = [CROSS_ORIGIN_EMBEDDER_POLICY]
+    expected_notes = [COEP_UNSAFE_NONE]
 
 
 class CrossOriginEmbedderPolicyBadValueTest(FieldTest):

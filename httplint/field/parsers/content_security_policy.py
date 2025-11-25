@@ -27,13 +27,18 @@ sources of content that browsers are allowed to load on a page."""
     valid_in_requests = False
     valid_in_responses = True
     report_only_string = ""
+    report_only_text = ""
 
     def parse(self, field_value: str, add_note: AddNoteMethodType) -> str:
         return field_value
 
     def evaluate(self, add_note: AddNoteMethodType) -> None:
         if self.value:
-            add_note(CONTENT_SECURITY_POLICY, report_only=self.report_only_string)
+            add_note(
+                CONTENT_SECURITY_POLICY,
+                report_only=self.report_only_string,
+                report_only_text=self.report_only_text,
+            )
 
         unsafe_inline_directives = []
         unsafe_eval_directives = []
@@ -79,25 +84,36 @@ sources of content that browsers are allowed to load on a page."""
             add_note(
                 CSP_DUPLICATE_DIRECTIVE,
                 directives_list=self._make_list(duplicate_directives),
+                report_only_text=self.report_only_text,
             )
         if deprecated_report_uri:
-            add_note(CSP_DEPRECATED_REPORT_URI)
+            add_note(
+                CSP_DEPRECATED_REPORT_URI,
+                report_only_text=self.report_only_text,
+            )
         if wide_open_directives:
             add_note(
-                CSP_WIDE_OPEN, directives_list=self._make_list(wide_open_directives)
+                CSP_WIDE_OPEN,
+                directives_list=self._make_list(wide_open_directives),
+                report_only_text=self.report_only_text,
             )
         if unsafe_inline_directives:
             add_note(
                 CSP_UNSAFE_INLINE,
                 directives_list=self._make_list(unsafe_inline_directives),
+                report_only_text=self.report_only_text,
             )
         if unsafe_eval_directives:
             add_note(
-                CSP_UNSAFE_EVAL, directives_list=self._make_list(unsafe_eval_directives)
+                CSP_UNSAFE_EVAL,
+                directives_list=self._make_list(unsafe_eval_directives),
+                report_only_text=self.report_only_text,
             )
         if http_uri_directives:
             add_note(
-                CSP_HTTP_URI, directives_list=self._make_list(http_uri_directives)
+                CSP_HTTP_URI,
+                directives_list=self._make_list(http_uri_directives),
+                report_only_text=self.report_only_text,
             )
 
     def _make_list(self, items: list[str]) -> str:
@@ -109,8 +125,8 @@ class CONTENT_SECURITY_POLICY(Note):
     level = levels.GOOD
     _summary = "%(message)s sets a content security policy%(report_only)s."
     _text = """\
-The `%(field_name)s` header allows web site administrators to declare approved
-sources of content that browsers are allowed to load on a page."""
+[Content Security Policy](https://www.w3.org/TR/CSP3/) allows the server to declare
+the sources of content that browsers are allowed to use on a page.%(report_only_text)s"""
 
 
 class CSP_UNSAFE_INLINE(Note):
@@ -118,8 +134,9 @@ class CSP_UNSAFE_INLINE(Note):
     level = levels.WARN
     _summary = "%(message)s's %(field_name)s allows inline scripts."
     _text = """\
-Using `'unsafe-inline'` in `%(field_name)s` allows the execution of inline scripts and
-event handlers, which significantly reduces the protection provided by CSP against Cross-Site
+The `'unsafe-inline'` [Content Security Policy](https://www.w3.org/TR/CSP3/)
+directive allows the execution of inline scripts and event handlers, which
+significantly reduces the protection provided by CSP against Cross-Site
 Scripting (XSS) attacks.
 
 It was found in the following directives:
@@ -131,8 +148,9 @@ class CSP_UNSAFE_EVAL(Note):
     level = levels.WARN
     _summary = "%(message)s's %(field_name)s allows unsafe evaluation."
     _text = """\
-Using `'unsafe-eval'` in `%(field_name)s` allows the use of string-to-code mechanisms like
-`eval()`, which can make it easier for attackers to execute malicious code.
+The `'unsafe-eval'` [Content Security Policy](https://www.w3.org/TR/CSP3/)
+directive allows the use of string-to-code mechanisms like `eval()`, which can make it easier for
+attackers to execute malicious code.
 
 It was found in the following directives:
 %(directives_list)s"""
@@ -166,7 +184,8 @@ class CSP_DEPRECATED_REPORT_URI(Note):
     level = levels.INFO
     _summary = "%(message)s's %(field_name)s uses the deprecated report-uri directive."
     _text = """\
-The `report-uri` directive is deprecated in favor of `report-to`. It is recommended to use `report-to`
+The `report-uri` [Content Security Policy](https://www.w3.org/TR/CSP3/)
+directive is deprecated in favor of `report-to`. It is recommended to use `report-to`
 for reporting violations, although `report-uri` may still be supported for backward
 compatibility."""
 
@@ -174,10 +193,13 @@ compatibility."""
 class CSP_WIDE_OPEN(Note):
     category = categories.SECURITY
     level = levels.WARN
-    _summary = "%(message)s's %(field_name)s allows all sources in one or more directives."
+    _summary = (
+        "%(message)s's %(field_name)s allows all sources in one or more directives."
+    )
     _text = """\
-Using `*` allows resources to be loaded from any origin, which significantly reduces the protection
-provided by CSP.
+The `*` [Content Security Policy](https://www.w3.org/TR/CSP3/)
+directive allows resources to be loaded from any origin, which significantly reduces the protection
+provided by CSP.%(report_only_text)s
 
 It was found in the following directives:
 %(directives_list)s"""
