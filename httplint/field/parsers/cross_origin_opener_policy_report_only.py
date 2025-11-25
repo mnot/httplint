@@ -7,6 +7,8 @@ from httplint.field.parsers.cross_origin_opener_policy import (
     COOP_SAME_ORIGIN,
     CROSS_ORIGIN_OPENER_POLICY_BAD_VALUE,
 )
+from httplint.note import Note, categories, levels
+from httplint.types import AddNoteMethodType
 
 
 class cross_origin_opener_policy_report_only(cross_origin_opener_policy):
@@ -19,6 +21,20 @@ potential violations of its Cross-Origin Opener Policy without enforcing them.""
     report_only_text = (
         "\n\nBrowsers will only report violations of this policy, not enforce it."
     )
+
+    def evaluate(self, add_note: AddNoteMethodType) -> None:
+        if "cross-origin-opener-policy" in self.message.headers.handlers:
+            add_note(COOP_REPORT_ONLY_DUPLICATE)
+        super().evaluate(add_note)
+
+
+class COOP_REPORT_ONLY_DUPLICATE(Note):
+    category = categories.SECURITY
+    level = levels.WARN
+    _summary = "%(message)s has both enforcing and report-only COOP headers."
+    _text = """\
+A response should not have both `Cross-Origin-Opener-Policy` and
+`Cross-Origin-Opener-Policy-Report-Only` headers. The report-only header will be ignored."""
 
 
 class CrossOriginOpenerPolicyReportOnlySameOriginTest(FieldTest):

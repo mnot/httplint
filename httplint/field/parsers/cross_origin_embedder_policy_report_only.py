@@ -7,6 +7,8 @@ from httplint.field.parsers.cross_origin_embedder_policy import (
     COEP_REQUIRE_CORP,
     CROSS_ORIGIN_EMBEDDER_POLICY_BAD_VALUE,
 )
+from httplint.note import Note, categories, levels
+from httplint.types import AddNoteMethodType
 
 
 class cross_origin_embedder_policy_report_only(cross_origin_embedder_policy):
@@ -19,6 +21,20 @@ potential violations of its Cross-Origin Embedder Policy without enforcing them.
     report_only_text = (
         "\n\nBrowsers will only report violations of this policy, not enforce it."
     )
+
+    def evaluate(self, add_note: AddNoteMethodType) -> None:
+        if "cross-origin-embedder-policy" in self.message.headers.handlers:
+            add_note(COEP_REPORT_ONLY_DUPLICATE)
+        super().evaluate(add_note)
+
+
+class COEP_REPORT_ONLY_DUPLICATE(Note):
+    category = categories.SECURITY
+    level = levels.WARN
+    _summary = "%(message)s has both enforcing and report-only COEP headers."
+    _text = """\
+A response should not have both `Cross-Origin-Embedder-Policy` and
+`Cross-Origin-Embedder-Policy-Report-Only` headers. The report-only header will be ignored."""
 
 
 class CrossOriginEmbedderPolicyReportOnlyRequireCorpTest(FieldTest):
