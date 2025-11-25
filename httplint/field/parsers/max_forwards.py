@@ -44,6 +44,7 @@ class MaxForwardsTest(FieldTest):
         self.set_context(self.message)
 
     def test_trace_method(self) -> None:
+        assert isinstance(self.message, FakeRequestLinter)
         self.message.method = "TRACE"
         self.inputs = [b"5"]
         self.expected_out = "5"
@@ -52,6 +53,7 @@ class MaxForwardsTest(FieldTest):
         self.test_header()
 
     def test_options_method(self) -> None:
+        assert isinstance(self.message, FakeRequestLinter)
         self.message.method = "OPTIONS"
         self.inputs = [b"5"]
         self.expected_out = "5"
@@ -64,5 +66,6 @@ class MaxForwardsTest(FieldTest):
         self.expected_out = "5"
         self.expected_notes = [MAX_FORWARDS_IGNORED]
         self.setUp()
+        assert isinstance(self.message, FakeRequestLinter)
         self.message.method = "GET"
         self.test_header()
