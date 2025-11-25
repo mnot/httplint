@@ -34,6 +34,14 @@ sources of content that browsers are allowed to load on a page."""
     def evaluate(self, add_note: AddNoteMethodType) -> None:
         if self.value:
             add_note(CONTENT_SECURITY_POLICY, report_only=self.report_only_string)
+
+        unsafe_inline_directives = []
+        unsafe_eval_directives = []
+        http_uri_directives = []
+        wide_open_directives = []
+        duplicate_directives = []
+        deprecated_report_uri = False
+
         for policy in self.value:
             parsed_directives = {}
             directives = [d.strip() for d in policy.split(";")]
@@ -45,27 +53,55 @@ sources of content that browsers are allowed to load on a page."""
                 value = parts[1] if len(parts) > 1 else ""
 
                 if name in parsed_directives:
-                    add_note(CSP_DUPLICATE_DIRECTIVE, directive=name)
+                    duplicate_directives.append(name)
                     continue
                 parsed_directives[name] = value
 
             for name, value in parsed_directives.items():
                 if name == "report-uri":
-                    add_note(CSP_DEPRECATED_REPORT_URI)
+                    deprecated_report_uri = True
 
                 if name in ["script-src", "style-src", "object-src"]:
                     if "*" in value.split():
-                        add_note(CSP_WIDE_OPEN, directive=name)
+                        wide_open_directives.append(name)
 
                 if "'unsafe-inline'" in value:
-                    add_note(CSP_UNSAFE_INLINE)
+                    unsafe_inline_directives.append(name)
                 if "'unsafe-eval'" in value:
-                    add_note(CSP_UNSAFE_EVAL)
+                    unsafe_eval_directives.append(name)
                 # Check for http: scheme or literal http://
                 if "http:" in value or "http://" in value:
                     # Simple check, could be improved to parse source lists
                     if "http:" in value.split():
-                        add_note(CSP_HTTP_URI)
+                        http_uri_directives.append(name)
+
+        if duplicate_directives:
+            add_note(
+                CSP_DUPLICATE_DIRECTIVE,
+                directives_list=self._make_list(duplicate_directives),
+            )
+        if deprecated_report_uri:
+            add_note(CSP_DEPRECATED_REPORT_URI)
+        if wide_open_directives:
+            add_note(
+                CSP_WIDE_OPEN, directives_list=self._make_list(wide_open_directives)
+            )
+        if unsafe_inline_directives:
+            add_note(
+                CSP_UNSAFE_INLINE,
+                directives_list=self._make_list(unsafe_inline_directives),
+            )
+        if unsafe_eval_directives:
+            add_note(
+                CSP_UNSAFE_EVAL, directives_list=self._make_list(unsafe_eval_directives)
+            )
+        if http_uri_directives:
+            add_note(
+                CSP_HTTP_URI, directives_list=self._make_list(http_uri_directives)
+            )
+
+    def _make_list(self, items: list[str]) -> str:
+        return "\n".join([f"* `{item}`" for item in items])
 
 
 class CONTENT_SECURITY_POLICY(Note):
@@ -84,7 +120,10 @@ class CSP_UNSAFE_INLINE(Note):
     _text = """\
 Using `'unsafe-inline'` in `%(field_name)s` allows the execution of inline scripts and
 event handlers, which significantly reduces the protection provided by CSP against Cross-Site
-Scripting (XSS) attacks."""
+Scripting (XSS) attacks.
+
+It was found in the following directives:
+%(directives_list)s"""
 
 
 class CSP_UNSAFE_EVAL(Note):
@@ -93,7 +132,10 @@ class CSP_UNSAFE_EVAL(Note):
     _summary = "%(message)s's %(field_name)s allows unsafe evaluation."
     _text = """\
 Using `'unsafe-eval'` in `%(field_name)s` allows the use of string-to-code mechanisms like
-`eval()`, which can make it easier for attackers to execute malicious code."""
+`eval()`, which can make it easier for attackers to execute malicious code.
+
+It was found in the following directives:
+%(directives_list)s"""
 
 
 class CSP_HTTP_URI(Note):
@@ -102,16 +144,21 @@ class CSP_HTTP_URI(Note):
     _summary = "%(message)s's %(field_name)s allows insecure HTTP sources."
     _text = """\
 Allowing `http:` sources in `%(field_name)s` can allow attackers to intercept and modify
-content loaded by the page, potentially bypassing security controls."""
+content loaded by the page, potentially bypassing security controls.
+
+It was found in the following directives:
+%(directives_list)s"""
 
 
 class CSP_DUPLICATE_DIRECTIVE(Note):
     category = categories.SECURITY
     level = levels.WARN
-    _summary = "%(message)s's %(field_name)s contains a duplicate directive."
+    _summary = "%(message)s's %(field_name)s contains duplicate directives."
     _text = """\
-The `%(directive)s` directive appears more than once in the `%(field_name)s` header.
-Directives must only appear once; subsequent occurrences are ignored."""
+Directives must only appear once in the `%(field_name)s` header; subsequent occurrences are ignored.
+
+The following directives were duplicated:
+%(directives_list)s"""
 
 
 class CSP_DEPRECATED_REPORT_URI(Note):
@@ -127,10 +174,13 @@ compatibility."""
 class CSP_WIDE_OPEN(Note):
     category = categories.SECURITY
     level = levels.WARN
-    _summary = "%(message)s's %(field_name)s allows all sources one or more directives."
+    _summary = "%(message)s's %(field_name)s allows all sources in one or more directives."
     _text = """\
-Using `*` in `%(directive)s` allows resources to be loaded from any origin, which significantly
-reduces the protection provided by CSP."""
+Using `*` allows resources to be loaded from any origin, which significantly reduces the protection
+provided by CSP.
+
+It was found in the following directives:
+%(directives_list)s"""
 
 
 class CSPTest(FieldTest):
