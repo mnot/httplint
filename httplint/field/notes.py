@@ -181,3 +181,14 @@ This field is no longer recommended for use, because of interoperability problem
 lack of use.
 
 See [the deprecation notice](%(deprecation_ref)s) for more information."""
+
+
+class MISSING_USER_AGENT(Note):
+    category = categories.GENERAL
+    level = levels.WARN
+    _summary = "The User-Agent header is missing."
+    _text = """\
+Clients SHOULD send a `User-Agent` header field.
+
+See [RFC 9110 Section 10.1.5](https://www.rfc-editor.org/rfc/rfc9110.html#section-10.1.5)
+for details."""

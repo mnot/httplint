@@ -13,6 +13,7 @@ from httplint.types import RawFieldListType
 from httplint.util import iri_to_uri, f_num
 from httplint.status import StatusChecker
 from httplint.content_type import verify_content_type
+from httplint.field.notes import MISSING_USER_AGENT
 
 
 class HttpMessageParams(TypedDict):
@@ -182,6 +183,10 @@ class HttpRequestLinter(HttpMessageLinter):
             self.uri = self.uri[: self.uri.index("#")]
         if len(self.uri) > self.max_uri_chars:
             self.notes.add("uri", URI_TOO_LONG, uri_len=f_num(len(self.uri)))
+
+    def post_checks(self) -> None:
+        if "user-agent" not in self.headers.parsed:
+            self.notes.add("header-user-agent", MISSING_USER_AGENT)
 
 
 class HttpResponseLinter(HttpMessageLinter):
