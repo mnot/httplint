@@ -31,6 +31,7 @@ class HttpFieldFinder:
         "xxxxxxxxxx": "connectiox",
         "x_cnection": "connectiox",
         "_onnection": "connectiox",
+        "from": "from_field",
     }
 
     def __init__(
@@ -62,7 +63,10 @@ class HttpFieldFinder:
         """
 
         name_token = HttpFieldFinder.name_token(field_name)
-        module = HttpFieldFinder.find_module(name_token)
+        if name_token in HttpFieldFinder.field_aliases:
+            name_token = HttpFieldFinder.field_aliases[name_token]
+
+        module = HttpFieldFinder.find_module(field_name)
         if module and hasattr(module, name_token):
             return getattr(module, name_token)  # type: ignore
         if field_name.lower() in deprecated.field_lookup:

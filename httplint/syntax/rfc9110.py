@@ -123,7 +123,7 @@ parameters = rf"(?: {OWS} ; {OWS} {parameter}? )*"
 
 #   qvalue = ( "0" [ "." *3DIGIT ] ) / ( "1" [ "." *3"0" ] )
 
-qvalue = rf"(?: (?: 0 (?: \. {DIGIT}{{,3}} ) ) | (?: 1 (?: \. [0]{{,3}} ) ) )"
+qvalue = rf"(?: (?: 0 (?: \. {DIGIT}{{,3}} )? ) | (?: 1 (?: \. [0]{{,3}} )? ) )"
 
 #   weight = OWS ";" OWS "q=" qvalue
 
@@ -171,7 +171,7 @@ Accept_Encoding = list_rule(rf"(?: {codings} {weight}? )")
 #   language-range = <language-range, see [RFC4647], Section 2.1>
 
 language_range = (
-    rf"(?: (?: {ALPHA}{{1,8}} (?: \- (?: {ALPHA} {DIGIT} ){{1,8}} )* ) | \* )"
+    rf"(?: (?: {ALPHA}{{1,8}} (?: \- (?: {ALPHA} | {DIGIT} ){{1,8}} )* ) | \* )"
 )
 
 #   Accept-Language = [ ( language-range [ weight ] )
