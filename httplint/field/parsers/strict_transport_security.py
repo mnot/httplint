@@ -88,6 +88,20 @@ browsers that it should only be communicated with using HTTPS, instead of using 
             if hasattr(self.message, "status_code") and self.message.status_code != 301:
                 add_note(HSTS_OVER_HTTP)
 
+        if not any(
+            isinstance(note, (
+                HSTS_NO_MAX_AGE,
+                HSTS_MAX_AGE_ZERO,
+                HSTS_DUPLICATE_DIRECTIVE,
+                HSTS_OVER_HTTP,
+                HSTS_MULTIPLE_HEADERS,
+                HSTS_BAD_MAX_AGE,
+                HSTS_VALUE_NOT_ALLOWED
+            ))
+            for note in self.message.notes
+        ):
+            add_note(HSTS_VALID)
+
 
 class HSTS_NO_MAX_AGE(Note):
     category = categories.SECURITY
@@ -169,11 +183,30 @@ The `%(directive)s` directive in the `Strict-Transport-Security` header is a val
 directive. It should not have an associated value."""
 
 
+class HSTS_VALID(Note):
+    category = categories.SECURITY
+    level = levels.GOOD
+    _summary = "Strict-Transport-Security is enabled."
+    _text = """\
+This site has enabled HTTP Strict Transport Security (HSTS), which tells the browser to only
+communicate with it over a secure connection."""
+
+
 class HSTSTest(FieldTest):
     name = "Strict-Transport-Security"
     inputs = [b"max-age=31536000; includeSubDomains"]
     expected_out = [{"max-age": 31536000, "includesubdomains": True, "preload": False}]
-    expected_notes = [HSTS_SUBDOMAINS]
+    expected_notes = [HSTS_SUBDOMAINS, HSTS_VALID]
+
+    def set_context(self, message: HttpMessageLinter) -> None:
+        message.base_uri = "https://www.example.com/"
+
+
+class HSTSValidTest(FieldTest):
+    name = "Strict-Transport-Security"
+    inputs = [b"max-age=31536000; includeSubDomains; preload"]
+    expected_out = [{"max-age": 31536000, "includesubdomains": True, "preload": True}]
+    expected_notes = [HSTS_SUBDOMAINS, HSTS_PRELOAD, HSTS_VALID]
 
     def set_context(self, message: HttpMessageLinter) -> None:
         message.base_uri = "https://www.example.com/"
