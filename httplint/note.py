@@ -18,7 +18,6 @@ class categories(Enum):
     VALIDATION = "Validation"
     CONNECTION = "Connection"
     RANGE = "Partial Content"
-    CORS = "CORS"
 
 
 class levels(Enum):

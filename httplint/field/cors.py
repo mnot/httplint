@@ -51,7 +51,7 @@ def check_preflight_response(
 
 
 class CORS_PREFLIGHT_ONLY(Note):
-    category = categories.CORS
+    category = categories.SECURITY
     level = levels.BAD
     _summary = "The %(field_name)s header is only allowed in CORS preflight responses."
     _text = """\
@@ -65,7 +65,7 @@ This response was not to a CORS preflight request, so this header should not be 
 
 
 class CORS_PREFLIGHT_REQ_METHOD_WRONG(Note):
-    category = categories.CORS
+    category = categories.SECURITY
     level = levels.BAD
     _summary = "The %(field_name)s header is only allowed in CORS preflight requests."
     _text = """\
@@ -76,7 +76,7 @@ A preflight request uses the `OPTIONS` method; this request uses `%(method)s`.""
 
 
 class CORS_PREFLIGHT_REQ_NO_ORIGIN(Note):
-    category = categories.CORS
+    category = categories.SECURITY
     level = levels.BAD
     _summary = "The %(field_name)s header requires the Origin header."
     _text = """\
@@ -87,7 +87,7 @@ A preflight request requires the `Origin` header to be present."""
 
 
 class CORS_PREFLIGHT_REQ_NO_METHOD(Note):
-    category = categories.CORS
+    category = categories.SECURITY
     level = levels.BAD
     _summary = (
         "The %(field_name)s header requires the Access-Control-Request-Method header."

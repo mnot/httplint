@@ -24,7 +24,7 @@ to frontend code when the request's credentials mode (`Request.credentials`) is
 
 
 class ACAC_NOT_TRUE(Note):
-    category = categories.CORS
+    category = categories.SECURITY
     level = levels.BAD
     _summary = "Access-Control-Allow-Credentials must be 'true'."
     _text = """\

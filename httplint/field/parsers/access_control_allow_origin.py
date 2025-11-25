@@ -25,7 +25,7 @@ requesting code from the given origin."""
 
 
 class ACAO_MULTIPLE_VALUES(Note):
-    category = categories.CORS
+    category = categories.SECURITY
     level = levels.BAD
     _summary = "Access-Control-Allow-Origin should not have multiple values."
     _text = """\
