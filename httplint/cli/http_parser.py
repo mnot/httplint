@@ -67,8 +67,13 @@ class HttpCliParser(HttpMessageHandler):
 
     def input_end(self, trailers: RawFieldListType) -> None:
         self.linter.finish_content(True, trailers)
-        for note in self.linter.notes:
-            print(f"* {note}")
+        notes = sorted(self.linter.notes, key=lambda n: n.category.value)
+        current_category = None
+        for note in notes:
+            if note.category != current_category:
+                print(f"\n### {note.category.value}\n")
+                current_category = note.category
+            print(f"* [{note.level.name}] {note.summary}")
         self._input_state = States.ERROR
 
     def input_error(self, err: HttpError, close: bool = True) -> None:
