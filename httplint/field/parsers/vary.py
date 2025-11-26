@@ -78,9 +78,9 @@ some cache implementations will not store anything that has a `Vary` header)."""
 
 
 class VARY_NEGOTIATE(Note):
-    category = categories.CACHING
-    level = levels.WARN
-    _summary = "Vary: Negotiate is not necessary."
+    category = categories.CONNEG
+    level = levels.INFO
+    _summary = "Transparent Content Negotiation is not widely supported."
     _text = """\
 The `Vary: Negotiate` header value is not necessary, as 
 [Transparent Content Negotiation](https://www.rfc-editor.org/rfc/rfc2295.html)
