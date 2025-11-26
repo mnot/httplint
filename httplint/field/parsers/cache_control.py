@@ -153,7 +153,7 @@ ignoring it there."""
                 add_note(
                     CC_WRONG_MESSAGE,
                     directive=directive,
-                    message="request",
+                    this_message="request",
                     other_message="response",
                 )
                 continue  # don't run other checks
@@ -164,7 +164,7 @@ ignoring it there."""
                 add_note(
                     CC_WRONG_MESSAGE,
                     directive=directive,
-                    message="response",
+                    this_message="response",
                     other_message="request",
                 )
                 continue  # don't run other checks
@@ -247,10 +247,10 @@ The conflicting directives will be ignored by caches, and can be safely omitted.
 class CC_WRONG_MESSAGE(Note):
     category = categories.CACHING
     level = levels.WARN
-    _summary = "The %(directive)s cache directive has no meaning in a %(message)s."
+    _summary = "The %(directive)s cache directive has no meaning in a %(message_type)s."
     _text = """\
 The `%(directive)s` cache directive is only defined to appear in %(other_message)s
-messages; is has no defined meaning in a %(message)s."""
+messages; is has no defined meaning in a %(message_type)s."""
 
 
 class CHECK_SINGLE(Note):
