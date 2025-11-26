@@ -29,7 +29,7 @@ For each code change:
 
 These MUST be run after each code change, and MUST all succeed before presenting something to the user.
 
-If you need to run a Python interpreter, use `.venv/bin/python`.
+ALWAYS use `.venv/bin/python` if you need to run Python.
 
 Note that `make` targets automatically use the virtual environment, so you don't need to activate it explicitly.
 
