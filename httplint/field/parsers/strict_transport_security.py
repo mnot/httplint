@@ -65,8 +65,10 @@ browsers that it should only be communicated with using HTTPS, instead of using 
         if not self.value:
             return
 
+        notes_to_add = []
+
         if len(self.value) > 1:
-            add_note(HSTS_MULTIPLE_HEADERS)
+            notes_to_add.append(HSTS_MULTIPLE_HEADERS)
 
         # RFC 6797 Section 8.1:
         # If a UA receives more than one STS header field in an HTTP
@@ -75,35 +77,46 @@ browsers that it should only be communicated with using HTTPS, instead of using 
         parsed = self.value[0]
 
         if parsed["max-age"] is None:
-            add_note(HSTS_NO_MAX_AGE)
+            notes_to_add.append(HSTS_NO_MAX_AGE)
         elif parsed["max-age"] == 0:
-            add_note(HSTS_MAX_AGE_ZERO)
+            notes_to_add.append(HSTS_MAX_AGE_ZERO)
 
         if parsed["includesubdomains"]:
-            add_note(HSTS_SUBDOMAINS)
+            notes_to_add.append(HSTS_SUBDOMAINS)
         if parsed["preload"]:
-            add_note(HSTS_PRELOAD)
+            notes_to_add.append(HSTS_PRELOAD)
 
         if self.message.base_uri and self.message.base_uri.startswith("http:"):
             if hasattr(self.message, "status_code") and self.message.status_code != 301:
-                add_note(HSTS_OVER_HTTP)
+                notes_to_add.append(HSTS_OVER_HTTP)
 
-        if not any(
-            isinstance(
-                note,
-                (
-                    HSTS_NO_MAX_AGE,
-                    HSTS_MAX_AGE_ZERO,
-                    HSTS_DUPLICATE_DIRECTIVE,
-                    HSTS_OVER_HTTP,
-                    HSTS_MULTIPLE_HEADERS,
-                    HSTS_BAD_MAX_AGE,
-                    HSTS_VALUE_NOT_ALLOWED,
-                ),
-            )
-            for note in self.message.notes
-        ):
+        invalidating_notes = (
+            HSTS_NO_MAX_AGE,
+            HSTS_MAX_AGE_ZERO,
+            HSTS_DUPLICATE_DIRECTIVE,
+            HSTS_OVER_HTTP,
+            HSTS_MULTIPLE_HEADERS,
+            HSTS_BAD_MAX_AGE,
+            HSTS_VALUE_NOT_ALLOWED,
+        )
+
+        is_valid = True
+        for note in self.message.notes:
+            if isinstance(note, invalidating_notes):
+                is_valid = False
+                break
+
+        if is_valid:
+            for note_cls in notes_to_add:
+                if issubclass(note_cls, invalidating_notes):
+                    is_valid = False
+                    break
+
+        if is_valid:
             add_note(HSTS_VALID)
+
+        for note_cls in notes_to_add:
+            add_note(note_cls)
 
 
 class HSTS_NO_MAX_AGE(Note):
@@ -126,10 +139,10 @@ all of its subdomains."""
 class HSTS_PRELOAD(Note):
     category = categories.SECURITY
     level = levels.INFO
-    _summary = "%(message)s's HSTS policy allows preloading."
+    _summary = "%(message)s's HSTS policy allows browser preloading."
     _text = """\
-The `preload` directive indicates that the site owner consents to have their domain preloaded in
-browser HSTS lists."""
+The `preload` directive on `Strict-Transport-Security` indicates that the site owner consents
+to have their domain preloaded in browser HSTS lists."""
 
 
 class HSTS_MAX_AGE_ZERO(Note):
@@ -137,8 +150,8 @@ class HSTS_MAX_AGE_ZERO(Note):
     level = levels.WARN
     _summary = "%(message)s's HSTS policy has a max-age of 0."
     _text = """\
-A `max-age` of 0 tells the browser to expire the HSTS policy immediately, effectively disabling
-it."""
+A `max-age` of 0 tells the browser to expire the `Strict-Transport-Security` policy immediately,
+effectively disabling it."""
 
 
 class HSTS_DUPLICATE_DIRECTIVE(Note):
@@ -189,7 +202,7 @@ directive. It should not have an associated value."""
 class HSTS_VALID(Note):
     category = categories.SECURITY
     level = levels.GOOD
-    _summary = "Strict-Transport-Security is enabled."
+    _summary = "Strict Transport Security (HSTS) is enabled."
     _text = """\
 This site has enabled HTTP Strict Transport Security (HSTS), which tells the browser to only
 communicate with it over a secure connection."""
