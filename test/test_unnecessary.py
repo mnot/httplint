@@ -31,3 +31,7 @@ class TestUnnecessaryHeaders(unittest.TestCase):
             n for n in linter.notes if isinstance(n, UNNECESSARY_HEADER)
         ]
         self.assertEqual(len(unnecessary_notes), len(headers))
+
+
+if __name__ == "__main__":
+    unittest.main()
