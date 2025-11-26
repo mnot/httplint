@@ -3,7 +3,6 @@ from httplint import HttpResponseLinter
 from httplint.cache import (
     FRESHNESS_FRESH,
     FRESHNESS_SHARED_PRIVATE,
-    FRESHNESS_STALE_CACHE,
     FRESHNESS_STALE_ALREADY,
     FRESHNESS_HEURISTIC,
     FRESHNESS_NONE,

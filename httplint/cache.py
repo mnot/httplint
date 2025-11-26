@@ -87,7 +87,7 @@ class ResponseCacheChecker:
             self.notes.add("header-cache-control", NO_STORE)
             return False
 
-        # public and private
+        # private
         if "private" in self.cc_dict:
             self.store_shared = False
             self.notes.add("header-cache-control", PRIVATE_CC)
@@ -95,7 +95,7 @@ class ResponseCacheChecker:
             if "public" in self.cc_dict:
                 self.notes.add("header-cache-control", PRIVATE_PUBLIC_CONFLICT)
 
-        # public and authorization
+        # authorization
         elif self._request and "authorization" in [
             k.lower() for k, v in self._request.headers.text
         ]:
@@ -152,25 +152,12 @@ class ResponseCacheChecker:
         return True
 
     def check_freshness(self) -> bool:
+        # check to see if there's an Expires, even if it's invalid
         expires_hdr_present = "expires" in [
             n.lower() for (n, v) in self._response.headers.text
         ]
         has_explicit_freshness = False
-        has_cc_freshness = False
         freshness_hdrs = ["header-date"]
-        if "max-age" in self.cc_dict:
-            self.freshness_lifetime_private = self.cc_dict["max-age"]
-            self.freshness_lifetime_shared = self.cc_dict["max-age"]
-            freshness_hdrs.append("header-cache-control")
-            has_explicit_freshness = True
-            has_cc_freshness = True
-            if expires_hdr_present:
-                self.notes.add("header-expires header-cache-control", CC_AND_EXPIRES)
-        if "s-maxage" in self.cc_dict:
-            self.freshness_lifetime_shared = self.cc_dict["s-maxage"]
-            freshness_hdrs.append("header-cache-control")
-            has_explicit_freshness = True
-            has_cc_freshness = True
         if expires_hdr_present and self.response_time:
             # An invalid Expires header means it's automatically stale
             has_explicit_freshness = True
@@ -178,10 +165,19 @@ class ResponseCacheChecker:
             expires_lifetime = self.freshness_lifetime_shared = (
                 self.expires_value or 0
             ) - (self.date_value or int(self.response_time))
-            if not self.freshness_lifetime_private:
-                self.freshness_lifetime_private = expires_lifetime
-            if not self.freshness_lifetime_shared:
-                self.freshness_lifetime_shared = expires_lifetime
+            self.freshness_lifetime_private = expires_lifetime
+            self.freshness_lifetime_shared = expires_lifetime
+        if "max-age" in self.cc_dict:
+            self.freshness_lifetime_private = self.cc_dict["max-age"]
+            self.freshness_lifetime_shared = self.cc_dict["max-age"]
+            freshness_hdrs.append("header-cache-control")
+            has_explicit_freshness = True
+            if expires_hdr_present:
+                self.notes.add("header-expires header-cache-control", CC_AND_EXPIRES)
+        if "s-maxage" in self.cc_dict:
+            self.freshness_lifetime_shared = self.cc_dict["s-maxage"]
+            freshness_hdrs.append("header-cache-control")
+            has_explicit_freshness = True
 
         freshness_left = self.freshness_lifetime_private - self.age
         freshness_left_str = relative_time(abs(int(freshness_left)), 0, 0)
@@ -195,10 +191,11 @@ class ResponseCacheChecker:
             int(self.freshness_lifetime_shared), 0, 0
         )
 
-        fresh = freshness_left > 0
-        shared_fresh = shared_freshness_left > 0
+        is_fresh = freshness_left > 0
+        is_shared_fresh = shared_freshness_left > 0
         current_age_str = relative_time(self.age, 0, 0)
 
+        # explicit freshness
         if has_explicit_freshness:
             if self.freshness_lifetime_shared != self.freshness_lifetime_private:
                 self.notes.add(
@@ -208,21 +205,13 @@ class ResponseCacheChecker:
                     fresh_left=freshness_left_str,
                     share_lifetime=shared_freshness_lifetime_str,
                     share_left=shared_freshness_left_str,
-                    private_status="fresh" if fresh else "stale",
-                    shared_status="fresh" if shared_fresh else "stale",
+                    private_status="fresh" if is_fresh else "stale",
+                    shared_status="fresh" if is_shared_fresh else "stale",
                 )
-            elif fresh or shared_fresh:
+            elif is_fresh or is_shared_fresh:
                 self.notes.add(
                     " ".join(freshness_hdrs),
                     FRESHNESS_FRESH,
-                    freshness_lifetime=freshness_lifetime_str,
-                    freshness_left=freshness_left_str,
-                    current_age=current_age_str,
-                )
-            elif has_cc_freshness and self.age > self.freshness_lifetime_private:
-                self.notes.add(
-                    " ".join(freshness_hdrs),
-                    FRESHNESS_STALE_CACHE,
                     freshness_lifetime=freshness_lifetime_str,
                     freshness_left=freshness_left_str,
                     current_age=current_age_str,
@@ -250,12 +239,12 @@ class ResponseCacheChecker:
         if "stale-if-error" in self.cc_dict:
             self.notes.add("header-cache-control", STALE_IF_ERROR)
         elif "must-revalidate" in self.cc_dict:
-            if fresh:
+            if is_fresh:
                 self.notes.add("header-cache-control", FRESH_MUST_REVALIDATE)
             elif has_explicit_freshness:
                 self.notes.add("header-cache-control", STALE_MUST_REVALIDATE)
         elif "proxy-revalidate" in self.cc_dict or "s-maxage" in self.cc_dict:
-            if shared_fresh:
+            if is_shared_fresh:
                 self.notes.add("header-cache-control", FRESH_PROXY_REVALIDATE)
             elif has_explicit_freshness:
                 self.notes.add("header-cache-control", STALE_PROXY_REVALIDATE)
@@ -425,29 +414,21 @@ now).
 Shared caches can consider it fresh for %(share_lifetime)s (until %(share_left)s from now)."""
 
 
-class FRESHNESS_STALE_CACHE(Note):
-    category = categories.CACHING
-    level = levels.WARN
-    _summary = "%(message)s has been cached and then served stale."
-    _text = """\
-An HTTP response is stale when its age (here, %(current_age)s) is equal to or exceeds its freshness
-lifetime (in this case, %(freshness_lifetime)s).
-
-HTTP allows caches to use stale responses to satisfy requests under exceptional circumstances;
-e.g., when they lose contact with the origin server. Either that has happened here, or the cache
-has ignored the response's freshness directives."""
-
-
 class FRESHNESS_STALE_ALREADY(Note):
     category = categories.CACHING
     level = levels.INFO
-    _summary = "%(message)s has been served stale."
+    _summary = "%(message)s is stale."
     _text = """\
-A cache considers a HTTP response stale when its age (here, %(current_age)s) is equal to or exceeds
+A HTTP response is stale when its age (here, %(current_age)s) is equal to or exceeds
 its freshness lifetime (in this case, %(freshness_lifetime)s).
 
-HTTP allows caches to use stale responses to satisfy requests only under exceptional circumstances;
-e.g., when they lose contact with the origin server."""
+There are a few reasons why a cache might serve a stale response:
+
+* HTTP allows stale responses to be used to satisfy requests under exceptional circumstances;
+e.g., when they lose contact with the origin server. This is subject to a number of requirements.
+* Response directives like `stale-if-error` and `stale-while-revalidate` explicitly allow stale
+  responses to be used in particular circumstances.
+* Some caches are configured to ignore the response's freshness directives."""
 
 
 class FRESHNESS_HEURISTIC(Note):
@@ -471,17 +452,17 @@ than you'd like."""
 class FRESHNESS_NONE(Note):
     category = categories.CACHING
     level = levels.INFO
-    _summary = (
-        "%(message)s can only be served by a cache under exceptional circumstances."
-    )
+    _summary = "%(message)s cannot be considered fresh by caches."
     _text = """\
 %(message)s doesn't have explicit freshness information (like a ` Cache-Control: max-age`
 directive, or `Expires` header), and this status code doesn't allow caches to calculate their own.
 
-Therefore, while caches may be allowed to store it, they can't use it, except in unusual
-circumstances, such a when the origin server can't be contacted.
+Additionally, its status code doesn't allow caches to assign their own freshness lifetimes to it.
 
-Note that many caches will not store the response at all, because it is not generally useful to do
+Therefore, while caches might be allowed to store it, they generally can't use it, unless it can be
+served stale.
+
+As a result, many caches will not store the response at all, because it is not generally useful to do
 so."""
 
 
@@ -489,7 +470,7 @@ class STALE_SERVABLE(Note):
     category = categories.CACHING
     level = levels.INFO
     _summary = (
-        "Under exceptional circumstances, %(message)s can be served stale by a cache."
+        "Under exceptional circumstances, %(message)s can be served stale from a cache."
     )
     _text = """\
 HTTP allows stale responses to be served under some circumstances; for example, if the origin
@@ -502,7 +483,7 @@ This behaviour can be prevented by using the `Cache-Control: must-revalidate` re
 class STALE_IF_ERROR(Note):
     category = categories.CACHING
     level = levels.INFO
-    _summary = "%(message)s allows caches to serve it stale when an error occurs."
+    _summary = "If an error occurs, %(message)s can be served stale from a cache."
     _text = """\
 The `stale-if-error` cache directive allows a cache to return a stale response when an error
 (e.g., a 500 Internal Server Error, or a network timeout) is encountered while attempting to
@@ -515,7 +496,7 @@ class STALE_WHILE_REVALIDATE(Note):
     category = categories.CACHING
     level = levels.INFO
     _summary = (
-        "%(message)s allows caches to serve it stale while it is being revalidated."
+        "%(message)s can be served stale from a cache while it is being revalidated."
     )
     _text = """\
 The `stale-while-revalidate` cache directive allows a cache to serve a stale response while a
