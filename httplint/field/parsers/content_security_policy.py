@@ -140,6 +140,7 @@ significantly reduces the protection provided by CSP against Cross-Site
 Scripting (XSS) attacks.
 
 It was found in the following directives:
+
 %(directives_list)s"""
 
 
@@ -153,6 +154,7 @@ directive allows the use of string-to-code mechanisms like `eval()`, which can m
 attackers to execute malicious code.
 
 It was found in the following directives:
+
 %(directives_list)s"""
 
 
@@ -165,6 +167,7 @@ Allowing `http:` sources in `%(field_name)s` can allow attackers to intercept an
 content loaded by the page, potentially bypassing security controls.
 
 It was found in the following directives:
+
 %(directives_list)s"""
 
 
@@ -176,6 +179,7 @@ class CSP_DUPLICATE_DIRECTIVE(Note):
 Directives must only appear once in the `%(field_name)s` header; subsequent occurrences are ignored.
 
 The following directives were duplicated:
+
 %(directives_list)s"""
 
 
@@ -202,6 +206,7 @@ directive allows resources to be loaded from any origin, which significantly red
 provided by CSP.%(report_only_text)s
 
 It was found in the following directives:
+
 %(directives_list)s"""
 
 
