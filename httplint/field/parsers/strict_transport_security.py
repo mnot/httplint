@@ -65,7 +65,7 @@ browsers that it should only be communicated with using HTTPS, instead of using 
         if not self.value:
             return
 
-        notes_to_add = []
+        notes_to_add: list[type[Note]] = []
 
         if len(self.value) > 1:
             notes_to_add.append(HSTS_MULTIPLE_HEADERS)
