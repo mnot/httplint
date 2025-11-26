@@ -20,7 +20,7 @@ sources of content that browsers are allowed to load on a page."""
     reference = "https://www.w3.org/TR/CSP3/"
 
     syntax = (
-        rf"(?: {csp_directive} (?: {rfc9110.OWS} ; {rfc9110.OWS} {csp_directive} )* )"
+        rf"(?: {csp_directive} (?: {rfc9110.OWS} ; (?: {rfc9110.OWS} {csp_directive} )? )* )"
     )
     list_header = True
     deprecated = False
@@ -123,7 +123,7 @@ sources of content that browsers are allowed to load on a page."""
 class CONTENT_SECURITY_POLICY(Note):
     category = categories.SECURITY
     level = levels.GOOD
-    _summary = "%(message)s sets a content security policy%(report_only)s."
+    _summary = "%(message)s sets a Content Security Policy%(report_only)s."
     _text = """\
 [Content Security Policy](https://www.w3.org/TR/CSP3/) allows the server to declare
 the sources of content that browsers are allowed to use on a page.%(report_only_text)s"""
@@ -241,3 +241,9 @@ class CSPWideOpenTest(FieldTest):
     inputs = [b"script-src *"]
     expected_out = ["script-src *"]
     expected_notes = [CONTENT_SECURITY_POLICY, CSP_WIDE_OPEN]
+
+class CSPTrailingSemiTest(FieldTest):
+    name = "Content-Security-Policy"
+    inputs = [b"default-src 'self'; script-src 'self';"]
+    expected_out = ["default-src 'self'; script-src 'self';"]
+    expected_notes = [CONTENT_SECURITY_POLICY]
