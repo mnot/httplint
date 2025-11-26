@@ -42,9 +42,9 @@ class ResponseCacheChecker:
 
         if not self.check_basic():
             return
-        if not self.check_cache_control():
-            return
         if not self.check_age():
+            return
+        if not self.check_cache_control():
             return
         if not self.check_freshness():
             return
@@ -111,6 +111,7 @@ class ResponseCacheChecker:
                 self.notes.add("header-cache-control", NO_CACHE_NO_VALIDATOR)
             else:
                 self.notes.add("header-cache-control", NO_CACHE)
+            return False
 
         return True
 
@@ -237,10 +238,7 @@ class ResponseCacheChecker:
             elif has_explicit_freshness:
                 self.notes.add("header-cache-control", STALE_PROXY_REVALIDATE)
         else:
-            if fresh:
-                self.notes.add("header-cache-control", FRESH_SERVABLE)
-            elif has_explicit_freshness:
-                self.notes.add("header-cache-control", STALE_SERVABLE)
+            self.notes.add("header-cache-control", STALE_SERVABLE)
 
         return True
 
@@ -351,28 +349,29 @@ class NO_CACHE(Note):
     level = levels.INFO
     _summary = "%(message)s cannot be served from cache without validation."
     _text = """\
-The `Cache-Control: no-cache` directive means that while caches **can** store this
+The `Cache-Control: no-cache` directive means that while caches can store this
 response, they cannot use it to satisfy a request unless it has been validated (either with an
 `If-None-Match` or `If-Modified-Since` conditional) for that request."""
 
 
 class NO_CACHE_NO_VALIDATOR(Note):
     category = categories.CACHING
-    level = levels.INFO
-    _summary = "%(message)s cannot be served from cache without validation."
+    level = levels.WARN
+    _summary = "%(message)s cannot be served from cache without validation, \
+and doesn't have a validator."
     _text = """\
-The `Cache-Control: no-cache` directive means that while caches **can** store this response, they
+The `Cache-Control: no-cache` directive means that while caches can store this response, they
 cannot use it to satisfy a request unless it has been validated (either with an `If-None-Match` or
 `If-Modified-Since` conditional) for that request.
 
 %(message)s doesn't have a `Last-Modified` or `ETag` header, so it effectively can't be used by a
-cache."""
+cache. `Cache-Control: no-store` is more appropriate."""
 
 
 class CURRENT_AGE(Note):
     category = categories.CACHING
     level = levels.INFO
-    _summary = "%(message)s has been cached for %(age)s."
+    _summary = "%(message)s has already been cached for %(age)s."
     _text = """\
 HTTP defines an algorithm that uses the `Age` header, `Date` header, and local time observations to
 determine the age of a response. As a result, caches might use a value other than that in the `Age`
@@ -396,20 +395,19 @@ class FRESHNESS_SHARED_PRIVATE(Note):
         "(%(shared_status)s for %(share_left)s in shared caches)."
     )
     _text = """\
-This response has different freshness lifetimes for private (e.g., browser) and shared (e.g., proxy)
+%(message)s has different freshness lifetimes for private (e.g., browser) and shared (e.g., proxy)
 caches.
 
 Private caches can consider it fresh for %(fresh_lifetime)s (until %(fresh_left)s from
 now).
 
-Shared caches can consider it fresh for %(share_lifetime)s (until %(share_left)s from now).
-"""
+Shared caches can consider it fresh for %(share_lifetime)s (until %(share_left)s from now)."""
 
 
 class FRESHNESS_STALE_CACHE(Note):
     category = categories.CACHING
     level = levels.WARN
-    _summary = "%(message)s has been served stale by a cache."
+    _summary = "%(message)s has been cached and then served stale."
     _text = """\
 An HTTP response is stale when its age (here, %(current_age)s) is equal to or exceeds its freshness
 lifetime (in this case, %(freshness_lifetime)s).
@@ -422,7 +420,7 @@ has ignored the response's freshness directives."""
 class FRESHNESS_STALE_ALREADY(Note):
     category = categories.CACHING
     level = levels.INFO
-    _summary = "%(message)s is already stale."
+    _summary = "%(message)s has been served stale."
     _text = """\
 A cache considers a HTTP response stale when its age (here, %(current_age)s) is equal to or exceeds
 its freshness lifetime (in this case, %(freshness_lifetime)s).
@@ -438,15 +436,15 @@ class FRESHNESS_HEURISTIC(Note):
         "%(message)s allows caches to assign their own freshness lifetimes to it."
     )
     _text = """\
-When responses with certain status codes don't have explicit freshness information (like a `
-Cache-Control: max-age` directive, or `Expires` header), caches are allowed to estimate how fresh
-it is using a heuristic.
+When a response doesn't have explicit freshness information (like a `Cache-Control: max-age` 
+directive, or `Expires` header), caches are allowed to estimate how fresh it is using a heuristic
+(provided that the status code allows it).
 
-This is often done using the `Last-Modified` header. For example, if a response was last modified a
+Caches often do this using the `Last-Modified` header. For example, if a response was last modified a
 week ago, a cache might consider it fresh for a day.
 
-Consider adding a `Cache-Control` header; otherwise, it may be cached for longer or shorter than
-you'd like."""
+Consider adding a `Cache-Control: max-age` header; otherwise, it may be cached for longer or shorter
+than you'd like."""
 
 
 class FRESHNESS_NONE(Note):
@@ -462,32 +460,18 @@ directive, or `Expires` header), and this status code doesn't allow caches to ca
 Therefore, while caches may be allowed to store it, they can't use it, except in unusual
 circumstances, such a when the origin server can't be contacted.
 
-This behaviour can be prevented by using the `Cache-Control: must-revalidate` response directive.
-
 Note that many caches will not store the response at all, because it is not generally useful to do
 so."""
-
-
-class FRESH_SERVABLE(Note):
-    category = categories.CACHING
-    level = levels.INFO
-    _summary = "%(message)s can be served by a cache when stale under exceptional circumstances."
-    _text = """\
-HTTP allows stale responses to be served under some circumstances; for example, if the origin
-server can't be contacted, a stale response can be used (even if it doesn't have explicit freshness
-information).
-
-This behaviour can be prevented by using the `Cache-Control: must-revalidate` response directive."""
 
 
 class STALE_SERVABLE(Note):
     category = categories.CACHING
     level = levels.INFO
-    _summary = "%(message)s is stale and can be served by a cache under exceptional circumstances."
+    _summary = "Under exceptional circumstances, %(message)s can be served stale by a cache."
     _text = """\
 HTTP allows stale responses to be served under some circumstances; for example, if the origin
-server can't be contacted, a stale response can be used (even if it doesn't have explicit freshness
-information).
+server can't be contacted, a stale response can be used even if it doesn't have explicit freshness
+information available.
 
 This behaviour can be prevented by using the `Cache-Control: must-revalidate` response directive."""
 
@@ -507,7 +491,7 @@ this directive is present, they will return an error rather than a stale respons
 class STALE_MUST_REVALIDATE(Note):
     category = categories.CACHING
     level = levels.INFO
-    _summary = "%(message)s cannot be served by a cache, because it is stale."
+    _summary = "%(message)s cannot be served by a cache now that it is stale."
     _text = """\
 The `Cache-Control: must-revalidate` directive forbids caches from using stale responses to satisfy
 requests.
@@ -533,7 +517,7 @@ These directives do not affect private caches; for example, those in browsers.""
 class STALE_PROXY_REVALIDATE(Note):
     category = categories.CACHING
     level = levels.INFO
-    _summary = "%(message)s cannot be served by a shared cache, because it is stale."
+    _summary = "%(message)s cannot be served by a shared cache now that it is stale."
     _text = """\
 The presence of the `Cache-Control: proxy-revalidate` and/or `s-maxage` directives forbids shared
 caches (e.g., proxy caches) from using stale responses to satisfy requests.
