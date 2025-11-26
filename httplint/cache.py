@@ -42,6 +42,8 @@ class ResponseCacheChecker:
 
         if not self.check_basic():
             return
+        if not self.check_storable():
+            return
         if not self.check_age():
             return
         if not self.check_cache_control():
@@ -78,7 +80,7 @@ class ResponseCacheChecker:
 
         return True
 
-    def check_cache_control(self) -> bool:
+    def check_storable(self) -> bool:
         # no-store
         if "no-store" in self.cc_dict:
             self.store_shared = self.store_private = False
@@ -93,11 +95,20 @@ class ResponseCacheChecker:
             if "public" in self.cc_dict:
                 self.notes.add("header-cache-control", PRIVATE_PUBLIC_CONFLICT)
 
+        # public and authorization
         elif self._request and "authorization" in [
             k.lower() for k, v in self._request.headers.text
         ]:
             if "public" in self.cc_dict:
-                self.notes.add("header-cache-control", PUBLIC_AUTH)
+                self.notes.add("header-cache-control", PUBLIC_AUTH, directive="public")
+            elif "must-revalidate" in self.cc_dict:
+                self.notes.add(
+                    "header-cache-control", PUBLIC_AUTH, directive="must-revalidate"
+                )
+            elif "s-maxage" in self.cc_dict:
+                self.notes.add(
+                    "header-cache-control", PUBLIC_AUTH, directive="s-maxage"
+                )
             else:
                 self.store_shared = False
                 self.notes.add("header-cache-control", PRIVATE_AUTH)
@@ -106,7 +117,9 @@ class ResponseCacheChecker:
 
             if "public" in self.cc_dict:
                 self.notes.add("header-cache-control", PUBLIC_UNNECESSARY)
+        return True
 
+    def check_cache_control(self) -> bool:
         # no-cache
         if "no-cache" in self.cc_dict:
             if self.lm_value is None and self.etag_value is None:
@@ -114,7 +127,6 @@ class ResponseCacheChecker:
             else:
                 self.notes.add("header-cache-control", NO_CACHE)
             return False
-
         return True
 
     def check_age(self) -> bool:
@@ -249,7 +261,6 @@ class ResponseCacheChecker:
                 self.notes.add("header-cache-control", STALE_PROXY_REVALIDATE)
         else:
             self.notes.add("header-cache-control", STALE_SERVABLE)
-
         return True
 
 
@@ -327,7 +338,7 @@ class PUBLIC_AUTH(Note):
     _summary = "%(message)s can be stored by all caches, even though the request was authenticated."
     _text = """\
 Usually, responses to authenticated requests can't be stored by shared caches. However, because
-This response contains a `Cache-Control: public` directive, it can be stored by all caches,
+This response contains a `Cache-Control: %(directive)s` directive, it can be stored by all caches,
 including shared caches (like those in proxies)."""
 
 
@@ -477,7 +488,9 @@ so."""
 class STALE_SERVABLE(Note):
     category = categories.CACHING
     level = levels.INFO
-    _summary = "Under exceptional circumstances, %(message)s can be served stale by a cache."
+    _summary = (
+        "Under exceptional circumstances, %(message)s can be served stale by a cache."
+    )
     _text = """\
 HTTP allows stale responses to be served under some circumstances; for example, if the origin
 server can't be contacted, a stale response can be used even if it doesn't have explicit freshness
@@ -501,7 +514,9 @@ See [RFC 5861](https://www.rfc-editor.org/rfc/rfc5861) for more information."""
 class STALE_WHILE_REVALIDATE(Note):
     category = categories.CACHING
     level = levels.INFO
-    _summary = "%(message)s allows caches to serve it stale while it is being revalidated."
+    _summary = (
+        "%(message)s allows caches to serve it stale while it is being revalidated."
+    )
     _text = """\
 The `stale-while-revalidate` cache directive allows a cache to serve a stale response while a
 revalidation request is happening in the background.
