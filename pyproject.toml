@@ -100,7 +100,7 @@ max-attributes=40
 min-public-methods=1
 
 [tool.pylint.similarities]
-min-similarity-lines = 15
+min-similarity-lines = 20
 
 [tool.pytest.ini_options]
 python_classes = "*Test"

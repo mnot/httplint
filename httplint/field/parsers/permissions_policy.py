@@ -9,7 +9,7 @@ from httplint.types import AddNoteMethodType
 class permissions_policy(HttpField):
     canonical_name = "Permissions-Policy"
     description = """\
-The `Permissions-Policy` response header allows a site to allow or deny the use of browser features."""
+The `Permissions-Policy` response header allows a site to control the use of browser features."""
     reference = "https://www.w3.org/TR/permissions-policy/"
 
     syntax = False  # Uses SF parser
