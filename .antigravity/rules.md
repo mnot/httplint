@@ -49,3 +49,4 @@ The output of the program is created in terms of a Note object.
 - Field-specific notes should be defined in the parser file for that field (e.g., `httplint/field/parsers/cache_control.py`).
 - The _summary field of a Note is plain text and should be reasonably short.
 - The _text field of a Note is markdown. That means it should NOT be indented.
+- When possible, bias towards emitting a single note for a condition with details in _text, rather than multiple notes.
