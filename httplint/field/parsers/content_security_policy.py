@@ -19,9 +19,7 @@ The `Content-Security-Policy` response header allows web site administrators to 
 sources of content that browsers are allowed to load on a page."""
     reference = "https://www.w3.org/TR/CSP3/"
 
-    syntax = (
-        rf"(?: {csp_directive} (?: {rfc9110.OWS} ; (?: {rfc9110.OWS} {csp_directive} )? )* )"
-    )
+    syntax = rf"(?: {csp_directive} (?: {rfc9110.OWS} ; (?: {rfc9110.OWS} {csp_directive} )? )* )"
     list_header = True
     deprecated = False
     valid_in_requests = False
@@ -186,7 +184,9 @@ The following directives were duplicated:
 class CSP_DEPRECATED_REPORT_URI(Note):
     category = categories.SECURITY
     level = levels.INFO
-    _summary = "%(message)s uses the deprecated report-uri content security policy directive."
+    _summary = (
+        "%(message)s uses the deprecated report-uri content security policy directive."
+    )
     _text = """\
 The `report-uri` [Content Security Policy](https://www.w3.org/TR/CSP3/)
 directive is deprecated in favor of `report-to`. It is recommended to use `report-to`
@@ -241,6 +241,7 @@ class CSPWideOpenTest(FieldTest):
     inputs = [b"script-src *"]
     expected_out = ["script-src *"]
     expected_notes = [CONTENT_SECURITY_POLICY, CSP_WIDE_OPEN]
+
 
 class CSPTrailingSemiTest(FieldTest):
     name = "Content-Security-Policy"
