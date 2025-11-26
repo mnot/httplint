@@ -24,12 +24,13 @@ debugging caches."""
 
     def evaluate(self, add_note: AddNoteMethodType) -> None:
         status_list = []
+        bad_structure = False
         for member in self.value:
             if isinstance(member, tuple):
                 target = member[0]
                 params = member[1]
             else:
-                add_note(CACHE_STATUS_BAD_STRUCTURE)
+                bad_structure = True
                 continue
 
             param_str = check_sf_params(
@@ -43,6 +44,9 @@ debugging caches."""
 
         if status_list:
             add_note(CACHE_STATUS, status="\n\n".join(status_list))
+
+        if bad_structure:
+            add_note(CACHE_STATUS_BAD_STRUCTURE)
 
 
 KNOWN_PARAMS: Dict[str, Dict[str, Any]] = {
