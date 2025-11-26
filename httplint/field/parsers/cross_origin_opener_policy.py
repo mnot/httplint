@@ -108,7 +108,7 @@ group with other documents unless they enforce isolation.%(report_only_text)s"""
 class CROSS_ORIGIN_OPENER_POLICY_BAD_VALUE(Note):
     category = categories.SECURITY
     level = levels.BAD
-    _summary = "%(field_name)s's %(message)s has an invalid value."
+    _summary = "%(message)s's %(field_name)s has an invalid value."
     _text = """\
 The `%(field_name)s` header must be one of `same-origin`, `same-origin-allow-popups`,
 or `unsafe-none`.
