@@ -20,7 +20,7 @@ You are writing a Python library for linting HTTP messages. Adherence to the rel
 
 ## Workflow
 
-For each code change:
+For each code change, you MUST:
 
 1. Typecheck by running `make typecheck`
 2. Lint by running `make lint`
@@ -29,7 +29,7 @@ For each code change:
 
 These MUST be run after each code change, and MUST all succeed before presenting something to the user.
 
-ALWAYS use `.venv/bin/python` if you need to run Python.
+You MUST use `.venv/bin/python` if you need to run Python and the task isn't covered by the make rules above. Don't run pytest; use make test. You can run `test/`test_foo` with `make test_foo`.
 
 Note that `make` targets automatically use the virtual environment, so you don't need to activate it explicitly.
 
