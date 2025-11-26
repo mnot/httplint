@@ -366,7 +366,7 @@ Browsers will ignore this cookie."""
 class SET_COOKIE_BAD_DATE(Note):
     category = categories.GENERAL
     level = levels.WARN
-    _summary = "The %(cookie_name)s Set-Cookie header has an invalid Expires date."
+    _summary = "The %(cookie_name)s cookie has an invalid Expires date."
     _text = """\
 The `expires` date on this `Set-Cookie` header isn't valid; see
 [RFC6265](https://www.rfc-editor.org/rfc/rfc6265) for details of the correct format."""
@@ -375,7 +375,7 @@ The `expires` date on this `Set-Cookie` header isn't valid; see
 class SET_COOKIE_EMPTY_MAX_AGE(Note):
     category = categories.GENERAL
     level = levels.WARN
-    _summary = "The %(cookie_name)s Set-Cookie header has an empty Max-Age."
+    _summary = "The %(cookie_name)s cookie has an empty Max-Age."
     _text = """\
 The `max-age` parameter on this `Set-Cookie` header doesn't have a value.
 
@@ -386,7 +386,7 @@ class SET_COOKIE_LEADING_ZERO_MAX_AGE(Note):
     category = categories.GENERAL
     level = levels.WARN
     _summary = (
-        "The %(cookie_name)s Set-Cookie header has a Max-Age with a leading zero."
+        "The %(cookie_name)s cookie has a Max-Age with a leading zero."
     )
     _text = """\
 The `max-age` parameter on this `Set-Cookie` header has a leading zero.
@@ -397,7 +397,7 @@ Browsers will ignore the `max-age` value as a result."""
 class SET_COOKIE_NON_DIGIT_MAX_AGE(Note):
     category = categories.GENERAL
     level = levels.WARN
-    _summary = "The %(cookie_name)s Set-Cookie header has a non-numeric Max-Age."
+    _summary = "The %(cookie_name)s cookie has a non-numeric Max-Age."
     _text = """\
 The `max-age` parameter on this `Set-Cookie` header isn't numeric.
 
@@ -407,7 +407,7 @@ Browsers will ignore the `max-age` value as a result."""
 class SET_COOKIE_EMPTY_DOMAIN(Note):
     category = categories.GENERAL
     level = levels.WARN
-    _summary = "The %(cookie_name)s Set-Cookie header has an empty domain."
+    _summary = "The %(cookie_name)s cookie has an empty domain."
     _text = """\
 The `domain` parameter on this `Set-Cookie` header is empty.
 
@@ -417,7 +417,7 @@ Browsers will probably ignore it as a result."""
 class SET_COOKIE_NOT_SECURE(Note):
     category = categories.GENERAL
     level = levels.WARN
-    _summary = "The %(cookie_name)s Set-Cookie header is missing the Secure attribute."
+    _summary = "The %(cookie_name)s cookie is missing the Secure attribute."
     _text = """\
 The `Secure` attribute on this `Set-Cookie` header is missing.
 
@@ -427,9 +427,9 @@ Browsers will ignore it."""
 class SET_COOKIE_UNKNOWN_ATTRIBUTE(Note):
     category = categories.GENERAL
     level = levels.WARN
-    _summary = "The %(cookie_name)s Set-Cookie header has an unknown attribute, '%(attribute)s'."
+    _summary = "The %(cookie_name)s cookie has an unknown attribute, '%(attribute)s'."
     _text = """\
-This `Set-Cookie` header has an extra parameter, "%(attribute)s".
+This cookie has an extra parameter, "%(attribute)s".
 
 Browsers will ignore it."""
 
@@ -438,7 +438,7 @@ class SET_COOKIE_UNKNOWN_ATTRIBUTE_VALUE(Note):
     category = categories.GENERAL
     level = levels.WARN
     _summary = (
-        "The %(cookie_name)s Set-Cookie header has an unknown "
+        "The %(cookie_name)s cookie has an unknown "
         "'%(attribute_name)s' attribute value."
     )
     _text = """\
@@ -451,7 +451,7 @@ class SET_COOKIE_PARTITIONED_NO_SECURE(Note):
     category = categories.GENERAL
     level = levels.WARN
     _summary = (
-        "The %(cookie_name)s Set-Cookie header has the Partitioned attribute "
+        "The %(cookie_name)s cookie has the Partitioned attribute "
         "but is missing the Secure attribute."
     )
     _text = """\
