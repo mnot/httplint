@@ -235,7 +235,9 @@ class ResponseCacheChecker:
             self.notes.add("header-cache-control", STALE_WHILE_REVALIDATE)
 
         # stale revalidation
-        if "must-revalidate" in self.cc_dict:
+        if "stale-if-error" in self.cc_dict:
+            self.notes.add("header-cache-control", STALE_IF_ERROR)
+        elif "must-revalidate" in self.cc_dict:
             if fresh:
                 self.notes.add("header-cache-control", FRESH_MUST_REVALIDATE)
             elif has_explicit_freshness:
@@ -245,8 +247,6 @@ class ResponseCacheChecker:
                 self.notes.add("header-cache-control", FRESH_PROXY_REVALIDATE)
             elif has_explicit_freshness:
                 self.notes.add("header-cache-control", STALE_PROXY_REVALIDATE)
-        elif "stale-if-error" in self.cc_dict:
-            self.notes.add("header-cache-control", STALE_IF_ERROR)
         else:
             self.notes.add("header-cache-control", STALE_SERVABLE)
 
