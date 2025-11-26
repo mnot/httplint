@@ -7,6 +7,7 @@ from httplint.cache import (
     FRESHNESS_STALE_ALREADY,
     FRESHNESS_HEURISTIC,
     FRESHNESS_NONE,
+    STALE_SERVABLE,
 )
 
 
@@ -97,6 +98,47 @@ class TestCacheFreshness(unittest.TestCase):
 
         notes = [n.__class__ for n in linter.notes]
         self.assertIn(CC_AND_EXPIRES, notes)
+
+    def test_stale_while_revalidate(self):
+        from httplint.cache import STALE_WHILE_REVALIDATE
+        linter = HttpResponseLinter()
+        linter.process_response_topline(b"HTTP/1.1", b"200", b"OK")
+        linter.process_headers([
+            (b"Date", b"Tue, 15 Nov 1994 08:12:31 GMT"),
+            (b"Cache-Control", b"max-age=60, stale-while-revalidate=120"),
+        ])
+        linter.finish_content(True)
+
+        notes = [n.__class__ for n in linter.notes]
+        self.assertIn(STALE_WHILE_REVALIDATE, notes)
+
+    def test_stale_if_error(self):
+        from httplint.cache import STALE_IF_ERROR
+        linter = HttpResponseLinter()
+        linter.process_response_topline(b"HTTP/1.1", b"200", b"OK")
+        linter.process_headers([
+            (b"Date", b"Tue, 15 Nov 1994 08:12:31 GMT"),
+            (b"Cache-Control", b"max-age=60, stale-if-error=120"),
+        ])
+        linter.finish_content(True)
+
+        notes = [n.__class__ for n in linter.notes]
+        self.assertIn(STALE_IF_ERROR, notes)
+        self.assertNotIn(STALE_SERVABLE, notes)
+
+    def test_stale_extensions(self):
+        from httplint.cache import STALE_WHILE_REVALIDATE, STALE_IF_ERROR
+        linter = HttpResponseLinter()
+        linter.process_response_topline(b"HTTP/1.1", b"200", b"OK")
+        linter.process_headers([
+            (b"Date", b"Tue, 15 Nov 1994 08:12:31 GMT"),
+            (b"Cache-Control", b"max-age=60, stale-while-revalidate=120, stale-if-error=120"),
+        ])
+        linter.finish_content(True)
+
+        notes = [n.__class__ for n in linter.notes]
+        self.assertIn(STALE_WHILE_REVALIDATE, notes)
+        self.assertIn(STALE_IF_ERROR, notes)
 
 
 if __name__ == "__main__":

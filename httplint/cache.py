@@ -79,11 +79,13 @@ class ResponseCacheChecker:
         return True
 
     def check_cache_control(self) -> bool:
+        # no-store
         if "no-store" in self.cc_dict:
             self.store_shared = self.store_private = False
             self.notes.add("header-cache-control", NO_STORE)
             return False
 
+        # public and private
         if "private" in self.cc_dict:
             self.store_shared = False
             self.notes.add("header-cache-control", PRIVATE_CC)
@@ -105,7 +107,7 @@ class ResponseCacheChecker:
             if "public" in self.cc_dict:
                 self.notes.add("header-cache-control", PUBLIC_UNNECESSARY)
 
-        # no-cache?
+        # no-cache
         if "no-cache" in self.cc_dict:
             if self.lm_value is None and self.etag_value is None:
                 self.notes.add("header-cache-control", NO_CACHE_NO_VALIDATOR)
@@ -221,12 +223,18 @@ class ResponseCacheChecker:
                     freshness_left=freshness_left_str,
                     current_age=current_age_str,
                 )
-        # can heuristic freshness be used?
+
+        # heuristic freshness
         elif self._response.status_code in HEURISTIC_CACHEABLE_STATUS:
             self.notes.add("header-last-modified", FRESHNESS_HEURISTIC)
         else:
             self.notes.add("", FRESHNESS_NONE)
 
+        # stale-while-revalidate
+        if "stale-while-revalidate" in self.cc_dict:
+            self.notes.add("header-cache-control", STALE_WHILE_REVALIDATE)
+
+        # stale revalidation
         if "must-revalidate" in self.cc_dict:
             if fresh:
                 self.notes.add("header-cache-control", FRESH_MUST_REVALIDATE)
@@ -237,6 +245,8 @@ class ResponseCacheChecker:
                 self.notes.add("header-cache-control", FRESH_PROXY_REVALIDATE)
             elif has_explicit_freshness:
                 self.notes.add("header-cache-control", STALE_PROXY_REVALIDATE)
+        elif "stale-if-error" in self.cc_dict:
+            self.notes.add("header-cache-control", STALE_IF_ERROR)
         else:
             self.notes.add("header-cache-control", STALE_SERVABLE)
 
@@ -474,6 +484,29 @@ server can't be contacted, a stale response can be used even if it doesn't have 
 information available.
 
 This behaviour can be prevented by using the `Cache-Control: must-revalidate` response directive."""
+
+
+class STALE_IF_ERROR(Note):
+    category = categories.CACHING
+    level = levels.INFO
+    _summary = "%(message)s allows caches to serve it stale when an error occurs."
+    _text = """\
+The `stale-if-error` cache directive allows a cache to return a stale response when an error
+(e.g., a 500 Internal Server Error, or a network timeout) is encountered while attempting to
+revalidate it.
+
+See [RFC 5861](https://www.rfc-editor.org/rfc/rfc5861) for more information."""
+
+
+class STALE_WHILE_REVALIDATE(Note):
+    category = categories.CACHING
+    level = levels.INFO
+    _summary = "%(message)s allows caches to serve it stale while it is being revalidated."
+    _text = """\
+The `stale-while-revalidate` cache directive allows a cache to serve a stale response while a
+revalidation request is happening in the background.
+
+See [RFC 5861](https://www.rfc-editor.org/rfc/rfc5861) for more information."""
 
 
 class FRESH_MUST_REVALIDATE(Note):
