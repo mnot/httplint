@@ -153,7 +153,6 @@ ignoring it there."""
                 add_note(
                     CC_WRONG_MESSAGE,
                     directive=directive,
-                    this_message="request",
                     other_message="response",
                 )
                 continue  # don't run other checks
@@ -164,7 +163,6 @@ ignoring it there."""
                 add_note(
                     CC_WRONG_MESSAGE,
                     directive=directive,
-                    this_message="response",
                     other_message="request",
                 )
                 continue  # don't run other checks

@@ -36,7 +36,12 @@ class HttpMessageLinter:
         message_ref: Optional[str] = None,
         related: Optional["HttpMessageLinter"] = None,
     ) -> None:
-        self.notes = Notes({"message": message_ref or self.message_ref})
+        self.notes = Notes(
+            {
+                "message": message_ref or self.message_ref,
+                "message_type": self.message_type,
+            }
+        )
         self.related = related
         self.start_time = start_time
         self.finish_time: Optional[float] = None
