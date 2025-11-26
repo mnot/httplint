@@ -385,9 +385,7 @@ Browsers will ignore the `max-age` value as a result."""
 class SET_COOKIE_LEADING_ZERO_MAX_AGE(Note):
     category = categories.GENERAL
     level = levels.WARN
-    _summary = (
-        "The %(cookie_name)s cookie has a Max-Age with a leading zero."
-    )
+    _summary = "The %(cookie_name)s cookie has a Max-Age with a leading zero."
     _text = """\
 The `max-age` parameter on this `Set-Cookie` header has a leading zero.
 

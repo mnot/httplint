@@ -137,15 +137,18 @@ class HttpField:
             try:
                 if self.sf_type == "list":
                     _, parsed_value = http_sf.parse_list(
-                        combined_value.encode("utf-8"), on_duplicate_key=on_duplicate_key
+                        combined_value.encode("utf-8"),
+                        on_duplicate_key=on_duplicate_key,
                     )
                 elif self.sf_type == "dictionary":
                     _, parsed_value = http_sf.parse_dictionary(
-                        combined_value.encode("utf-8"), on_duplicate_key=on_duplicate_key
+                        combined_value.encode("utf-8"),
+                        on_duplicate_key=on_duplicate_key,
                     )
                 elif self.sf_type == "item":
                     _, parsed_value = http_sf.parse_item(
-                        combined_value.encode("utf-8"), on_duplicate_key=on_duplicate_key
+                        combined_value.encode("utf-8"),
+                        on_duplicate_key=on_duplicate_key,
                     )
                 else:
                     raise ValueError(f"Unknown sf_type: {self.sf_type}")

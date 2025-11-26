@@ -89,15 +89,18 @@ browsers that it should only be communicated with using HTTPS, instead of using 
                 add_note(HSTS_OVER_HTTP)
 
         if not any(
-            isinstance(note, (
-                HSTS_NO_MAX_AGE,
-                HSTS_MAX_AGE_ZERO,
-                HSTS_DUPLICATE_DIRECTIVE,
-                HSTS_OVER_HTTP,
-                HSTS_MULTIPLE_HEADERS,
-                HSTS_BAD_MAX_AGE,
-                HSTS_VALUE_NOT_ALLOWED
-            ))
+            isinstance(
+                note,
+                (
+                    HSTS_NO_MAX_AGE,
+                    HSTS_MAX_AGE_ZERO,
+                    HSTS_DUPLICATE_DIRECTIVE,
+                    HSTS_OVER_HTTP,
+                    HSTS_MULTIPLE_HEADERS,
+                    HSTS_BAD_MAX_AGE,
+                    HSTS_VALUE_NOT_ALLOWED,
+                ),
+            )
             for note in self.message.notes
         ):
             add_note(HSTS_VALID)

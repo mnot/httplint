@@ -307,7 +307,9 @@ circumstances."""
 class HEADER_SHOULD_NOT_BE_IN_304(Note):
     category = categories.GENERAL
     level = levels.WARN
-    _summary = "%(message)s contains headers that should not be sent in 304 (Not Modified)."
+    _summary = (
+        "%(message)s contains headers that should not be sent in 304 (Not Modified)."
+    )
     _text = """\
 These headers are representation metadata that should not be sent in a 304 response unless
 they are being used to guide cache updates:
