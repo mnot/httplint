@@ -341,7 +341,7 @@ Note that these directives do not have any effect on other clients or caches."""
 class STALE_IF_ERROR(Note):
     category = categories.CACHING
     level = levels.INFO
-    _summary = "%(message)s may be served by a cache when an error occurs."
+    _summary = "%(message)s allows caches to serve it stale when an error occurs."
     _text = """\
 The `stale-if-error` cache directive allows a cache to return a stale response when an error
 (e.g., a 500 Internal Server Error, or a network timeout) is encountered while attempting to
@@ -353,7 +353,7 @@ See [RFC 5861](https://www.rfc-editor.org/rfc/rfc5861) for more information."""
 class STALE_WHILE_REVALIDATE(Note):
     category = categories.CACHING
     level = levels.INFO
-    _summary = "%(message)s may be served by a cache while it is being revalidated."
+    _summary = "%(message)s allows caches to serve it stale while it is being revalidated."
     _text = """\
 The `stale-while-revalidate` cache directive allows a cache to serve a stale response while a
 revalidation request is happening in the background.
