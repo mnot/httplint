@@ -22,7 +22,7 @@ dependencies = [
     "MarkupSafe",
     "thor",
     "typing_extensions",
-    "http-sf",
+    "http-sf>=1.0.7",
     "sniffpy==1.0.0"
 ]
 

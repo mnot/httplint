@@ -192,3 +192,11 @@ Clients SHOULD send a `User-Agent` header field.
 
 See [RFC 9110 Section 10.1.5](https://www.rfc-editor.org/rfc/rfc9110.html#section-10.1.5)
 for details."""
+
+
+class DUPLICATE_KEY(Note):
+    category = categories.GENERAL
+    level = levels.WARN
+    _summary = "In %(field_name)s, the %(context)s key '%(key)s' is duplicated."
+    _text = """\
+The %(context)s key '%(key)s' is duplicated. All instances after the first will be ignored."""

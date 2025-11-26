@@ -130,15 +130,23 @@ class HttpField:
         if self.structured_field:
             combined_value = ", ".join(self.value).strip()
             parsed_value: Any = None
+
+            def on_duplicate_key(key: str, context: str) -> None:
+                add_note(DUPLICATE_KEY, key=key, context=context)
+
             try:
                 if self.sf_type == "list":
-                    _, parsed_value = http_sf.parse_list(combined_value.encode("utf-8"))
+                    _, parsed_value = http_sf.parse_list(
+                        combined_value.encode("utf-8"), on_duplicate_key=on_duplicate_key
+                    )
                 elif self.sf_type == "dictionary":
                     _, parsed_value = http_sf.parse_dictionary(
-                        combined_value.encode("utf-8")
+                        combined_value.encode("utf-8"), on_duplicate_key=on_duplicate_key
                     )
                 elif self.sf_type == "item":
-                    _, parsed_value = http_sf.parse_item(combined_value.encode("utf-8"))
+                    _, parsed_value = http_sf.parse_item(
+                        combined_value.encode("utf-8"), on_duplicate_key=on_duplicate_key
+                    )
                 else:
                     raise ValueError(f"Unknown sf_type: {self.sf_type}")
                 self.value = parsed_value
