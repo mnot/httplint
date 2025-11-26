@@ -172,8 +172,6 @@ class ResponseCacheChecker:
             self.freshness_lifetime_shared = self.cc_dict["max-age"]
             freshness_hdrs.append("header-cache-control")
             has_explicit_freshness = True
-            if expires_hdr_present:
-                self.notes.add("header-expires header-cache-control", CC_AND_EXPIRES)
         if "s-maxage" in self.cc_dict:
             self.freshness_lifetime_shared = self.cc_dict["s-maxage"]
             freshness_hdrs.append("header-cache-control")
@@ -224,6 +222,8 @@ class ResponseCacheChecker:
                     freshness_left=freshness_left_str,
                     current_age=current_age_str,
                 )
+            if "max-age" in self.cc_dict and expires_hdr_present:
+                self.notes.add("header-expires header-cache-control", CC_AND_EXPIRES)
 
         # heuristic freshness
         elif self._response.status_code in HEURISTIC_CACHEABLE_STATUS:
@@ -469,9 +469,7 @@ so."""
 class STALE_SERVABLE(Note):
     category = categories.CACHING
     level = levels.INFO
-    _summary = (
-        "Under exceptional circumstances, this response can be served stale from a cache."
-    )
+    _summary = "Under exceptional circumstances, this response can be served stale from a cache."
     _text = """\
 HTTP allows stale responses to be served under some circumstances; for example, if the origin
 server can't be contacted, a stale response can be used even if it doesn't have explicit freshness
