@@ -12,7 +12,7 @@ class categories(Enum):
     "Note classifications."
 
     GENERAL = "General"
-    SECURITY = "Security"
+    SECURITY = "Browser Security"
     CONNEG = "Content Negotiation"
     CACHING = "Caching"
     VALIDATION = "Validation"
