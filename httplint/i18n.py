@@ -1,11 +1,12 @@
 import os
 from contextlib import contextmanager
 from contextvars import ContextVar
-from typing import Optional, Generator, Dict
-from babel.support import Translations
+from datetime import timedelta
+from typing import Optional, Generator, Dict, Any
+from babel.support import Translations, NullTranslations
 from babel.dates import format_timedelta as babel_format_timedelta
 
-_translations_cache: Dict[str, Translations] = {}
+_translations_cache: Dict[str, NullTranslations] = {}
 _locale_var: ContextVar[str] = ContextVar("locale", default="en")
 
 
@@ -21,7 +22,7 @@ def set_locale(locale_name: Optional[str]) -> Generator[None, None, None]:
         _locale_var.reset(token)
 
 
-def get_translations() -> Optional[Translations]:
+def get_translations() -> Optional[NullTranslations]:
     locale = _locale_var.get()
     if locale not in _translations_cache:
         localedir = os.path.join(os.path.dirname(__file__), "translations")
@@ -49,7 +50,7 @@ def ngettext(singular: str, plural: str, n: int) -> str:
     return singular if n == 1 else plural
 
 
-def format_timedelta(delta, **kwargs) -> str:
+def format_timedelta(delta: timedelta | int, **kwargs: Any) -> str:
     """
     Format a timedelta object.
     """
