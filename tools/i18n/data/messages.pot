@@ -1,0 +1,3422 @@
+# Translations template for PROJECT.
+# Copyright (C) 2025 ORGANIZATION
+# This file is distributed under the same license as the PROJECT project.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2025.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PROJECT VERSION\n"
+"Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
+"POT-Creation-Date: 2025-11-27 23:01+1100\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.17.0\n"
+
+#: httplint/cache.py:281
+#, python-format
+msgid "%(message)s doesn't have a Date header."
+msgstr ""
+
+#: httplint/cache.py:282
+msgid ""
+"Although HTTP allows a server not to send a `Date` header in responses if"
+" it doesn't have a local\n"
+"clock, this can make calculation of a stored response's age inexact."
+msgstr ""
+
+#: httplint/cache.py:290
+#, python-format
+msgid "%(message)s has an Expires or Last-Modified header, but no Date."
+msgstr ""
+
+#: httplint/cache.py:291
+msgid ""
+"Because both the `Expires` and `Last-Modified` headers are date-based, "
+"it's necessary to send when\n"
+"the message was generated in `Date` for them to be useful; otherwise, "
+"clock drift, transit times\n"
+"between nodes as well as caching could skew their application."
+msgstr ""
+
+#: httplint/cache.py:300
+#, python-format
+msgid "Responses to the %(method)s method can't be stored by caches."
+msgstr ""
+
+#: httplint/cache.py:308
+#, python-format
+msgid "%(message)s can't be stored by caches."
+msgstr ""
+
+#: httplint/cache.py:309
+msgid ""
+"The `Cache-Control: no-store` directive indicates that this response "
+"can't be stored by a cache."
+msgstr ""
+
+#: httplint/cache.py:316
+#, python-format
+msgid "%(message)s allows only private caches to store it."
+msgstr ""
+
+#: httplint/cache.py:317
+msgid ""
+"The `Cache-Control: private` directive indicates that the response can "
+"only be stored by caches\n"
+"that are specific to a single user; for example, a browser cache. Shared "
+"caches, such as those in\n"
+"proxies, cannot store it."
+msgstr ""
+
+#: httplint/cache.py:326
+#, python-format
+msgid ""
+"%(message)s contains both the `public` and `private` Cache-Control "
+"directives."
+msgstr ""
+
+#: httplint/cache.py:329
+msgid ""
+"`Cache-Control: public` and `Cache-Control: private` conflict; they "
+"should not occur on the same message.\n"
+"\n"
+"Conservative caches will ignore `public` and honor `private`, but this "
+"cannot be relied upon."
+msgstr ""
+
+#: httplint/cache.py:338
+#, python-format
+msgid ""
+"%(message)s can only be stored by private caches, because the request was"
+" authenticated."
+msgstr ""
+
+#: httplint/cache.py:340
+msgid ""
+"Because the request was authenticated and this response doesn't contain a"
+" `Cache-Control: public`\n"
+"directive, this response can only be stored by caches that are specific "
+"to a single user; for\n"
+"example, a browser cache. Shared caches, such as those in proxies, cannot"
+" store it."
+msgstr ""
+
+#: httplint/cache.py:349
+#, python-format
+msgid ""
+"%(message)s can be stored by all caches, even though the request was "
+"authenticated."
+msgstr ""
+
+#: httplint/cache.py:350
+#, python-format
+msgid ""
+"Usually, responses to authenticated requests can't be stored by shared "
+"caches. However, because\n"
+"This response contains a `Cache-Control: %(directive)s` directive, it can"
+" be stored by all caches,\n"
+"including shared caches (like those in proxies)."
+msgstr ""
+
+#: httplint/cache.py:359
+msgid "Cache-Control: public is probably not necessary."
+msgstr ""
+
+#: httplint/cache.py:360
+msgid ""
+"The `Cache-Control: public` directive allows caches to store and use "
+"responses\n"
+"in some circumstances when they would otherwise not be able to.\n"
+"\n"
+"For example, it allows responses to authenticated requests to be stored "
+"by shared caches.\n"
+"\n"
+"Other responses **do not need to contain `public`**; it does not make the"
+"\n"
+"response \"more cacheable\", and only makes the response headers larger."
+msgstr ""
+
+#: httplint/cache.py:373
+#, python-format
+msgid "%(message)s allows all caches to store it."
+msgstr ""
+
+#: httplint/cache.py:375
+msgid ""
+"A cache can store this response; it may or may not be able to use it to "
+"satisfy a particular\n"
+"request."
+msgstr ""
+
+#: httplint/cache.py:383
+#, python-format
+msgid "%(message)s allows only shared caches to store it."
+msgstr ""
+
+#: httplint/cache.py:385
+msgid ""
+"A shared cache can store this response; it may or may not be able to use "
+"it to satisfy a\n"
+"particular request. \n"
+"\n"
+"Private caches cannot store it, because there is no explicit freshness "
+"information\n"
+"(such as Cache-Control: max-age), and the status code is not "
+"heuristically cacheable.\n"
+"\n"
+"Note that a cache extension might override this behaviour."
+msgstr ""
+
+#: httplint/cache.py:398
+#, python-format
+msgid "%(message)s cannot be stored by caches."
+msgstr ""
+
+#: httplint/cache.py:399
+msgid ""
+"While caches can store many kinds of response as being heuristically "
+"cacheable -- that is, \n"
+"they can store them without explicit caching directives like Cache-"
+"Control:max-age, this\n"
+"reponse's status code is not defined as being heuristically cacheable, "
+"and other directives\n"
+"that would allow it to be stored (such as Cache-Control: public) are not "
+"present.\n"
+"\n"
+"Note that a cache extension might override this behaviour."
+msgstr ""
+
+#: httplint/cache.py:411
+#, python-format
+msgid "%(message)s cannot be served from cache without validation."
+msgstr ""
+
+#: httplint/cache.py:412
+msgid ""
+"The `Cache-Control: no-cache` directive means that while caches can store"
+" this\n"
+"response, they cannot use it to satisfy a request unless it has been "
+"validated (either with an\n"
+"`If-None-Match` or `If-Modified-Since` conditional) for that request."
+msgstr ""
+
+#: httplint/cache.py:421
+#, python-format
+msgid ""
+"%(message)s cannot be served from cache without validation, and doesn't "
+"have a validator."
+msgstr ""
+
+#: httplint/cache.py:423
+#, python-format
+msgid ""
+"The `Cache-Control: no-cache` directive means that while caches can store"
+" this response, they\n"
+"cannot use it to satisfy a request unless it has been validated (either "
+"with an `If-None-Match` or\n"
+"`If-Modified-Since` conditional) for that request.\n"
+"\n"
+"%(message)s doesn't have a `Last-Modified` or `ETag` header, so it "
+"effectively can't be used by a\n"
+"cache. `Cache-Control: no-store` is more appropriate."
+msgstr ""
+
+#: httplint/cache.py:435
+#, python-format
+msgid "%(message)s has already been cached for %(age)s."
+msgstr ""
+
+#: httplint/cache.py:436
+msgid ""
+"HTTP defines an algorithm that uses the `Age` header, `Date` header, and "
+"local time observations to\n"
+"determine the age of a response. As a result, caches might use a value "
+"other than that in the `Age`\n"
+"header to determine how old the response is -- and therefore how much "
+"longer it can be used."
+msgstr ""
+
+#: httplint/cache.py:445
+#, python-format
+msgid "%(message)s is fresh for %(freshness_left)s."
+msgstr ""
+
+#: httplint/cache.py:446
+#, python-format
+msgid ""
+"A response can be considered fresh when its age (here, %(current_age)s) "
+"is less than its freshness\n"
+"lifetime (in this case, %(freshness_lifetime)s)."
+msgstr ""
+
+#: httplint/cache.py:454
+#, python-format
+msgid ""
+"%(message)s is %(private_status)s for %(fresh_left)s (%(shared_status)s "
+"for %(share_left)s in shared caches)."
+msgstr ""
+
+#: httplint/cache.py:458
+#, python-format
+msgid ""
+"%(message)s has different freshness lifetimes for private (e.g., browser)"
+" and shared (e.g., proxy)\n"
+"caches.\n"
+"\n"
+"Private caches can consider it fresh for %(fresh_lifetime)s (until "
+"%(fresh_left)s from\n"
+"now).\n"
+"\n"
+"Shared caches can consider it fresh for %(share_lifetime)s (until "
+"%(share_left)s from now)."
+msgstr ""
+
+#: httplint/cache.py:471
+#, python-format
+msgid "%(message)s is stale."
+msgstr ""
+
+#: httplint/cache.py:472
+#, python-format
+msgid ""
+"A HTTP response is stale when its age (here, %(current_age)s) is equal to"
+" or exceeds\n"
+"its freshness lifetime (in this case, %(freshness_lifetime)s).\n"
+"\n"
+"There are a few reasons why a cache might serve a stale response:\n"
+"\n"
+"* HTTP allows stale responses to be used to satisfy requests in "
+"exceptional circumstances;\n"
+"e.g., when they lose contact with the origin server. This is subject to a"
+" number of requirements.\n"
+"* Response directives like `stale-if-error` and `stale-while-revalidate` "
+"explicitly allow stale\n"
+"  responses to be used in particular circumstances.\n"
+"* Some caches are configured to ignore the response's freshness "
+"directives."
+msgstr ""
+
+#: httplint/cache.py:488
+#, python-format
+msgid "%(message)s allows caches to assign their own freshness lifetimes to it."
+msgstr ""
+
+#: httplint/cache.py:491
+msgid ""
+"When a response doesn't have explicit freshness information (like a "
+"`Cache-Control: max-age` \n"
+"directive, or `Expires` header), caches are allowed to estimate how fresh"
+" it is using a heuristic\n"
+"(provided that the status code allows it).\n"
+"\n"
+"Caches often do this using the `Last-Modified` header. For example, if a "
+"response was last modified a\n"
+"week ago, a cache might consider it fresh for a day.\n"
+"\n"
+"Consider adding a `Cache-Control: max-age` header; otherwise, it may be "
+"cached for longer or shorter\n"
+"than you'd like."
+msgstr ""
+
+#: httplint/cache.py:506
+#, python-format
+msgid "%(message)s cannot be considered fresh by caches."
+msgstr ""
+
+#: httplint/cache.py:507
+#, python-format
+msgid ""
+"%(message)s doesn't have explicit freshness information (like a ` Cache-"
+"Control: max-age`\n"
+"directive, or `Expires` header), and this status code doesn't allow "
+"caches to calculate their own.\n"
+"\n"
+"Additionally, its status code doesn't allow caches to assign their own "
+"freshness lifetimes to it.\n"
+"\n"
+"Therefore, while caches might be allowed to store it, they generally "
+"can't use it, unless it can be\n"
+"served stale.\n"
+"\n"
+"As a result, many caches will not store the response at all, because it "
+"is not generally useful to do\n"
+"so."
+msgstr ""
+
+#: httplint/cache.py:523
+msgid "In exceptional circumstances, caches can serve this response stale."
+msgstr ""
+
+#: httplint/cache.py:524
+msgid ""
+"HTTP allows stale responses to be served in some circumstances; for "
+"example, if the origin\n"
+"server can't be contacted, a stale response can be used even if it "
+"doesn't have explicit freshness\n"
+"information available.\n"
+"\n"
+"This behaviour can be prevented by using the `Cache-Control: must-"
+"revalidate` response directive."
+msgstr ""
+
+#: httplint/cache.py:535
+msgid "If an error occurs, caches can serve this response stale."
+msgstr ""
+
+#: httplint/cache.py:536
+msgid ""
+"The `stale-if-error` cache directive allows a cache to return a stale "
+"response when an error\n"
+"(e.g., a 500 Internal Server Error, or a network timeout) is encountered "
+"while attempting to\n"
+"revalidate it.\n"
+"\n"
+"See [RFC 5861](https://www.rfc-editor.org/rfc/rfc5861) for more "
+"information."
+msgstr ""
+
+#: httplint/cache.py:547
+#, python-format
+msgid ""
+"%(message)s can be served stale from a cache while it is being "
+"revalidated."
+msgstr ""
+
+#: httplint/cache.py:550
+msgid ""
+"The `stale-while-revalidate` cache directive allows a cache to serve a "
+"stale response while a\n"
+"revalidation request is happening in the background.\n"
+"\n"
+"See [RFC 5861](https://www.rfc-editor.org/rfc/rfc5861) for more "
+"information."
+msgstr ""
+
+#: httplint/cache.py:560
+#, python-format
+msgid "%(message)s cannot be served by a cache once it becomes stale."
+msgstr ""
+
+#: httplint/cache.py:561 httplint/cache.py:573
+msgid ""
+"The `Cache-Control: must-revalidate` directive forbids caches from using "
+"stale responses to satisfy\n"
+"requests.\n"
+"\n"
+"For example, caches often use stale responses when they cannot connect to"
+" the origin server; when\n"
+"this directive is present, they will return an error rather than a stale "
+"response."
+msgstr ""
+
+#: httplint/cache.py:572
+#, python-format
+msgid "%(message)s cannot be served by a cache now that it is stale."
+msgstr ""
+
+#: httplint/cache.py:584
+#, python-format
+msgid "%(message)s cannot be served by a shared cache once it becomes stale."
+msgstr ""
+
+#: httplint/cache.py:585 httplint/cache.py:599
+msgid ""
+"The presence of the `Cache-Control: proxy-revalidate` and/or `s-maxage` "
+"directives forbids shared\n"
+"caches (e.g., proxy caches) from using stale responses to satisfy "
+"requests.\n"
+"\n"
+"For example, caches often use stale responses when they cannot connect to"
+" the origin server; when\n"
+"this directive is present, they will return an error rather than a stale "
+"response.\n"
+"\n"
+"These directives do not affect private caches; for example, those in "
+"browsers."
+msgstr ""
+
+#: httplint/cache.py:598
+#, python-format
+msgid "%(message)s cannot be served by a shared cache now that it is stale."
+msgstr ""
+
+#: httplint/cache.py:612
+msgid "Cache-Control: max-age and Expires are both present."
+msgstr ""
+
+#: httplint/cache.py:613
+msgid ""
+"The `Cache-Control: max-age` directive and the `Expires` header are both "
+"present.\n"
+"\n"
+"`max-age` takes precedence over `Expires`, so `Expires` is redundant and "
+"can be removed."
+msgstr ""
+
+#: httplint/content_encoding.py:136
+#, python-format
+msgid "%(message)s was compressed using GZip, but the header wasn't valid."
+msgstr ""
+
+#: httplint/content_encoding.py:138
+#, python-format
+msgid ""
+"GZip-compressed responses have a header that contains metadata. "
+"%(message)s's header wasn't valid;\n"
+"the error encountered was \"`%(gzip_error)s`\"."
+msgstr ""
+
+#: httplint/content_encoding.py:146
+#, python-format
+msgid "%(message)s was compressed using GZip, but the data was corrupt."
+msgstr ""
+
+#: httplint/content_encoding.py:147
+#, python-format
+msgid ""
+"GZip-compressed responses use zlib compression to reduce the number of "
+"bytes transferred on the\n"
+"wire. However, this response could not be decompressed; the error "
+"encountered was\n"
+"\"`%(zlib_error)s`\".\n"
+"\n"
+"%(ok_zlib_len)s bytes were decompressed successfully before this; the "
+"erroneous chunk starts with (in hex):\n"
+"\n"
+"    %(chunk_sample)s\n"
+msgstr ""
+
+#: httplint/content_type.py:15
+msgid "The content doesn't match the declared Content-Type."
+msgstr ""
+
+#: httplint/content_type.py:16
+#, python-format
+msgid ""
+"The `Content-Type` header declares the content as `%(declared_type)s`, "
+"but it looks like\n"
+"`%(sniffed_type)s`."
+msgstr ""
+
+#: httplint/message.py:250
+msgid "The Content-Length header is correct."
+msgstr ""
+
+#: httplint/message.py:251
+msgid ""
+"`Content-Length` is used by HTTP to delimit messages; that is, to mark "
+"the end of one message and\n"
+"the beginning of the next."
+msgstr ""
+
+#: httplint/message.py:259
+#, python-format
+msgid "%(message)s's Content-Length header is incorrect."
+msgstr ""
+
+#: httplint/message.py:260
+#, python-format
+msgid ""
+"`Content-Length` is used by HTTP to delimit messages; that is, to mark "
+"the end of one message and\n"
+"the beginning of the next. An incorrect `Content-Length` can cause "
+"security and interoperability\n"
+"issues.\n"
+"\n"
+"The actual content size was %(content_length)s bytes."
+msgstr ""
+
+#: httplint/message.py:271
+#, python-format
+msgid "The URI is very long (%(uri_len)s characters)."
+msgstr ""
+
+#: httplint/message.py:272
+msgid ""
+"Long URIs aren't supported by some implementations, including proxies. A "
+"reasonable upper size\n"
+"limit is 8192 characters."
+msgstr ""
+
+#: httplint/message.py:280
+msgid "The URI's syntax isn't valid."
+msgstr ""
+
+#: httplint/message.py:281
+msgid ""
+"This isn't a valid URI. See\n"
+"[RFC3986](http://www.ietf.org/rfc/rfc3986.txt) for more information."
+msgstr ""
+
+#: httplint/message.py:289
+msgid "The status code is not an integer."
+msgstr ""
+
+#: httplint/message.py:290
+msgid "This isn't a valid status code; it needs to be an ASCII integer."
+msgstr ""
+
+#: httplint/message.py:297
+msgid "The status phrase contains non-ASCII characters."
+msgstr ""
+
+#: httplint/message.py:298
+msgid "The status phrase can only contain ASCII characters."
+msgstr ""
+
+#: httplint/message.py:31
+msgid "This message"
+msgstr ""
+
+#: httplint/message.py:32
+msgid "message"
+msgstr ""
+
+#: httplint/message.py:158
+msgid "This request"
+msgstr ""
+
+#: httplint/message.py:159
+msgid "request"
+msgstr ""
+
+#: httplint/message.py:203
+msgid "This response"
+msgstr ""
+
+#: httplint/message.py:204
+msgid "response"
+msgstr ""
+
+#: httplint/note.py:15
+msgid "General"
+msgstr ""
+
+#: httplint/note.py:16
+msgid "Browser Security"
+msgstr ""
+
+#: httplint/note.py:17
+msgid "Content Negotiation"
+msgstr ""
+
+#: httplint/note.py:18
+msgid "Caching"
+msgstr ""
+
+#: httplint/note.py:19
+msgid "Validation"
+msgstr ""
+
+#: httplint/note.py:20
+msgid "Connection"
+msgstr ""
+
+#: httplint/note.py:21
+msgid "Partial Content"
+msgstr ""
+
+#: httplint/status.py:301
+msgid "304 (Not Modified) responses need to have a Date header."
+msgstr ""
+
+#: httplint/status.py:302
+msgid ""
+"HTTP requires `304 (Not Modified)` responses to have a `Date` header in "
+"all but the most unusual\n"
+"circumstances."
+msgstr ""
+
+#: httplint/status.py:310
+#, python-format
+msgid ""
+"%(message)s contains headers that should not be sent in 304 (Not "
+"Modified)."
+msgstr ""
+
+#: httplint/status.py:313
+#, python-format
+msgid ""
+"These headers are representation metadata that should not be sent in a "
+"304 response unless\n"
+"they are being used to guide cache updates:\n"
+"\n"
+"%(headers)s\n"
+"\n"
+"See [RFC 9110 Section 15.4.5](https://www.rfc-"
+"editor.org/rfc/rfc9110.html#section-15.4.5) for\n"
+"more information."
+msgstr ""
+
+#: httplint/status.py:326
+msgid "A 100 (Continue) response was sent when it wasn't asked for."
+msgstr ""
+
+#: httplint/status.py:327
+msgid ""
+"HTTP allows clients to ask a server if a request containing content "
+"(e.g., uploading a large file)\n"
+"will succeed before sending it, using a mechanism called "
+"\"Expect/continue\".\n"
+"\n"
+"When used, the client sends an `Expect: 100-continue`, in the request "
+"headers, and if the server is\n"
+"willing to process it, it will send a `100 (Continue)` status code to "
+"indicate that the request\n"
+"should continue.\n"
+"\n"
+"This response has a `100 (Continue)` status code, but the request did not"
+" ask for it using the\n"
+"`Expect` request header. Sending this status code without it being "
+"requested can cause\n"
+"interoperability problems."
+msgstr ""
+
+#: httplint/status.py:343
+msgid "The protocol was upgraded without being requested."
+msgstr ""
+
+#: httplint/status.py:344
+msgid ""
+"HTTP defines the `Upgrade` header as a means of negotiating a change of "
+"protocol; i.e., it\n"
+"allows you to switch the protocol on a given connection from HTTP to "
+"something else.\n"
+"\n"
+"This response was upgraded, but the request did not contain an `Upgrade` "
+"header field.\n"
+msgstr ""
+
+#: httplint/status.py:355
+msgid "A new resource was created in response to a safe request."
+msgstr ""
+
+#: httplint/status.py:356
+#, python-format
+msgid ""
+"The `201 (Created)` status code indicates that the request created a new "
+"resource.\n"
+"\n"
+"However, the request method used (%(method)s) is defined as a \"safe\" "
+"method; that is, it\n"
+"should not have any side effects.\n"
+"\n"
+"Creating resources as a side effect of a safe method can have unintended "
+"consequences; for example,\n"
+"search engine spiders and similar automated agents often follow links, "
+"and intermediaries sometimes\n"
+"re-try safe methods when they fail."
+msgstr ""
+
+#: httplint/status.py:370
+msgid "A new resource was created without its location being sent."
+msgstr ""
+
+#: httplint/status.py:371
+msgid ""
+"The `201 (Created)` status code indicates that the request created a new "
+"resource.\n"
+"\n"
+"HTTP specifies that the URL of the new resource is to be indicated in the"
+" `Location` header,\n"
+"but it isn't present in this response."
+msgstr ""
+
+#: httplint/status.py:381
+#, python-format
+msgid "%(message)s doesn't have a Content-Range header."
+msgstr ""
+
+#: httplint/status.py:382
+msgid ""
+"The `206 (Partial Response)` status code indicates that the response "
+"content is only partial.\n"
+"\n"
+"However, for a response to be partial, it needs to have a `Content-Range`"
+" header to indicate\n"
+"what part of the full response it carries. This response does not have "
+"one."
+msgstr ""
+
+#: httplint/status.py:392
+msgid "A partial response was sent when it wasn't requested."
+msgstr ""
+
+#: httplint/status.py:393
+msgid ""
+"The `206 (Partial Response)` status code indicates that the response "
+"content is only partial.\n"
+"\n"
+"However, the client needs to ask for it with the `Range` header, and the "
+"request did not\n"
+"include one."
+msgstr ""
+
+#: httplint/status.py:403
+msgid "Redirects need to have a Location header."
+msgstr ""
+
+#: httplint/status.py:404
+#, python-format
+msgid ""
+"The %(status)s status code redirects users to another URI. The `Location`"
+" header is used to\n"
+"convey this URI, but a valid one isn't present in this response."
+msgstr ""
+
+#: httplint/status.py:412
+#, python-format
+msgid "The %(status)s status code is deprecated."
+msgstr ""
+
+#: httplint/status.py:413
+msgid ""
+"When a status code is deprecated, it should not be used, because its "
+"meaning is not well-defined\n"
+"enough to ensure interoperability."
+msgstr ""
+
+#: httplint/status.py:421
+#, python-format
+msgid "The %(status)s status code is reserved."
+msgstr ""
+
+#: httplint/status.py:422
+msgid ""
+"Reserved status codes can only be used by future, standard protocol "
+"extensions; they are not for\n"
+"private use."
+msgstr ""
+
+#: httplint/status.py:430
+#, python-format
+msgid "%(status)s is not a standard HTTP status code."
+msgstr ""
+
+#: httplint/status.py:431
+msgid ""
+"Non-standard status codes are not well-defined and interoperable. Instead"
+" of defining your own\n"
+"status code, you should reuse one of the more generic ones; for example, "
+"`400` for a client-side\n"
+"problem, or `500` for a server-side problem."
+msgstr ""
+
+#: httplint/status.py:440
+msgid "The server didn't understand the request."
+msgstr ""
+
+#: httplint/status.py:448
+msgid "The server has forbidden this request."
+msgstr ""
+
+#: httplint/status.py:456 httplint/status.py:464
+msgid "The resource could not be found."
+msgstr ""
+
+#: httplint/status.py:457
+msgid "The server couldn't find any resource to serve for the given URI."
+msgstr ""
+
+#: httplint/status.py:472
+msgid "The request conflicted with the state of the resource."
+msgstr ""
+
+#: httplint/status.py:480
+msgid "The resource is gone."
+msgstr ""
+
+#: httplint/status.py:481
+msgid ""
+"The server previously had a resource at the given URI, but it is no "
+"longer there."
+msgstr ""
+
+#: httplint/status.py:488
+msgid "The request content was too large for the server."
+msgstr ""
+
+#: httplint/status.py:489
+msgid ""
+"The server rejected the request because the request content sent was too "
+"large."
+msgstr ""
+
+#: httplint/status.py:496
+#, python-format
+msgid "The server won't accept a URI this long %(uri_len)s."
+msgstr ""
+
+#: httplint/status.py:497
+#, python-format
+msgid ""
+"The %(status)s status code means that the server can't or won't accept a "
+"request-uri this long."
+msgstr ""
+
+#: httplint/status.py:504
+msgid "The resource doesn't support this media type in requests."
+msgstr ""
+
+#: httplint/status.py:512
+msgid "The server returned 418 (I'm a Teapot), an easter egg defined in RFC 2324."
+msgstr ""
+
+#: httplint/status.py:515
+msgid ""
+"RFC 2324 was an April Fools' Day RFC that lampooned the various ways HTTP"
+" was abused; one such abuse\n"
+"was the definition of the application-specific `418 (I'm a Teapot)` "
+"status code. In the\n"
+"intervening years, this status code has been sometimes implemented as an "
+"\"easter egg\".\n"
+"\n"
+"This status code is not a part of HTTP and hence it might not be "
+"supported by some strict\n"
+"standards-compliant clients.\n"
+msgstr ""
+
+#: httplint/status.py:528
+msgid "There was a general server error."
+msgstr ""
+
+#: httplint/status.py:536
+msgid "The server doesn't implement the request method."
+msgstr ""
+
+#: httplint/status.py:544
+msgid "An intermediary encountered an error."
+msgstr ""
+
+#: httplint/status.py:552
+msgid "The server is temporarily unavailable."
+msgstr ""
+
+#: httplint/status.py:560
+msgid "An intermediary timed out."
+msgstr ""
+
+#: httplint/status.py:568
+msgid "The request HTTP version isn't supported."
+msgstr ""
+
+#: httplint/status.py:576
+msgid "The request didn't have any preconditions."
+msgstr ""
+
+#: httplint/status.py:577
+msgid ""
+"The `412 (Precondition Failed)` status code indicates that one or more "
+"conditions given in the\n"
+"request header fields evaluated to false when tested on the server.\n"
+"\n"
+"However, this request didn't contain any conditional headers (such as "
+"`If-Match`, `If-None-Match`,\n"
+"`If-Modified-Since`, `If-Unmodified-Since`, or `If-Range`)."
+msgstr ""
+
+#: httplint/status.py:588
+msgid "The request didn't have a Range header."
+msgstr ""
+
+#: httplint/status.py:589
+msgid ""
+"The `416 (Range Not Satisfiable)` status code indicates that the set of "
+"ranges in the request's\n"
+"`Range` header field overlap the current extent of the selected resource."
+"\n"
+"\n"
+"However, this request didn't contain a `Range` header."
+msgstr ""
+
+#: httplint/status.py:599
+msgid "The request didn't have an Expect header."
+msgstr ""
+
+#: httplint/status.py:600
+msgid ""
+"The `417 (Expectation Failed)` status code indicates that the expectation"
+" given in the request's\n"
+"`Expect` header field could not be met by at least one of the inbound "
+"servers.\n"
+"\n"
+"However, this request didn't contain an `Expect` header."
+msgstr ""
+
+#: httplint/status.py:610
+msgid "The server couldn't meet the 100-continue expectation."
+msgstr ""
+
+#: httplint/status.py:611
+msgid ""
+"The `417 (Expectation Failed)` status code indicates that the expectation"
+" given in the request's\n"
+"`Expect` header field could not be met by at least one of the inbound "
+"servers.\n"
+"\n"
+"In this case, the client requested `100-continue`, but the server (or an "
+"intermediary) couldn't\n"
+"satisfy it."
+msgstr ""
+
+#: httplint/status.py:622
+msgid "The server sent early hints."
+msgstr ""
+
+#: httplint/status.py:623
+msgid ""
+"The `103 (Early Hints)` status code allows the server to send some "
+"headers before the final response,\n"
+"typically to help the client start fetching resources earlier."
+msgstr ""
+
+#: httplint/status.py:631
+msgid "The server supports upload resumption."
+msgstr ""
+
+#: httplint/status.py:632
+msgid ""
+"The `104 (Upload Resumption Supported)` status code indicates that the "
+"server supports resumable\n"
+"uploads."
+msgstr ""
+
+#: httplint/status.py:640
+msgid "The members of a DAV binding have already been enumerated."
+msgstr ""
+
+#: httplint/status.py:641
+msgid ""
+"The `208 (Already Reported)` status code can be used inside a DAV: "
+"propstat response element to\n"
+"avoid enumerating the internal members of multiple bindings to the same "
+"collection repeatedly."
+msgstr ""
+
+#: httplint/status.py:649
+msgid ""
+"The request was directed at a server that is not able to produce a "
+"response."
+msgstr ""
+
+#: httplint/status.py:652
+msgid ""
+"The `421 (Misdirected Request)` status code indicates that the request "
+"was directed at a server\n"
+"that is not able to produce a response. This can happen when a connection"
+" is reused."
+msgstr ""
+
+#: httplint/status.py:660
+msgid ""
+"The server is unwilling to risk processing a request that might be "
+"replayed."
+msgstr ""
+
+#: httplint/status.py:663
+msgid ""
+"The `425 (Too Early)` status code indicates that the server is unwilling "
+"to risk processing a\n"
+"request that might be replayed."
+msgstr ""
+
+#: httplint/status.py:671
+msgid "The origin server requires the request to be conditional."
+msgstr ""
+
+#: httplint/status.py:672
+msgid ""
+"The `428 (Precondition Required)` status code indicates that the origin "
+"server requires the request\n"
+"to be conditional."
+msgstr ""
+
+#: httplint/status.py:680
+msgid "The client has sent too many requests in a given amount of time."
+msgstr ""
+
+#: httplint/status.py:681
+msgid ""
+"The `429 (Too Many Requests)` status code indicates that the client has "
+"sent too many requests in a\n"
+"given amount of time (\"rate limiting\")."
+msgstr ""
+
+#: httplint/status.py:689
+msgid ""
+"The server is unwilling to process the request because its headers are "
+"too large."
+msgstr ""
+
+#: httplint/status.py:690
+msgid ""
+"The `431 (Request Header Fields Too Large)` status code indicates that "
+"the server is unwilling to\n"
+"process the request because its header fields are too large."
+msgstr ""
+
+#: httplint/status.py:698
+msgid "The resource is unavailable for legal reasons."
+msgstr ""
+
+#: httplint/status.py:699
+msgid ""
+"The `451 (Unavailable For Legal Reasons)` status code indicates that the "
+"server is denying access to\n"
+"the resource as a consequence of a legal demand."
+msgstr ""
+
+#: httplint/status.py:707
+msgid ""
+"The server terminated an operation because it encountered an infinite "
+"loop."
+msgstr ""
+
+#: httplint/status.py:710
+msgid ""
+"The `508 (Loop Detected)` status code indicates that the server "
+"terminated an operation because it\n"
+"encountered an infinite loop while processing a request with \"Depth: "
+"infinity\"."
+msgstr ""
+
+#: httplint/status.py:718
+msgid "The client needs to authenticate to gain network access."
+msgstr ""
+
+#: httplint/status.py:719
+msgid ""
+"The `511 (Network Authentication Required)` status code indicates that "
+"the client needs to\n"
+"authenticate to gain network access."
+msgstr ""
+
+#: httplint/util.py:66
+msgid "(none)"
+msgstr ""
+
+#: httplint/util.py:70
+#, python-format
+msgid "%(item1)s and %(item2)s"
+msgstr ""
+
+#: httplint/util.py:75
+#, python-format
+msgid "and %(item)s"
+msgstr ""
+
+#: httplint/util.py:96
+msgid "ahead"
+msgstr ""
+
+#: httplint/util.py:98
+msgid "behind"
+msgstr ""
+
+#: httplint/field/cors.py:56
+#, python-format
+msgid "The %(field_name)s header is only allowed in CORS preflight responses."
+msgstr ""
+
+#: httplint/field/cors.py:57
+#, python-format
+msgid ""
+"The `%(field_name)s` header is only used in the response to a Cross-"
+"Origin Resource Sharing (CORS)\n"
+"preflight request.\n"
+"\n"
+"A preflight request is an `OPTIONS` request that includes an `Origin` "
+"header and an\n"
+"`Access-Control-Request-Method` header.\n"
+"\n"
+"This response was not to a CORS preflight request, so this header should "
+"not be present."
+msgstr ""
+
+#: httplint/field/cors.py:70
+#, python-format
+msgid "The %(field_name)s header is only allowed in CORS preflight requests."
+msgstr ""
+
+#: httplint/field/cors.py:71
+#, python-format
+msgid ""
+"The `%(field_name)s` header is only used in a Cross-Origin Resource "
+"Sharing (CORS) preflight\n"
+"request.\n"
+"\n"
+"A preflight request uses the `OPTIONS` method; this request uses "
+"`%(method)s`."
+msgstr ""
+
+#: httplint/field/cors.py:81
+#, python-format
+msgid "The %(field_name)s header requires the Origin header."
+msgstr ""
+
+#: httplint/field/cors.py:82
+#, python-format
+msgid ""
+"The `%(field_name)s` header is only used in a Cross-Origin Resource "
+"Sharing (CORS) preflight\n"
+"request.\n"
+"\n"
+"A preflight request requires the `Origin` header to be present."
+msgstr ""
+
+#: httplint/field/cors.py:92
+#, python-format
+msgid ""
+"The %(field_name)s header requires the Access-Control-Request-Method "
+"header."
+msgstr ""
+
+#: httplint/field/cors.py:95
+#, python-format
+msgid ""
+"The `%(field_name)s` header is only used in a Cross-Origin Resource "
+"Sharing (CORS) preflight\n"
+"request.\n"
+"\n"
+"A preflight request requires the `Access-Control-Request-Method` header "
+"to be present."
+msgstr ""
+
+#: httplint/field/notes.py:11
+#, python-format
+msgid "Only one %(field_name)s field is allowed in a response's headers."
+msgstr ""
+
+#: httplint/field/notes.py:12
+msgid ""
+"This field is designed to only occur once in a message. When it occurs "
+"more than once, a receiver\n"
+"needs to choose the one to use, which can lead to interoperability "
+"problems, since different\n"
+"implementations may make different choices."
+msgstr ""
+
+#: httplint/field/notes.py:21
+#, python-format
+msgid "\"%(field_name)s\" is not a valid field name."
+msgstr ""
+
+#: httplint/field/notes.py:22
+#, python-brace-format
+msgid ""
+"Field names are limited to the `token` production in HTTP; i.e., they "
+"can't contain parenthesis,\n"
+"angle brackets (<>), ampersands (@), commas, semicolons, colons, "
+"backslashes (\\), forward\n"
+"slashes (/), quotes, square brackets ([]), question marks, equals signs "
+"(=), curly brackets ({})\n"
+"spaces or tabs."
+msgstr ""
+
+#: httplint/field/notes.py:32
+#, python-format
+msgid "The %(field_name)s field value isn't valid."
+msgstr ""
+
+#: httplint/field/notes.py:33
+#, python-format
+msgid ""
+"The value for this field doesn't conform to its specified syntax; see "
+"[its\n"
+"definition](%(ref_uri)s) for more information."
+msgstr ""
+
+#: httplint/field/notes.py:41
+#, python-format
+msgid "The %(field_name)s field value isn't a valid Structured Field."
+msgstr ""
+
+#: httplint/field/notes.py:42
+#, python-format
+msgid ""
+"The %(field_name)s field is defined as a\n"
+"[Structured Field](https://www.rfc-editor.org/rfc/rfc9651.html),\n"
+"but its value can't be parsed as one. As a result, this field is likely\n"
+"to be ignored.\n"
+"\n"
+"The parser reports this error:\n"
+"    %(error)s."
+msgstr ""
+
+#: httplint/field/notes.py:55
+#, python-format
+msgid "The '%(param)s' parameter's value cannot be quoted."
+msgstr ""
+
+#: httplint/field/notes.py:56
+#, python-format
+msgid ""
+"Parameter values that end in '*' have a specific format, defined in\n"
+"[RFC5987](https://www.rfc-editor.org/rfc/rfc5987), to allow non-ASCII "
+"text.\n"
+"\n"
+"The `%(param)s` parameter on the `%(field_name)s` field has double-quotes"
+" around it, which is not\n"
+"valid."
+msgstr ""
+
+#: httplint/field/notes.py:67
+#, python-format
+msgid "The %(param)s parameter's value is invalid."
+msgstr ""
+
+#: httplint/field/notes.py:68
+#, python-format
+msgid ""
+"Parameter values that end in '*' have a specific format, defined in\n"
+"[RFC5987](https://www.rfc-editor.org/rfc/rfc5987), to allow non-ASCII "
+"text.\n"
+"\n"
+"The `%(param)s` parameter on the `%(field_name)s` field is not valid; it "
+"needs to have three\n"
+"parts, separated by single quotes (')."
+msgstr ""
+
+#: httplint/field/notes.py:79
+#, python-format
+msgid "The %(param)s* parameter isn't allowed on the %(field_name)s field."
+msgstr ""
+
+#: httplint/field/notes.py:80
+#, python-format
+msgid ""
+"Parameter values that end in '*' are reserved for non-ascii text, as "
+"explained in\n"
+"[RFC5987](https://www.rfc-editor.org/rfc/rfc5987).\n"
+"\n"
+"The `%(param)s` parameter on the `%(field_name)s` field does not allow "
+"this; you should use\n"
+"%(param)s without the \"*\" on the end (and without the associated "
+"encoding)."
+msgstr ""
+
+#: httplint/field/notes.py:91
+#, python-format
+msgid "The %(param)s parameter's value doesn't define an encoding."
+msgstr ""
+
+#: httplint/field/notes.py:92
+#, python-format
+msgid ""
+"Parameter values that end in '*' have a specific format, defined in\n"
+"[RFC5987](https://www.rfc-editor.org/rfc/rfc5987), to allow non-ASCII "
+"text.\n"
+"\n"
+"The `%(param)s` parameter on the `%(field_name)s` header doesn't declare "
+"its character encoding,\n"
+"which means that recipients can't understand it. It should be `UTF-8`."
+msgstr ""
+
+#: httplint/field/notes.py:103
+#, python-format
+msgid "The %(param)s parameter's value uses an encoding other than UTF-8."
+msgstr ""
+
+#: httplint/field/notes.py:104
+#, python-format
+msgid ""
+"Parameter values that end in '*' have a specific format, defined in\n"
+"[RFC5987](https://www.rfc-editor.org/rfc/rfc5987), to allow non-ASCII "
+"text.\n"
+"\n"
+"The `%(param)s` parameter on the `%(field_name)s` header uses the "
+"`'%(enc)s` encoding, which has\n"
+"interoperability issues with some browsers. It should be `UTF-8`."
+msgstr ""
+
+#: httplint/field/notes.py:115
+#, python-format
+msgid "The '%(param)s' parameter repeats in the %(field_name)s header."
+msgstr ""
+
+#: httplint/field/notes.py:116
+#, python-format
+msgid ""
+"Parameters on the %(field_name)s field should not repeat; implementations"
+" may handle them\n"
+"differently."
+msgstr ""
+
+#: httplint/field/notes.py:124
+#, python-format
+msgid "The '%(param)s' parameter on the %(field_name)s header is single-quoted."
+msgstr ""
+
+#: httplint/field/notes.py:127
+#, python-format
+msgid ""
+"The `%(param)s`'s value on the %(field_name)s field starts and ends with "
+"a single quote (').\n"
+"However, single quotes don't mean anything there.\n"
+"\n"
+"This means that the value will be interpreted as `%(param_val)s`, **not**"
+"\n"
+"`%(param_val_unquoted)s`. If you intend the latter, remove the single "
+"quotes."
+msgstr ""
+
+#: httplint/field/notes.py:138
+#, python-format
+msgid "The %(field_name)s header's value isn't a valid date."
+msgstr ""
+
+#: httplint/field/notes.py:139
+msgid ""
+"HTTP dates have specific syntax, and sending an invalid date can cause a "
+"number of problems,\n"
+"especially with caching. Common problems include sending \"1 May\" "
+"instead of \"01 May\" (the month\n"
+"is a fixed-width field), and sending a date in a timezone other than GMT."
+"\n"
+"\n"
+"See [the HTTP specification](https://www.rfc-editor.org/rfc/rfc9110.html"
+"#name-date-time-formats) for more\n"
+"information."
+msgstr ""
+
+#: httplint/field/notes.py:151
+#, python-format
+msgid "The %(field_name)s header's value uses an obsolete format."
+msgstr ""
+
+#: httplint/field/notes.py:152
+msgid ""
+"HTTP has a number of defined date formats for historical reasons. This "
+"header is using an old\n"
+"format that are now obsolete. See [the\n"
+"specification](https://www.rfc-editor.org/rfc/rfc9110.html#name-obsolete-"
+"date-formats) for more information.\n"
+msgstr ""
+
+#: httplint/field/notes.py:162 httplint/field/notes.py:170
+#, python-format
+msgid "\"%(field_name)s\" is a request header."
+msgstr ""
+
+#: httplint/field/notes.py:163
+#, python-format
+msgid "The %(field_name)s field isn't defined to have any meaning in responses."
+msgstr ""
+
+#: httplint/field/notes.py:171
+#, python-format
+msgid "The %(field_name)s field isn't defined to have any meaning in requests."
+msgstr ""
+
+#: httplint/field/notes.py:178
+#, python-format
+msgid "The %(field_name)s header is deprecated."
+msgstr ""
+
+#: httplint/field/notes.py:179
+#, python-format
+msgid ""
+"This field is no longer recommended for use, because of interoperability "
+"problems and/or\n"
+"lack of use.\n"
+"\n"
+"See [the deprecation notice](%(deprecation_ref)s) for more information."
+msgstr ""
+
+#: httplint/field/notes.py:189
+msgid "The User-Agent header is missing."
+msgstr ""
+
+#: httplint/field/notes.py:190
+msgid ""
+"Clients SHOULD send a `User-Agent` header field.\n"
+"\n"
+"See [RFC 9110 Section 10.1.5](https://www.rfc-"
+"editor.org/rfc/rfc9110.html#section-10.1.5)\n"
+"for details."
+msgstr ""
+
+#: httplint/field/notes.py:200
+#, python-format
+msgid "In %(field_name)s, the %(context)s key '%(key)s' is duplicated."
+msgstr ""
+
+#: httplint/field/notes.py:201
+#, python-format
+msgid ""
+"The %(context)s key '%(key)s' is duplicated. All instances after the "
+"first will be ignored."
+msgstr ""
+
+#: httplint/field/section.py:97
+#, python-format
+msgid "The %(field_name)s header is very large (%(field_size)s bytes)."
+msgstr ""
+
+#: httplint/field/section.py:98
+msgid "Some implementations limit the size of any single header line."
+msgstr ""
+
+#: httplint/field/section.py:105
+#, python-format
+msgid "The total size of the headers is very large (%(header_size)s bytes)."
+msgstr ""
+
+#: httplint/field/section.py:106
+msgid ""
+"Some implementations limit the total size of the header block. 32KB is a "
+"reasonable\n"
+"upper limit."
+msgstr ""
+
+#: httplint/field/section.py:114
+#, python-format
+msgid "The %(field_name)s header's name contains non-ASCII characters."
+msgstr ""
+
+#: httplint/field/section.py:115
+msgid "HTTP field names can only contain ASCII characters."
+msgstr ""
+
+#: httplint/field/section.py:122
+#, python-format
+msgid "The %(field_name)s header's value contains non-ASCII characters."
+msgstr ""
+
+#: httplint/field/section.py:123
+msgid ""
+"HTTP fields notionally use the ISO-8859-1 character set, but in most "
+"cases are pure ASCII\n"
+"(a subset of this encoding).\n"
+"\n"
+"This header has non-ASCII characters, which have been interpreted as "
+"being encoded in\n"
+"ISO-8859-1. If another encoding is used (e.g., UTF-8), the results may be"
+" unpredictable."
+msgstr ""
+
+#: httplint/field/unnecessary.py:51
+#, python-format
+msgid "The %(header_name)s header can probably be removed."
+msgstr ""
+
+#: httplint/field/unnecessary.py:52
+#, python-format
+msgid ""
+"The `%(header_name)s` header adds little value, contributes to "
+"unnecessary bandwidth,\n"
+"and may increase security risk by exposing details of the back-end "
+"system.\n"
+"\n"
+"Consider removing it."
+msgstr ""
+
+#: httplint/field/parsers/accept_ranges.py:30
+#, python-format
+msgid "%(message)s advertises support for non-standard range-units."
+msgstr ""
+
+#: httplint/field/parsers/accept_ranges.py:31
+msgid ""
+"The `Accept-Ranges` response header tells clients what `range-unit`s a "
+"resource is willing to\n"
+"process in future requests. HTTP only defines two: `bytes` and `none`.\n"
+"\n"
+"Clients who don't know about the non-standard range-unit will not be able"
+" to use it."
+msgstr ""
+
+#: httplint/field/parsers/access_control_allow_credentials.py:29
+msgid "Access-Control-Allow-Credentials must be 'true'."
+msgstr ""
+
+#: httplint/field/parsers/access_control_allow_credentials.py:30
+msgid ""
+"The `Access-Control-Allow-Credentials` header must be set to `true` if "
+"present. If you don't want\n"
+"to allow credentials, omit the header."
+msgstr ""
+
+#: httplint/field/parsers/access_control_allow_origin.py:30
+msgid "Access-Control-Allow-Origin should not have multiple values."
+msgstr ""
+
+#: httplint/field/parsers/access_control_allow_origin.py:31
+msgid ""
+"The `Access-Control-Allow-Origin` header can only contain a single "
+"origin, `*`, or `null`. It\n"
+"cannot contain a list of origins."
+msgstr ""
+
+#: httplint/field/parsers/age.py:38
+msgid "The Age header's value should be an integer."
+msgstr ""
+
+#: httplint/field/parsers/age.py:39
+msgid ""
+"The `Age` header indicates the age of the response; i.e., how long it has"
+" been cached\n"
+"since it was generated. The value given was not an integer, so it is not "
+"a valid age."
+msgstr ""
+
+#: httplint/field/parsers/age.py:47
+msgid "The Age headers' value must be a positive integer."
+msgstr ""
+
+#: httplint/field/parsers/age.py:48
+msgid ""
+"The `Age` header indicates the age of the response; i.e., how long it has"
+" been cached\n"
+"since it was generated. The value given was negative, so it is not a "
+"valid age."
+msgstr ""
+
+#: httplint/field/parsers/age.py:56
+msgid "The Age header's value is very large."
+msgstr ""
+
+#: httplint/field/parsers/age.py:57
+msgid ""
+"The `Age` header's value is greater than 2,147,483,648. Some "
+"implementations may represent it\n"
+"using that value (which is over 68 years).\n"
+msgstr ""
+
+#: httplint/field/parsers/cache_control.py:200
+#, python-format
+msgid "The %(bad_directive)s cache directive's syntax is incorrect."
+msgstr ""
+
+#: httplint/field/parsers/cache_control.py:201
+msgid "This value must be an integer."
+msgstr ""
+
+#: httplint/field/parsers/cache_control.py:207
+#, python-format
+msgid "The %(directive)s cache directive is very large."
+msgstr ""
+
+#: httplint/field/parsers/cache_control.py:208
+#, python-format
+msgid ""
+"The `%(directive)s` cache directive's value is greater than 2^31-1. Some "
+"implementations may not be\n"
+"able to handle values this large."
+msgstr ""
+
+#: httplint/field/parsers/cache_control.py:216
+#, python-format
+msgid "The %(directive)s cache directive has non-lowercase characters."
+msgstr ""
+
+#: httplint/field/parsers/cache_control.py:217
+#, python-format
+msgid ""
+"cache directive names are case-insensitive, but some implementations "
+"don't\n"
+"recognize directives that aren't all-lowercase.\n"
+"\n"
+"Therefore, it's safest to use `%(directive_lower)s` instead of "
+"`%(directive)s`."
+msgstr ""
+
+#: httplint/field/parsers/cache_control.py:227
+#, python-format
+msgid "The %(directive)s cache directive appears more than once."
+msgstr ""
+
+#: httplint/field/parsers/cache_control.py:228
+#, python-format
+msgid ""
+"The `%(directive)s` cache directive is only defined to appear once; it is"
+" used more than\n"
+"once here, so implementations may use different instances (e.g., the "
+"first, or the last),\n"
+"making their behaviour unpredictable."
+msgstr ""
+
+#: httplint/field/parsers/cache_control.py:237
+#, python-format
+msgid "The %(directive)s cache directive overrides other directives."
+msgstr ""
+
+#: httplint/field/parsers/cache_control.py:238
+#, python-format
+msgid ""
+"The `%(directive)s` cache directive overrides or conflicts with "
+"%(conflicts)s.\n"
+"\n"
+"The conflicting directives will be ignored by caches, and can be safely "
+"omitted.\n"
+"    "
+msgstr ""
+
+#: httplint/field/parsers/cache_control.py:248
+#, python-format
+msgid "The %(directive)s cache directive has no meaning in a %(message_type)s."
+msgstr ""
+
+#: httplint/field/parsers/cache_control.py:249
+#, python-format
+msgid ""
+"The `%(directive)s` cache directive is only defined to appear in "
+"%(other_message)s\n"
+"messages; is has no defined meaning in a %(message_type)s."
+msgstr ""
+
+#: httplint/field/parsers/cache_control.py:257
+msgid "Only one of the pre-check and post-check cache directives is present."
+msgstr ""
+
+#: httplint/field/parsers/cache_control.py:260
+#, python-format
+msgid ""
+"Microsoft Internet Explorer implements two `Cache-Control` extensions, "
+"`pre-check` and\n"
+"`post-check`, to give more control over how its cache stores responses.\n"
+"\n"
+"%(message)s uses only one of these directives; as a result, Internet "
+"Explorer will ignore the\n"
+"directive, since it requires both to be present.\n"
+msgstr ""
+
+#: httplint/field/parsers/cache_control.py:272
+msgid "The pre-check and post-check cache directives are both '0'."
+msgstr ""
+
+#: httplint/field/parsers/cache_control.py:275
+#, python-format
+msgid ""
+"Microsoft Internet Explorer implements two `Cache-Control` extensions, "
+"`pre-check` and\n"
+"`post-check`, to give more control over how its cache stores responses.\n"
+"\n"
+"%(message)s gives a value of \"0\" for both; as a result, Internet "
+"Explorer will ignore the\n"
+"directive, since it requires both to be present.\n"
+"\n"
+"In other words, setting these to zero has **no effect** (besides wasting "
+"bandwidth),\n"
+"and may trigger bugs in some beta versions of IE."
+msgstr ""
+
+#: httplint/field/parsers/cache_control.py:289
+msgid "The post-check cache directive's value is larger than pre-check's."
+msgstr ""
+
+#: httplint/field/parsers/cache_control.py:292
+#, python-format
+msgid ""
+"Microsoft Internet Explorer implements two `Cache-Control` extensions, "
+"`pre-check` and\n"
+"`post-check`, to give more control over how its cache stores responses.\n"
+"\n"
+"%(message)s assigns a higher value to `post-check` than to `pre-check`; "
+"this means that Internet\n"
+"Explorer will treat `post-check` as if its value is the same as `pre-"
+"check`'s."
+msgstr ""
+
+#: httplint/field/parsers/cache_control.py:303
+msgid "The post-check cache directive's value is '0'."
+msgstr ""
+
+#: httplint/field/parsers/cache_control.py:306
+#, python-format
+msgid ""
+"Microsoft Internet Explorer implements two `Cache-Control` extensions, "
+"`pre-check` and\n"
+"`post-check`, to give more control over how its cache stores responses.\n"
+"\n"
+"%(message)s assigns a value of \"0\" to `post-check`, which means that "
+"Internet Explorer will reload\n"
+"the content as soon as it enters the browser cache, effectively "
+"**doubling the load on the\n"
+"server**."
+msgstr ""
+
+#: httplint/field/parsers/cache_control.py:318
+#, python-format
+msgid "%(message)s may be refreshed in the background by Internet Explorer."
+msgstr ""
+
+#: httplint/field/parsers/cache_control.py:321
+#, python-format
+msgid ""
+"Microsoft Internet Explorer implements two `Cache-Control` extensions, "
+"`pre-check` and\n"
+"`post-check`, to give more control over how its cache stores responses.\n"
+"\n"
+"Once it has been cached for more than %(post_check)s seconds, a new "
+"request will result in the\n"
+"cached response being served while it is refreshed in the background. "
+"However, if it has been\n"
+"cached for more than %(pre_check)s seconds, the browser will download a "
+"fresh response before\n"
+"showing it to the user.\n"
+"\n"
+"Note that these directives do not have any effect on other clients or "
+"caches."
+msgstr ""
+
+#: httplint/field/parsers/cache_status.py:102
+msgid "Cache information is available."
+msgstr ""
+
+#: httplint/field/parsers/cache_status.py:103
+#, python-format
+msgid ""
+"The `Cache-Status` header field indicates how caches have handled the "
+"response.\n"
+"\n"
+"%(status)s\n"
+msgstr ""
+
+#: httplint/field/parsers/cache_status.py:113
+msgid "The Cache-Status header has an invalid structure."
+msgstr ""
+
+#: httplint/field/parsers/cache_status.py:114
+msgid ""
+"The `Cache-Status` header must be a list of members, where each member is"
+" a \n"
+"Token or String (identifying the cache) with optional parameters.\n"
+msgstr ""
+
+#: httplint/field/parsers/cache_status.py:123
+#, python-format
+msgid ""
+"%(message)s has a Cache-Status header with an unknown parameter "
+"'%(param)s'."
+msgstr ""
+
+#: httplint/field/parsers/cache_status.py:126
+#, python-format
+msgid ""
+"The `%(param)s` parameter is not defined in the Cache-Status "
+"specification.\n"
+msgstr ""
+
+#: httplint/field/parsers/cache_status.py:134
+#, python-format
+msgid ""
+"%(message)s has a Cache-Status header with an unknown value for "
+"'%(param)s'."
+msgstr ""
+
+#: httplint/field/parsers/cache_status.py:137
+#: httplint/field/parsers/proxy_status.py:174
+#, python-format
+msgid "The value `%(value)s` is not defined for the `%(param)s` parameter.\n"
+msgstr ""
+
+#: httplint/field/parsers/clear_site_data.py:35
+#, python-format
+msgid "The Clear-Site-Data header contains an unknown value '%(value)s'."
+msgstr ""
+
+#: httplint/field/parsers/clear_site_data.py:36
+msgid ""
+"The `Clear-Site-Data` header contains a value that is not recognized.\n"
+"Valid values are: `\"cache\"`, `\"cookies\"`, `\"storage\"`, "
+"`\"executionContexts\"`, `\"*\"`."
+msgstr ""
+
+#: httplint/field/parsers/content_disposition.py:51
+#, python-format
+msgid "The '%(disposition)s' Content-Disposition isn't known."
+msgstr ""
+
+#: httplint/field/parsers/content_disposition.py:52
+#, python-format
+msgid ""
+"The `Content-Disposition` header has two widely-known values; `inline` "
+"and `attachment`.\n"
+"`%(disposition)s` isn't recognised, and most implementations will default"
+" to handling it like\n"
+"`attachment`."
+msgstr ""
+
+#: httplint/field/parsers/content_disposition.py:61
+msgid "The Content-Disposition header doesn't have a 'filename' parameter."
+msgstr ""
+
+#: httplint/field/parsers/content_disposition.py:62
+msgid ""
+"The `Content-Disposition` header with a disposition of `attachment` "
+"suggests a filename for clients\n"
+"to use when saving the file locally.\n"
+"\n"
+"It should always contain a `filename` parameter, even when the "
+"`filename*` parameter is used to\n"
+"carry an internationalised filename, so that browsers can fall back to an"
+" ASCII-only filename."
+msgstr ""
+
+#: httplint/field/parsers/content_disposition.py:73
+#, python-format
+msgid ""
+"The 'filename' parameter on the Content-Disposition header contains a "
+"'%%' character."
+msgstr ""
+
+#: httplint/field/parsers/content_disposition.py:77
+#, python-format
+msgid ""
+"The `Content-Disposition` header suggests a filename for clients to use "
+"when saving the file\n"
+"locally, using the `filename` parameter.\n"
+"\n"
+"[RFC6266](https://www.rfc-editor.org/rfc/rfc6266) specifies how to carry "
+"non-ASCII characters in this\n"
+"parameter. However, historically some (but not all) browsers have also "
+"decoded %%-encoded\n"
+"characters in the `filename` parameter, which means that they'll be "
+"treated differently depending\n"
+"on the browser you're using.\n"
+"\n"
+"As a result, it's not interoperable to use percent characters in the "
+"`filename` parameter. Use the\n"
+"correct encoding in the `filename*` parameter instead."
+msgstr ""
+
+#: httplint/field/parsers/content_disposition.py:93
+msgid "The filename in the Content-Disposition header contains a path character."
+msgstr ""
+
+#: httplint/field/parsers/content_disposition.py:96
+msgid ""
+"The `Content-Disposition` header suggests a filename for clients to use "
+"when saving the file\n"
+"locally, using the `filename` and `filename*` parameters.\n"
+"\n"
+"One of these parameters contains a path character (\"\\\" or \"/\"), used"
+" to navigate between\n"
+"directories on common operating systems.\n"
+"\n"
+"Because this can be used to attach the browser's host operating system "
+"(e.g., by saving a file to a\n"
+"system directory), browsers will usually ignore these parameters, or "
+"remove path information.\n"
+"\n"
+"You should remove these characters."
+msgstr ""
+
+#: httplint/field/parsers/content_encoding.py:35
+#, python-format
+msgid "%(message)s contained unwanted content-codings."
+msgstr ""
+
+#: httplint/field/parsers/content_encoding.py:36
+#, python-format
+msgid ""
+"%(message)s's `Content-Encoding` header indicates it has content-codings "
+"applied\n"
+"(`%(unwanted_codings)s`) that the request didn't ask for.\n"
+"\n"
+"Normally, clients ask for the encodings they want in the `Accept-"
+"Encoding` request header. Using\n"
+"encodings that the client doesn't explicitly request can lead to "
+"interoperability problems."
+msgstr ""
+
+#: httplint/field/parsers/content_language.py:37
+#, python-format
+msgid "The %(lang)s language tag appears more than once."
+msgstr ""
+
+#: httplint/field/parsers/content_language.py:38
+#, python-format
+msgid ""
+"The `%(lang)s` language tag is used more than once in the `Content-"
+"Language` header.\n"
+"\n"
+"Recipients will likely ignore duplicates."
+msgstr ""
+
+#: httplint/field/parsers/content_length.py:44
+msgid "Content-Length and Transfer-Encoding should not be present together."
+msgstr ""
+
+#: httplint/field/parsers/content_length.py:45
+msgid ""
+"RFC 9110 Section 8.6:\n"
+"> A sender MUST NOT send a Content-Length header field in any message "
+"that contains a Transfer-Encoding header field.\n"
+"\n"
+"This is because `Transfer-Encoding` overrides `Content-Length`."
+msgstr ""
+
+#: httplint/field/parsers/content_length.py:55
+msgid "The Content-Length header is very large."
+msgstr ""
+
+#: httplint/field/parsers/content_length.py:56
+msgid ""
+"The `Content-Length` header's value is greater than 2^63-1. Some "
+"implementations may not be able to\n"
+"handle values this large."
+msgstr ""
+
+#: httplint/field/parsers/content_range.py:37
+#, python-format
+msgid "%(message)s shouldn't have a Content-Range header."
+msgstr ""
+
+#: httplint/field/parsers/content_range.py:38
+msgid ""
+"HTTP only defines meaning for the `Content-Range` header in responses "
+"with a `206` (Partial\n"
+"Content) or `416` (Requested Range Not Satisfiable) status code.\n"
+"\n"
+"Because the status code is neither of those, this `Content-Range` header "
+"may confuse caches and\n"
+"clients."
+msgstr ""
+
+#: httplint/field/parsers/content_security_policy.py:126
+#, python-format
+msgid "%(message)s sets a Content Security Policy%(report_only)s."
+msgstr ""
+
+#: httplint/field/parsers/content_security_policy.py:127
+#, python-format
+msgid ""
+"[Content Security Policy](https://www.w3.org/TR/CSP3/) allows the server "
+"to declare\n"
+"the sources of content that browsers are allowed to use on a "
+"page.%(report_only_text)s"
+msgstr ""
+
+#: httplint/field/parsers/content_security_policy.py:135
+msgid "Inline scripts are allowed."
+msgstr ""
+
+#: httplint/field/parsers/content_security_policy.py:136
+#, python-format
+msgid ""
+"The `'unsafe-inline'` [Content Security "
+"Policy](https://www.w3.org/TR/CSP3/)\n"
+"directive allows the execution of inline scripts and event handlers, "
+"which\n"
+"significantly reduces the protection provided by CSP against Cross-Site\n"
+"Scripting (XSS) attacks.\n"
+"\n"
+"It was found in the following directives:\n"
+"\n"
+"%(directives_list)s"
+msgstr ""
+
+#: httplint/field/parsers/content_security_policy.py:150
+msgid "Unsafe script evaluation is allowed."
+msgstr ""
+
+#: httplint/field/parsers/content_security_policy.py:151
+#, python-format
+msgid ""
+"The `'unsafe-eval'` [Content Security "
+"Policy](https://www.w3.org/TR/CSP3/)\n"
+"directive allows the use of string-to-code mechanisms like `eval()`, "
+"which can make it easier for\n"
+"attackers to execute malicious code.\n"
+"\n"
+"It was found in the following directives:\n"
+"\n"
+"%(directives_list)s"
+msgstr ""
+
+#: httplint/field/parsers/content_security_policy.py:164
+msgid "Loading from insecure HTTP sources is allowed."
+msgstr ""
+
+#: httplint/field/parsers/content_security_policy.py:165
+#, python-format
+msgid ""
+"Allowing `http:` sources in `%(field_name)s` can allow attackers to "
+"intercept and modify\n"
+"content loaded by the page, potentially bypassing security controls.\n"
+"\n"
+"It was found in the following directives:\n"
+"\n"
+"%(directives_list)s"
+msgstr ""
+
+#: httplint/field/parsers/content_security_policy.py:177
+msgid "Duplicate directives are present."
+msgstr ""
+
+#: httplint/field/parsers/content_security_policy.py:178
+#, python-format
+msgid ""
+"Directives must only appear once in the `%(field_name)s` header; "
+"subsequent occurrences are ignored.\n"
+"\n"
+"The following directives were duplicated:\n"
+"\n"
+"%(directives_list)s"
+msgstr ""
+
+#: httplint/field/parsers/content_security_policy.py:189
+msgid "The deprecated report-uri directive is used."
+msgstr ""
+
+#: httplint/field/parsers/content_security_policy.py:190
+msgid ""
+"The `report-uri` [Content Security Policy](https://www.w3.org/TR/CSP3/)\n"
+"directive is deprecated in favor of `report-to`. It is recommended to use"
+" `report-to`\n"
+"for reporting violations, although `report-uri` may still be supported "
+"for backward\n"
+"compatibility."
+msgstr ""
+
+#: httplint/field/parsers/content_security_policy.py:200
+msgid "All sources are allowed in one or more directives."
+msgstr ""
+
+#: httplint/field/parsers/content_security_policy.py:201
+#, python-format
+msgid ""
+"The `*` [Content Security Policy](https://www.w3.org/TR/CSP3/)\n"
+"directive allows resources to be loaded from any origin, which "
+"significantly reduces the protection\n"
+"provided by CSP.%(report_only_text)s\n"
+"\n"
+"It was found in the following directives:\n"
+"\n"
+"%(directives_list)s"
+msgstr ""
+
+#: httplint/field/parsers/cross_origin_embedder_policy.py:71
+#, python-format
+msgid "%(message)s requires resources to have a CORP header%(report_only)s."
+msgstr ""
+
+#: httplint/field/parsers/cross_origin_embedder_policy.py:72
+#, python-format
+msgid ""
+"The `require-corp`\n"
+"[Cross Origin Embedder Policy](https://fetch.spec.whatwg.org/#cross-"
+"origin-embedder-policy-header)\n"
+"requires that all cross-origin resources must explicitly grant permission"
+" to be loaded via a\n"
+"`Cross-Origin-Resource-Policy` header, in supporting "
+"browsers.%(report_only_text)s"
+msgstr ""
+
+#: httplint/field/parsers/cross_origin_embedder_policy.py:82
+#, python-format
+msgid ""
+"%(message)s loads cross-origin resources without "
+"credentials%(report_only)s."
+msgstr ""
+
+#: httplint/field/parsers/cross_origin_embedder_policy.py:85
+#, python-format
+msgid ""
+"The `credentialless`\n"
+"[Cross-Origin Embedder Policy](https://fetch.spec.whatwg.org/#cross-"
+"origin-embedder-policy-header)\n"
+"allows loading cross-origin resources without explicit permission in "
+"supporting browsers, but\n"
+"requests for them will not include credentials (cookies, client "
+"certificates,\n"
+"etc.).%(report_only_text)s"
+msgstr ""
+
+#: httplint/field/parsers/cross_origin_embedder_policy.py:96
+#, python-format
+msgid ""
+"%(message)s allows loading cross-origin resources without "
+"restriction%(report_only)s."
+msgstr ""
+
+#: httplint/field/parsers/cross_origin_embedder_policy.py:100
+#, python-format
+msgid ""
+"The `unsafe-none`\n"
+"[Cross-Origin Embedder Policy](https://fetch.spec.whatwg.org/#cross-"
+"origin-embedder-policy-header)\n"
+"is the default behavior, allowing cross-origin resources to be loaded\n"
+"without explicit permission in supporting browsers.\n"
+"\n"
+"This does not provide cross-origin isolation.%(report_only_text)s"
+msgstr ""
+
+#: httplint/field/parsers/cross_origin_embedder_policy.py:112
+#: httplint/field/parsers/cross_origin_opener_policy.py:111
+#, python-format
+msgid "%(message)s's %(field_name)s has an invalid value."
+msgstr ""
+
+#: httplint/field/parsers/cross_origin_embedder_policy.py:113
+#, python-format
+msgid ""
+"The `%(field_name)s` header must be one of `require-corp`, "
+"`credentialless`, or\n"
+"`unsafe-none`.\n"
+msgstr ""
+
+#: httplint/field/parsers/cross_origin_embedder_policy_report_only.py:34
+#, python-format
+msgid "%(message)s has both enforcing and report-only COEP headers."
+msgstr ""
+
+#: httplint/field/parsers/cross_origin_embedder_policy_report_only.py:35
+msgid ""
+"A response should not have both `Cross-Origin-Embedder-Policy` and\n"
+"`Cross-Origin-Embedder-Policy-Report-Only` headers. The report-only "
+"header will be ignored."
+msgstr ""
+
+#: httplint/field/parsers/cross_origin_opener_policy.py:71
+#, python-format
+msgid ""
+"%(message)s isolates the browsing context to the same "
+"origin%(report_only)s."
+msgstr ""
+
+#: httplint/field/parsers/cross_origin_opener_policy.py:74
+#, python-format
+msgid ""
+"The `same-origin` \n"
+"[Cross-Origin Opener "
+"Policy](https://html.spec.whatwg.org/multipage/origin.html#coop)\n"
+"isolates the browsing context, preventing it from sharing a window object"
+"\n"
+"with cross-origin documents in supporting browsers.%(report_only_text)s"
+msgstr ""
+
+#: httplint/field/parsers/cross_origin_opener_policy.py:84
+#, python-format
+msgid ""
+"%(message)s isolates the browsing context but allows "
+"popups%(report_only)s."
+msgstr ""
+
+#: httplint/field/parsers/cross_origin_opener_policy.py:87
+#, python-format
+msgid ""
+"The `same-origin-allow-popups` \n"
+"[Cross-Origin Opener "
+"Policy](https://html.spec.whatwg.org/multipage/origin.html#coop)\n"
+"isolates the browsing context but maintains a relationship\n"
+"with popups that it opens, or that opened it, in supporting "
+"browsers.%(report_only_text)s"
+msgstr ""
+
+#: httplint/field/parsers/cross_origin_opener_policy.py:97
+#, python-format
+msgid ""
+"%(message)s allows sharing the browsing context with cross-origin "
+"documents%(report_only)s."
+msgstr ""
+
+#: httplint/field/parsers/cross_origin_opener_policy.py:101
+#, python-format
+msgid ""
+"The `unsafe-none` \n"
+"[Cross-Origin Opener "
+"Policy](https://html.spec.whatwg.org/multipage/origin.html#coop)\n"
+"is the default behavior in supporting browsers. It allows the document to"
+" share a browsing context\n"
+"group with other documents unless they enforce "
+"isolation.%(report_only_text)s"
+msgstr ""
+
+#: httplint/field/parsers/cross_origin_opener_policy.py:112
+#, python-format
+msgid ""
+"The `%(field_name)s` header must be one of `same-origin`, `same-origin-"
+"allow-popups`,\n"
+"or `unsafe-none`.\n"
+msgstr ""
+
+#: httplint/field/parsers/cross_origin_opener_policy_report_only.py:34
+#, python-format
+msgid "%(message)s has both enforcing and report-only COOP headers."
+msgstr ""
+
+#: httplint/field/parsers/cross_origin_opener_policy_report_only.py:35
+msgid ""
+"A response should not have both `Cross-Origin-Opener-Policy` and\n"
+"`Cross-Origin-Opener-Policy-Report-Only` headers. The report-only header "
+"will be ignored."
+msgstr ""
+
+#: httplint/field/parsers/cross_origin_resource_policy.py:41
+#, python-format
+msgid ""
+"%(message)s is only available for reading to requests from the same "
+"origin."
+msgstr ""
+
+#: httplint/field/parsers/cross_origin_resource_policy.py:44
+#, python-format
+msgid ""
+"The `same-origin`\n"
+"[Cross-Origin Resource Policy](https://fetch.spec.whatwg.org/#cross-"
+"origin-resource-policy-header)\n"
+"prevents the resource from being read by any cross-origin document \n"
+"in supporting browsers.%(report_only_text)s"
+msgstr ""
+
+#: httplint/field/parsers/cross_origin_resource_policy.py:54
+#, python-format
+msgid "%(message)s is available for reading to requests from the same site."
+msgstr ""
+
+#: httplint/field/parsers/cross_origin_resource_policy.py:55
+#, python-format
+msgid ""
+"The `same-site`\n"
+"[Cross-Origin Resource Policy](https://fetch.spec.whatwg.org/#cross-"
+"origin-resource-policy-header)\n"
+"allows the resource to be read by documents from the same site, but\n"
+"prevents it from being read by cross-site documents in supporting "
+"browsers.%(report_only_text)s"
+msgstr ""
+
+#: httplint/field/parsers/cross_origin_resource_policy.py:65
+#, python-format
+msgid "%(message)s is available for reading to requests from all origins."
+msgstr ""
+
+#: httplint/field/parsers/cross_origin_resource_policy.py:66
+#, python-format
+msgid ""
+"The `cross-origin`\n"
+"[Cross-Origin Resource Policy](https://fetch.spec.whatwg.org/#cross-"
+"origin-resource-policy-header)\n"
+"allows the resource to be read by any document in supporting browsers, "
+"regardless of its \n"
+"origin.%(report_only_text)s"
+msgstr ""
+
+#: httplint/field/parsers/cross_origin_resource_policy.py:76
+msgid "Cross-Origin-Resource-Policy has an invalid value."
+msgstr ""
+
+#: httplint/field/parsers/cross_origin_resource_policy.py:77
+#, python-format
+msgid ""
+"`%(value)s` is not a valid value for the `Cross-Origin-Resource-Policy` "
+"header;\n"
+"it must be one of `same-origin`, `same-site`, or `cross-origin`.\n"
+msgstr ""
+
+#: httplint/field/parsers/date.py:51
+msgid "The server's clock is correct."
+msgstr ""
+
+#: httplint/field/parsers/date.py:52
+msgid ""
+"HTTP's caching model assumes reasonable synchronisation between clocks on"
+" the server and client;\n"
+"compared to the local clock, the server's clock appears to be well-"
+"synchronised."
+msgstr ""
+
+#: httplint/field/parsers/date.py:60
+#, python-format
+msgid "The server's clock is %(clock_skew_string)s."
+msgstr ""
+
+#: httplint/field/parsers/date.py:61
+msgid ""
+"Compared to the local clock, the server's clock does not appear to be "
+"well-synchronised.\n"
+"\n"
+"HTTP's caching model assumes reasonable synchronisation between clocks on"
+" the server and client;\n"
+"clock skew can cause responses that should be cacheable to be considered "
+"uncacheable (especially if\n"
+"their freshness lifetime is short).\n"
+"\n"
+"Ask your server administrator to synchronise the clock, e.g., using\n"
+"[NTP](http://en.wikipedia.org/wiki/Network_Time_Protocol Network Time "
+"Protocol).\n"
+"\n"
+"Apparent clock skew can also be caused by caching the response without "
+"adjusting the `Age` header;\n"
+"e.g., in a reverse proxy or Content Delivery network. See [this\n"
+"paper](https://www.usenix.org/legacy/events/usits01/full_papers/cohen/cohen_html/index.html)"
+" for more information. "
+msgstr ""
+
+#: httplint/field/parsers/date.py:79
+msgid "It appears that the Date header has been changed by an intermediary."
+msgstr ""
+
+#: httplint/field/parsers/date.py:80
+msgid ""
+"It appears that this response has been cached by a reverse proxy or "
+"Content Delivery Network,\n"
+"because the `Age` header is present, but the `Date` header is more recent"
+" than it indicates.\n"
+"\n"
+"Generally, reverse proxies should either omit the `Age` header (if they "
+"have another means of\n"
+"determining how fresh the response is), or leave the `Date` header alone "
+"(i.e., act as a normal\n"
+"HTTP cache).\n"
+"\n"
+"See [this "
+"paper](https://www.usenix.org/legacy/events/usits01/full_papers/cohen/cohen_html/index.html)"
+"\n"
+"for more information."
+msgstr ""
+
+#: httplint/field/parsers/expect.py:37
+#, python-format
+msgid "The '%(expectation)s' expectation is not supported."
+msgstr ""
+
+#: httplint/field/parsers/expect.py:38
+msgid ""
+"HTTP only defines one expectation, `100-continue`. This expectation is "
+"not recognized."
+msgstr ""
+
+#: httplint/field/parsers/expect.py:45
+msgid "The Expect header is not supported in HTTP/1.0."
+msgstr ""
+
+#: httplint/field/parsers/expect.py:46
+msgid "The `Expect` header was added in HTTP/1.1; it has no meaning in HTTP/1.0."
+msgstr ""
+
+#: httplint/field/parsers/last_modified.py:44
+msgid "The Last-Modified time is in the future."
+msgstr ""
+
+#: httplint/field/parsers/last_modified.py:45
+#, python-format
+msgid ""
+"The `Last-Modified` header indicates the last point in time that the "
+"resource has changed.\n"
+"%(message)s's `Last-Modified` time is in the future, which doesn't have "
+"any defined meaning in\n"
+"HTTP."
+msgstr ""
+
+#: httplint/field/parsers/last_modified.py:54
+#, python-format
+msgid "The resource last changed %(last_modified_string)s."
+msgstr ""
+
+#: httplint/field/parsers/last_modified.py:55
+#, python-format
+msgid ""
+"The `Last-Modified` header indicates the last point in time that the "
+"resource has changed. It is\n"
+"used in HTTP for validating cached responses, and for calculating "
+"heuristic freshness in caches.\n"
+"\n"
+"This resource last changed %(last_modified_string)s."
+msgstr ""
+
+#: httplint/field/parsers/link.py:52
+msgid "The 'rev' parameter on the Link header is deprecated."
+msgstr ""
+
+#: httplint/field/parsers/link.py:53
+msgid ""
+"The `Link` header, defined by [RFC5988](https://www.rfc-"
+"editor.org/rfc/rfc5988#section-5), uses the\n"
+"`rel` parameter to communicate the type of a link. `rev` is deprecated by"
+" that specification\n"
+"because it is often confusing.\n"
+"\n"
+"Use `rel` and an appropriate relation."
+msgstr ""
+
+#: httplint/field/parsers/link.py:64
+#, python-format
+msgid "The 'anchor' parameter on the %(link)s Link header isn't a URI."
+msgstr ""
+
+#: httplint/field/parsers/link.py:65
+#, python-format
+msgid ""
+"The `Link` header, defined by [RFC5988](https://www.rfc-"
+"editor.org/rfc/rfc5988#section-5), uses the\n"
+"`anchor` parameter to define the context URI for the link.\n"
+"\n"
+"This parameter can be an absolute or relative URI; however, `%(anchor)s` "
+"is neither."
+msgstr ""
+
+#: httplint/field/parsers/location.py:51
+#, python-format
+msgid "%(message)s doesn't define any meaning for the Location header."
+msgstr ""
+
+#: httplint/field/parsers/location.py:52
+msgid ""
+"The `Location` header is used for specific purposes in HTTP; mostly to "
+"indicate the URI of another\n"
+"resource (e.g., in redirection, or when a new resource is created).\n"
+"\n"
+"In other status codes (such as this one) it doesn't have a defined "
+"meaning, so any use of it won't\n"
+"be interoperable.\n"
+"\n"
+"Sometimes `Location` is confused with `Content-Location`, which indicates"
+" a URI for the payload of\n"
+"the message that it appears in."
+msgstr ""
+
+#: httplint/field/parsers/location.py:66
+msgid "The Location header contains a relative URI."
+msgstr ""
+
+#: httplint/field/parsers/location.py:67
+#, python-format
+msgid ""
+"`Location` was originally specified to contain an absolute, not relative,"
+" URI.\n"
+"\n"
+"It is in the process of being updated, and most clients will work around "
+"this.\n"
+"\n"
+"The correct absolute URI is (probably): `%(full_uri)s`"
+msgstr ""
+
+#: httplint/field/parsers/max_forwards.py:11
+msgid "The Max-Forwards header is ignored for this method."
+msgstr ""
+
+#: httplint/field/parsers/max_forwards.py:12
+msgid ""
+"The `Max-Forwards` header is only defined for `TRACE` and `OPTIONS` "
+"requests; for other methods, it\n"
+"is likely to be ignored."
+msgstr ""
+
+#: httplint/field/parsers/permissions_policy.py:73
+#, python-format
+msgid "%(message)s sets a Permissions Policy."
+msgstr ""
+
+#: httplint/field/parsers/permissions_policy.py:74
+msgid ""
+"The `Permissions-Policy` header allows a site to control the use of "
+"browser features."
+msgstr ""
+
+#: httplint/field/parsers/permissions_policy.py:81
+#, python-format
+msgid "The '%(feature)s' feature is allowed for all origins."
+msgstr ""
+
+#: httplint/field/parsers/permissions_policy.py:82
+#, python-format
+msgid ""
+"The `%(feature)s` feature is allowed for all origins (using `*`).\n"
+"This is insecure and should be restricted to specific origins or `self`."
+msgstr ""
+
+#: httplint/field/parsers/permissions_policy.py:90
+#, python-format
+msgid "The value for '%(feature)s' should be an Inner List or the token '*'."
+msgstr ""
+
+#: httplint/field/parsers/permissions_policy.py:91
+#, python-format
+msgid ""
+"The value for the `%(feature)s` feature in `Permissions-Policy` is "
+"invalid. It should be either\n"
+"an Inner List of origins (e.g., `(self \"https://example.com\")`) or the "
+"special token `*`."
+msgstr ""
+
+#: httplint/field/parsers/permissions_policy.py:99
+#, python-format
+msgid "'%(token)s' is not valid in an allowlist."
+msgstr ""
+
+#: httplint/field/parsers/permissions_policy.py:100
+#, python-format
+msgid ""
+"The token `%(token)s` is not a valid keyword in an allowlist.\n"
+"Valid tokens are `self` and `src`."
+msgstr ""
+
+#: httplint/field/parsers/permissions_policy.py:108
+#, python-format
+msgid "The value '%(value)s' looks like a keyword but is a string."
+msgstr ""
+
+#: httplint/field/parsers/permissions_policy.py:109
+#, python-format
+msgid ""
+"The value `%(value)s` is a string, but it looks like a keyword.\n"
+"If you meant to use the keyword, remove the quotes (e.g., `self` instead "
+"of `\"self\"`)."
+msgstr ""
+
+#: httplint/field/parsers/permissions_policy.py:117
+#, python-format
+msgid "The item '%(item)s' is not a valid type for an allowlist."
+msgstr ""
+
+#: httplint/field/parsers/permissions_policy.py:118
+#, python-format
+msgid ""
+"The item `%(item)s` is not a valid type for an allowlist.\n"
+"Allowlists should contain origins (strings) or keywords (tokens)."
+msgstr ""
+
+#: httplint/field/parsers/pragma.py:37
+msgid "Pragma: no-cache is a request directive, not a response directive."
+msgstr ""
+
+#: httplint/field/parsers/pragma.py:38
+msgid ""
+"`Pragma` is a very old request header that is sometimes used as a "
+"response header, even though\n"
+"this is not specified behaviour. `Cache-Control: no-cache` is more "
+"appropriate."
+msgstr ""
+
+#: httplint/field/parsers/pragma.py:46
+msgid "The Pragma header is being used in an undefined way."
+msgstr ""
+
+#: httplint/field/parsers/pragma.py:47
+msgid ""
+"HTTP only defines `Pragma: no-cache`; other uses of this header are "
+"deprecated."
+msgstr ""
+
+#: httplint/field/parsers/proxy_status.py:139
+msgid "Information about intermediaries is available."
+msgstr ""
+
+#: httplint/field/parsers/proxy_status.py:140
+#, python-format
+msgid ""
+"The `Proxy-Status` header field indicates how intermediaries have handled"
+" the response.\n"
+"\n"
+"%(status)s\n"
+msgstr ""
+
+#: httplint/field/parsers/proxy_status.py:150
+#, python-format
+msgid "%(message)s has a Proxy-Status header with an invalid structure."
+msgstr ""
+
+#: httplint/field/parsers/proxy_status.py:151
+msgid ""
+"The `Proxy-Status` header must be a list of members, where each member is"
+"\n"
+"a Token or String (identifying the proxy) with optional parameters.\n"
+msgstr ""
+
+#: httplint/field/parsers/proxy_status.py:160
+#, python-format
+msgid ""
+"%(message)s has a Proxy-Status header with an unknown parameter "
+"'%(param)s'."
+msgstr ""
+
+#: httplint/field/parsers/proxy_status.py:163
+#, python-format
+msgid ""
+"The `%(param)s` parameter is not defined in the Proxy-Status "
+"specification.\n"
+msgstr ""
+
+#: httplint/field/parsers/proxy_status.py:171
+#, python-format
+msgid ""
+"%(message)s has a Proxy-Status header with an unknown value for "
+"'%(param)s'."
+msgstr ""
+
+#: httplint/field/parsers/referer.py:17
+msgid "The Referer header is sent from a secure origin to an insecure target."
+msgstr ""
+
+#: httplint/field/parsers/referer.py:18
+msgid ""
+"HTTP prohibits a user agent from sending a Referer header field in an "
+"unsecured HTTP request\n"
+"if the referring resource was accessed with a secure protocol.\n"
+"\n"
+"See [RFC 9110 Section 10.1.3](https://www.rfc-"
+"editor.org/rfc/rfc9110.html#section-10.1.3)\n"
+"for details."
+msgstr ""
+
+#: httplint/field/parsers/referer.py:29
+msgid "The Referer header is sent from a secure origin to a different origin."
+msgstr ""
+
+#: httplint/field/parsers/referer.py:30
+msgid ""
+"HTTP prohibits a user agent from sending a Referer header field if the "
+"referring resource was\n"
+"accessed with a secure protocol and the request target has an origin "
+"differing from that of the\n"
+"referring resource, unless the referring resource explicitly allows "
+"Referer to be sent.\n"
+"\n"
+"See [RFC 9110 Section 10.1.3](https://www.rfc-"
+"editor.org/rfc/rfc9110.html#section-10.1.3)\n"
+"for details."
+msgstr ""
+
+#: httplint/field/parsers/referrer_policy.py:46
+#, python-format
+msgid "%(message)s's Referrer-Policy allows unsafe URLs."
+msgstr ""
+
+#: httplint/field/parsers/referrer_policy.py:47
+msgid ""
+"Using `unsafe-url` in `Referrer-Policy` means that the full URL "
+"(including query parameters) will\n"
+"be sent as a referrer to all origins, including those that are not secure"
+" (HTTP). This can leak\n"
+"sensitive information."
+msgstr ""
+
+#: httplint/field/parsers/referrer_policy.py:56
+#, python-format
+msgid "The Referrer-Policy value '%(policy)s' is unknown."
+msgstr ""
+
+#: httplint/field/parsers/referrer_policy.py:57
+#, python-format
+msgid ""
+"The `Referrer-Policy` header contains the value `%(policy)s`, which is "
+"not a known referrer policy.\n"
+"It will be ignored by browsers."
+msgstr ""
+
+#: httplint/field/parsers/referrer_policy.py:65
+msgid "No valid Referrer-Policy found."
+msgstr ""
+
+#: httplint/field/parsers/referrer_policy.py:66
+msgid ""
+"The `Referrer-Policy` header does not contain any valid policies. "
+"Browsers will use their default\n"
+"policy (usually `strict-origin-when-cross-origin`)."
+msgstr ""
+
+#: httplint/field/parsers/referrer_policy.py:74
+#, python-format
+msgid "Multiple Referrer-Policy values found; only '%(effective)s' is used."
+msgstr ""
+
+#: httplint/field/parsers/referrer_policy.py:75
+#, python-format
+msgid ""
+"The `Referrer-Policy` header contains multiple valid policies. Browsers "
+"will only use the last\n"
+"valid policy found, which is `%(effective)s`. Earlier values are ignored."
+msgstr ""
+
+#: httplint/field/parsers/server.py:43
+msgid "The Server header is long."
+msgstr ""
+
+#: httplint/field/parsers/server.py:44
+#, python-format
+msgid ""
+"The `Server` header is %(server_length)s long, which uses unnecessary "
+"bandwidth\n"
+"and can expose details of the back-end system to attackers.\n"
+"\n"
+"Consider shortening it."
+msgstr ""
+
+#: httplint/field/parsers/set_cookie.py:359
+#, python-format
+msgid "%(message)s has a Set-Cookie header without a cookie-name."
+msgstr ""
+
+#: httplint/field/parsers/set_cookie.py:360
+msgid ""
+"This `Set-Cookie` header has an empty name; there needs to be a name "
+"before the `=`.\n"
+"\n"
+"Browsers will ignore this cookie."
+msgstr ""
+
+#: httplint/field/parsers/set_cookie.py:369
+#, python-format
+msgid "The %(cookie_name)s cookie has an invalid Expires date."
+msgstr ""
+
+#: httplint/field/parsers/set_cookie.py:370
+msgid ""
+"The `expires` date on this `Set-Cookie` header isn't valid; see\n"
+"[RFC6265](https://www.rfc-editor.org/rfc/rfc6265) for details of the "
+"correct format."
+msgstr ""
+
+#: httplint/field/parsers/set_cookie.py:378
+#, python-format
+msgid "The %(cookie_name)s cookie has an empty Max-Age."
+msgstr ""
+
+#: httplint/field/parsers/set_cookie.py:379
+msgid ""
+"The `max-age` parameter on this `Set-Cookie` header doesn't have a value."
+"\n"
+"\n"
+"Browsers will ignore the `max-age` value as a result."
+msgstr ""
+
+#: httplint/field/parsers/set_cookie.py:388
+#, python-format
+msgid "The %(cookie_name)s cookie has a Max-Age with a leading zero."
+msgstr ""
+
+#: httplint/field/parsers/set_cookie.py:389
+msgid ""
+"The `max-age` parameter on this `Set-Cookie` header has a leading zero.\n"
+"\n"
+"Browsers will ignore the `max-age` value as a result."
+msgstr ""
+
+#: httplint/field/parsers/set_cookie.py:398
+#, python-format
+msgid "The %(cookie_name)s cookie has a non-numeric Max-Age."
+msgstr ""
+
+#: httplint/field/parsers/set_cookie.py:399
+msgid ""
+"The `max-age` parameter on this `Set-Cookie` header isn't numeric.\n"
+"\n"
+"Browsers will ignore the `max-age` value as a result."
+msgstr ""
+
+#: httplint/field/parsers/set_cookie.py:408
+#, python-format
+msgid "The %(cookie_name)s cookie has an empty domain."
+msgstr ""
+
+#: httplint/field/parsers/set_cookie.py:409
+msgid ""
+"The `domain` parameter on this `Set-Cookie` header is empty.\n"
+"\n"
+"Browsers will probably ignore it as a result."
+msgstr ""
+
+#: httplint/field/parsers/set_cookie.py:418
+#, python-format
+msgid "The %(cookie_name)s cookie is missing the Secure attribute."
+msgstr ""
+
+#: httplint/field/parsers/set_cookie.py:419
+msgid ""
+"The `Secure` attribute on this `Set-Cookie` header is missing.\n"
+"\n"
+"Browsers will ignore it."
+msgstr ""
+
+#: httplint/field/parsers/set_cookie.py:428
+#, python-format
+msgid "The %(cookie_name)s cookie has an unknown attribute, '%(attribute)s'."
+msgstr ""
+
+#: httplint/field/parsers/set_cookie.py:429
+#, python-format
+msgid ""
+"This cookie has an extra parameter, \"%(attribute)s\".\n"
+"\n"
+"Browsers will ignore it."
+msgstr ""
+
+#: httplint/field/parsers/set_cookie.py:438
+#, python-format
+msgid ""
+"The %(cookie_name)s cookie has an unknown '%(attribute_name)s' attribute "
+"value."
+msgstr ""
+
+#: httplint/field/parsers/set_cookie.py:442
+#, python-format
+msgid ""
+"This `Set-Cookie` header has an unknown \"%(attribute_name)s\" attribute "
+"value, \"%(attribute_value)s\".\n"
+"\n"
+"Browsers will probably ignore it as a result."
+msgstr ""
+
+#: httplint/field/parsers/set_cookie.py:451
+#, python-format
+msgid ""
+"The %(cookie_name)s cookie has the Partitioned attribute but is missing "
+"the Secure attribute."
+msgstr ""
+
+#: httplint/field/parsers/set_cookie.py:455
+msgid ""
+"The `Partitioned` attribute on this `Set-Cookie` header is present, but "
+"the `Secure` attribute is\n"
+"missing.\n"
+"\n"
+"Browsers will ignore the `Partitioned` attribute as a result."
+msgstr ""
+
+#: httplint/field/parsers/set_cookie.py:465
+#, python-format
+msgid "The %(cookie_name)s Set-Cookie header is too large."
+msgstr ""
+
+#: httplint/field/parsers/set_cookie.py:466
+msgid ""
+"The `Set-Cookie` header is larger than 4096 bytes.\n"
+"\n"
+"Browsers will ignore this cookie."
+msgstr ""
+
+#: httplint/field/parsers/set_cookie.py:475
+#, python-format
+msgid "The %(cookie_name)s Set-Cookie value is large."
+msgstr ""
+
+#: httplint/field/parsers/set_cookie.py:476
+#, python-format
+msgid ""
+"The `Set-Cookie` value is %(set_cookie_value_length)s long.\n"
+"\n"
+"This may be wasteful."
+msgstr ""
+
+#: httplint/field/parsers/set_cookie.py:492
+#, python-format
+msgid "The %(cookie_name)s Set-Cookie header has a lifetime that is too long."
+msgstr ""
+
+#: httplint/field/parsers/set_cookie.py:493
+msgid ""
+"The `Set-Cookie` header has a lifetime (Max-Age or Expires) that is "
+"greater than 400 days.\n"
+"\n"
+"Browsers will cap the lifetime to 400 days."
+msgstr ""
+
+#: httplint/field/parsers/set_cookie.py:502
+#, python-format
+msgid "The %(cookie_name)s Set-Cookie header requires the Secure attribute."
+msgstr ""
+
+#: httplint/field/parsers/set_cookie.py:503
+msgid ""
+"The `Set-Cookie` header has a prefix (e.g., `__Secure-` or `__Host-`) "
+"that requires the `Secure`\n"
+"attribute.\n"
+"\n"
+"Browsers will reject this cookie."
+msgstr ""
+
+#: httplint/field/parsers/set_cookie.py:513
+#, python-format
+msgid ""
+"The %(cookie_name)s Set-Cookie header has a __Host- prefix but sets a "
+"Domain."
+msgstr ""
+
+#: httplint/field/parsers/set_cookie.py:516
+msgid ""
+"The `Set-Cookie` header has a `__Host-` prefix, but it sets a `Domain` "
+"attribute.\n"
+"\n"
+"Browsers will reject this cookie."
+msgstr ""
+
+#: httplint/field/parsers/set_cookie.py:525
+#, python-format
+msgid ""
+"The %(cookie_name)s Set-Cookie header has a __Host- prefix but does not "
+"set Path=/."
+msgstr ""
+
+#: httplint/field/parsers/set_cookie.py:526
+msgid ""
+"The `Set-Cookie` header has a `__Host-` prefix, but it does not set "
+"`Path=/`.\n"
+"\n"
+"Browsers will reject this cookie."
+msgstr ""
+
+#: httplint/field/parsers/set_cookie.py:535
+#, python-format
+msgid ""
+"The %(cookie_name)s Set-Cookie header has duplicate '%(attribute)s' "
+"attributes."
+msgstr ""
+
+#: httplint/field/parsers/set_cookie.py:536
+#, python-format
+msgid ""
+"The `%(attribute)s` attribute appears more than once in this `Set-Cookie`"
+" header.\n"
+"\n"
+"Browsers will only use the last occurrence."
+msgstr ""
+
+#: httplint/field/parsers/set_cookie.py:545
+#, python-format
+msgid "%(message)s sets duplicate cookies."
+msgstr ""
+
+#: httplint/field/parsers/set_cookie.py:546
+#, python-format
+msgid ""
+"The following cookies are set more than once in this response: "
+"%(cookie_names)s.\n"
+"\n"
+"Browsers will likely accept all of them, but the order of application\n"
+"may vary or be confusing."
+msgstr ""
+
+#: httplint/field/parsers/strict_transport_security.py:129
+msgid "Strict Transport Security (HSTS) is enabled."
+msgstr ""
+
+#: httplint/field/parsers/strict_transport_security.py:130
+msgid ""
+"This site has enabled HTTP Strict Transport Security (HSTS), which tells "
+"the browser to only\n"
+"communicate with it over a secure connection."
+msgstr ""
+
+#: httplint/field/parsers/strict_transport_security.py:138
+#, python-format
+msgid "%(message)s's Strict Transport Security (HSTS) header is invalid."
+msgstr ""
+
+#: httplint/field/parsers/strict_transport_security.py:139
+msgid ""
+"This site has attempted to enable HTTP Strict Transport Security (HSTS), "
+"which tells the browser to only\n"
+"communicate with it over a secure connection.\n"
+"\n"
+"However, one or more issues prevent it from being valid. See the child "
+"notes for details."
+msgstr ""
+
+#: httplint/field/parsers/strict_transport_security.py:149
+msgid "There is no max-age directive."
+msgstr ""
+
+#: httplint/field/parsers/strict_transport_security.py:150
+msgid ""
+"The `Strict-Transport-Security` header requires a `max-age` directive to "
+"be valid."
+msgstr ""
+
+#: httplint/field/parsers/strict_transport_security.py:157
+msgid "The max-age is 0."
+msgstr ""
+
+#: httplint/field/parsers/strict_transport_security.py:158
+msgid ""
+"A `max-age` of 0 tells the browser to expire the `Strict-Transport-"
+"Security` policy immediately,\n"
+"effectively disabling it."
+msgstr ""
+
+#: httplint/field/parsers/strict_transport_security.py:166
+msgid "The max-age is less than one year."
+msgstr ""
+
+#: httplint/field/parsers/strict_transport_security.py:167
+msgid ""
+"Most sites should set a `max-age` of at least one year on `Strict-"
+"Transport-Security`."
+msgstr ""
+
+#: httplint/field/parsers/strict_transport_security.py:174
+msgid "HSTS applies to subdomains."
+msgstr ""
+
+#: httplint/field/parsers/strict_transport_security.py:175
+msgid ""
+"The `includeSubDomains` directive indicates that this HSTS policy applies"
+" to this domain as well as\n"
+"all of its subdomains."
+msgstr ""
+
+#: httplint/field/parsers/strict_transport_security.py:183
+msgid "HSTS doesn't apply to subdomains."
+msgstr ""
+
+#: httplint/field/parsers/strict_transport_security.py:184
+msgid ""
+"The `includeSubDomains` directive indicates that this HSTS policy applies"
+" to this domain as well as\n"
+"all of its subdomains.\n"
+"\n"
+"Because cookies can be set across HTTP and HTTPS sites as well as across "
+"subdomains, this means \n"
+"that an attacker might be able to take advantage of a subdomain that "
+"doesn't have HSTS enabled.\n"
+msgstr ""
+
+#: httplint/field/parsers/strict_transport_security.py:196
+msgid "Browser preloading is allowed."
+msgstr ""
+
+#: httplint/field/parsers/strict_transport_security.py:197
+msgid ""
+"The `preload` directive on `Strict-Transport-Security` allows browsers to"
+" preload the site in\n"
+"its HSTS lists, avoiding the potential for making unencrypted requests "
+"when first accessing the\n"
+"site.\n"
+"\n"
+"See the [HSTS Preload List](https://hstspreload.org/) for more "
+"information.\n"
+msgstr ""
+
+#: httplint/field/parsers/strict_transport_security.py:209
+msgid "Browser preloading is allowed, but this policy isn't suitable for it."
+msgstr ""
+
+#: httplint/field/parsers/strict_transport_security.py:210
+msgid ""
+"Preloading a site in a browser's HSTS list requires a `max-age` of at "
+"least one year and the\n"
+"`includeSubDomains` directive.\n"
+"\n"
+"See the [HSTS Preload List](https://hstspreload.org/) for more "
+"information.\n"
+msgstr ""
+
+#: httplint/field/parsers/strict_transport_security.py:221
+msgid "Browser preloading isn't allowed."
+msgstr ""
+
+#: httplint/field/parsers/strict_transport_security.py:222
+msgid ""
+"Without a `preload` directive, browsers may make an unencrypted request "
+"when first accessing the\n"
+"site, potentially exposing sensitive information.\n"
+"\n"
+"See the [HSTS Preload List](https://hstspreload.org/) for more "
+"information.\n"
+msgstr ""
+
+#: httplint/field/parsers/strict_transport_security.py:233
+#, python-format
+msgid "%(message)s's HSTS header contains a duplicate directive."
+msgstr ""
+
+#: httplint/field/parsers/strict_transport_security.py:234
+#, python-format
+msgid ""
+"The `%(directive)s` directive appears more than once in the `Strict-"
+"Transport-Security` header.\n"
+"Directives must only appear once."
+msgstr ""
+
+#: httplint/field/parsers/strict_transport_security.py:242
+#, python-format
+msgid "%(message)s's HSTS header is sent over HTTP."
+msgstr ""
+
+#: httplint/field/parsers/strict_transport_security.py:243
+msgid ""
+"The `Strict-Transport-Security` header is ignored when sent over HTTP, "
+"unless it's a 301 Redirect.\n"
+"It should only be sent over HTTPS."
+msgstr ""
+
+#: httplint/field/parsers/strict_transport_security.py:251
+#, python-format
+msgid "%(message)s has multiple HSTS headers."
+msgstr ""
+
+#: httplint/field/parsers/strict_transport_security.py:252
+msgid ""
+"A response should only contain a single `Strict-Transport-Security` "
+"header.\n"
+"User agents are required to process only the first one and ignore the "
+"rest."
+msgstr ""
+
+#: httplint/field/parsers/strict_transport_security.py:260
+msgid "The max-age directive in the HSTS header is invalid."
+msgstr ""
+
+#: httplint/field/parsers/strict_transport_security.py:261
+#, python-format
+msgid ""
+"The `max-age` directive in the `Strict-Transport-Security` header must be"
+" a non-negative\n"
+"integer. The value \"%(max_age)s\" is not valid."
+msgstr ""
+
+#: httplint/field/parsers/strict_transport_security.py:269
+#, python-format
+msgid "The %(directive)s directive in the HSTS header must not have a value."
+msgstr ""
+
+#: httplint/field/parsers/strict_transport_security.py:270
+#, python-format
+msgid ""
+"The `%(directive)s` directive in the `Strict-Transport-Security` header "
+"is a valueless\n"
+"directive. It should not have an associated value."
+msgstr ""
+
+#: httplint/field/parsers/transfer_encoding.py:54
+msgid "The identity transfer-coding isn't necessary."
+msgstr ""
+
+#: httplint/field/parsers/transfer_encoding.py:55
+msgid ""
+"HTTP defines _transfer-codings_ as a hop-by-hop encoding of the message's"
+" content. The `identity`\n"
+"transfer-coding was defined as the absence of encoding; it doesn't do "
+"anything, so it is unnecessary.\n"
+"\n"
+"You can remove this token to save a few bytes."
+msgstr ""
+
+#: httplint/field/parsers/transfer_encoding.py:65
+#, python-format
+msgid "%(message)s has unsupported transfer-coding."
+msgstr ""
+
+#: httplint/field/parsers/transfer_encoding.py:66
+#, python-format
+msgid ""
+"%(message)s's `Transfer-Encoding` header indicates it has transfer-"
+"codings applied, but the\n"
+"request didn't ask for it (or them) to be.\n"
+"\n"
+"They are: `%(unwanted_codings)s`\n"
+"\n"
+"Normally, clients ask for the encodings they want in the `TE` request "
+"header. Using codings that\n"
+"the client doesn't explicitly request can lead to interoperability "
+"problems."
+msgstr ""
+
+#: httplint/field/parsers/transfer_encoding.py:79
+#, python-format
+msgid "%(message)s had parameters on its transfer-codings."
+msgstr ""
+
+#: httplint/field/parsers/transfer_encoding.py:80
+#, python-format
+msgid ""
+"HTTP allows transfer-codings in the `Transfer-Encoding` header to have "
+"optional parameters, but it\n"
+"doesn't define what they mean.\n"
+"\n"
+"%(message)s has encodings with such parameters; although they're "
+"technically allowed, they may\n"
+"cause interoperability problems. They should be removed."
+msgstr ""
+
+#: httplint/field/parsers/vary.py:43
+msgid "Vary: * effectively makes this response uncacheable."
+msgstr ""
+
+#: httplint/field/parsers/vary.py:44
+msgid ""
+"`Vary *` indicates that responses for this resource vary by some aspect "
+"that can't (or won't) be\n"
+"described by the server. This makes this response effectively uncacheable."
+msgstr ""
+
+#: httplint/field/parsers/vary.py:52
+msgid "Vary: User-Agent can cause cache inefficiency."
+msgstr ""
+
+#: httplint/field/parsers/vary.py:53
+msgid ""
+"Sending `Vary: User-Agent` requires caches to store a separate copy of "
+"the response for every\n"
+"`User-Agent` request header they see.\n"
+"\n"
+"Since there are so many different `User-Agent`s, this can \"bloat\" "
+"caches with many copies of the\n"
+"same thing, or cause them to give up on storing these responses at all.\n"
+"\n"
+"Consider having different URIs for the various versions of your content "
+"instead; this will give\n"
+"finer control over caching without sacrificing efficiency."
+msgstr ""
+
+#: httplint/field/parsers/vary.py:67
+msgid "Vary: Host is not necessary."
+msgstr ""
+
+#: httplint/field/parsers/vary.py:68
+msgid ""
+"Some servers (e.g., [Apache](http://httpd.apache.org/) with\n"
+"[mod_rewrite](http://httpd.apache.org/docs/2.4/mod/mod_rewrite.html)) "
+"will send `Host` in the\n"
+"`Vary` header, in the belief that this is necessary.\n"
+"\n"
+"This is not the case; HTTP specifies that the URI is the basis of the "
+"cache key, and the URI\n"
+"incorporates the `Host` header.\n"
+"\n"
+"The presence of `Vary: Host` may make some caches not store an otherwise "
+"cacheable response (since\n"
+"some cache implementations will not store anything that has a `Vary` "
+"header)."
+msgstr ""
+
+#: httplint/field/parsers/vary.py:83
+msgid "Transparent Content Negotiation is not widely supported."
+msgstr ""
+
+#: httplint/field/parsers/vary.py:84
+msgid ""
+"The `Vary: Negotiate` header value is not necessary, as \n"
+"[Transparent Content Negotiation](https://www.rfc-"
+"editor.org/rfc/rfc2295.html)\n"
+"is not widely supported.\n"
+"\n"
+"Consider removing it."
+msgstr ""
+
+#: httplint/field/parsers/vary.py:95
+#, python-format
+msgid "This resource varies in %(vary_count)s ways."
+msgstr ""
+
+#: httplint/field/parsers/vary.py:96
+msgid ""
+"The `Vary` mechanism allows a resource to describe the dimensions that "
+"its responses vary, or\n"
+"change, over; each listed header is another dimension.\n"
+"\n"
+"Varying by too many dimensions makes using this information impractical."
+msgstr ""
+
+#: httplint/field/parsers/via.py:33
+msgid "One or more intermediaries are present."
+msgstr ""
+
+#: httplint/field/parsers/via.py:34
+msgid ""
+"The `Via` header indicates that one or more intermediaries are present "
+"between the user agent and\n"
+"the origin server for the resource.\n"
+"\n"
+"This may indicate that a proxy is configured, or that the server uses a "
+"\"reverse proxy\" or CDN in\n"
+"front of it.\n"
+"\n"
+"There field has three space-separated components; first, the HTTP version"
+" of the message that the\n"
+"intermediary received, then the identity of the intermediary (usually but"
+" not always its hostname),\n"
+"and then optionally a product identifier or comment (usually used to "
+"identify the software being\n"
+"used)."
+msgstr ""
+
+#: httplint/field/parsers/x_content_type_options.py:29
+#, python-format
+msgid "%(message)s instructs browsers not to 'sniff' its media type."
+msgstr ""
+
+#: httplint/field/parsers/x_content_type_options.py:32
+msgid ""
+"Many Web browsers \"sniff\" the media type of responses to figure out "
+"whether they're HTML, RSS or\n"
+"another format, no matter what the `Content-Type` header says.\n"
+"\n"
+"This header instructs browsers not to do this, but to always respect the\n"
+"Content-Type header. It probably won't have any effect in other clients.\n"
+"\n"
+"See [MDN](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X"
+"-Content-Type-Options)\n"
+"for more information about this header."
+msgstr ""
+
+#: httplint/field/parsers/x_content_type_options.py:46
+#, python-format
+msgid ""
+"%(message)s contains an X-Content-Type-Options header with an unknown "
+"value."
+msgstr ""
+
+#: httplint/field/parsers/x_content_type_options.py:51
+msgid ""
+"Only one value is currently defined for this header, `nosniff`. Using "
+"other values here won't\n"
+"necessarily cause problems, but they probably won't have any effect "
+"either.\n"
+"\n"
+"See [MDN](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X"
+"-Content-Type-Options)\n"
+"for more information about this header."
+msgstr ""
+
+#: httplint/field/parsers/x_frame_options.py:53
+#, python-format
+msgid "%(message)s prevents some browsers from rendering it within a frame."
+msgstr ""
+
+#: httplint/field/parsers/x_frame_options.py:56
+msgid ""
+"The `X-Frame-Options` response header controls how IE8 handles HTML "
+"frames; the `DENY` value\n"
+"prevents this content from being rendered within a frame, which defends "
+"against certain types of\n"
+"attacks.\n"
+"\n"
+"See [MDN](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X"
+"-Frame-Options) for more information.\n"
+msgstr ""
+
+#: httplint/field/parsers/x_frame_options.py:68
+#, python-format
+msgid ""
+"%(message)s prevents some browsers from rendering it within a frame on "
+"another site."
+msgstr ""
+
+#: httplint/field/parsers/x_frame_options.py:74
+msgid ""
+"The `X-Frame-Options` response header controls how IE8 handles HTML "
+"frames; the `DENY` value\n"
+"prevents this content from being rendered within a frame on another site,"
+" which defends against\n"
+"certain types of attacks.\n"
+"\n"
+"Currently this is supported by IE8 and Safari 4.\n"
+"\n"
+"See [MDN](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X"
+"-Frame-Options) for more information.\n"
+msgstr ""
+
+#: httplint/field/parsers/x_frame_options.py:88
+#, python-format
+msgid "%(message)s contains an X-Frame-Options header with an unknown value."
+msgstr ""
+
+#: httplint/field/parsers/x_frame_options.py:91
+msgid ""
+"Only two values are currently defined for this header, `DENY` and "
+"`SAMEORIGIN`. Using other values\n"
+"here won't necessarily cause problems, but they probably won't have any "
+"effect either.\n"
+"\n"
+"See [MDN](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X"
+"-Frame-Options) for more information.\n"
+msgstr ""
+
