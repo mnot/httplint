@@ -136,8 +136,7 @@ but still only once for `Baz`.
 Note that `syntax` is checked against the `field_value` before _parse_ is called, subject to
 `list_header` processing.
 
-`add_note` is a function that can be called with the appropriate _Note_, when it's necessary to
-communicate something about the field_value.
+communicate something about the field_value. It returns the created _Note_ instance.
 
 _parse_ should return the parsed value corresponding to the `field_value`. If there is an error and
 the value shouldn't be remembered, raise `ValueError`.
@@ -171,6 +170,15 @@ When writing new notes, it's important to keep in mind that the `text` field is 
 valid Markdown; any variables you pass to it will be escaped for you before rendering.
 
 Common notes used by multiple fields should be in `httplint/field/notes.py`.
+
+Notes can also have child notes (sub-notes) attached to them. To do so, call `add_child` on the
+parent note instance (returned by `add_note`). `add_child` takes the Note class and any variables
+as arguments; the subject and other variables are inherited from the parent note.
+
+~~~ python
+parent_note = add_note(MY_NOTE)
+parent_note.add_child(MY_SUB_NOTE)
+~~~
 
 
 #### Writing Tests

@@ -1,4 +1,4 @@
-from typing import Any, List, Tuple, Type
+from typing import Any, List, Tuple, Type, Iterable
 import unittest
 
 from httplint.note import Note
@@ -71,10 +71,19 @@ class FieldTest(unittest.TestCase):
             self.name.lower(), "HEADER HANDLER NOT FOUND"
         )
         self.assertEqual(self.expected_out, out)
+        all_notes: List[Note] = []
+
+        def collect_notes(notes: Iterable[Note]) -> None:
+            for note in notes:
+                all_notes.append(note)
+                collect_notes(note.subnotes)
+
+        collect_notes(self.message.notes)
+
         diff = {n.__name__ for n in self.expected_notes}.symmetric_difference(
-            {n.__class__.__name__ for n in self.message.notes}
+            {n.__class__.__name__ for n in all_notes}
         )
-        for message in self.message.notes:  # check formatting
+        for message in all_notes:  # check formatting
             message.vars.update({"field_name": self.name, "response": "response"})
             self.assertTrue(message.detail)
             self.assertTrue(message.summary)

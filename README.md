@@ -57,6 +57,7 @@ Once a message has been linted, the results will appear on the `notes` property.
 * `level` - see `note.levels`
 * `summary` - a brief, one-line description of the note
 * `detail` - a longer explanation
+* `subnotes` - a list of child `Note` objects
 
 Note that `summary` is textual, and needs to be escaped in a markup environment; `detail`, however, is already escaped HTML.
 

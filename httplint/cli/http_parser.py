@@ -74,6 +74,8 @@ class HttpCliParser(HttpMessageHandler):
                 print(f"\n### {note.category.value}\n")
                 current_category = note.category
             print(f"* [{note.level.name}] {note.summary}")
+            for subnote in note.subnotes:
+                print(f"  * [{subnote.level.name}] {subnote.summary}")
         self._input_state = States.ERROR
 
     def input_error(self, err: HttpError, close: bool = True) -> None:
