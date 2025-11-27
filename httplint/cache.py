@@ -475,7 +475,7 @@ its freshness lifetime (in this case, %(freshness_lifetime)s).
 
 There are a few reasons why a cache might serve a stale response:
 
-* HTTP allows stale responses to be used to satisfy requests under exceptional circumstances;
+* HTTP allows stale responses to be used to satisfy requests in exceptional circumstances;
 e.g., when they lose contact with the origin server. This is subject to a number of requirements.
 * Response directives like `stale-if-error` and `stale-while-revalidate` explicitly allow stale
   responses to be used in particular circumstances.
@@ -520,9 +520,9 @@ so."""
 class STALE_SERVABLE(Note):
     category = categories.CACHING
     level = levels.INFO
-    _summary = "Under exceptional circumstances, this response can be served stale from a cache."
+    _summary = "In exceptional circumstances, this response can be served stale from a cache."
     _text = """\
-HTTP allows stale responses to be served under some circumstances; for example, if the origin
+HTTP allows stale responses to be served in some circumstances; for example, if the origin
 server can't be contacted, a stale response can be used even if it doesn't have explicit freshness
 information available.
 
