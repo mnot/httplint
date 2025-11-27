@@ -66,6 +66,7 @@ browsers that it should only be communicated with using HTTPS, instead of using 
             return
 
         notes_to_add: list[type[Note]] = []
+        is_valid = True
 
         if len(self.value) > 1:
             notes_to_add.append(HSTS_MULTIPLE_HEADERS)
@@ -86,6 +87,7 @@ browsers that it should only be communicated with using HTTPS, instead of using 
 
         if parsed["max-age"] is None:
             notes_to_add.append(HSTS_NO_MAX_AGE)
+            is_valid = False
         elif parsed["max-age"] == 0:
             notes_to_add.append(HSTS_MAX_AGE_ZERO)
         elif parsed["max-age"] < 1536000:
@@ -99,39 +101,52 @@ browsers that it should only be communicated with using HTTPS, instead of using 
         if self.message.base_uri and self.message.base_uri.startswith("http:"):
             if hasattr(self.message, "status_code") and self.message.status_code != 301:
                 notes_to_add.append(HSTS_OVER_HTTP)
+                is_valid = False
 
         invalidating_notes = (
-            HSTS_NO_MAX_AGE,
-            HSTS_MAX_AGE_ZERO,
             HSTS_DUPLICATE_DIRECTIVE,
-            HSTS_OVER_HTTP,
             HSTS_BAD_MAX_AGE,
             HSTS_VALUE_NOT_ALLOWED,
         )
 
-        is_valid = True
         for note in self.message.notes:
             if isinstance(note, invalidating_notes):
                 is_valid = False
                 break
 
         if is_valid:
-            for note_cls in notes_to_add:
-                if issubclass(note_cls, invalidating_notes):
-                    is_valid = False
-                    break
-
-        if is_valid:
-            add_note(HSTS_VALID)
+            parent = add_note(HSTS_VALID)
+        else:
+            parent = add_note(HSTS_INVALID)
 
         for note_cls in notes_to_add:
-            add_note(note_cls)
+            parent.add_child(note_cls)
+
+
+class HSTS_VALID(Note):
+    category = categories.SECURITY
+    level = levels.GOOD
+    _summary = "Strict Transport Security (HSTS) is enabled."
+    _text = """\
+This site has enabled HTTP Strict Transport Security (HSTS), which tells the browser to only
+communicate with it over a secure connection."""
+
+
+class HSTS_INVALID(Note):
+    category = categories.SECURITY
+    level = levels.BAD
+    _summary = "%(message)s's Strict Transport Security (HSTS) header is invalid."
+    _text = """\
+This site has attempted to enable HTTP Strict Transport Security (HSTS), which tells the browser to only
+communicate with it over a secure connection.
+
+However, one or more issues prevent it from being valid. See the child notes for details."""
 
 
 class HSTS_NO_MAX_AGE(Note):
     category = categories.SECURITY
     level = levels.BAD
-    _summary = "%(message)s's HSTS header doesn't contain a max-age directive."
+    _summary = "There is no max-age directive."
     _text = """\
 The `Strict-Transport-Security` header requires a `max-age` directive to be valid."""
 
@@ -139,7 +154,7 @@ The `Strict-Transport-Security` header requires a `max-age` directive to be vali
 class HSTS_MAX_AGE_ZERO(Note):
     category = categories.SECURITY
     level = levels.WARN
-    _summary = "%(message)s's HSTS policy has a max-age of 0."
+    _summary = "The max-age is 0."
     _text = """\
 A `max-age` of 0 tells the browser to expire the `Strict-Transport-Security` policy immediately,
 effectively disabling it."""
@@ -148,7 +163,7 @@ effectively disabling it."""
 class HSTS_SHORT_MAX_AGE(Note):
     category = categories.SECURITY
     level = levels.WARN
-    _summary = "%(message)s's HSTS policy has a short max-age."
+    _summary = "The max-age is less than one year."
     _text = """\
 Most sites should set a `max-age` of at least one year on `Strict-Transport-Security`."""
 
@@ -156,7 +171,7 @@ Most sites should set a `max-age` of at least one year on `Strict-Transport-Secu
 class HSTS_SUBDOMAINS(Note):
     category = categories.SECURITY
     level = levels.INFO
-    _summary = "%(message)s's HSTS policy applies to subdomains."
+    _summary = "HSTS applies to subdomains."
     _text = """\
 The `includeSubDomains` directive indicates that this HSTS policy applies to this domain as well as
 all of its subdomains."""
@@ -165,7 +180,7 @@ all of its subdomains."""
 class HSTS_NO_SUBDOMAINS(Note):
     category = categories.SECURITY
     level = levels.WARN
-    _summary = "%(message)s's HSTS policy doesn't apply to subdomains."
+    _summary = "HSTS doesn't apply to subdomains."
     _text = """\
 The `includeSubDomains` directive indicates that this HSTS policy applies to this domain as well as
 all of its subdomains.
@@ -178,10 +193,10 @@ that an attacker might be able to take advantage of a subdomain that doesn't hav
 class HSTS_PRELOAD(Note):
     category = categories.SECURITY
     level = levels.GOOD
-    _summary = "%(message)s's HSTS policy allows browser preloading."
+    _summary = "Browser preloading is allowed."
     _text = """\
 The `preload` directive on `Strict-Transport-Security` allows browsers to preload the site in
-their HSTS lists, avoiding the potential for making unencrypted requests when first accessing the
+its HSTS lists, avoiding the potential for making unencrypted requests when first accessing the
 site.
 
 See the [HSTS Preload List](https://hstspreload.org/) for more information.
@@ -191,7 +206,7 @@ See the [HSTS Preload List](https://hstspreload.org/) for more information.
 class HSTS_PRELOAD_NOT_SUITABLE(Note):
     category = categories.SECURITY
     level = levels.BAD
-    _summary = "%(message)s's HSTS policy allows preloading, but isn't suitable."
+    _summary = "Browser preloading is allowed, but this policy isn't suitable for it."
     _text = """\
 Preloading a site in a browser's HSTS list requires a `max-age` of at least one year and the
 `includeSubDomains` directive.
@@ -203,7 +218,7 @@ See the [HSTS Preload List](https://hstspreload.org/) for more information.
 class HSTS_NO_PRELOAD(Note):
     category = categories.SECURITY
     level = levels.INFO
-    _summary = "%(message)s's HSTS policy doesn't allow browser preloading."
+    _summary = "Browser preloading isn't allowed."
     _text = """\
 Without a `preload` directive, browsers may make an unencrypted request when first accessing the
 site, potentially exposing sensitive information.
@@ -257,15 +272,6 @@ The `%(directive)s` directive in the `Strict-Transport-Security` header is a val
 directive. It should not have an associated value."""
 
 
-class HSTS_VALID(Note):
-    category = categories.SECURITY
-    level = levels.GOOD
-    _summary = "Strict Transport Security (HSTS) is enabled."
-    _text = """\
-This site has enabled HTTP Strict Transport Security (HSTS), which tells the browser to only
-communicate with it over a secure connection."""
-
-
 class HSTSTest(FieldTest):
     name = "Strict-Transport-Security"
     inputs = [b"max-age=31536000; includeSubDomains"]
@@ -290,7 +296,7 @@ class HSTSHttpTest(FieldTest):
     name = "Strict-Transport-Security"
     inputs = [b"max-age=31536000"]
     expected_out = [{"max-age": 31536000, "includesubdomains": False, "preload": False}]
-    expected_notes = [HSTS_OVER_HTTP, HSTS_NO_SUBDOMAINS, HSTS_NO_PRELOAD]
+    expected_notes = [HSTS_OVER_HTTP, HSTS_NO_SUBDOMAINS, HSTS_NO_PRELOAD, HSTS_INVALID]
 
     def set_context(self, message: HttpMessageLinter) -> None:
         message.base_uri = "http://www.example.com/"
@@ -300,7 +306,12 @@ class HSTSDuplicateTest(FieldTest):
     name = "Strict-Transport-Security"
     inputs = [b"max-age=31536000; max-age=100"]
     expected_out = [{"max-age": 31536000, "includesubdomains": False, "preload": False}]
-    expected_notes = [HSTS_DUPLICATE_DIRECTIVE, HSTS_NO_SUBDOMAINS, HSTS_NO_PRELOAD]
+    expected_notes = [
+        HSTS_DUPLICATE_DIRECTIVE,
+        HSTS_NO_SUBDOMAINS,
+        HSTS_NO_PRELOAD,
+        HSTS_INVALID,
+    ]
 
     def set_context(self, message: HttpMessageLinter) -> None:
         message.base_uri = "https://www.example.com/"
@@ -310,7 +321,12 @@ class HSTSTripleDuplicateTest(FieldTest):
     name = "Strict-Transport-Security"
     inputs = [b"max-age=31536000; max-age=100; max-age=200"]
     expected_out = [{"max-age": 31536000, "includesubdomains": False, "preload": False}]
-    expected_notes = [HSTS_DUPLICATE_DIRECTIVE, HSTS_NO_SUBDOMAINS, HSTS_NO_PRELOAD]
+    expected_notes = [
+        HSTS_DUPLICATE_DIRECTIVE,
+        HSTS_NO_SUBDOMAINS,
+        HSTS_NO_PRELOAD,
+        HSTS_INVALID,
+    ]
 
     def set_context(self, message: HttpMessageLinter) -> None:
         message.base_uri = "https://www.example.com/"
@@ -372,6 +388,7 @@ class HSTSMaxAgeZeroTest(FieldTest):
         HSTS_NO_SUBDOMAINS,
         HSTS_NO_PRELOAD,
         HSTS_MAX_AGE_ZERO,
+        HSTS_VALID,
     ]
 
     def set_context(self, message: HttpMessageLinter) -> None:

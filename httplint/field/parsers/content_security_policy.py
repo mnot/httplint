@@ -32,11 +32,13 @@ sources of content that browsers are allowed to load on a page."""
 
     def evaluate(self, add_note: AddNoteMethodType) -> None:
         if self.value:
-            add_note(
+            parent = add_note(
                 CONTENT_SECURITY_POLICY,
                 report_only=self.report_only_string,
                 report_only_text=self.report_only_text,
             )
+        else:
+            return
 
         unsafe_inline_directives = []
         unsafe_eval_directives = []
@@ -79,36 +81,36 @@ sources of content that browsers are allowed to load on a page."""
                         http_uri_directives.append(name)
 
         if duplicate_directives:
-            add_note(
+            parent.add_child(
                 CSP_DUPLICATE_DIRECTIVE,
                 directives_list=self._make_list(duplicate_directives),
                 report_only_text=self.report_only_text,
             )
         if deprecated_report_uri:
-            add_note(
+            parent.add_child(
                 CSP_DEPRECATED_REPORT_URI,
                 report_only_text=self.report_only_text,
             )
         if wide_open_directives:
-            add_note(
+            parent.add_child(
                 CSP_WIDE_OPEN,
                 directives_list=self._make_list(wide_open_directives),
                 report_only_text=self.report_only_text,
             )
         if unsafe_inline_directives:
-            add_note(
+            parent.add_child(
                 CSP_UNSAFE_INLINE,
                 directives_list=self._make_list(unsafe_inline_directives),
                 report_only_text=self.report_only_text,
             )
         if unsafe_eval_directives:
-            add_note(
+            parent.add_child(
                 CSP_UNSAFE_EVAL,
                 directives_list=self._make_list(unsafe_eval_directives),
                 report_only_text=self.report_only_text,
             )
         if http_uri_directives:
-            add_note(
+            parent.add_child(
                 CSP_HTTP_URI,
                 directives_list=self._make_list(http_uri_directives),
                 report_only_text=self.report_only_text,
@@ -130,7 +132,7 @@ the sources of content that browsers are allowed to use on a page.%(report_only_
 class CSP_UNSAFE_INLINE(Note):
     category = categories.SECURITY
     level = levels.WARN
-    _summary = "%(message)s allows inline scripts to run."
+    _summary = "Inline scripts are allowed."
     _text = """\
 The `'unsafe-inline'` [Content Security Policy](https://www.w3.org/TR/CSP3/)
 directive allows the execution of inline scripts and event handlers, which
@@ -145,7 +147,7 @@ It was found in the following directives:
 class CSP_UNSAFE_EVAL(Note):
     category = categories.SECURITY
     level = levels.WARN
-    _summary = "%(message)s allows unsafe script evaluation."
+    _summary = "Unsafe script evaluation is allowed."
     _text = """\
 The `'unsafe-eval'` [Content Security Policy](https://www.w3.org/TR/CSP3/)
 directive allows the use of string-to-code mechanisms like `eval()`, which can make it easier for
@@ -159,7 +161,7 @@ It was found in the following directives:
 class CSP_HTTP_URI(Note):
     category = categories.SECURITY
     level = levels.WARN
-    _summary = "%(message)s allows loading from insecure HTTP sources."
+    _summary = "Loading from insecure HTTP sources is allowed."
     _text = """\
 Allowing `http:` sources in `%(field_name)s` can allow attackers to intercept and modify
 content loaded by the page, potentially bypassing security controls.
@@ -172,7 +174,7 @@ It was found in the following directives:
 class CSP_DUPLICATE_DIRECTIVE(Note):
     category = categories.SECURITY
     level = levels.WARN
-    _summary = "%(message)s contains duplicate content security policy directives."
+    _summary = "Duplicate directives are present."
     _text = """\
 Directives must only appear once in the `%(field_name)s` header; subsequent occurrences are ignored.
 
@@ -184,9 +186,7 @@ The following directives were duplicated:
 class CSP_DEPRECATED_REPORT_URI(Note):
     category = categories.SECURITY
     level = levels.INFO
-    _summary = (
-        "%(message)s uses the deprecated report-uri content security policy directive."
-    )
+    _summary = "The deprecated report-uri directive is used."
     _text = """\
 The `report-uri` [Content Security Policy](https://www.w3.org/TR/CSP3/)
 directive is deprecated in favor of `report-to`. It is recommended to use `report-to`
@@ -197,7 +197,7 @@ compatibility."""
 class CSP_WIDE_OPEN(Note):
     category = categories.SECURITY
     level = levels.WARN
-    _summary = "%(message)s allows all sources in one or more content security policy directives."
+    _summary = "All sources are allowed in one or more directives."
     _text = """\
 The `*` [Content Security Policy](https://www.w3.org/TR/CSP3/)
 directive allows resources to be loaded from any origin, which significantly reduces the protection
