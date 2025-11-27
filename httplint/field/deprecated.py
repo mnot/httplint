@@ -35,6 +35,7 @@ OBSOLETED_FIELDS = {
     "Digest": "https://datatracker.ietf.org/doc/draft-ietf-httpbis-digest-headers/",
     "Expect-CT": "https://mailarchive.ietf.org/arch/msg/httpbisa/XpAWZsIre5WAte3lXGTh6A77sok/",
     "Ext": "https://datatracker.ietf.org/doc/status-change-http-experiments-to-historic/",
+    "Feature-Policy": "https://www.w3.org/TR/feature-policy/",
     "GetProfile": "https://www.w3.org/TR/NOTE-OPS-OverHTTP",
     "HTTP2-Settings": "https://www.rfc-editor.org/rfc/rfc9113.html#name-http2-settings-header-field",
     "Man": "https://datatracker.ietf.org/doc/status-change-http-experiments-to-historic/",
