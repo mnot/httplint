@@ -56,24 +56,11 @@ def display_bytes(inbytes: bytes, encoding: str = "utf-8", truncate: int = 40) -
     return "".join(out)
 
 
-def prose_list(inlist: List[str], markup: str = "") -> str:
+def markdown_list(inlist: List[str], markup: str = "") -> str:
     """
-    Format a list of strings into prose.
+    Format a list of strings into markdown.
     """
-    length = len(inlist)
-    mu = markup
-    if length == 0:
-        return translate("(none)")
-    if length == 1:
-        return f"{mu}{inlist[0]}{mu}"
-    if length == 2:
-        return translate("%(item1)s and %(item2)s") % {
-            "item1": f"{mu}{inlist[0]}{mu}",
-            "item2": f"{mu}{inlist[1]}{mu}",
-        }
-    return f"{', '.join([f'{mu}{i}{mu}' for i in inlist[:-1]])}, " + translate(
-        "and %(item)s"
-    ) % {"item": f"{mu}{inlist[-1]}{mu}"}
+    return "\n".join([f"- {markup}{i}{markup}" for i in inlist])
 
 
 def relative_time(utime: float, now: float, show_sign: int = 1) -> str:
