@@ -185,7 +185,7 @@ The following directives were duplicated:
 
 class CSP_DEPRECATED_REPORT_URI(Note):
     category = categories.SECURITY
-    level = levels.INFO
+    level = levels.WARN
     _summary = "The deprecated report-uri directive is used."
     _text = """\
 The `report-uri` [Content Security Policy](https://www.w3.org/TR/CSP3/)
