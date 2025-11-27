@@ -57,4 +57,39 @@ endif
 url: venv
 	curl -si $(URL_ARGS) | $(VENV)/httplint --now
 
+## Translation
+.PHONY: extract_messages
+extract_messages: venv
+	PYTHONPATH=. $(VENV)/pybabel extract -F tools/i18n/babel.cfg -o tools/i18n/data/messages.pot .
+
+.PHONY: update_po
+update_po: extract_messages
+	$(VENV)/pybabel update -i tools/i18n/data/messages.pot -d httplint/translations
+
+.PHONY: apply_memory
+apply_memory: venv
+	$(VENV)/python -m tools.i18n.apply --locale_dir httplint/translations
+
+.PHONY: save_memory
+save_memory: venv
+	$(VENV)/python -m tools.i18n.extract --locale_dir httplint/translations
+
+.PHONY: autotranslate
+autotranslate: venv
+	$(VENV)/python -m tools.i18n.autotranslate --locale_dir httplint/translations --model $(or $(MODEL),gemini-2.5-flash-lite) --rpm $(or $(RPM),15)
+
+.PHONY: compile_translations
+compile_translations: venv
+	$(VENV)/pybabel compile -d httplint/translations
+
+.PHONY: translations
+translations: update_po apply_memory compile_translations
+
+.PHONY: init_locale
+init_locale: venv
+	@if [ -z "$(LOCALE)" ]; then echo "Usage: make init_locale LOCALE=xx"; exit 1; fi
+	$(VENV)/pybabel init -i tools/i18n/data/messages.pot -d httplint/translations -l $(LOCALE)
+
+
+
 include Makefile.pyproject

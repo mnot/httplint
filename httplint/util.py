@@ -5,6 +5,8 @@ from typing import List
 import unittest
 from urllib.parse import urlsplit, urlunsplit, quote as urlquote
 
+from httplint.i18n import translate, ngettext
+
 
 def iri_to_uri(iri: str) -> str:
     "Takes a string that can contain an IRI and return a URI."
@@ -60,14 +62,17 @@ def prose_list(inlist: List[str], markup: str = "") -> str:
     length = len(inlist)
     mu = markup
     if length == 0:
-        return "(none)"
+        return translate("(none)")
     if length == 1:
         return f"{mu}{inlist[0]}{mu}"
     if length == 2:
-        return f"{mu}{inlist[0]}{mu} and {mu}{inlist[1]}{mu}"
-    return (
-        f"{', '.join([f'{mu}{i}{mu}' for i in inlist[:-1]])}, and {mu}{inlist[-1]}{mu}"
-    )
+        return translate("%(item1)s and %(item2)s") % {
+            "item1": f"{mu}{inlist[0]}{mu}",
+            "item2": f"{mu}{inlist[1]}{mu}",
+        }
+    return f"{', '.join([f'{mu}{i}{mu}' for i in inlist[:-1]])}, " + translate(
+        "and %(item)s"
+    ) % {"item": f"{mu}{inlist[-1]}{mu}"}
 
 
 def relative_time(utime: float, now: float, show_sign: int = 1) -> str:
@@ -81,8 +86,8 @@ def relative_time(utime: float, now: float, show_sign: int = 1) -> str:
 
     signs = {
         0: ("0", "", ""),
-        1: ("now", "ago", "from now"),
-        2: ("none", "behind", "ahead"),
+        1: (translate("now"), translate("ago"), translate("from now")),
+        2: (translate("none"), translate("behind"), translate("ahead")),
     }
 
     age = round(now - utime)
@@ -105,15 +110,15 @@ def relative_time(utime: float, now: float, show_sign: int = 1) -> str:
 
     arr = []
     if yrs:
-        arr.append(f"{yrs} year{yrs > 1 and 's' or ''}")
+        arr.append(ngettext("%(num)s year", "%(num)s years", yrs) % {"num": yrs})
     if day:
-        arr.append(f"{day} day{day > 1 and 's' or ''}")
+        arr.append(ngettext("%(num)s day", "%(num)s days", day) % {"num": day})
     if hrs:
-        arr.append(f"{hrs} hour{hrs > 1 and 's' or ''}")
+        arr.append(ngettext("%(num)s hour", "%(num)s hours", hrs) % {"num": hrs})
     if mnt:
-        arr.append(f"{mnt} minute{mnt > 1 and 's' or ''}")
+        arr.append(ngettext("%(num)s minute", "%(num)s minutes", mnt) % {"num": mnt})
     if sec:
-        arr.append(f"{sec} second{sec > 1 and 's' or ''}")
+        arr.append(ngettext("%(num)s second", "%(num)s seconds", sec) % {"num": sec})
     arr = arr[:2]  # resolution
     output = ", ".join(arr)
     if show_sign:

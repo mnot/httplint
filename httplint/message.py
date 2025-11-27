@@ -14,6 +14,7 @@ from httplint.util import iri_to_uri, f_num
 from httplint.status import StatusChecker
 from httplint.content_type import verify_content_type
 from httplint.field.notes import MISSING_USER_AGENT
+from httplint.i18n import L_, translate
 
 
 class HttpMessageParams(TypedDict):
@@ -27,8 +28,8 @@ class HttpMessageLinter:
     Base class for HTTP message linters.
     """
 
-    message_ref = "This message"
-    message_type = "message"
+    message_ref = L_("This message")
+    message_type = L_("message")
 
     def __init__(
         self,
@@ -38,8 +39,8 @@ class HttpMessageLinter:
     ) -> None:
         self.notes = Notes(
             {
-                "message": message_ref or self.message_ref,
-                "message_type": self.message_type,
+                "message": translate(message_ref or self.message_ref),
+                "message_type": translate(self.message_type),
             }
         )
         self.related = related
@@ -154,8 +155,8 @@ class HttpRequestLinter(HttpMessageLinter):
     """
 
     max_uri_chars = 8000
-    message_ref = "This request"
-    message_type = "request"
+    message_ref = L_("This request")
+    message_type = L_("request")
 
     def __init__(self, **kw: Unpack[HttpMessageParams]) -> None:
         HttpMessageLinter.__init__(self, **kw)
@@ -199,8 +200,8 @@ class HttpResponseLinter(HttpMessageLinter):
     A HTTP Response message linter.
     """
 
-    message_ref = "This response"
-    message_type = "response"
+    message_ref = L_("This response")
+    message_type = L_("response")
 
     def __init__(self, **kw: Unpack[HttpMessageParams]) -> None:
         HttpMessageLinter.__init__(self, **kw)

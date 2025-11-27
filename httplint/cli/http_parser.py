@@ -7,6 +7,7 @@ from thor.http.error import HttpError, StartLineError, HttpVersionError
 
 from httplint.message import HttpMessageLinter, HttpRequestLinter, HttpResponseLinter
 from httplint.types import RawFieldListType
+from httplint.i18n import translate
 
 
 class modes(Enum):
@@ -71,7 +72,7 @@ class HttpCliParser(HttpMessageHandler):
         current_category = None
         for note in notes:
             if note.category != current_category:
-                print(f"\n### {note.category.value}\n")
+                print(f"\n### {translate(note.category.value)}\n")
                 current_category = note.category
             print(f"* [{note.level.name}] {note.summary}")
             for subnote in note.subnotes:
