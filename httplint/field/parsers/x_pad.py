@@ -16,7 +16,7 @@ class x_pad(HttpField):
     )
     syntax = False
     list_header = False
-    deprecated = False
+    deprecated = True
     valid_in_requests = False
     valid_in_responses = True
     no_coverage = True
