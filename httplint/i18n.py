@@ -1,28 +1,41 @@
 import os
-from typing import Optional
-from babel.support import Translations, format_timedelta
+from contextlib import contextmanager
+from contextvars import ContextVar
+from typing import Optional, Generator, Dict
+from babel.support import Translations
+from babel.dates import format_timedelta as babel_format_timedelta
 
-_translations: Optional[Translations] = None
+_translations_cache: Dict[str, Translations] = {}
+_locale_var: ContextVar[str] = ContextVar("locale", default="en")
 
 
-def set_locale(locale_name: str) -> None:
+@contextmanager
+def set_locale(locale_name: Optional[str]) -> Generator[None, None, None]:
     """
-    Set the locale for the application.
+    Set the locale for the application context.
     """
-    global _translations
-    # We assume translations are in 'httplint/translations' (or similar)
-    # For now, let's look in the package directory
+    token = _locale_var.set(locale_name or "en")
+    try:
+        yield
+    finally:
+        _locale_var.reset(token)
 
-    localedir = os.path.join(os.path.dirname(__file__), "translations")
-    _translations = Translations.load(localedir, [locale_name])
+
+def get_translations() -> Optional[Translations]:
+    locale = _locale_var.get()
+    if locale not in _translations_cache:
+        localedir = os.path.join(os.path.dirname(__file__), "translations")
+        _translations_cache[locale] = Translations.load(localedir, [locale])
+    return _translations_cache[locale]
 
 
 def translate(message: str) -> str:
     """
     Translate a message.
     """
-    if _translations:
-        return _translations.gettext(message)
+    t = get_translations()
+    if t:
+        return t.gettext(message)
     return message
 
 
@@ -30,9 +43,18 @@ def ngettext(singular: str, plural: str, n: int) -> str:
     """
     Translate a message with pluralization.
     """
-    if _translations:
-        return _translations.ngettext(singular, plural, n)
+    t = get_translations()
+    if t:
+        return t.ngettext(singular, plural, n)
     return singular if n == 1 else plural
+
+
+def format_timedelta(delta, **kwargs) -> str:
+    """
+    Format a timedelta object.
+    """
+    locale = _locale_var.get()
+    return babel_format_timedelta(delta, locale=locale, **kwargs)
 
 
 def L_(message: str) -> str:

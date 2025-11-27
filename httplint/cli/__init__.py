@@ -8,11 +8,10 @@ from httplint.i18n import set_locale
 
 def main() -> None:
     args = getargs()
-    if args.locale:
-        set_locale(args.locale)
-    start_time = time.time() if args.now else None
-    parser = HttpCliParser(args, start_time)
-    parser.handle_input(sys.stdin.read().encode("utf-8", "replace"))
+    with set_locale(args.locale):
+        start_time = time.time() if args.now else None
+        parser = HttpCliParser(args, start_time)
+        parser.handle_input(sys.stdin.read().encode("utf-8", "replace"))
 
 
 def getargs() -> Namespace:
