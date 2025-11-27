@@ -23,6 +23,7 @@ The `Permissions-Policy` response header allows a site to control the use of bro
     def evaluate(self, add_note: AddNoteMethodType) -> None:
         if not self.value:
             return
+        parent = add_note(PERMISSIONS_POLICY_PRESENT)
         for feature, allowlist in self.value.items():
             val, _ = allowlist
             if isinstance(val, list):
@@ -30,34 +31,48 @@ The `Permissions-Policy` response header allows a site to control the use of bro
                     i_val, _ = item
                     if isinstance(i_val, Token):
                         if str(i_val) not in ["self", "src"]:
-                            add_note(
+                            parent.add_child(
                                 PERMISSIONS_POLICY_UNKNOWN_TOKEN,
                                 token=str(i_val),
                                 feature=feature,
                             )
                     elif isinstance(i_val, str):
                         if i_val in ["self", "src", "*", "none"]:
-                            add_note(
+                            parent.add_child(
                                 PERMISSIONS_POLICY_QUOTED_KEYWORD,
                                 value=i_val,
                                 feature=feature,
                             )
                     else:
-                        add_note(
+                        parent.add_child(
                             PERMISSIONS_POLICY_INVALID_ITEM_TYPE,
                             item=str(i_val),
                             feature=feature,
                         )
             elif isinstance(val, Token):
                 if val != "*":
-                    add_note(PERMISSIONS_POLICY_INVALID_VALUE, feature=feature)
+                    parent.add_child(
+                        PERMISSIONS_POLICY_INVALID_VALUE,
+                        feature=feature,
+                    )
             else:
-                add_note(PERMISSIONS_POLICY_INVALID_VALUE, feature=feature)
+                parent.add_child(
+                    PERMISSIONS_POLICY_INVALID_VALUE,
+                    feature=feature,
+                )
 
             if feature not in SENSITIVE_FEATURES:
                 continue
             if isinstance(val, Token) and val == "*":
-                add_note(PERMISSIONS_POLICY_WILDCARD, feature=feature)
+                parent.add_child(PERMISSIONS_POLICY_WILDCARD, feature=feature)
+
+
+class PERMISSIONS_POLICY_PRESENT(Note):
+    category = categories.SECURITY
+    level = levels.GOOD
+    _summary = "%(message)s sets a Permissions Policy."
+    _text = """\
+The `Permissions-Policy` header allows a site to control the use of browser features."""
 
 
 class PERMISSIONS_POLICY_WILDCARD(Note):
@@ -65,7 +80,7 @@ class PERMISSIONS_POLICY_WILDCARD(Note):
     level = levels.WARN
     _summary = "The '%(feature)s' feature is allowed for all origins."
     _text = """\
-The `Permissions-Policy` header allows the `%(feature)s` feature for all origins (using `*`).
+The `%(feature)s` feature is allowed for all origins (using `*`).
 This is insecure and should be restricted to specific origins or `self`."""
 
 
@@ -81,9 +96,9 @@ an Inner List of origins (e.g., `(self "https://example.com")`) or the special t
 class PERMISSIONS_POLICY_UNKNOWN_TOKEN(Note):
     category = categories.SECURITY
     level = levels.WARN
-    _summary = "The token '%(token)s' is not valid in a Permissions Policy allowlist."
+    _summary = "'%(token)s' is not valid in an allowlist."
     _text = """\
-The token `%(token)s` is not a valid keyword in a `Permissions-Policy` allowlist.
+The token `%(token)s` is not a valid keyword in an allowlist.
 Valid tokens are `self` and `src`."""
 
 
@@ -99,11 +114,9 @@ If you meant to use the keyword, remove the quotes (e.g., `self` instead of `"se
 class PERMISSIONS_POLICY_INVALID_ITEM_TYPE(Note):
     category = categories.SECURITY
     level = levels.WARN
-    _summary = (
-        "The item '%(item)s' is not a valid type for a Permissions Policy allowlist."
-    )
+    _summary = "The item '%(item)s' is not a valid type for an allowlist."
     _text = """\
-The item `%(item)s` is not a valid type for a `Permissions-Policy` allowlist.
+The item `%(item)s` is not a valid type for an allowlist.
 Allowlists should contain origins (strings) or keywords (tokens)."""
 
 
