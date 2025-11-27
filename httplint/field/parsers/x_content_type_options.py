@@ -25,7 +25,7 @@ Indicates that the client should not 'sniff' the `Content-Type` of the message f
 
 class CONTENT_TYPE_OPTIONS(Note):
     category = categories.SECURITY
-    level = levels.INFO
+    level = levels.GOOD
     _summary = "%(message)s instructs browsers not to 'sniff' its media type."
     # Original URL:
     # http://blogs.msdn.com/b/ie/archive/2008/09/02/ie8-security-part-vi-beta-2-update.aspx
