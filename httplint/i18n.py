@@ -1,6 +1,6 @@
 import os
 from typing import Optional
-from babel.support import Translations
+from babel.support import Translations, format_timedelta
 
 _translations: Optional[Translations] = None
 
