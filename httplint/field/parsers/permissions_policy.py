@@ -138,14 +138,14 @@ class PermissionsPolicyTest(FieldTest):
     name = "Permissions-Policy"
     inputs = [b"geolocation=(), camera=self"]
     expected_out = {"geolocation": ([], {}), "camera": (Token("self"), {})}
-    expected_notes = [PERMISSIONS_POLICY_INVALID_VALUE]
+    expected_notes = [PERMISSIONS_POLICY_INVALID_VALUE, PERMISSIONS_POLICY_PRESENT]
 
 
 class PermissionsPolicyWildcardTest(FieldTest):
     name = "Permissions-Policy"
     inputs = [b"geolocation=*, camera=()"]
     expected_out = {"geolocation": (Token("*"), {}), "camera": ([], {})}
-    expected_notes = [PERMISSIONS_POLICY_WILDCARD]
+    expected_notes = [PERMISSIONS_POLICY_WILDCARD, PERMISSIONS_POLICY_PRESENT]
 
 
 class PermissionsPolicyInvalidTest(FieldTest):
@@ -158,4 +158,5 @@ class PermissionsPolicyInvalidTest(FieldTest):
     expected_notes = [
         PERMISSIONS_POLICY_QUOTED_KEYWORD,
         PERMISSIONS_POLICY_UNKNOWN_TOKEN,
+        PERMISSIONS_POLICY_PRESENT,
     ]
