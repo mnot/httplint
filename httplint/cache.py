@@ -520,7 +520,7 @@ so."""
 class STALE_SERVABLE(Note):
     category = categories.CACHING
     level = levels.INFO
-    _summary = "In exceptional circumstances, this response can be served stale from a cache."
+    _summary = "In exceptional circumstances, caches can serve this response stale."
     _text = """\
 HTTP allows stale responses to be served in some circumstances; for example, if the origin
 server can't be contacted, a stale response can be used even if it doesn't have explicit freshness
@@ -532,7 +532,7 @@ This behaviour can be prevented by using the `Cache-Control: must-revalidate` re
 class STALE_IF_ERROR(Note):
     category = categories.CACHING
     level = levels.INFO
-    _summary = "If an error occurs, this response can be served stale from a cache."
+    _summary = "If an error occurs, caches can serve this response stale."
     _text = """\
 The `stale-if-error` cache directive allows a cache to return a stale response when an error
 (e.g., a 500 Internal Server Error, or a network timeout) is encountered while attempting to
