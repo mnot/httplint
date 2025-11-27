@@ -46,24 +46,12 @@ class ResponseCacheChecker:
             return
         if not self.check_age():
             return
-        if not self.check_cache_control():
-            return
         if not self.check_freshness():
+            return
+        if not self.check_stale():
             return
 
     def check_basic(self) -> bool:
-        # Is method cacheable?
-        if (
-            self._request
-            and self._request.method
-            and self._request.method not in CACHEABLE_METHODS
-        ):
-            self.store_shared = self.store_private = False
-            self._request.notes.add(
-                "method", METHOD_UNCACHEABLE, method=self._request.method
-            )
-            return False
-
         # Is Vary: * present?
         if "*" in self.vary_value:
             self.store_shared = self.store_private = False
@@ -81,52 +69,68 @@ class ResponseCacheChecker:
         return True
 
     def check_storable(self) -> bool:
+        # method
+        if (
+            self._request
+            and self._request.method
+            and self._request.method not in CACHEABLE_METHODS
+        ):
+            self.store_shared = self.store_private = False
+            self._request.notes.add(
+                "method", STORE_METHOD_UNCACHEABLE, method=self._request.method
+            )
+            return False
+
         # no-store
         if "no-store" in self.cc_dict:
             self.store_shared = self.store_private = False
-            self.notes.add("header-cache-control", NO_STORE)
+            self.notes.add("header-cache-control", STORE_NO_STORE)
             return False
 
         # private
         if "private" in self.cc_dict:
             self.store_shared = False
-            self.notes.add("header-cache-control", PRIVATE_CC)
+            self.notes.add("header-cache-control", STORE_PRIVATE_CC)
 
             if "public" in self.cc_dict:
-                self.notes.add("header-cache-control", PRIVATE_PUBLIC_CONFLICT)
+                self.notes.add("header-cache-control", STORE_PRIVATE_PUBLIC_CONFLICT)
 
         # authorization
         elif self._request and "authorization" in [
             k.lower() for k, v in self._request.headers.text
         ]:
             if "public" in self.cc_dict:
-                self.notes.add("header-cache-control", PUBLIC_AUTH, directive="public")
+                self.notes.add(
+                    "header-cache-control", STORE_PUBLIC_AUTH, directive="public"
+                )
             elif "must-revalidate" in self.cc_dict:
                 self.notes.add(
-                    "header-cache-control", PUBLIC_AUTH, directive="must-revalidate"
+                    "header-cache-control",
+                    STORE_PUBLIC_AUTH,
+                    directive="must-revalidate",
                 )
             elif "s-maxage" in self.cc_dict:
                 self.notes.add(
-                    "header-cache-control", PUBLIC_AUTH, directive="s-maxage"
+                    "header-cache-control", STORE_PUBLIC_AUTH, directive="s-maxage"
                 )
             else:
                 self.store_shared = False
-                self.notes.add("header-cache-control", PRIVATE_AUTH)
+                self.notes.add("header-cache-control", STORE_PRIVATE_AUTH)
         else:
-            self.notes.add("header-cache-control", STORABLE)
-
-            if "public" in self.cc_dict:
-                self.notes.add("header-cache-control", PUBLIC_UNNECESSARY)
-        return True
-
-    def check_cache_control(self) -> bool:
-        # no-cache
-        if "no-cache" in self.cc_dict:
-            if self.lm_value is None and self.etag_value is None:
-                self.notes.add("header-cache-control", NO_CACHE_NO_VALIDATOR)
+            if (
+                "public" in self.cc_dict
+                or "private" in self.cc_dict
+                or self.expires_value
+                or "max-age" in self.cc_dict
+                or self._response.status_code in HEURISTIC_CACHEABLE_STATUS
+            ):
+                self.notes.add("header-cache-control", STORE_STORABLE)
+            elif "s-maxage" in self.cc_dict:
+                self.notes.add("header-cache-control", STORE_STORABLE_SHARED_ONLY)
             else:
-                self.notes.add("header-cache-control", NO_CACHE)
-            return False
+                self.notes.add("header-cache-control", STORE_UNSTORABLE)
+                return False
+
         return True
 
     def check_age(self) -> bool:
@@ -156,11 +160,12 @@ class ResponseCacheChecker:
         expires_hdr_present = "expires" in [
             n.lower() for (n, v) in self._response.headers.text
         ]
-        has_explicit_freshness = False
+        self.has_explicit_freshness = False
+        self.has_heuristic_freshness = False
         freshness_hdrs = ["header-date"]
         if expires_hdr_present and self.response_time:
             # An invalid Expires header means it's automatically stale
-            has_explicit_freshness = True
+            self.has_explicit_freshness = True
             freshness_hdrs.append("header-expires")
             expires_lifetime = self.freshness_lifetime_shared = (
                 self.expires_value or 0
@@ -171,11 +176,11 @@ class ResponseCacheChecker:
             self.freshness_lifetime_private = self.cc_dict["max-age"]
             self.freshness_lifetime_shared = self.cc_dict["max-age"]
             freshness_hdrs.append("header-cache-control")
-            has_explicit_freshness = True
+            self.has_explicit_freshness = True
         if "s-maxage" in self.cc_dict:
             self.freshness_lifetime_shared = self.cc_dict["s-maxage"]
             freshness_hdrs.append("header-cache-control")
-            has_explicit_freshness = True
+            self.has_explicit_freshness = True
 
         freshness_left = self.freshness_lifetime_private - self.age
         freshness_left_str = relative_time(abs(int(freshness_left)), 0, 0)
@@ -189,12 +194,20 @@ class ResponseCacheChecker:
             int(self.freshness_lifetime_shared), 0, 0
         )
 
-        is_fresh = freshness_left > 0
-        is_shared_fresh = shared_freshness_left > 0
+        self.is_fresh = freshness_left > 0
+        self.is_shared_fresh = shared_freshness_left > 0
         current_age_str = relative_time(self.age, 0, 0)
 
+        # no-cache
+        if "no-cache" in self.cc_dict:
+            if self.lm_value is None and self.etag_value is None:
+                self.notes.add("header-cache-control", FRESHNESS_NO_CACHE_NO_VALIDATOR)
+            else:
+                self.notes.add("header-cache-control", FRESHNESS_NO_CACHE)
+            return False
+
         # explicit freshness
-        if has_explicit_freshness:
+        if self.has_explicit_freshness:
             if self.freshness_lifetime_shared != self.freshness_lifetime_private:
                 self.notes.add(
                     " ".join(freshness_hdrs),
@@ -203,10 +216,10 @@ class ResponseCacheChecker:
                     fresh_left=freshness_left_str,
                     share_lifetime=shared_freshness_lifetime_str,
                     share_left=shared_freshness_left_str,
-                    private_status="fresh" if is_fresh else "stale",
-                    shared_status="fresh" if is_shared_fresh else "stale",
+                    private_status="fresh" if self.is_fresh else "stale",
+                    shared_status="fresh" if self.is_shared_fresh else "stale",
                 )
-            elif is_fresh or is_shared_fresh:
+            elif self.is_fresh or self.is_shared_fresh:
                 self.notes.add(
                     " ".join(freshness_hdrs),
                     FRESHNESS_FRESH,
@@ -227,10 +240,19 @@ class ResponseCacheChecker:
 
         # heuristic freshness
         elif self._response.status_code in HEURISTIC_CACHEABLE_STATUS:
+            self.has_heuristic_freshness = True
             self.notes.add("header-last-modified", FRESHNESS_HEURISTIC)
         else:
             self.notes.add("", FRESHNESS_NONE)
 
+        # check to see if public was necessary
+        if "public" in self.cc_dict and (
+            self.has_explicit_freshness or self.has_heuristic_freshness
+        ):
+            self.notes.add("header-cache-control", STORE_PUBLIC_UNNECESSARY)
+        return True
+
+    def check_stale(self) -> bool:
         # stale-while-revalidate
         if "stale-while-revalidate" in self.cc_dict:
             self.notes.add("header-cache-control", STALE_WHILE_REVALIDATE)
@@ -239,26 +261,18 @@ class ResponseCacheChecker:
         if "stale-if-error" in self.cc_dict:
             self.notes.add("header-cache-control", STALE_IF_ERROR)
         elif "must-revalidate" in self.cc_dict:
-            if is_fresh:
+            if self.is_fresh:
                 self.notes.add("header-cache-control", FRESH_MUST_REVALIDATE)
-            elif has_explicit_freshness:
+            elif self.has_explicit_freshness:
                 self.notes.add("header-cache-control", STALE_MUST_REVALIDATE)
         elif "proxy-revalidate" in self.cc_dict or "s-maxage" in self.cc_dict:
-            if is_shared_fresh:
+            if self.is_shared_fresh:
                 self.notes.add("header-cache-control", FRESH_PROXY_REVALIDATE)
-            elif has_explicit_freshness:
+            elif self.has_explicit_freshness:
                 self.notes.add("header-cache-control", STALE_PROXY_REVALIDATE)
         else:
             self.notes.add("header-cache-control", STALE_SERVABLE)
         return True
-
-
-class METHOD_UNCACHEABLE(Note):
-    category = categories.CACHING
-    level = levels.INFO
-    _summary = "Responses to the %(method)s method can't be stored by caches."
-    _text = """\
-"""
 
 
 class DATE_CLOCKLESS(Note):
@@ -280,7 +294,15 @@ the message was generated in `Date` for them to be useful; otherwise, clock drif
 between nodes as well as caching could skew their application."""
 
 
-class NO_STORE(Note):
+class STORE_METHOD_UNCACHEABLE(Note):
+    category = categories.CACHING
+    level = levels.INFO
+    _summary = "Responses to the %(method)s method can't be stored by caches."
+    _text = """\
+"""
+
+
+class STORE_NO_STORE(Note):
     category = categories.CACHING
     level = levels.INFO
     _summary = "%(message)s can't be stored by caches."
@@ -288,17 +310,17 @@ class NO_STORE(Note):
 The `Cache-Control: no-store` directive indicates that this response can't be stored by a cache."""
 
 
-class PRIVATE_CC(Note):
+class STORE_PRIVATE_CC(Note):
     category = categories.CACHING
     level = levels.INFO
-    _summary = "%(message)s only allows private caches to store it."
+    _summary = "%(message)s allows only private caches to store it."
     _text = """\
 The `Cache-Control: private` directive indicates that the response can only be stored by caches
 that are specific to a single user; for example, a browser cache. Shared caches, such as those in
 proxies, cannot store it."""
 
 
-class PRIVATE_PUBLIC_CONFLICT(Note):
+class STORE_PRIVATE_PUBLIC_CONFLICT(Note):
     category = categories.CACHING
     level = levels.BAD
     _summary = (
@@ -310,7 +332,7 @@ class PRIVATE_PUBLIC_CONFLICT(Note):
 Conservative caches will ignore `public` and honor `private`, but this cannot be relied upon."""
 
 
-class PRIVATE_AUTH(Note):
+class STORE_PRIVATE_AUTH(Note):
     category = categories.CACHING
     level = levels.INFO
     _summary = "%(message)s can only be stored by private caches, because the request was \
@@ -321,7 +343,7 @@ directive, this response can only be stored by caches that are specific to a sin
 example, a browser cache. Shared caches, such as those in proxies, cannot store it."""
 
 
-class PUBLIC_AUTH(Note):
+class STORE_PUBLIC_AUTH(Note):
     category = categories.CACHING
     level = levels.INFO
     _summary = "%(message)s can be stored by all caches, even though the request was authenticated."
@@ -331,20 +353,21 @@ This response contains a `Cache-Control: %(directive)s` directive, it can be sto
 including shared caches (like those in proxies)."""
 
 
-class PUBLIC_UNNECESSARY(Note):
+class STORE_PUBLIC_UNNECESSARY(Note):
     category = categories.CACHING
     level = levels.WARN
-    _summary = "Cache-Control: public is rarely necessary."
+    _summary = "Cache-Control: public is probably not necessary."
     _text = """\
-The `Cache-Control: public` directive makes a response cacheable even when the request had an
-`Authorization` header (i.e., HTTP authentication was in use). Therefore, HTTP-authenticated 
-(NOT cookie-authenticated) resources _may_ have reason to use `public`.
+The `Cache-Control: public` directive allows caches to store and use responses
+in some circumstances when they would otherwise not be able to.
+
+For example, it allows responses to authenticated requests to be stored by shared caches.
 
 Other responses **do not need to contain `public`**; it does not make the
 response "more cacheable", and only makes the response headers larger."""
 
 
-class STORABLE(Note):
+class STORE_STORABLE(Note):
     category = categories.CACHING
     level = levels.INFO
     _summary = """\
@@ -354,7 +377,35 @@ A cache can store this response; it may or may not be able to use it to satisfy 
 request."""
 
 
-class NO_CACHE(Note):
+class STORE_STORABLE_SHARED_ONLY(Note):
+    category = categories.CACHING
+    level = levels.INFO
+    _summary = """\
+%(message)s allows only shared caches to store it."""
+    _text = """\
+A shared cache can store this response; it may or may not be able to use it to satisfy a
+particular request. 
+
+Private caches cannot store it, because there is no explicit freshness information
+(such as Cache-Control: max-age), and the status code is not heuristically cacheable.
+
+Note that a cache extension might override this behaviour."""
+
+
+class STORE_UNSTORABLE(Note):
+    category = categories.CACHING
+    level = levels.INFO
+    _summary = "%(message)s cannot be stored by caches."
+    _text = """\
+While caches can store many kinds of response as being heuristically cacheable -- that is, 
+they can store them without explicit caching directives like Cache-Control:max-age, this
+reponse's status code is not defined as being heuristically cacheable, and other directives
+that would allow it to be stored (such as Cache-Control: public) are not present.
+
+Note that a cache extension might override this behaviour."""
+
+
+class FRESHNESS_NO_CACHE(Note):
     category = categories.CACHING
     level = levels.INFO
     _summary = "%(message)s cannot be served from cache without validation."
@@ -364,7 +415,7 @@ response, they cannot use it to satisfy a request unless it has been validated (
 `If-None-Match` or `If-Modified-Since` conditional) for that request."""
 
 
-class NO_CACHE_NO_VALIDATOR(Note):
+class FRESHNESS_NO_CACHE_NO_VALIDATOR(Note):
     category = categories.CACHING
     level = levels.WARN
     _summary = "%(message)s cannot be served from cache without validation, \
