@@ -442,7 +442,7 @@ header to determine how old the response is -- and therefore how much longer it 
 class FRESHNESS_FRESH(Note):
     category = categories.CACHING
     level = levels.GOOD
-    _summary = "%(message)s is fresh until %(freshness_left)s from now."
+    _summary = "%(message)s is fresh for %(freshness_left)s."
     _text = """\
 A response can be considered fresh when its age (here, %(current_age)s) is less than its freshness
 lifetime (in this case, %(freshness_lifetime)s)."""
