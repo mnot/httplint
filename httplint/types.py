@@ -9,8 +9,6 @@ from typing import (
     TYPE_CHECKING,
 )
 
-from http_sf import Token
-
 if TYPE_CHECKING:
     from httplint.note import Note
 
@@ -20,7 +18,7 @@ FieldDictType = Dict[str, Any]
 ParamDictType = Dict[str, Union[str, None]]
 
 
-VariableType = Union[str, int, None, Token]
+VariableType = Any
 
 
 class AddNoteMethodType(Protocol):

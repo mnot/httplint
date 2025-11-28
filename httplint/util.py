@@ -2,7 +2,7 @@ from binascii import b2a_hex
 from datetime import timedelta
 import locale
 import time
-from typing import List
+from typing import List, Any
 import unittest
 from urllib.parse import urlsplit, urlunsplit, quote as urlquote
 
@@ -63,29 +63,41 @@ def markdown_list(inlist: List[str], markup: str = "") -> str:
     return "\n".join([f"- {markup}{i}{markup}" for i in inlist])
 
 
-def relative_time(utime: float, now: float, show_sign: int = 1) -> str:
+class RelativeTime:
+    def __init__(self, utime: float, now: float, show_sign: int = 1) -> None:
+        self.utime = utime
+        self.now = now
+        self.show_sign = show_sign
+
+    def __str__(self) -> str:
+        delta_secs = self.utime - self.now
+        delta = timedelta(seconds=delta_secs)
+        if self.show_sign == 1:
+            output = format_timedelta(delta, add_direction=True, threshold=1.2)
+        else:
+            delta_string = format_timedelta(delta, threshold=1.2)
+            if self.show_sign == 2:
+                if delta_secs > 0:
+                    output = f"{delta_string} {translate('ahead')}"
+                else:
+                    output = f"{delta_string} {translate('behind')}"
+            else:
+                output = delta_string
+        return output
+
+    def __repr__(self) -> str:
+        return f"RelativeTime({self.utime}, {self.now}, {self.show_sign})"
+
+
+def relative_time(utime: float, now: float, show_sign: int = 1) -> Any:
     """
-    Given two times, return a string that explains how far apart they are.
+    Given two times, return a object that explains how far apart they are.
     show_sign can be:
         0 - don't show
         1 - ago / from now  [DEFAULT]
         2 - early / late
     """
-
-    delta_secs = utime - now
-    delta = timedelta(seconds=delta_secs)
-    if show_sign == 1:
-        output = format_timedelta(delta, add_direction=True, threshold=1.2)
-    else:
-        delta_string = format_timedelta(delta, threshold=1.2)
-        if show_sign == 2:
-            if delta_secs > 0:
-                output = f"{delta_string} {translate('ahead')}"
-            else:
-                output = f"{delta_string} {translate('behind')}"
-        else:
-            output = delta_string
-    return output
+    return RelativeTime(utime, now, show_sign)
 
 
 class RelativeTimeTester(unittest.TestCase):
@@ -109,4 +121,4 @@ class RelativeTimeTester(unittest.TestCase):
 
     def test_relative_time(self) -> None:
         for delta, result in self.cases:
-            self.assertEqual(relative_time(self.now + delta, self.now), result)
+            self.assertEqual(str(relative_time(self.now + delta, self.now)), result)
