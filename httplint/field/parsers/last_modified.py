@@ -44,7 +44,7 @@ class LM_FUTURE(Note):
     _summary = "The Last-Modified time is in the future."
     _text = """\
 The `Last-Modified` header indicates the last point in time that the resource has changed.
-%(message)s's `Last-Modified` time is in the future, which doesn't have any defined meaning in
+This response's `Last-Modified` time is in the future, which doesn't have any defined meaning in
 HTTP."""
 
 

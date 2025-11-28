@@ -263,7 +263,7 @@ class CHECK_SINGLE(Note):
 Microsoft Internet Explorer implements two `Cache-Control` extensions, `pre-check` and
 `post-check`, to give more control over how its cache stores responses.
 
-%(message)s uses only one of these directives; as a result, Internet Explorer will ignore the
+This response uses only one of these directives; as a result, Internet Explorer will ignore the
 directive, since it requires both to be present.
 """
 
@@ -278,7 +278,7 @@ class CHECK_ALL_ZERO(Note):
 Microsoft Internet Explorer implements two `Cache-Control` extensions, `pre-check` and
 `post-check`, to give more control over how its cache stores responses.
 
-%(message)s gives a value of "0" for both; as a result, Internet Explorer will ignore the
+This response gives a value of "0" for both; as a result, Internet Explorer will ignore the
 directive, since it requires both to be present.
 
 In other words, setting these to zero has **no effect** (besides wasting bandwidth),
@@ -295,7 +295,7 @@ class CHECK_POST_BIGGER(Note):
 Microsoft Internet Explorer implements two `Cache-Control` extensions, `pre-check` and
 `post-check`, to give more control over how its cache stores responses.
 
-%(message)s assigns a higher value to `post-check` than to `pre-check`; this means that Internet
+This response assigns a higher value to `post-check` than to `pre-check`; this means that Internet
 Explorer will treat `post-check` as if its value is the same as `pre-check`'s."""
 
 
@@ -309,7 +309,7 @@ class CHECK_POST_ZERO(Note):
 Microsoft Internet Explorer implements two `Cache-Control` extensions, `pre-check` and
 `post-check`, to give more control over how its cache stores responses.
 
-%(message)s assigns a value of "0" to `post-check`, which means that Internet Explorer will reload
+This response assigns a value of "0" to `post-check`, which means that Internet Explorer will reload
 the content as soon as it enters the browser cache, effectively **doubling the load on the
 server**."""
 
@@ -317,7 +317,7 @@ server**."""
 class CHECK_POST_PRE(Note):
     category = categories.CACHING
     level = levels.INFO
-    _summary = "%(message)s may be refreshed in the background by Internet Explorer."
+    _summary = "This response may be refreshed in the background by Internet Explorer."
     # Original URL:
     # http://blogs.msdn.com/b/ie/archive/2005/07/12/internet-explorer-cache-control-extensions.aspx
     _text = """\

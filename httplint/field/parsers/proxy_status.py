@@ -16,7 +16,7 @@ The `Proxy-Status` header field indicates how intermediaries have handled the re
     syntax = False  # Structured Field
     list_header = False
     deprecated = False
-    valid_in_requests = True
+    valid_in_requests = False
     valid_in_responses = True
     structured_field = True
     sf_type = "list"
@@ -147,7 +147,7 @@ The `Proxy-Status` header field indicates how intermediaries have handled the re
 class PROXY_STATUS_BAD_STRUCTURE(Note):
     category = categories.CACHING
     level = levels.WARN
-    _summary = "%(message)s has a Proxy-Status header with an invalid structure."
+    _summary = "The Proxy-Status header has an invalid structure."
     _text = """\
 The `Proxy-Status` header must be a list of members, where each member is
 a Token or String (identifying the proxy) with optional parameters.
@@ -157,9 +157,7 @@ a Token or String (identifying the proxy) with optional parameters.
 class PROXY_STATUS_UNKNOWN_PARAM(Note):
     category = categories.CACHING
     level = levels.INFO
-    _summary = (
-        "%(message)s has a Proxy-Status header with an unknown parameter '%(param)s'."
-    )
+    _summary = "The Proxy-Status header has an unknown parameter '%(param)s'."
     _text = """\
 The `%(param)s` parameter is not defined in the Proxy-Status specification.
 """
@@ -168,9 +166,7 @@ The `%(param)s` parameter is not defined in the Proxy-Status specification.
 class PROXY_STATUS_BAD_PARAM_VAL(Note):
     category = categories.CACHING
     level = levels.WARN
-    _summary = (
-        "%(message)s has a Proxy-Status header with an unknown value for '%(param)s'."
-    )
+    _summary = "The Proxy-Status header has an unknown value for '%(param)s'."
     _text = """\
 The value `%(value)s` is not defined for the `%(param)s` parameter.
 """

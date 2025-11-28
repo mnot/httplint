@@ -68,7 +68,7 @@ resources that don't explicitly grant the document permission (using CORP or COR
 class COEP_REQUIRE_CORP(Note):
     category = categories.SECURITY
     level = levels.GOOD
-    _summary = "%(message)s requires resources to have a CORP header%(report_only)s."
+    _summary = "This response requires resources to have a CORP header%(report_only)s."
     _text = """\
 The `require-corp`
 [Cross Origin Embedder Policy](https://fetch.spec.whatwg.org/#cross-origin-embedder-policy-header)
@@ -80,7 +80,7 @@ class COEP_CREDENTIALLESS(Note):
     category = categories.SECURITY
     level = levels.GOOD
     _summary = (
-        "%(message)s loads cross-origin resources without credentials%(report_only)s."
+        "This response loads cross-origin resources without credentials%(report_only)s."
     )
     _text = """\
 The `credentialless`
@@ -94,7 +94,7 @@ class COEP_UNSAFE_NONE(Note):
     category = categories.SECURITY
     level = levels.WARN
     _summary = (
-        "%(message)s allows loading cross-origin resources without restriction"
+        "This response allows loading cross-origin resources without restriction"
         "%(report_only)s."
     )
     _text = """\
@@ -109,7 +109,7 @@ This does not provide cross-origin isolation.%(report_only_text)s"""
 class CROSS_ORIGIN_EMBEDDER_POLICY_BAD_VALUE(Note):
     category = categories.SECURITY
     level = levels.BAD
-    _summary = "%(message)s's %(field_name)s has an invalid value."
+    _summary = "This response's %(field_name)s has an invalid value."
     _text = """\
 The `%(field_name)s` header must be one of `require-corp`, `credentialless`, or
 `unsafe-none`.

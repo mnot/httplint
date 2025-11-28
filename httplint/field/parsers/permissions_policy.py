@@ -70,7 +70,7 @@ The `Permissions-Policy` response header allows a site to control the use of bro
 class PERMISSIONS_POLICY_PRESENT(Note):
     category = categories.SECURITY
     level = levels.GOOD
-    _summary = "%(message)s sets a Permissions Policy."
+    _summary = "This response sets a Permissions Policy."
     _text = """\
 The `Permissions-Policy` header allows a site to control the use of browser features."""
 

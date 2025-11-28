@@ -135,7 +135,7 @@ communicate with it over a secure connection."""
 class HSTS_INVALID(Note):
     category = categories.SECURITY
     level = levels.BAD
-    _summary = "%(message)s's Strict Transport Security (HSTS) header is invalid."
+    _summary = "This response's Strict Transport Security (HSTS) header is invalid."
     _text = """\
 This site has attempted to enable HTTP Strict Transport Security (HSTS), which tells the browser to only
 communicate with it over a secure connection.
@@ -230,7 +230,7 @@ See the [HSTS Preload List](https://hstspreload.org/) for more information.
 class HSTS_DUPLICATE_DIRECTIVE(Note):
     category = categories.SECURITY
     level = levels.WARN
-    _summary = "%(message)s's HSTS header contains a duplicate directive."
+    _summary = "The HSTS header contains a duplicate directive."
     _text = """\
 The `%(directive)s` directive appears more than once in the `Strict-Transport-Security` header.
 Directives must only appear once."""
@@ -239,7 +239,7 @@ Directives must only appear once."""
 class HSTS_OVER_HTTP(Note):
     category = categories.SECURITY
     level = levels.WARN
-    _summary = "%(message)s's HSTS header is sent over HTTP."
+    _summary = "The HSTS header is sent over HTTP."
     _text = """\
 The `Strict-Transport-Security` header is ignored when sent over HTTP, unless it's a 301 Redirect.
 It should only be sent over HTTPS."""
@@ -248,7 +248,7 @@ It should only be sent over HTTPS."""
 class HSTS_MULTIPLE_HEADERS(Note):
     category = categories.SECURITY
     level = levels.WARN
-    _summary = "%(message)s has multiple HSTS headers."
+    _summary = "This response has multiple HSTS headers."
     _text = """\
 A response should only contain a single `Strict-Transport-Security` header.
 User agents are required to process only the first one and ignore the rest."""

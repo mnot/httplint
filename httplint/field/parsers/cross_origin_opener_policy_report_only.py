@@ -31,7 +31,7 @@ potential violations of its Cross-Origin Opener Policy without enforcing them.""
 class COOP_REPORT_ONLY_DUPLICATE(Note):
     category = categories.SECURITY
     level = levels.WARN
-    _summary = "%(message)s has both enforcing and report-only COOP headers."
+    _summary = "This response has both enforcing and report-only COOP headers."
     _text = """\
 A response should not have both `Cross-Origin-Opener-Policy` and
 `Cross-Origin-Opener-Policy-Report-Only` headers. The report-only header will be ignored."""

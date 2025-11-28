@@ -356,7 +356,7 @@ def loose_date_parse(cookie_date: str) -> int:
 class SET_COOKIE_NO_NAME(Note):
     category = categories.GENERAL
     level = levels.BAD
-    _summary = "%(message)s has a Set-Cookie header without a cookie-name."
+    _summary = "This response has a Set-Cookie header without a cookie-name."
     _text = """\
 This `Set-Cookie` header has an empty name; there needs to be a name before the `=`.
 
@@ -542,7 +542,7 @@ Browsers will only use the last occurrence."""
 class SET_COOKIE_NAME_DUP(Note):
     category = categories.GENERAL
     level = levels.WARN
-    _summary = "%(message)s sets duplicate cookies."
+    _summary = "This response sets duplicate cookies."
     _text = """\
 The following cookies are set more than once in this response: %(cookie_names)s.
 

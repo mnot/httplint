@@ -19,7 +19,6 @@ from httplint.i18n import L_, translate
 
 class HttpMessageParams(TypedDict):
     start_time: NotRequired[Optional[float]]
-    message_ref: NotRequired[Optional[str]]
     related: NotRequired["HttpMessageLinter"]
 
 
@@ -28,21 +27,14 @@ class HttpMessageLinter:
     Base class for HTTP message linters.
     """
 
-    message_ref = L_("This message")
     message_type = L_("message")
 
     def __init__(
         self,
         start_time: Optional[float] = None,
-        message_ref: Optional[str] = None,
         related: Optional["HttpMessageLinter"] = None,
     ) -> None:
-        self.notes = Notes(
-            {
-                "message": translate(message_ref or self.message_ref),
-                "message_type": translate(self.message_type),
-            }
-        )
+        self.notes = Notes({"message_type": translate(self.message_type)})
         self.related = related
         self.start_time = start_time
         self.finish_time: Optional[float] = None
@@ -155,7 +147,6 @@ class HttpRequestLinter(HttpMessageLinter):
     """
 
     max_uri_chars = 8000
-    message_ref = L_("This request")
     message_type = L_("request")
 
     def __init__(self, **kw: Unpack[HttpMessageParams]) -> None:
@@ -200,7 +191,6 @@ class HttpResponseLinter(HttpMessageLinter):
     A HTTP Response message linter.
     """
 
-    message_ref = L_("This response")
     message_type = L_("response")
 
     def __init__(self, **kw: Unpack[HttpMessageParams]) -> None:
@@ -256,7 +246,7 @@ the beginning of the next."""
 class CL_INCORRECT(Note):
     category = categories.GENERAL
     level = levels.BAD
-    _summary = "%(message)s's Content-Length header is incorrect."
+    _summary = "The Content-Length header is incorrect."
     _text = """\
 `Content-Length` is used by HTTP to delimit messages; that is, to mark the end of one message and
 the beginning of the next. An incorrect `Content-Length` can cause security and interoperability

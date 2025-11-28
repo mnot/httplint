@@ -43,7 +43,7 @@ header) should be included with requests."""
 class REFERRER_POLICY_UNSAFE(Note):
     category = categories.SECURITY
     level = levels.WARN
-    _summary = "%(message)s's Referrer-Policy allows unsafe URLs."
+    _summary = "This response's Referrer-Policy allows unsafe URLs."
     _text = """\
 Using `unsafe-url` in `Referrer-Policy` means that the full URL (including query parameters) will
 be sent as a referrer to all origins, including those that are not secure (HTTP). This can leak

@@ -69,10 +69,10 @@ class COOP_SAME_ORIGIN(Note):
     category = categories.SECURITY
     level = levels.GOOD
     _summary = (
-        "%(message)s isolates the browsing context to the same origin%(report_only)s."
+        "This response isolates the browsing context to the same origin%(report_only)s."
     )
     _text = """\
-The `same-origin` 
+The `same-origin`
 [Cross-Origin Opener Policy](https://html.spec.whatwg.org/multipage/origin.html#coop)
 isolates the browsing context, preventing it from sharing a window object
 with cross-origin documents in supporting browsers.%(report_only_text)s"""
@@ -82,10 +82,10 @@ class COOP_SAME_ORIGIN_ALLOW_POPUPS(Note):
     category = categories.SECURITY
     level = levels.GOOD
     _summary = (
-        "%(message)s isolates the browsing context but allows popups%(report_only)s."
+        "This response isolates the browsing context but allows popups%(report_only)s."
     )
     _text = """\
-The `same-origin-allow-popups` 
+The `same-origin-allow-popups`
 [Cross-Origin Opener Policy](https://html.spec.whatwg.org/multipage/origin.html#coop)
 isolates the browsing context but maintains a relationship
 with popups that it opens, or that opened it, in supporting browsers.%(report_only_text)s"""
@@ -95,11 +95,11 @@ class COOP_UNSAFE_NONE(Note):
     category = categories.SECURITY
     level = levels.WARN
     _summary = (
-        "%(message)s allows sharing the browsing context with cross-origin documents"
-        "%(report_only)s."
+        "This response allows sharing the browsing context "
+        "with cross-origin documents%(report_only)s."
     )
     _text = """\
-The `unsafe-none` 
+The `unsafe-none`
 [Cross-Origin Opener Policy](https://html.spec.whatwg.org/multipage/origin.html#coop)
 is the default behavior in supporting browsers. It allows the document to share a browsing context
 group with other documents unless they enforce isolation.%(report_only_text)s"""
@@ -108,7 +108,7 @@ group with other documents unless they enforce isolation.%(report_only_text)s"""
 class CROSS_ORIGIN_OPENER_POLICY_BAD_VALUE(Note):
     category = categories.SECURITY
     level = levels.BAD
-    _summary = "%(message)s's %(field_name)s has an invalid value."
+    _summary = "This response's %(field_name)s has an invalid value."
     _text = """\
 The `%(field_name)s` header must be one of `same-origin`, `same-origin-allow-popups`,
 or `unsafe-none`.

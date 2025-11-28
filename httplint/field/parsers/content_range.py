@@ -34,7 +34,7 @@ in `416` (Requested Range Not Satisfiable) responses."""
 class CONTENT_RANGE_MEANINGLESS(Note):
     category = categories.RANGE
     level = levels.WARN
-    _summary = "%(message)s shouldn't have a Content-Range header."
+    _summary = "This response shouldn't have a Content-Range header."
     _text = """\
 HTTP only defines meaning for the `Content-Range` header in responses with a `206` (Partial
 Content) or `416` (Requested Range Not Satisfiable) status code.

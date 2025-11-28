@@ -39,7 +39,7 @@ class CORP_SAME_ORIGIN(Note):
     category = categories.SECURITY
     level = levels.INFO
     _summary = (
-        "%(message)s is only available for reading to requests from the same origin."
+        "This response is only available for reading to requests from the same origin."
     )
     _text = """\
 The `same-origin`
@@ -51,7 +51,7 @@ in supporting browsers.%(report_only_text)s"""
 class CORP_SAME_SITE(Note):
     category = categories.SECURITY
     level = levels.INFO
-    _summary = "%(message)s is available for reading to requests from the same site."
+    _summary = "This response is available for reading to requests from the same site."
     _text = """\
 The `same-site`
 [Cross-Origin Resource Policy](https://fetch.spec.whatwg.org/#cross-origin-resource-policy-header)
@@ -62,7 +62,7 @@ prevents it from being read by cross-site documents in supporting browsers.%(rep
 class CORP_CROSS_ORIGIN(Note):
     category = categories.SECURITY
     level = levels.INFO
-    _summary = "%(message)s is available for reading to requests from all origins."
+    _summary = "This response is available for reading to requests from all origins."
     _text = """\
 The `cross-origin`
 [Cross-Origin Resource Policy](https://fetch.spec.whatwg.org/#cross-origin-resource-policy-header)

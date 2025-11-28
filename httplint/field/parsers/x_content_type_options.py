@@ -26,7 +26,7 @@ Indicates that the client should not 'sniff' the `Content-Type` of the message f
 class CONTENT_TYPE_OPTIONS(Note):
     category = categories.SECURITY
     level = levels.GOOD
-    _summary = "%(message)s instructs browsers not to 'sniff' its media type."
+    _summary = "This response instructs browsers not to 'sniff' its media type."
     # Original URL:
     # http://blogs.msdn.com/b/ie/archive/2008/09/02/ie8-security-part-vi-beta-2-update.aspx
     _text = """\
@@ -43,9 +43,7 @@ for more information about this header."""
 class CONTENT_TYPE_OPTIONS_UNKNOWN(Note):
     category = categories.SECURITY
     level = levels.WARN
-    _summary = (
-        "%(message)s contains an X-Content-Type-Options header with an unknown value."
-    )
+    _summary = "X-Content-Type-Options contains an unknown value."
     # Original URL:
     # http://blogs.msdn.com/b/ie/archive/2008/09/02/ie8-security-part-vi-beta-2-update.aspx
     _text = """\

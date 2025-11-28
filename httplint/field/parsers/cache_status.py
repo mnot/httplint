@@ -99,7 +99,7 @@ KNOWN_PARAMS: Dict[str, Dict[str, Any]] = {
 class CACHE_STATUS(Note):
     category = categories.CACHING
     level = levels.INFO
-    _summary = "Cache information is available."
+    _summary = "Detailed information about caching is available."
     _text = """\
 The `Cache-Status` header field indicates how caches have handled the response.
 
@@ -120,9 +120,7 @@ Token or String (identifying the cache) with optional parameters.
 class CACHE_STATUS_UNKNOWN_PARAM(Note):
     category = categories.CACHING
     level = levels.INFO
-    _summary = (
-        "%(message)s has a Cache-Status header with an unknown parameter '%(param)s'."
-    )
+    _summary = "The Cache-Status header has an unknown parameter '%(param)s'."
     _text = """\
 The `%(param)s` parameter is not defined in the Cache-Status specification.
 """
@@ -131,9 +129,7 @@ The `%(param)s` parameter is not defined in the Cache-Status specification.
 class CACHE_STATUS_BAD_PARAM_VAL(Note):
     category = categories.CACHING
     level = levels.WARN
-    _summary = (
-        "%(message)s has a Cache-Status header with an unknown value for '%(param)s'."
-    )
+    _summary = "The Cache-Status header has an unknown value for '%(param)s'."
     _text = """\
 The value `%(value)s` is not defined for the `%(param)s` parameter.
 """

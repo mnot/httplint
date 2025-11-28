@@ -27,7 +27,7 @@ for a resource."""
 class UNKNOWN_RANGE(Note):
     category = categories.RANGE
     level = levels.WARN
-    _summary = "%(message)s advertises support for non-standard range-units."
+    _summary = "This response advertises support for non-standard range-units."
     _text = """\
 The `Accept-Ranges` response header tells clients what `range-unit`s a resource is willing to
 process in future requests. HTTP only defines two: `bytes` and `none`.

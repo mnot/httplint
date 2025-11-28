@@ -278,7 +278,7 @@ class ResponseCacheChecker:
 class DATE_CLOCKLESS(Note):
     category = categories.GENERAL
     level = levels.WARN
-    _summary = "%(message)s doesn't have a Date header."
+    _summary = "This response doesn't have a Date header."
     _text = """\
 Although HTTP allows a server not to send a `Date` header in responses if it doesn't have a local
 clock, this can make calculation of a stored response's age inexact."""
@@ -287,7 +287,7 @@ clock, this can make calculation of a stored response's age inexact."""
 class DATE_CLOCKLESS_BAD_HDR(Note):
     category = categories.CACHING
     level = levels.BAD
-    _summary = "%(message)s has an Expires or Last-Modified header, but no Date."
+    _summary = "This response has an Expires or Last-Modified header, but no Date."
     _text = """\
 Because both the `Expires` and `Last-Modified` headers are date-based, it's necessary to send when
 the message was generated in `Date` for them to be useful; otherwise, clock drift, transit times
@@ -305,7 +305,7 @@ class STORE_METHOD_UNCACHEABLE(Note):
 class STORE_NO_STORE(Note):
     category = categories.CACHING
     level = levels.INFO
-    _summary = "%(message)s can't be stored by caches."
+    _summary = "This response can't be stored by caches."
     _text = """\
 The `Cache-Control: no-store` directive indicates that this response can't be stored by a cache."""
 
@@ -313,7 +313,7 @@ The `Cache-Control: no-store` directive indicates that this response can't be st
 class STORE_PRIVATE_CC(Note):
     category = categories.CACHING
     level = levels.INFO
-    _summary = "%(message)s allows only private caches to store it."
+    _summary = "This response allows only private caches to store it."
     _text = """\
 The `Cache-Control: private` directive indicates that the response can only be stored by caches
 that are specific to a single user; for example, a browser cache. Shared caches, such as those in
@@ -323,9 +323,7 @@ proxies, cannot store it."""
 class STORE_PRIVATE_PUBLIC_CONFLICT(Note):
     category = categories.CACHING
     level = levels.BAD
-    _summary = (
-        "%(message)s contains both the `public` and `private` Cache-Control directives."
-    )
+    _summary = "This response contains both the `public` and `private` Cache-Control directives."
     _text = """\
 `Cache-Control: public` and `Cache-Control: private` conflict; they should not occur on the same message.
 
@@ -335,7 +333,7 @@ Conservative caches will ignore `public` and honor `private`, but this cannot be
 class STORE_PRIVATE_AUTH(Note):
     category = categories.CACHING
     level = levels.INFO
-    _summary = "%(message)s can only be stored by private caches, because the request was \
+    _summary = "This response can only be stored by private caches, because the request was \
 authenticated."
     _text = """\
 Because the request was authenticated and this response doesn't contain a `Cache-Control: public`
@@ -346,7 +344,10 @@ example, a browser cache. Shared caches, such as those in proxies, cannot store 
 class STORE_PUBLIC_AUTH(Note):
     category = categories.CACHING
     level = levels.INFO
-    _summary = "%(message)s can be stored by all caches, even though the request was authenticated."
+    _summary = (
+        "This response can be stored by all caches, "
+        "even though the request was authenticated."
+    )
     _text = """\
 Usually, responses to authenticated requests can't be stored by shared caches. However, because
 This response contains a `Cache-Control: %(directive)s` directive, it can be stored by all caches,
@@ -371,7 +372,7 @@ class STORE_STORABLE(Note):
     category = categories.CACHING
     level = levels.INFO
     _summary = """\
-%(message)s allows all caches to store it."""
+This response allows all caches to store it."""
     _text = """\
 A cache can store this response; it may or may not be able to use it to satisfy a particular
 request."""
@@ -381,10 +382,10 @@ class STORE_STORABLE_SHARED_ONLY(Note):
     category = categories.CACHING
     level = levels.INFO
     _summary = """\
-%(message)s allows only shared caches to store it."""
+This response allows only shared caches to store it."""
     _text = """\
 A shared cache can store this response; it may or may not be able to use it to satisfy a
-particular request. 
+particular request.
 
 Private caches cannot store it, because there is no explicit freshness information
 (such as Cache-Control: max-age), and the status code is not heuristically cacheable.
@@ -395,9 +396,9 @@ Note that a cache extension might override this behaviour."""
 class STORE_UNSTORABLE(Note):
     category = categories.CACHING
     level = levels.INFO
-    _summary = "%(message)s cannot be stored by caches."
+    _summary = "This response cannot be stored by caches."
     _text = """\
-While caches can store many kinds of response as being heuristically cacheable -- that is, 
+While caches can store many kinds of response as being heuristically cacheable -- that is,
 they can store them without explicit caching directives like Cache-Control:max-age, this
 reponse's status code is not defined as being heuristically cacheable, and other directives
 that would allow it to be stored (such as Cache-Control: public) are not present.
@@ -408,7 +409,7 @@ Note that a cache extension might override this behaviour."""
 class FRESHNESS_NO_CACHE(Note):
     category = categories.CACHING
     level = levels.INFO
-    _summary = "%(message)s cannot be served from cache without validation."
+    _summary = "This response cannot be served from cache without validation."
     _text = """\
 The `Cache-Control: no-cache` directive means that while caches can store this
 response, they cannot use it to satisfy a request unless it has been validated (either with an
@@ -418,21 +419,21 @@ response, they cannot use it to satisfy a request unless it has been validated (
 class FRESHNESS_NO_CACHE_NO_VALIDATOR(Note):
     category = categories.CACHING
     level = levels.WARN
-    _summary = "%(message)s cannot be served from cache without validation, \
+    _summary = "This response cannot be served from cache without validation, \
 and doesn't have a validator."
     _text = """\
 The `Cache-Control: no-cache` directive means that while caches can store this response, they
 cannot use it to satisfy a request unless it has been validated (either with an `If-None-Match` or
 `If-Modified-Since` conditional) for that request.
 
-%(message)s doesn't have a `Last-Modified` or `ETag` header, so it effectively can't be used by a
+This response doesn't have a `Last-Modified` or `ETag` header, so it effectively can't be used by a
 cache. `Cache-Control: no-store` is more appropriate."""
 
 
 class CURRENT_AGE(Note):
     category = categories.CACHING
     level = levels.INFO
-    _summary = "%(message)s has already been cached for %(age)s."
+    _summary = "This response has already been cached for %(age)s."
     _text = """\
 HTTP defines an algorithm that uses the `Age` header, `Date` header, and local time observations to
 determine the age of a response. As a result, caches might use a value other than that in the `Age`
@@ -442,7 +443,7 @@ header to determine how old the response is -- and therefore how much longer it 
 class FRESHNESS_FRESH(Note):
     category = categories.CACHING
     level = levels.GOOD
-    _summary = "%(message)s is fresh for %(freshness_left)s."
+    _summary = "This response is fresh for %(freshness_left)s."
     _text = """\
 A response can be considered fresh when its age (here, %(current_age)s) is less than its freshness
 lifetime (in this case, %(freshness_lifetime)s)."""
@@ -452,11 +453,11 @@ class FRESHNESS_SHARED_PRIVATE(Note):
     category = categories.CACHING
     level = levels.GOOD
     _summary = (
-        "%(message)s is %(private_status)s for %(fresh_left)s "
+        "This response is %(private_status)s for %(fresh_left)s "
         "(%(shared_status)s for %(share_left)s in shared caches)."
     )
     _text = """\
-%(message)s has different freshness lifetimes for private (e.g., browser) and shared (e.g., proxy)
+This response has different freshness lifetimes for private (e.g., browser) and shared (e.g., proxy)
 caches.
 
 Private caches can consider it fresh for %(fresh_lifetime)s (until %(fresh_left)s from
@@ -468,7 +469,7 @@ Shared caches can consider it fresh for %(share_lifetime)s (until %(share_left)s
 class FRESHNESS_STALE_ALREADY(Note):
     category = categories.CACHING
     level = levels.INFO
-    _summary = "%(message)s is stale."
+    _summary = "This response is stale."
     _text = """\
 A HTTP response is stale when its age (here, %(current_age)s) is equal to or exceeds
 its freshness lifetime (in this case, %(freshness_lifetime)s).
@@ -486,10 +487,10 @@ class FRESHNESS_HEURISTIC(Note):
     category = categories.CACHING
     level = levels.WARN
     _summary = (
-        "%(message)s allows caches to assign their own freshness lifetimes to it."
+        "This response allows caches to assign their own freshness lifetimes to it."
     )
     _text = """\
-When a response doesn't have explicit freshness information (like a `Cache-Control: max-age` 
+When a response doesn't have explicit freshness information (like a `Cache-Control: max-age`
 directive, or `Expires` header), caches are allowed to estimate how fresh it is using a heuristic
 (provided that the status code allows it).
 
@@ -503,9 +504,9 @@ than you'd like."""
 class FRESHNESS_NONE(Note):
     category = categories.CACHING
     level = levels.INFO
-    _summary = "%(message)s cannot be considered fresh by caches."
+    _summary = "This response cannot be considered fresh by caches."
     _text = """\
-%(message)s doesn't have explicit freshness information (like a ` Cache-Control: max-age`
+This response doesn't have explicit freshness information (like a ` Cache-Control: max-age`
 directive, or `Expires` header), and this status code doesn't allow caches to calculate their own.
 
 Additionally, its status code doesn't allow caches to assign their own freshness lifetimes to it.
@@ -545,7 +546,7 @@ class STALE_WHILE_REVALIDATE(Note):
     category = categories.CACHING
     level = levels.INFO
     _summary = (
-        "%(message)s can be served stale from a cache while it is being revalidated."
+        "This response can be served stale from a cache while it is being revalidated."
     )
     _text = """\
 The `stale-while-revalidate` cache directive allows a cache to serve a stale response while a
@@ -557,7 +558,7 @@ See [RFC 5861](https://www.rfc-editor.org/rfc/rfc5861) for more information."""
 class FRESH_MUST_REVALIDATE(Note):
     category = categories.CACHING
     level = levels.INFO
-    _summary = "%(message)s cannot be served by a cache once it becomes stale."
+    _summary = "This response cannot be served by a cache once it becomes stale."
     _text = """\
 The `Cache-Control: must-revalidate` directive forbids caches from using stale responses to satisfy
 requests.
@@ -569,7 +570,7 @@ this directive is present, they will return an error rather than a stale respons
 class STALE_MUST_REVALIDATE(Note):
     category = categories.CACHING
     level = levels.INFO
-    _summary = "%(message)s cannot be served by a cache now that it is stale."
+    _summary = "This response cannot be served by a cache now that it is stale."
     _text = """\
 The `Cache-Control: must-revalidate` directive forbids caches from using stale responses to satisfy
 requests.
@@ -581,7 +582,7 @@ this directive is present, they will return an error rather than a stale respons
 class FRESH_PROXY_REVALIDATE(Note):
     category = categories.CACHING
     level = levels.INFO
-    _summary = "%(message)s cannot be served by a shared cache once it becomes stale."
+    _summary = "This response cannot be served by a shared cache once it becomes stale."
     _text = """\
 The presence of the `Cache-Control: proxy-revalidate` and/or `s-maxage` directives forbids shared
 caches (e.g., proxy caches) from using stale responses to satisfy requests.
@@ -595,7 +596,7 @@ These directives do not affect private caches; for example, those in browsers.""
 class STALE_PROXY_REVALIDATE(Note):
     category = categories.CACHING
     level = levels.INFO
-    _summary = "%(message)s cannot be served by a shared cache now that it is stale."
+    _summary = "This response cannot be served by a shared cache now that it is stale."
     _text = """\
 The presence of the `Cache-Control: proxy-revalidate` and/or `s-maxage` directives forbids shared
 caches (e.g., proxy caches) from using stale responses to satisfy requests.

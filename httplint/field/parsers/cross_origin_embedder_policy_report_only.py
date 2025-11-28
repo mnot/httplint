@@ -31,7 +31,7 @@ potential violations of its Cross-Origin Embedder Policy without enforcing them.
 class COEP_REPORT_ONLY_DUPLICATE(Note):
     category = categories.SECURITY
     level = levels.WARN
-    _summary = "%(message)s has both enforcing and report-only COEP headers."
+    _summary = "This response has both enforcing and report-only COEP headers."
     _text = """\
 A response should not have both `Cross-Origin-Embedder-Policy` and
 `Cross-Origin-Embedder-Policy-Report-Only` headers. The report-only header will be ignored."""

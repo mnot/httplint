@@ -50,7 +50,7 @@ the transmitted content in frames that are part of other web pages.
 class FRAME_OPTIONS_DENY(Note):
     category = categories.SECURITY
     level = levels.INFO
-    _summary = "%(message)s prevents some browsers from rendering it within a frame."
+    _summary = "This response prevents some browsers from rendering it within a frame."
     # Original URL:
     # http://blogs.msdn.com/b/ie/archive/2009/01/27/ie8-security-part-vii-clickjacking-defenses.aspx
     _text = """\
@@ -66,8 +66,8 @@ class FRAME_OPTIONS_SAMEORIGIN(Note):
     category = categories.SECURITY
     level = levels.INFO
     _summary = (
-        "%(message)s prevents some browsers from rendering it within a frame "
-        "on another site."
+        "This response prevents some browsers from rendering it "
+        "within a frame on another site."
     )
     # Original URL:
     # http://blogs.msdn.com/b/ie/archive/2009/01/27/ie8-security-part-vii-clickjacking-defenses.aspx
@@ -85,7 +85,7 @@ See [MDN](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-Frame-Opti
 class FRAME_OPTIONS_UNKNOWN(Note):
     category = categories.SECURITY
     level = levels.WARN
-    _summary = "%(message)s contains an X-Frame-Options header with an unknown value."
+    _summary = "The X-Frame-Options header contains an unknown value."
     # Original URL:
     # http://blogs.msdn.com/b/ie/archive/2009/01/27/ie8-security-part-vii-clickjacking-defenses.aspx
     _text = """\

@@ -308,7 +308,7 @@ class HEADER_SHOULD_NOT_BE_IN_304(Note):
     category = categories.GENERAL
     level = levels.WARN
     _summary = (
-        "%(message)s contains headers that should not be sent in 304 (Not Modified)."
+        "This 304 (Not Modified) response contains headers that should not be sent."
     )
     _text = """\
 These headers are representation metadata that should not be sent in a 304 response unless
@@ -378,7 +378,7 @@ but it isn't present in this response."""
 class PARTIAL_WITHOUT_RANGE(Note):
     category = categories.GENERAL
     level = levels.BAD
-    _summary = "%(message)s doesn't have a Content-Range header."
+    _summary = "This response is partial, but doesn't have a Content-Range header."
     _text = """\
 The `206 (Partial Response)` status code indicates that the response content is only partial.
 
