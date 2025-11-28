@@ -31,11 +31,13 @@ pip install -e .[dev]
     ```
 *   **Direct Translation**: You can also use `translate()` directly for strings that don't need to be defined at module level (but `L_` is preferred for clarity).
 
+
 ## Workflow
 
 ### 1. Extract Messages
 
-When code changes, new translatable strings might be added. Extract them to the template (`tools/i18n/data/messages.pot`):
+When code changes, new translatable strings might be added. This will update the `.po` files in `httplint/translations` with any new strings from `httplint/translations/messages.pot`.
+
 ```bash
 make i18n-extract
 ```
@@ -48,15 +50,7 @@ Update the `.po` files for all locales to include the new strings from the templ
 make i18n-update
 ```
 
-### 3. Apply Translation Memory
-
-We maintain a JSON translation memory (`tools/i18n/data/translations.json`) to minimize re-work. Apply existing translations to the `.po` files:
-
-```bash
-make i18n-apply
-```
-
-### 4. Translate
+### 3. Translate
 
 You have two options for translation:
 
@@ -71,18 +65,7 @@ make i18n-autotranslate MODEL=gemini-1.5-flash-latest RPM=60
 ```
 *Note: You must have the `llm` package configured with valid API keys (e.g., `./.venv/bin/llm keys set gemini`).*
 
-### 5. Update Translation Memory
-
-If you manually translated, save your work back to the translation memory:
-
-```bash
-make i18n-save
-```
-
-This is done for you automatically by autotranslate.
-
-
-### 6. Compile
+### 4. Compile
 
 Compile the `.po` files into binary `.mo` files for use at runtime:
 
@@ -90,7 +73,7 @@ Compile the `.po` files into binary `.mo` files for use at runtime:
 make i18n-compile
 ```
 
-### 7. Verify
+### 5. Verify
 
 Run `httplint` with the target locale to verify the translations:
 

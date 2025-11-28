@@ -62,19 +62,11 @@ url: venv
 
 .PHONY: i18n-extract
 i18n-extract: venv
-	PYTHONPATH=. $(VENV)/pybabel extract -F tools/i18n/babel.cfg -o tools/i18n/data/messages.pot .
+	PYTHONPATH=. $(VENV)/pybabel extract -F tools/i18n/babel.cfg -o httplint/translations/messages.pot .
 
 .PHONY: i18n-update
 i18n-update: i18n-extract
-	$(VENV)/pybabel update -i tools/i18n/data/messages.pot -d httplint/translations
-
-.PHONY: i18n-apply
-i18n-apply: venv
-	$(VENV)/python -m tools.i18n.apply --locale_dir httplint/translations
-
-.PHONY: i18n-save
-i18n-save: venv
-	$(VENV)/python -m tools.i18n.extract --locale_dir httplint/translations
+	$(VENV)/pybabel update -i httplint/translations/messages.pot -d httplint/translations
 
 .PHONY: i18n-autotranslate
 i18n-autotranslate: venv
@@ -85,12 +77,12 @@ i18n-compile: venv
 	$(VENV)/pybabel compile -d httplint/translations
 
 .PHONY: translations
-translations: i18n-update i18n-apply i18n-compile
+translations: i18n-update i18n-compile
 
 .PHONY: i18n-init
 i18n-init: venv
 	@if [ -z "$(LOCALE)" ]; then echo "Usage: make init_locale LOCALE=xx"; exit 1; fi
-	$(VENV)/pybabel init -i tools/i18n/data/messages.pot -d httplint/translations -l $(LOCALE)
+	$(VENV)/pybabel init -i httplint/translations/messages.pot -d httplint/translations -l $(LOCALE)
 
 ###############################################################################
 

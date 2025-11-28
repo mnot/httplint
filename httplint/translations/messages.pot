@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2025-11-27 23:01+1100\n"
+"POT-Creation-Date: 2025-11-28 18:10+1100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -18,8 +18,7 @@ msgstr ""
 "Generated-By: Babel 2.17.0\n"
 
 #: httplint/cache.py:281
-#, python-format
-msgid "%(message)s doesn't have a Date header."
+msgid "This response doesn't have a Date header."
 msgstr ""
 
 #: httplint/cache.py:282
@@ -30,8 +29,7 @@ msgid ""
 msgstr ""
 
 #: httplint/cache.py:290
-#, python-format
-msgid "%(message)s has an Expires or Last-Modified header, but no Date."
+msgid "This response has an Expires or Last-Modified header, but no Date."
 msgstr ""
 
 #: httplint/cache.py:291
@@ -49,8 +47,7 @@ msgid "Responses to the %(method)s method can't be stored by caches."
 msgstr ""
 
 #: httplint/cache.py:308
-#, python-format
-msgid "%(message)s can't be stored by caches."
+msgid "This response can't be stored by caches."
 msgstr ""
 
 #: httplint/cache.py:309
@@ -60,8 +57,7 @@ msgid ""
 msgstr ""
 
 #: httplint/cache.py:316
-#, python-format
-msgid "%(message)s allows only private caches to store it."
+msgid "This response allows only private caches to store it."
 msgstr ""
 
 #: httplint/cache.py:317
@@ -74,13 +70,12 @@ msgid ""
 msgstr ""
 
 #: httplint/cache.py:326
-#, python-format
 msgid ""
-"%(message)s contains both the `public` and `private` Cache-Control "
+"This response contains both the `public` and `private` Cache-Control "
 "directives."
 msgstr ""
 
-#: httplint/cache.py:329
+#: httplint/cache.py:327
 msgid ""
 "`Cache-Control: public` and `Cache-Control: private` conflict; they "
 "should not occur on the same message.\n"
@@ -89,14 +84,13 @@ msgid ""
 "cannot be relied upon."
 msgstr ""
 
-#: httplint/cache.py:338
-#, python-format
+#: httplint/cache.py:336
 msgid ""
-"%(message)s can only be stored by private caches, because the request was"
-" authenticated."
+"This response can only be stored by private caches, because the request "
+"was authenticated."
 msgstr ""
 
-#: httplint/cache.py:340
+#: httplint/cache.py:338
 msgid ""
 "Because the request was authenticated and this response doesn't contain a"
 " `Cache-Control: public`\n"
@@ -106,14 +100,13 @@ msgid ""
 " store it."
 msgstr ""
 
-#: httplint/cache.py:349
-#, python-format
+#: httplint/cache.py:347
 msgid ""
-"%(message)s can be stored by all caches, even though the request was "
+"This response can be stored by all caches, even though the request was "
 "authenticated."
 msgstr ""
 
-#: httplint/cache.py:350
+#: httplint/cache.py:351
 #, python-format
 msgid ""
 "Usually, responses to authenticated requests can't be stored by shared "
@@ -123,11 +116,11 @@ msgid ""
 "including shared caches (like those in proxies)."
 msgstr ""
 
-#: httplint/cache.py:359
+#: httplint/cache.py:360
 msgid "Cache-Control: public is probably not necessary."
 msgstr ""
 
-#: httplint/cache.py:360
+#: httplint/cache.py:361
 msgid ""
 "The `Cache-Control: public` directive allows caches to store and use "
 "responses\n"
@@ -141,28 +134,26 @@ msgid ""
 "response \"more cacheable\", and only makes the response headers larger."
 msgstr ""
 
-#: httplint/cache.py:373
-#, python-format
-msgid "%(message)s allows all caches to store it."
+#: httplint/cache.py:374
+msgid "This response allows all caches to store it."
 msgstr ""
 
-#: httplint/cache.py:375
+#: httplint/cache.py:376
 msgid ""
 "A cache can store this response; it may or may not be able to use it to "
 "satisfy a particular\n"
 "request."
 msgstr ""
 
-#: httplint/cache.py:383
-#, python-format
-msgid "%(message)s allows only shared caches to store it."
+#: httplint/cache.py:384
+msgid "This response allows only shared caches to store it."
 msgstr ""
 
-#: httplint/cache.py:385
+#: httplint/cache.py:386
 msgid ""
 "A shared cache can store this response; it may or may not be able to use "
 "it to satisfy a\n"
-"particular request. \n"
+"particular request.\n"
 "\n"
 "Private caches cannot store it, because there is no explicit freshness "
 "information\n"
@@ -172,15 +163,14 @@ msgid ""
 "Note that a cache extension might override this behaviour."
 msgstr ""
 
-#: httplint/cache.py:398
-#, python-format
-msgid "%(message)s cannot be stored by caches."
+#: httplint/cache.py:399
+msgid "This response cannot be stored by caches."
 msgstr ""
 
-#: httplint/cache.py:399
+#: httplint/cache.py:400
 msgid ""
 "While caches can store many kinds of response as being heuristically "
-"cacheable -- that is, \n"
+"cacheable -- that is,\n"
 "they can store them without explicit caching directives like Cache-"
 "Control:max-age, this\n"
 "reponse's status code is not defined as being heuristically cacheable, "
@@ -191,12 +181,11 @@ msgid ""
 "Note that a cache extension might override this behaviour."
 msgstr ""
 
-#: httplint/cache.py:411
-#, python-format
-msgid "%(message)s cannot be served from cache without validation."
+#: httplint/cache.py:412
+msgid "This response cannot be served from cache without validation."
 msgstr ""
 
-#: httplint/cache.py:412
+#: httplint/cache.py:413
 msgid ""
 "The `Cache-Control: no-cache` directive means that while caches can store"
 " this\n"
@@ -205,15 +194,13 @@ msgid ""
 "`If-None-Match` or `If-Modified-Since` conditional) for that request."
 msgstr ""
 
-#: httplint/cache.py:421
-#, python-format
+#: httplint/cache.py:422
 msgid ""
-"%(message)s cannot be served from cache without validation, and doesn't "
-"have a validator."
+"This response cannot be served from cache without validation, and doesn't"
+" have a validator."
 msgstr ""
 
-#: httplint/cache.py:423
-#, python-format
+#: httplint/cache.py:424
 msgid ""
 "The `Cache-Control: no-cache` directive means that while caches can store"
 " this response, they\n"
@@ -221,17 +208,17 @@ msgid ""
 "with an `If-None-Match` or\n"
 "`If-Modified-Since` conditional) for that request.\n"
 "\n"
-"%(message)s doesn't have a `Last-Modified` or `ETag` header, so it "
+"This response doesn't have a `Last-Modified` or `ETag` header, so it "
 "effectively can't be used by a\n"
 "cache. `Cache-Control: no-store` is more appropriate."
 msgstr ""
 
-#: httplint/cache.py:435
+#: httplint/cache.py:436
 #, python-format
-msgid "%(message)s has already been cached for %(age)s."
+msgid "This response has already been cached for %(age)s."
 msgstr ""
 
-#: httplint/cache.py:436
+#: httplint/cache.py:437
 msgid ""
 "HTTP defines an algorithm that uses the `Age` header, `Date` header, and "
 "local time observations to\n"
@@ -241,12 +228,12 @@ msgid ""
 "longer it can be used."
 msgstr ""
 
-#: httplint/cache.py:445
+#: httplint/cache.py:446
 #, python-format
-msgid "%(message)s is fresh for %(freshness_left)s."
+msgid "This response is fresh for %(freshness_left)s."
 msgstr ""
 
-#: httplint/cache.py:446
+#: httplint/cache.py:447
 #, python-format
 msgid ""
 "A response can be considered fresh when its age (here, %(current_age)s) "
@@ -254,18 +241,18 @@ msgid ""
 "lifetime (in this case, %(freshness_lifetime)s)."
 msgstr ""
 
-#: httplint/cache.py:454
+#: httplint/cache.py:455
 #, python-format
 msgid ""
-"%(message)s is %(private_status)s for %(fresh_left)s (%(shared_status)s "
-"for %(share_left)s in shared caches)."
+"This response is %(private_status)s for %(fresh_left)s (%(shared_status)s"
+" for %(share_left)s in shared caches)."
 msgstr ""
 
-#: httplint/cache.py:458
+#: httplint/cache.py:459
 #, python-format
 msgid ""
-"%(message)s has different freshness lifetimes for private (e.g., browser)"
-" and shared (e.g., proxy)\n"
+"This response has different freshness lifetimes for private (e.g., "
+"browser) and shared (e.g., proxy)\n"
 "caches.\n"
 "\n"
 "Private caches can consider it fresh for %(fresh_lifetime)s (until "
@@ -276,12 +263,11 @@ msgid ""
 "%(share_left)s from now)."
 msgstr ""
 
-#: httplint/cache.py:471
-#, python-format
-msgid "%(message)s is stale."
+#: httplint/cache.py:472
+msgid "This response is stale."
 msgstr ""
 
-#: httplint/cache.py:472
+#: httplint/cache.py:473
 #, python-format
 msgid ""
 "A HTTP response is stale when its age (here, %(current_age)s) is equal to"
@@ -301,15 +287,14 @@ msgid ""
 "directives."
 msgstr ""
 
-#: httplint/cache.py:488
-#, python-format
-msgid "%(message)s allows caches to assign their own freshness lifetimes to it."
+#: httplint/cache.py:489
+msgid "This response allows caches to assign their own freshness lifetimes to it."
 msgstr ""
 
-#: httplint/cache.py:491
+#: httplint/cache.py:492
 msgid ""
 "When a response doesn't have explicit freshness information (like a "
-"`Cache-Control: max-age` \n"
+"`Cache-Control: max-age`\n"
 "directive, or `Expires` header), caches are allowed to estimate how fresh"
 " it is using a heuristic\n"
 "(provided that the status code allows it).\n"
@@ -323,16 +308,14 @@ msgid ""
 "than you'd like."
 msgstr ""
 
-#: httplint/cache.py:506
-#, python-format
-msgid "%(message)s cannot be considered fresh by caches."
+#: httplint/cache.py:507
+msgid "This response cannot be considered fresh by caches."
 msgstr ""
 
-#: httplint/cache.py:507
-#, python-format
+#: httplint/cache.py:508
 msgid ""
-"%(message)s doesn't have explicit freshness information (like a ` Cache-"
-"Control: max-age`\n"
+"This response doesn't have explicit freshness information (like a ` "
+"Cache-Control: max-age`\n"
 "directive, or `Expires` header), and this status code doesn't allow "
 "caches to calculate their own.\n"
 "\n"
@@ -348,11 +331,11 @@ msgid ""
 "so."
 msgstr ""
 
-#: httplint/cache.py:523
+#: httplint/cache.py:524
 msgid "In exceptional circumstances, caches can serve this response stale."
 msgstr ""
 
-#: httplint/cache.py:524
+#: httplint/cache.py:525
 msgid ""
 "HTTP allows stale responses to be served in some circumstances; for "
 "example, if the origin\n"
@@ -364,11 +347,11 @@ msgid ""
 "revalidate` response directive."
 msgstr ""
 
-#: httplint/cache.py:535
+#: httplint/cache.py:536
 msgid "If an error occurs, caches can serve this response stale."
 msgstr ""
 
-#: httplint/cache.py:536
+#: httplint/cache.py:537
 msgid ""
 "The `stale-if-error` cache directive allows a cache to return a stale "
 "response when an error\n"
@@ -380,14 +363,13 @@ msgid ""
 "information."
 msgstr ""
 
-#: httplint/cache.py:547
-#, python-format
+#: httplint/cache.py:548
 msgid ""
-"%(message)s can be served stale from a cache while it is being "
+"This response can be served stale from a cache while it is being "
 "revalidated."
 msgstr ""
 
-#: httplint/cache.py:550
+#: httplint/cache.py:551
 msgid ""
 "The `stale-while-revalidate` cache directive allows a cache to serve a "
 "stale response while a\n"
@@ -397,12 +379,11 @@ msgid ""
 "information."
 msgstr ""
 
-#: httplint/cache.py:560
-#, python-format
-msgid "%(message)s cannot be served by a cache once it becomes stale."
+#: httplint/cache.py:561
+msgid "This response cannot be served by a cache once it becomes stale."
 msgstr ""
 
-#: httplint/cache.py:561 httplint/cache.py:573
+#: httplint/cache.py:562 httplint/cache.py:574
 msgid ""
 "The `Cache-Control: must-revalidate` directive forbids caches from using "
 "stale responses to satisfy\n"
@@ -414,17 +395,15 @@ msgid ""
 "response."
 msgstr ""
 
-#: httplint/cache.py:572
-#, python-format
-msgid "%(message)s cannot be served by a cache now that it is stale."
+#: httplint/cache.py:573
+msgid "This response cannot be served by a cache now that it is stale."
 msgstr ""
 
-#: httplint/cache.py:584
-#, python-format
-msgid "%(message)s cannot be served by a shared cache once it becomes stale."
+#: httplint/cache.py:585
+msgid "This response cannot be served by a shared cache once it becomes stale."
 msgstr ""
 
-#: httplint/cache.py:585 httplint/cache.py:599
+#: httplint/cache.py:586 httplint/cache.py:600
 msgid ""
 "The presence of the `Cache-Control: proxy-revalidate` and/or `s-maxage` "
 "directives forbids shared\n"
@@ -440,16 +419,15 @@ msgid ""
 "browsers."
 msgstr ""
 
-#: httplint/cache.py:598
-#, python-format
-msgid "%(message)s cannot be served by a shared cache now that it is stale."
-msgstr ""
-
-#: httplint/cache.py:612
-msgid "Cache-Control: max-age and Expires are both present."
+#: httplint/cache.py:599
+msgid "This response cannot be served by a shared cache now that it is stale."
 msgstr ""
 
 #: httplint/cache.py:613
+msgid "Cache-Control: max-age and Expires are both present."
+msgstr ""
+
+#: httplint/cache.py:614
 msgid ""
 "The `Cache-Control: max-age` directive and the `Expires` header are both "
 "present.\n"
@@ -459,21 +437,19 @@ msgid ""
 msgstr ""
 
 #: httplint/content_encoding.py:136
-#, python-format
-msgid "%(message)s was compressed using GZip, but the header wasn't valid."
+msgid "This message was compressed, but the GZIP header wasn't valid."
 msgstr ""
 
 #: httplint/content_encoding.py:138
 #, python-format
 msgid ""
-"GZip-compressed responses have a header that contains metadata. "
-"%(message)s's header wasn't valid;\n"
+"GZip-compressed responses have a header that contains metadata. Here, "
+"that header wasn't valid;\n"
 "the error encountered was \"`%(gzip_error)s`\"."
 msgstr ""
 
 #: httplint/content_encoding.py:146
-#, python-format
-msgid "%(message)s was compressed using GZip, but the data was corrupt."
+msgid "This message was compressed using GZip, but the data was corrupt."
 msgstr ""
 
 #: httplint/content_encoding.py:147
@@ -503,23 +479,22 @@ msgid ""
 "`%(sniffed_type)s`."
 msgstr ""
 
-#: httplint/message.py:250
+#: httplint/message.py:240
 msgid "The Content-Length header is correct."
 msgstr ""
 
-#: httplint/message.py:251
+#: httplint/message.py:241
 msgid ""
 "`Content-Length` is used by HTTP to delimit messages; that is, to mark "
 "the end of one message and\n"
 "the beginning of the next."
 msgstr ""
 
-#: httplint/message.py:259
-#, python-format
-msgid "%(message)s's Content-Length header is incorrect."
+#: httplint/message.py:249
+msgid "The Content-Length header is incorrect."
 msgstr ""
 
-#: httplint/message.py:260
+#: httplint/message.py:250
 #, python-format
 msgid ""
 "`Content-Length` is used by HTTP to delimit messages; that is, to mark "
@@ -531,65 +506,53 @@ msgid ""
 "The actual content size was %(content_length)s bytes."
 msgstr ""
 
-#: httplint/message.py:271
+#: httplint/message.py:261
 #, python-format
 msgid "The URI is very long (%(uri_len)s characters)."
 msgstr ""
 
-#: httplint/message.py:272
+#: httplint/message.py:262
 msgid ""
 "Long URIs aren't supported by some implementations, including proxies. A "
 "reasonable upper size\n"
 "limit is 8192 characters."
 msgstr ""
 
-#: httplint/message.py:280
+#: httplint/message.py:270
 msgid "The URI's syntax isn't valid."
 msgstr ""
 
-#: httplint/message.py:281
+#: httplint/message.py:271
 msgid ""
 "This isn't a valid URI. See\n"
 "[RFC3986](http://www.ietf.org/rfc/rfc3986.txt) for more information."
 msgstr ""
 
-#: httplint/message.py:289
+#: httplint/message.py:279
 msgid "The status code is not an integer."
 msgstr ""
 
-#: httplint/message.py:290
+#: httplint/message.py:280
 msgid "This isn't a valid status code; it needs to be an ASCII integer."
 msgstr ""
 
-#: httplint/message.py:297
+#: httplint/message.py:287
 msgid "The status phrase contains non-ASCII characters."
 msgstr ""
 
-#: httplint/message.py:298
+#: httplint/message.py:288
 msgid "The status phrase can only contain ASCII characters."
 msgstr ""
 
-#: httplint/message.py:31
-msgid "This message"
-msgstr ""
-
-#: httplint/message.py:32
+#: httplint/message.py:30
 msgid "message"
 msgstr ""
 
-#: httplint/message.py:158
-msgid "This request"
-msgstr ""
-
-#: httplint/message.py:159
+#: httplint/message.py:150
 msgid "request"
 msgstr ""
 
-#: httplint/message.py:203
-msgid "This response"
-msgstr ""
-
-#: httplint/message.py:204
+#: httplint/message.py:194
 msgid "response"
 msgstr ""
 
@@ -633,10 +596,7 @@ msgid ""
 msgstr ""
 
 #: httplint/status.py:310
-#, python-format
-msgid ""
-"%(message)s contains headers that should not be sent in 304 (Not "
-"Modified)."
+msgid "This 304 (Not Modified) response contains headers that should not be sent."
 msgstr ""
 
 #: httplint/status.py:313
@@ -728,8 +688,7 @@ msgid ""
 msgstr ""
 
 #: httplint/status.py:381
-#, python-format
-msgid "%(message)s doesn't have a Content-Range header."
+msgid "This response is partial, but doesn't have a Content-Range header."
 msgstr ""
 
 #: httplint/status.py:382
@@ -1096,25 +1055,12 @@ msgid ""
 "authenticate to gain network access."
 msgstr ""
 
-#: httplint/util.py:66
-msgid "(none)"
-msgstr ""
-
-#: httplint/util.py:70
-#, python-format
-msgid "%(item1)s and %(item2)s"
-msgstr ""
-
-#: httplint/util.py:75
-#, python-format
-msgid "and %(item)s"
-msgstr ""
-
-#: httplint/util.py:96
+#: httplint/util.py:83 test/test_i18n.py:10 test/test_i18n.py:15
+#: test/test_i18n.py:18
 msgid "ahead"
 msgstr ""
 
-#: httplint/util.py:98
+#: httplint/util.py:85
 msgid "behind"
 msgstr ""
 
@@ -1517,8 +1463,7 @@ msgid ""
 msgstr ""
 
 #: httplint/field/parsers/accept_ranges.py:30
-#, python-format
-msgid "%(message)s advertises support for non-standard range-units."
+msgid "This response advertises support for non-standard range-units."
 msgstr ""
 
 #: httplint/field/parsers/accept_ranges.py:31
@@ -1649,20 +1594,22 @@ msgstr ""
 #: httplint/field/parsers/cache_control.py:238
 #, python-format
 msgid ""
-"The `%(directive)s` cache directive overrides or conflicts with "
-"%(conflicts)s.\n"
+"The `%(directive)s` cache directive overrides or conflicts with these "
+"other directives: \n"
+"\n"
+"%(conflicts)s\n"
 "\n"
 "The conflicting directives will be ignored by caches, and can be safely "
 "omitted.\n"
 "    "
 msgstr ""
 
-#: httplint/field/parsers/cache_control.py:248
+#: httplint/field/parsers/cache_control.py:250
 #, python-format
 msgid "The %(directive)s cache directive has no meaning in a %(message_type)s."
 msgstr ""
 
-#: httplint/field/parsers/cache_control.py:249
+#: httplint/field/parsers/cache_control.py:251
 #, python-format
 msgid ""
 "The `%(directive)s` cache directive is only defined to appear in "
@@ -1670,34 +1617,32 @@ msgid ""
 "messages; is has no defined meaning in a %(message_type)s."
 msgstr ""
 
-#: httplint/field/parsers/cache_control.py:257
+#: httplint/field/parsers/cache_control.py:259
 msgid "Only one of the pre-check and post-check cache directives is present."
 msgstr ""
 
-#: httplint/field/parsers/cache_control.py:260
-#, python-format
+#: httplint/field/parsers/cache_control.py:262
 msgid ""
 "Microsoft Internet Explorer implements two `Cache-Control` extensions, "
 "`pre-check` and\n"
 "`post-check`, to give more control over how its cache stores responses.\n"
 "\n"
-"%(message)s uses only one of these directives; as a result, Internet "
+"This response uses only one of these directives; as a result, Internet "
 "Explorer will ignore the\n"
 "directive, since it requires both to be present.\n"
 msgstr ""
 
-#: httplint/field/parsers/cache_control.py:272
+#: httplint/field/parsers/cache_control.py:274
 msgid "The pre-check and post-check cache directives are both '0'."
 msgstr ""
 
-#: httplint/field/parsers/cache_control.py:275
-#, python-format
+#: httplint/field/parsers/cache_control.py:277
 msgid ""
 "Microsoft Internet Explorer implements two `Cache-Control` extensions, "
 "`pre-check` and\n"
 "`post-check`, to give more control over how its cache stores responses.\n"
 "\n"
-"%(message)s gives a value of \"0\" for both; as a result, Internet "
+"This response gives a value of \"0\" for both; as a result, Internet "
 "Explorer will ignore the\n"
 "directive, since it requires both to be present.\n"
 "\n"
@@ -1706,47 +1651,44 @@ msgid ""
 "and may trigger bugs in some beta versions of IE."
 msgstr ""
 
-#: httplint/field/parsers/cache_control.py:289
+#: httplint/field/parsers/cache_control.py:291
 msgid "The post-check cache directive's value is larger than pre-check's."
 msgstr ""
 
-#: httplint/field/parsers/cache_control.py:292
-#, python-format
+#: httplint/field/parsers/cache_control.py:294
 msgid ""
 "Microsoft Internet Explorer implements two `Cache-Control` extensions, "
 "`pre-check` and\n"
 "`post-check`, to give more control over how its cache stores responses.\n"
 "\n"
-"%(message)s assigns a higher value to `post-check` than to `pre-check`; "
-"this means that Internet\n"
+"This response assigns a higher value to `post-check` than to `pre-check`;"
+" this means that Internet\n"
 "Explorer will treat `post-check` as if its value is the same as `pre-"
 "check`'s."
 msgstr ""
 
-#: httplint/field/parsers/cache_control.py:303
+#: httplint/field/parsers/cache_control.py:305
 msgid "The post-check cache directive's value is '0'."
 msgstr ""
 
-#: httplint/field/parsers/cache_control.py:306
-#, python-format
+#: httplint/field/parsers/cache_control.py:308
 msgid ""
 "Microsoft Internet Explorer implements two `Cache-Control` extensions, "
 "`pre-check` and\n"
 "`post-check`, to give more control over how its cache stores responses.\n"
 "\n"
-"%(message)s assigns a value of \"0\" to `post-check`, which means that "
+"This response assigns a value of \"0\" to `post-check`, which means that "
 "Internet Explorer will reload\n"
 "the content as soon as it enters the browser cache, effectively "
 "**doubling the load on the\n"
 "server**."
 msgstr ""
 
-#: httplint/field/parsers/cache_control.py:318
-#, python-format
-msgid "%(message)s may be refreshed in the background by Internet Explorer."
+#: httplint/field/parsers/cache_control.py:320
+msgid "This response may be refreshed in the background by Internet Explorer."
 msgstr ""
 
-#: httplint/field/parsers/cache_control.py:321
+#: httplint/field/parsers/cache_control.py:323
 #, python-format
 msgid ""
 "Microsoft Internet Explorer implements two `Cache-Control` extensions, "
@@ -1766,7 +1708,7 @@ msgid ""
 msgstr ""
 
 #: httplint/field/parsers/cache_status.py:102
-msgid "Cache information is available."
+msgid "Detailed information about caching is available."
 msgstr ""
 
 #: httplint/field/parsers/cache_status.py:103
@@ -1791,27 +1733,23 @@ msgstr ""
 
 #: httplint/field/parsers/cache_status.py:123
 #, python-format
-msgid ""
-"%(message)s has a Cache-Status header with an unknown parameter "
-"'%(param)s'."
+msgid "The Cache-Status header has an unknown parameter '%(param)s'."
 msgstr ""
 
-#: httplint/field/parsers/cache_status.py:126
+#: httplint/field/parsers/cache_status.py:124
 #, python-format
 msgid ""
 "The `%(param)s` parameter is not defined in the Cache-Status "
 "specification.\n"
 msgstr ""
 
-#: httplint/field/parsers/cache_status.py:134
+#: httplint/field/parsers/cache_status.py:132
 #, python-format
-msgid ""
-"%(message)s has a Cache-Status header with an unknown value for "
-"'%(param)s'."
+msgid "The Cache-Status header has an unknown value for '%(param)s'."
 msgstr ""
 
-#: httplint/field/parsers/cache_status.py:137
-#: httplint/field/parsers/proxy_status.py:174
+#: httplint/field/parsers/cache_status.py:133
+#: httplint/field/parsers/proxy_status.py:170
 #, python-format
 msgid "The value `%(value)s` is not defined for the `%(param)s` parameter.\n"
 msgstr ""
@@ -1909,15 +1847,14 @@ msgid ""
 msgstr ""
 
 #: httplint/field/parsers/content_encoding.py:35
-#, python-format
-msgid "%(message)s contained unwanted content-codings."
+msgid "This response contained unwanted content-codings."
 msgstr ""
 
 #: httplint/field/parsers/content_encoding.py:36
 #, python-format
 msgid ""
-"%(message)s's `Content-Encoding` header indicates it has content-codings "
-"applied\n"
+"This response's `Content-Encoding` header indicates it has content-"
+"codings applied\n"
 "(`%(unwanted_codings)s`) that the request didn't ask for.\n"
 "\n"
 "Normally, clients ask for the encodings they want in the `Accept-"
@@ -1965,8 +1902,7 @@ msgid ""
 msgstr ""
 
 #: httplint/field/parsers/content_range.py:37
-#, python-format
-msgid "%(message)s shouldn't have a Content-Range header."
+msgid "This response shouldn't have a Content-Range header."
 msgstr ""
 
 #: httplint/field/parsers/content_range.py:38
@@ -1982,7 +1918,7 @@ msgstr ""
 
 #: httplint/field/parsers/content_security_policy.py:126
 #, python-format
-msgid "%(message)s sets a Content Security Policy%(report_only)s."
+msgid "This response sets a Content Security Policy%(report_only)s."
 msgstr ""
 
 #: httplint/field/parsers/content_security_policy.py:127
@@ -2095,7 +2031,7 @@ msgstr ""
 
 #: httplint/field/parsers/cross_origin_embedder_policy.py:71
 #, python-format
-msgid "%(message)s requires resources to have a CORP header%(report_only)s."
+msgid "This response requires resources to have a CORP header%(report_only)s."
 msgstr ""
 
 #: httplint/field/parsers/cross_origin_embedder_policy.py:72
@@ -2113,7 +2049,7 @@ msgstr ""
 #: httplint/field/parsers/cross_origin_embedder_policy.py:82
 #, python-format
 msgid ""
-"%(message)s loads cross-origin resources without "
+"This response loads cross-origin resources without "
 "credentials%(report_only)s."
 msgstr ""
 
@@ -2133,7 +2069,7 @@ msgstr ""
 #: httplint/field/parsers/cross_origin_embedder_policy.py:96
 #, python-format
 msgid ""
-"%(message)s allows loading cross-origin resources without "
+"This response allows loading cross-origin resources without "
 "restriction%(report_only)s."
 msgstr ""
 
@@ -2152,7 +2088,7 @@ msgstr ""
 #: httplint/field/parsers/cross_origin_embedder_policy.py:112
 #: httplint/field/parsers/cross_origin_opener_policy.py:111
 #, python-format
-msgid "%(message)s's %(field_name)s has an invalid value."
+msgid "This response's %(field_name)s has an invalid value."
 msgstr ""
 
 #: httplint/field/parsers/cross_origin_embedder_policy.py:113
@@ -2164,8 +2100,7 @@ msgid ""
 msgstr ""
 
 #: httplint/field/parsers/cross_origin_embedder_policy_report_only.py:34
-#, python-format
-msgid "%(message)s has both enforcing and report-only COEP headers."
+msgid "This response has both enforcing and report-only COEP headers."
 msgstr ""
 
 #: httplint/field/parsers/cross_origin_embedder_policy_report_only.py:35
@@ -2178,14 +2113,14 @@ msgstr ""
 #: httplint/field/parsers/cross_origin_opener_policy.py:71
 #, python-format
 msgid ""
-"%(message)s isolates the browsing context to the same "
+"This response isolates the browsing context to the same "
 "origin%(report_only)s."
 msgstr ""
 
 #: httplint/field/parsers/cross_origin_opener_policy.py:74
 #, python-format
 msgid ""
-"The `same-origin` \n"
+"The `same-origin`\n"
 "[Cross-Origin Opener "
 "Policy](https://html.spec.whatwg.org/multipage/origin.html#coop)\n"
 "isolates the browsing context, preventing it from sharing a window object"
@@ -2196,14 +2131,14 @@ msgstr ""
 #: httplint/field/parsers/cross_origin_opener_policy.py:84
 #, python-format
 msgid ""
-"%(message)s isolates the browsing context but allows "
+"This response isolates the browsing context but allows "
 "popups%(report_only)s."
 msgstr ""
 
 #: httplint/field/parsers/cross_origin_opener_policy.py:87
 #, python-format
 msgid ""
-"The `same-origin-allow-popups` \n"
+"The `same-origin-allow-popups`\n"
 "[Cross-Origin Opener "
 "Policy](https://html.spec.whatwg.org/multipage/origin.html#coop)\n"
 "isolates the browsing context but maintains a relationship\n"
@@ -2214,14 +2149,14 @@ msgstr ""
 #: httplint/field/parsers/cross_origin_opener_policy.py:97
 #, python-format
 msgid ""
-"%(message)s allows sharing the browsing context with cross-origin "
+"This response allows sharing the browsing context with cross-origin "
 "documents%(report_only)s."
 msgstr ""
 
 #: httplint/field/parsers/cross_origin_opener_policy.py:101
 #, python-format
 msgid ""
-"The `unsafe-none` \n"
+"The `unsafe-none`\n"
 "[Cross-Origin Opener "
 "Policy](https://html.spec.whatwg.org/multipage/origin.html#coop)\n"
 "is the default behavior in supporting browsers. It allows the document to"
@@ -2239,8 +2174,7 @@ msgid ""
 msgstr ""
 
 #: httplint/field/parsers/cross_origin_opener_policy_report_only.py:34
-#, python-format
-msgid "%(message)s has both enforcing and report-only COOP headers."
+msgid "This response has both enforcing and report-only COOP headers."
 msgstr ""
 
 #: httplint/field/parsers/cross_origin_opener_policy_report_only.py:35
@@ -2251,9 +2185,8 @@ msgid ""
 msgstr ""
 
 #: httplint/field/parsers/cross_origin_resource_policy.py:41
-#, python-format
 msgid ""
-"%(message)s is only available for reading to requests from the same "
+"This response is only available for reading to requests from the same "
 "origin."
 msgstr ""
 
@@ -2268,8 +2201,7 @@ msgid ""
 msgstr ""
 
 #: httplint/field/parsers/cross_origin_resource_policy.py:54
-#, python-format
-msgid "%(message)s is available for reading to requests from the same site."
+msgid "This response is available for reading to requests from the same site."
 msgstr ""
 
 #: httplint/field/parsers/cross_origin_resource_policy.py:55
@@ -2284,8 +2216,7 @@ msgid ""
 msgstr ""
 
 #: httplint/field/parsers/cross_origin_resource_policy.py:65
-#, python-format
-msgid "%(message)s is available for reading to requests from all origins."
+msgid "This response is available for reading to requests from all origins."
 msgstr ""
 
 #: httplint/field/parsers/cross_origin_resource_policy.py:66
@@ -2397,12 +2328,11 @@ msgid "The Last-Modified time is in the future."
 msgstr ""
 
 #: httplint/field/parsers/last_modified.py:45
-#, python-format
 msgid ""
 "The `Last-Modified` header indicates the last point in time that the "
 "resource has changed.\n"
-"%(message)s's `Last-Modified` time is in the future, which doesn't have "
-"any defined meaning in\n"
+"This response's `Last-Modified` time is in the future, which doesn't have"
+" any defined meaning in\n"
 "HTTP."
 msgstr ""
 
@@ -2454,8 +2384,7 @@ msgid ""
 msgstr ""
 
 #: httplint/field/parsers/location.py:51
-#, python-format
-msgid "%(message)s doesn't define any meaning for the Location header."
+msgid "This status code doesn't define any meaning for the Location header."
 msgstr ""
 
 #: httplint/field/parsers/location.py:52
@@ -2501,8 +2430,7 @@ msgid ""
 msgstr ""
 
 #: httplint/field/parsers/permissions_policy.py:73
-#, python-format
-msgid "%(message)s sets a Permissions Policy."
+msgid "This response sets a Permissions Policy."
 msgstr ""
 
 #: httplint/field/parsers/permissions_policy.py:74
@@ -2610,8 +2538,7 @@ msgid ""
 msgstr ""
 
 #: httplint/field/parsers/proxy_status.py:150
-#, python-format
-msgid "%(message)s has a Proxy-Status header with an invalid structure."
+msgid "The Proxy-Status header has an invalid structure."
 msgstr ""
 
 #: httplint/field/parsers/proxy_status.py:151
@@ -2623,23 +2550,19 @@ msgstr ""
 
 #: httplint/field/parsers/proxy_status.py:160
 #, python-format
-msgid ""
-"%(message)s has a Proxy-Status header with an unknown parameter "
-"'%(param)s'."
+msgid "The Proxy-Status header has an unknown parameter '%(param)s'."
 msgstr ""
 
-#: httplint/field/parsers/proxy_status.py:163
+#: httplint/field/parsers/proxy_status.py:161
 #, python-format
 msgid ""
 "The `%(param)s` parameter is not defined in the Proxy-Status "
 "specification.\n"
 msgstr ""
 
-#: httplint/field/parsers/proxy_status.py:171
+#: httplint/field/parsers/proxy_status.py:169
 #, python-format
-msgid ""
-"%(message)s has a Proxy-Status header with an unknown value for "
-"'%(param)s'."
+msgid "The Proxy-Status header has an unknown value for '%(param)s'."
 msgstr ""
 
 #: httplint/field/parsers/referer.py:17
@@ -2676,8 +2599,7 @@ msgid ""
 msgstr ""
 
 #: httplint/field/parsers/referrer_policy.py:46
-#, python-format
-msgid "%(message)s's Referrer-Policy allows unsafe URLs."
+msgid "This response's Referrer-Policy allows unsafe URLs."
 msgstr ""
 
 #: httplint/field/parsers/referrer_policy.py:47
@@ -2741,8 +2663,7 @@ msgid ""
 msgstr ""
 
 #: httplint/field/parsers/set_cookie.py:359
-#, python-format
-msgid "%(message)s has a Set-Cookie header without a cookie-name."
+msgid "This response has a Set-Cookie header without a cookie-name."
 msgstr ""
 
 #: httplint/field/parsers/set_cookie.py:360
@@ -2970,8 +2891,7 @@ msgid ""
 msgstr ""
 
 #: httplint/field/parsers/set_cookie.py:545
-#, python-format
-msgid "%(message)s sets duplicate cookies."
+msgid "This response sets duplicate cookies."
 msgstr ""
 
 #: httplint/field/parsers/set_cookie.py:546
@@ -2996,8 +2916,7 @@ msgid ""
 msgstr ""
 
 #: httplint/field/parsers/strict_transport_security.py:138
-#, python-format
-msgid "%(message)s's Strict Transport Security (HSTS) header is invalid."
+msgid "This response's Strict Transport Security (HSTS) header is invalid."
 msgstr ""
 
 #: httplint/field/parsers/strict_transport_security.py:139
@@ -3113,8 +3032,7 @@ msgid ""
 msgstr ""
 
 #: httplint/field/parsers/strict_transport_security.py:233
-#, python-format
-msgid "%(message)s's HSTS header contains a duplicate directive."
+msgid "The HSTS header contains a duplicate directive."
 msgstr ""
 
 #: httplint/field/parsers/strict_transport_security.py:234
@@ -3126,8 +3044,7 @@ msgid ""
 msgstr ""
 
 #: httplint/field/parsers/strict_transport_security.py:242
-#, python-format
-msgid "%(message)s's HSTS header is sent over HTTP."
+msgid "The HSTS header is sent over HTTP."
 msgstr ""
 
 #: httplint/field/parsers/strict_transport_security.py:243
@@ -3138,8 +3055,7 @@ msgid ""
 msgstr ""
 
 #: httplint/field/parsers/strict_transport_security.py:251
-#, python-format
-msgid "%(message)s has multiple HSTS headers."
+msgid "This response has multiple HSTS headers."
 msgstr ""
 
 #: httplint/field/parsers/strict_transport_security.py:252
@@ -3190,14 +3106,13 @@ msgid ""
 msgstr ""
 
 #: httplint/field/parsers/transfer_encoding.py:65
-#, python-format
-msgid "%(message)s has unsupported transfer-coding."
+msgid "This message has unsupported transfer-coding."
 msgstr ""
 
 #: httplint/field/parsers/transfer_encoding.py:66
 #, python-format
 msgid ""
-"%(message)s's `Transfer-Encoding` header indicates it has transfer-"
+"This message's `Transfer-Encoding` header indicates it has transfer-"
 "codings applied, but the\n"
 "request didn't ask for it (or them) to be.\n"
 "\n"
@@ -3210,18 +3125,16 @@ msgid ""
 msgstr ""
 
 #: httplint/field/parsers/transfer_encoding.py:79
-#, python-format
-msgid "%(message)s had parameters on its transfer-codings."
+msgid "This message had parameters on its transfer-codings."
 msgstr ""
 
 #: httplint/field/parsers/transfer_encoding.py:80
-#, python-format
 msgid ""
 "HTTP allows transfer-codings in the `Transfer-Encoding` header to have "
 "optional parameters, but it\n"
 "doesn't define what they mean.\n"
 "\n"
-"%(message)s has encodings with such parameters; although they're "
+"This message has encodings with such parameters; although they're "
 "technically allowed, they may\n"
 "cause interoperability problems. They should be removed."
 msgstr ""
@@ -3329,8 +3242,7 @@ msgid ""
 msgstr ""
 
 #: httplint/field/parsers/x_content_type_options.py:29
-#, python-format
-msgid "%(message)s instructs browsers not to 'sniff' its media type."
+msgid "This response instructs browsers not to 'sniff' its media type."
 msgstr ""
 
 #: httplint/field/parsers/x_content_type_options.py:32
@@ -3348,13 +3260,10 @@ msgid ""
 msgstr ""
 
 #: httplint/field/parsers/x_content_type_options.py:46
-#, python-format
-msgid ""
-"%(message)s contains an X-Content-Type-Options header with an unknown "
-"value."
+msgid "X-Content-Type-Options contains an unknown value."
 msgstr ""
 
-#: httplint/field/parsers/x_content_type_options.py:51
+#: httplint/field/parsers/x_content_type_options.py:49
 msgid ""
 "Only one value is currently defined for this header, `nosniff`. Using "
 "other values here won't\n"
@@ -3367,8 +3276,7 @@ msgid ""
 msgstr ""
 
 #: httplint/field/parsers/x_frame_options.py:53
-#, python-format
-msgid "%(message)s prevents some browsers from rendering it within a frame."
+msgid "This response prevents some browsers from rendering it within a frame."
 msgstr ""
 
 #: httplint/field/parsers/x_frame_options.py:56
@@ -3384,9 +3292,8 @@ msgid ""
 msgstr ""
 
 #: httplint/field/parsers/x_frame_options.py:68
-#, python-format
 msgid ""
-"%(message)s prevents some browsers from rendering it within a frame on "
+"This response prevents some browsers from rendering it within a frame on "
 "another site."
 msgstr ""
 
@@ -3405,8 +3312,7 @@ msgid ""
 msgstr ""
 
 #: httplint/field/parsers/x_frame_options.py:88
-#, python-format
-msgid "%(message)s contains an X-Frame-Options header with an unknown value."
+msgid "The X-Frame-Options header contains an unknown value."
 msgstr ""
 
 #: httplint/field/parsers/x_frame_options.py:91

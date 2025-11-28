@@ -9,8 +9,10 @@ def autotranslate_file(po_file, lang, model_id, rpm):
     catalog = load_catalog(po_file)
     model = llm.get_model(model_id)
 
-    # Identify messages that need translation
-    to_translate = [m for m in catalog if m.id and not m.string]
+    # Identify messages that need translation (empty or fuzzy)
+    to_translate = [
+        m for m in catalog if m.id and (not m.string or "fuzzy" in m.flags)
+    ]
     count = 0
     errors = []
 
@@ -31,6 +33,8 @@ def autotranslate_file(po_file, lang, model_id, rpm):
 
             if translation and translation != message.id:
                 message.string = translation
+                if "fuzzy" in message.flags:
+                    message.flags.remove("fuzzy")
                 count += 1
                 sys.stdout.write(".")
             else:
