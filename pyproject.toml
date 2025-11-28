@@ -23,13 +23,14 @@ dependencies = [
     "thor",
     "typing_extensions",
     "http-sf>=1.0.7",
-    "sniffpy==1.0.0"
+    "sniffpy==1.0.0",
+    "Babel",
 ]
 
 [project.optional-dependencies]
 dev = [
     "mypy", "black", "pylint", "pytest", "pytest-md", "validate-pyproject", "build",
-    "twine", "types-Markdown"
+    "twine", "types-Markdown", "llm", "llm-gemini",
 ]
 
 [project.urls]

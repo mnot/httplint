@@ -6,7 +6,7 @@ from httplint.note import Note, categories, levels
 
 from httplint.syntax import rfc9111
 from httplint.types import AddNoteMethodType
-from httplint.util import prose_list
+from httplint.util import markdown_list
 from httplint.field.utils import unquote_string
 
 
@@ -140,7 +140,7 @@ ignoring it there."""
                         add_note(
                             CC_CONFLICTING,
                             directive=directive,
-                            conflicts=prose_list(conflicts, markup="`"),
+                            conflicts=markdown_list(conflicts, markup="`"),
                         )
                         break  # only show the first conflict
 
@@ -236,7 +236,9 @@ class CC_CONFLICTING(Note):
     level = levels.WARN
     _summary = "The %(directive)s cache directive overrides other directives."
     _text = """\
-The `%(directive)s` cache directive overrides or conflicts with %(conflicts)s.
+The `%(directive)s` cache directive overrides or conflicts with these other directives: 
+
+%(conflicts)s
 
 The conflicting directives will be ignored by caches, and can be safely omitted.
     """

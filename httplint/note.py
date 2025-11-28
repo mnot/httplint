@@ -6,18 +6,19 @@ from markupsafe import Markup, escape
 from markdown import Markdown
 
 from httplint.types import VariableType
+from httplint.i18n import translate, L_
 
 
 class categories(Enum):
     "Note classifications."
 
-    GENERAL = "General"
-    SECURITY = "Browser Security"
-    CONNEG = "Content Negotiation"
-    CACHING = "Caching"
-    VALIDATION = "Validation"
-    CONNECTION = "Connection"
-    RANGE = "Partial Content"
+    GENERAL = L_("General")
+    SECURITY = L_("Browser Security")
+    CONNEG = L_("Content Negotiation")
+    CACHING = L_("Caching")
+    VALIDATION = L_("Validation")
+    CONNECTION = L_("Connection")
+    RANGE = L_("Partial Content")
 
 
 class levels(Enum):
@@ -92,7 +93,7 @@ class Note:
         Note that if it is displayed in an environment that needs
         encoding (e.g., HTML), that is *NOT* done.
         """
-        return Markup(self._summary % self.vars)
+        return Markup(translate(self._summary) % self.vars)
 
     def _get_detail(self) -> Markup:
         """
@@ -102,7 +103,8 @@ class Note:
         """
         return Markup(
             self._markdown.reset().convert(
-                self._text % {k: escape(str(v)) for k, v in self.vars.items()}
+                translate(self._text)
+                % {k: escape(str(v)) for k, v in self.vars.items()}
             )
         )
 

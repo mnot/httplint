@@ -1,9 +1,12 @@
 from binascii import b2a_hex
+from datetime import timedelta
 import locale
 import time
 from typing import List
 import unittest
 from urllib.parse import urlsplit, urlunsplit, quote as urlquote
+
+from httplint.i18n import translate, format_timedelta
 
 
 def iri_to_uri(iri: str) -> str:
@@ -53,21 +56,11 @@ def display_bytes(inbytes: bytes, encoding: str = "utf-8", truncate: int = 40) -
     return "".join(out)
 
 
-def prose_list(inlist: List[str], markup: str = "") -> str:
+def markdown_list(inlist: List[str], markup: str = "") -> str:
     """
-    Format a list of strings into prose.
+    Format a list of strings into markdown.
     """
-    length = len(inlist)
-    mu = markup
-    if length == 0:
-        return "(none)"
-    if length == 1:
-        return f"{mu}{inlist[0]}{mu}"
-    if length == 2:
-        return f"{mu}{inlist[0]}{mu} and {mu}{inlist[1]}{mu}"
-    return (
-        f"{', '.join([f'{mu}{i}{mu}' for i in inlist[:-1]])}, and {mu}{inlist[-1]}{mu}"
-    )
+    return "\n".join([f"- {markup}{i}{markup}" for i in inlist])
 
 
 def relative_time(utime: float, now: float, show_sign: int = 1) -> str:
@@ -79,45 +72,19 @@ def relative_time(utime: float, now: float, show_sign: int = 1) -> str:
         2 - early / late
     """
 
-    signs = {
-        0: ("0", "", ""),
-        1: ("now", "ago", "from now"),
-        2: ("none", "behind", "ahead"),
-    }
-
-    age = round(now - utime)
-    if age == 0:
-        return signs[show_sign][0]
-
-    aa = abs(age)
-    yrs = int(aa / 60 / 60 / 24 / 365)
-    day = int(aa / 60 / 60 / 24) % 365
-    hrs = int(aa / 60 / 60) % 24
-    mnt = int(aa / 60) % 60
-    sec = int(aa % 60)
-
-    if age > 0:
-        sign = signs[show_sign][1]
+    delta_secs = utime - now
+    delta = timedelta(seconds=delta_secs)
+    if show_sign == 1:
+        output = format_timedelta(delta, add_direction=True, threshold=1.2)
     else:
-        sign = signs[show_sign][2]
-    if not sign:
-        sign = signs[show_sign][0]
-
-    arr = []
-    if yrs:
-        arr.append(f"{yrs} year{yrs > 1 and 's' or ''}")
-    if day:
-        arr.append(f"{day} day{day > 1 and 's' or ''}")
-    if hrs:
-        arr.append(f"{hrs} hour{hrs > 1 and 's' or ''}")
-    if mnt:
-        arr.append(f"{mnt} minute{mnt > 1 and 's' or ''}")
-    if sec:
-        arr.append(f"{sec} second{sec > 1 and 's' or ''}")
-    arr = arr[:2]  # resolution
-    output = ", ".join(arr)
-    if show_sign:
-        return f"{output} {sign}"
+        delta_string = format_timedelta(delta, threshold=1.2)
+        if show_sign == 2:
+            if delta_secs > 0:
+                output = f"{delta_string} {translate('ahead')}"
+            else:
+                output = f"{delta_string} {translate('behind')}"
+        else:
+            output = delta_string
     return output
 
 
@@ -127,14 +94,14 @@ class RelativeTimeTester(unittest.TestCase):
     day = hour * 24
     year = day * 365
     cases = [
-        (+year, "1 year from now"),
-        (-year, "1 year ago"),
-        (+year + 1, "1 year, 1 second from now"),
-        (+year + 0.9, "1 year, 1 second from now"),
-        (+year + day, "1 year, 1 day from now"),
-        (+year + (10 * day), "1 year, 10 days from now"),
-        (+year + (90 * day) + (3 * hour), "1 year, 90 days from now"),
-        (+(13 * day) - 0.4, "13 days from now"),
+        (+year, "in 12 months"),
+        (-year, "12 months ago"),
+        (+year + 1, "in 12 months"),
+        (+year + 0.9, "in 12 months"),
+        (+year + day, "in 12 months"),
+        (+year + (10 * day), "in 12 months"),
+        (+year + (90 * day) + (3 * hour), "in 1 year"),
+        (+(13 * day) - 0.4, "in 2 weeks"),
     ]
 
     def setUp(self) -> None:
