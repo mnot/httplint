@@ -19,14 +19,14 @@ pip install -e .[dev]
 *   **Other Strings**: For other strings (e.g., class attributes, global constants), use the `L_` lazy translation marker from `httplint.i18n`.
     ```python
     from httplint.i18n import L_
-    
+
     MY_STRING = L_("This is a translatable string")
     ```
     Ensure these strings are passed to `translate()` (from `httplint.i18n`) before being displayed or used in a context requiring translation.
 *   **Plurals**: Use `ngettext` from `httplint.i18n` for strings that have singular and plural forms.
     ```python
     from httplint.i18n import ngettext
-    
+
     msg = ngettext("%(num)s item", "%(num)s items", count) % {"num": count}
     ```
 *   **Direct Translation**: You can also use `translate()` directly for strings that don't need to be defined at module level (but `L_` is preferred for clarity).
@@ -37,7 +37,7 @@ pip install -e .[dev]
 
 When code changes, new translatable strings might be added. Extract them to the template (`tools/i18n/data/messages.pot`):
 ```bash
-make extract_messages
+make i18n-extract
 ```
 
 ### 2. Update PO Files
@@ -45,7 +45,7 @@ make extract_messages
 Update the `.po` files for all locales to include the new strings from the template:
 
 ```bash
-make update_po
+make i18n-update
 ```
 
 ### 3. Apply Translation Memory
@@ -53,7 +53,7 @@ make update_po
 We maintain a JSON translation memory (`tools/i18n/data/translations.json`) to minimize re-work. Apply existing translations to the `.po` files:
 
 ```bash
-make apply_memory
+make i18n-apply
 ```
 
 ### 4. Translate
@@ -67,7 +67,7 @@ Edit the `.po` files (e.g., `httplint/translations/fr/LC_MESSAGES/messages.po`) 
 Use an LLM (via the `llm` package) to automatically translate missing strings. You can specify the model using the `MODEL` variable (default: `gemini-1.5-flash-latest`) and the rate limit using `RPM` (default: 60).
 
 ```bash
-make autotranslate MODEL=gemini-1.5-flash-latest RPM=60
+make i18n-autotranslate MODEL=gemini-1.5-flash-latest RPM=60
 ```
 *Note: You must have the `llm` package configured with valid API keys (e.g., `./.venv/bin/llm keys set gemini`).*
 
@@ -76,7 +76,7 @@ make autotranslate MODEL=gemini-1.5-flash-latest RPM=60
 If you manually translated, save your work back to the translation memory:
 
 ```bash
-make save_memory
+make i18n-save
 ```
 
 This is done for you automatically by autotranslate.
@@ -87,7 +87,7 @@ This is done for you automatically by autotranslate.
 Compile the `.po` files into binary `.mo` files for use at runtime:
 
 ```bash
-make compile_translations
+make i18n-compile
 ```
 
 ### 7. Verify
