@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2025-12-02 12:04+1100\n"
+"POT-Creation-Date: 2025-12-02 14:10+1100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: zh\n"
@@ -1296,6 +1296,10 @@ msgstr ""
 "\n"
 "预检请求需要存在 `Access-Control-Request-Method` 标头。"
 
+#: httplint/field/finder.py:105
+msgid "Unknown"
+msgstr "未知"
+
 #: httplint/field/notes.py:11
 #, python-format
 msgid "Only one %(field_name)s field is allowed in a response's headers."
@@ -1687,6 +1691,34 @@ msgstr ""
 "\n"
 "考虑移除它。"
 
+#: httplint/field/parsers/accept.py:9
+msgid ""
+"The `Accept` header field can be used by user agents to specify response "
+"media types that are\n"
+"acceptable in responses."
+msgstr "`Accept` 头部字段可供用户代理用来指定响应中可接受的响应媒体类型。"
+
+#: httplint/field/parsers/accept_encoding.py:9
+msgid ""
+"The `Accept-Encoding` header field can be used by user agents to indicate"
+" what response content-codings are\n"
+"acceptable in the response."
+msgstr "`Accept-Encoding` 标头字段可供用户代理用来指示响应中可接受的响应内容编码。"
+
+#: httplint/field/parsers/accept_language.py:9
+msgid ""
+"The `Accept-Language` header field can be used by user agents to indicate"
+" the set of natural languages that are\n"
+"preferred in the response."
+msgstr "`Accept-Language` 标头字段可用于用户代理以指示首选响应中的自然语言集。"
+
+#: httplint/field/parsers/accept_ranges.py:10
+msgid ""
+"The `Accept-Ranges` response header allows the server to indicate that it"
+" accepts range requests\n"
+"for a resource."
+msgstr "`Accept-Ranges` 响应头允许服务器指示其接受对资源的范围请求。"
+
 #: httplint/field/parsers/accept_ranges.py:30
 msgid "This response advertises support for non-standard range-units."
 msgstr "此响应支持非标准范围单位。"
@@ -1705,6 +1737,24 @@ msgstr ""
 "\n"
 "不了解非标准 `range-unit` 的客户端将无法使用它。"
 
+#: httplint/field/parsers/access_control.py:8
+msgid ""
+"The `Access-Control` header was an experimental header for controlling "
+"access to resources. It is\n"
+"obsolete and should not be used."
+msgstr "`Access-Control` 标头是用于控制资源访问的实验性标头。它已过时，不应使用。"
+
+#: httplint/field/parsers/access_control_allow_credentials.py:9
+msgid ""
+"The `Access-Control-Allow-Credentials` response header tells browsers "
+"whether to expose the response\n"
+"to frontend code when the request's credentials mode "
+"(`Request.credentials`) is\n"
+"`include`."
+msgstr ""
+"`Access-Control-Allow-Credentials` "
+"响应头告知浏览器，当请求的凭证模式（`Request.credentials`）为 `include` 时，是否应将响应暴露给前端代码。"
+
 #: httplint/field/parsers/access_control_allow_credentials.py:29
 msgid "Access-Control-Allow-Credentials must be 'true'."
 msgstr "Access-Control-Allow-Credentials 必须是 'true'。"
@@ -1718,6 +1768,28 @@ msgstr ""
 "如果存在 `Access-Control-Allow-Credentials` 标头，则必须将其设置为 "
 "`true`。如果您不想允许凭据，请省略该标头。"
 
+#: httplint/field/parsers/access_control_allow_headers.py:13
+msgid ""
+"The `Access-Control-Allow-Headers` response header is used in response to"
+" a CORS preflight\n"
+"request to indicate which HTTP headers can be used during the actual "
+"request."
+msgstr "`Access-Control-Allow-Headers` 响应头用于响应 CORS 预检请求，以指示实际请求中可使用的 HTTP 头。"
+
+#: httplint/field/parsers/access_control_allow_methods.py:13
+msgid ""
+"The `Access-Control-Allow-Methods` response header specifies the method "
+"or methods allowed when\n"
+"accessing the resource in response to a CORS preflight request."
+msgstr "`Access-Control-Allow-Methods` 响应头指定了在 CORS 预检请求响应中访问资源时允许的方法。"
+
+#: httplint/field/parsers/access_control_allow_origin.py:11
+msgid ""
+"The `Access-Control-Allow-Origin` response header indicates whether the "
+"response can be shared with\n"
+"requesting code from the given origin."
+msgstr "`Access-Control-Allow-Origin` 响应头表明响应是否可以与给定来源的请求代码共享。"
+
 #: httplint/field/parsers/access_control_allow_origin.py:30
 msgid "Access-Control-Allow-Origin should not have multiple values."
 msgstr "Access-Control-Allow-Origin 不应有多个值。"
@@ -1728,6 +1800,54 @@ msgid ""
 "origin, `*`, or `null`. It\n"
 "cannot contain a list of origins."
 msgstr "`Access-Control-Allow-Origin` 标头只能包含单个来源、`*` 或 `null`。它不能包含来源列表。"
+
+#: httplint/field/parsers/access_control_expose_headers.py:8
+msgid ""
+"The `Access-Control-Expose-Headers` response header allows a server to "
+"indicate which response\n"
+"headers should be made available to scripts running in the browser, in "
+"response to a cross-origin\n"
+"request."
+msgstr "`Access-Control-Expose-Headers` 响应头允许服务器指示哪些响应头应在跨域请求后，供浏览器中运行的脚本使用。"
+
+#: httplint/field/parsers/access_control_max_age.py:13
+msgid ""
+"The `Access-Control-Max-Age` response header indicates how long the "
+"results of a CORS preflight\n"
+"request (as scoped by the `Access-Control-Allow-Methods` and\n"
+"`Access-Control-Allow-Headers` request headers) can be cached."
+msgstr ""
+"`Access-Control-Max-Age` 响应头指示 CORS 预检请求（由 `Access-Control-Allow-Methods`"
+" 和 `Access-Control-Allow-Headers` 请求头限定范围）的结果可以缓存多长时间。"
+
+#: httplint/field/parsers/access_control_request_headers.py:18
+msgid ""
+"The `Access-Control-Request-Headers` request header is used by browsers "
+"when issuing a CORS\n"
+"preflight request, to let the server know which HTTP headers the client "
+"might send when the actual\n"
+"request is made."
+msgstr ""
+"`Access-Control-Request-Headers` 请求头由浏览器在使用 CORS "
+"预检请求时使用，用于告知服务器客户端在发出实际请求时可能发送的 HTTP 头。"
+
+#: httplint/field/parsers/access_control_request_method.py:17
+msgid ""
+"The `Access-Control-Request-Method` request header is used by browsers "
+"when issuing a CORS\n"
+"preflight request, to let the server know which HTTP method will be used "
+"when the actual request\n"
+"is made."
+msgstr ""
+"`Access-Control-Request-Method` 请求头供浏览器在发出 CORS 预检请求时使用，告知服务器实际请求时将使用哪种 "
+"HTTP 方法。"
+
+#: httplint/field/parsers/age.py:11
+msgid ""
+"The `Age` response header conveys the sender's estimate of the amount of "
+"time since the response\n"
+"(or its validation) was generated at the origin server."
+msgstr "`Age` 响应头包含发送方对自源服务器生成响应（或其验证）以来的时间估算。"
 
 #: httplint/field/parsers/age.py:38
 msgid "The Age header's value should be an integer."
@@ -1763,6 +1883,38 @@ msgid ""
 "implementations may represent it\n"
 "using that value (which is over 68 years).\n"
 msgstr "`Age` 标头的值大于 2,147,483,648。某些实现可能会使用该值表示（这超过 68 年）。"
+
+#: httplint/field/parsers/allow.py:8
+msgid ""
+"The `Allow` response header advertises the set of methods that are "
+"supported by the resource."
+msgstr "`Allow` 响应头广告显示了该资源支持的方法集。"
+
+#: httplint/field/parsers/authentication_info.py:9
+msgid ""
+"The `Authentication-Info` header field is used to communicate information"
+" after \n"
+"the client's authentication credentials have been accepted."
+msgstr "`Authentication-Info` 标头字段用于在客户端的身份验证凭证被接受后传递信息。"
+
+#: httplint/field/parsers/authorization.py:9
+msgid ""
+"The `Authorization` header field allows a user agent to authenticate "
+"itself with an origin server\n"
+"-- usually, but not necessarily, after receiving a 401 (Unauthorized) "
+"response."
+msgstr ""
+"`Authorization` 标头字段允许用户代理向源服务器进行身份验证，\n"
+"-- 通常，但不一定是在收到 401 (Unauthorized) 响应后。"
+
+#: httplint/field/parsers/cache_control.py:85
+msgid ""
+"The `Cache-Control` header is used to specify required directives to all "
+"caches that\n"
+"handle the response. It can also occur in requests, but caches have the "
+"option of\n"
+"ignoring it there."
+msgstr "`Cache-Control` 标头用于指定处理响应的所有缓存必需的指令。它也可以出现在请求中，但缓存可以选择在那里忽略它。"
 
 #: httplint/field/parsers/cache_control.py:200
 #, python-format
@@ -1977,6 +2129,13 @@ msgstr ""
 "\n"
 "请注意，这些指令对其他客户端或缓存没有任何影响。"
 
+#: httplint/field/parsers/cache_status.py:13
+msgid ""
+"The `Cache-Status` header field indicates how caches have handled the "
+"response, to help with\n"
+"debugging caches."
+msgstr "`Cache-Status` 标头字段指示缓存如何处理响应，以帮助调试缓存。"
+
 #: httplint/field/parsers/cache_status.py:102
 msgid "Detailed information about caching is available."
 msgstr "有关缓存的详细信息可供使用。"
@@ -2027,6 +2186,15 @@ msgstr "Cache-Status 标头中 '%(param)s' 的值未知。"
 msgid "The value `%(value)s` is not defined for the `%(param)s` parameter.\n"
 msgstr "参数 `%(param)s` 的值 `%(value)s` 未定义。"
 
+#: httplint/field/parsers/clear_site_data.py:10
+msgid ""
+"The `Clear-Site-Data` header clears the data associated with the "
+"requesting website in the user's\n"
+"browser. It allows web developers to have more control over the data "
+"stored by a client for their\n"
+"origin."
+msgstr "`Clear-Site-Data` 标头会清除用户浏览器中与请求网站相关联的数据。它允许 Web 开发人员更好地控制客户端为其来源存储的数据。"
+
 #: httplint/field/parsers/clear_site_data.py:35
 #, python-format
 msgid "The Clear-Site-Data header contains an unknown value '%(value)s'."
@@ -2040,6 +2208,67 @@ msgid ""
 msgstr ""
 "`Clear-Site-Data` 标头包含一个未识别的值。\n"
 "有效值为：`\"cache\"`、`\"cookies\"`、`\"storage\"`、`\"executionContexts\"`、`\"*\"`。"
+
+#: httplint/field/parsers/connection.py:8
+msgid ""
+"The `Connection` header allows senders to specify which headers are hop-"
+"by-hop; that is, those that\n"
+"are not forwarded by intermediaries.\n"
+"\n"
+"It also indicates options that are desired for this particular "
+"connection; e.g., `close` means that\n"
+"it should not be reused.\n"
+"\n"
+"Connection is only valid in HTTP/1.x; HTTP/2 and HTTP/3 forbit it."
+msgstr ""
+"`Connection` 标头允许发送方指定哪些标头是逐跳的；也就是说，那些不被中间人转发的标头。\n"
+"\n"
+"它还指示了此特定连接所需的选项；例如，`close` 表示不应重用它。\n"
+"\n"
+"Connection 仅在 HTTP/1.x 中有效；HTTP/2 和 HTTP/3 禁止使用它。"
+
+#: httplint/field/parsers/connectiox.py:5
+#, python-format
+msgid ""
+"The `%(field_name)s` field usually means that a HTTP load balancer, proxy"
+" or other intermediary in\n"
+"front of the server has rewritten the `Connection` header, to allow it to"
+" insert its own.\n"
+"\n"
+"Usually, this is done so that clients won't see `Connection: close` so "
+"that the connection can be\n"
+"reused.\n"
+"\n"
+"It takes this form because the most efficient way of assuring that "
+"clients don't see the header is\n"
+"to rearrange or change individual characters in its name.\n"
+msgstr ""
+"`%(field_name)s` 字段通常表示服务器前面的 HTTP 负载均衡器、代理或其他中间设备已重写了 `Connection` "
+"标头，以便插入自己的标头。\n"
+"\n"
+"这通常是为了让客户端看不到 `Connection: close`，以便可以重用连接。\n"
+"\n"
+"它之所以采取这种形式，是因为确保客户端看不到该标头最有效的方法是重新排列或更改其名称中的单个字符。"
+
+#: httplint/field/parsers/content_base.py:6
+msgid ""
+"The `Content-Base` header established the base URI of the message. It has"
+" been\n"
+"deprecated, because it was not implemented widely.\n"
+msgstr "`Content-Base` 标头用于建立消息的基准 URI。该标头已被弃用，因为它没有被广泛实现。"
+
+#: httplint/field/parsers/content_disposition.py:14
+msgid ""
+"The `Content-Disposition` header suggests a name to use when saving the "
+"file.\n"
+"\n"
+"When the disposition (the first value) is set to `attachment`, it also "
+"prompts browsers to download\n"
+"the file, rather than display it."
+msgstr ""
+"`Content-Disposition` 标头建议保存文件时使用的名称。\n"
+"\n"
+"当 disposition（第一个值）设置为 `attachment` 时，它还会提示浏览器下载文件，而不是显示它。"
 
 #: httplint/field/parsers/content_disposition.py:51
 #, python-format
@@ -2142,6 +2371,23 @@ msgstr ""
 "\n"
 "您应该删除这些字符。"
 
+#: httplint/field/parsers/content_encoding.py:10
+msgid ""
+"The `Content-Encoding` header's value indicates what content codings have"
+"\n"
+"been applied, and thus what decoding mechanisms must be used to obtain "
+"the\n"
+"media-type referenced by the Content-Type header.\n"
+"\n"
+"Content-Encoding is primarily used to allow a document to be compressed "
+"without losing the identity\n"
+"of its underlying media type; e.g., `gzip` and `deflate`."
+msgstr ""
+"`Content-Encoding` 标头的值表示已应用的编码，因此必须使用哪些解码机制来获取 `Content-Type` 标头引用的媒体类型。"
+"\n"
+"\n"
+"`Content-Encoding` 主要用于允许在不丢失其底层媒体类型身份的情况下压缩文档；例如，`gzip` 和 `deflate`。"
+
 #: httplint/field/parsers/content_encoding.py:35
 msgid "This response contained unwanted content-codings."
 msgstr "此响应包含不期望的内容编码。"
@@ -2162,6 +2408,13 @@ msgstr ""
 "\n"
 "通常，客户端会在 `Accept-Encoding` 请求标头中请求它们想要的编码。使用客户端未明确请求的编码可能导致互操作性问题。"
 
+#: httplint/field/parsers/content_language.py:10
+msgid ""
+"The `Content-Language` header describes the natural language(s) of the "
+"intended audience for the\n"
+"messsage. Note that this might not convey all of the languages used."
+msgstr "`Content-Language` 标头描述了目标受众的自然语言。请注意，这可能无法传达所有使用的语言。"
+
 #: httplint/field/parsers/content_language.py:37
 #, python-format
 msgid "The %(lang)s language tag appears more than once."
@@ -2178,6 +2431,24 @@ msgstr ""
 "`Content-Language` 标头中多次使用了 `%(lang)s` 语言标记。\n"
 "\n"
 "接收方很可能会忽略重复项。"
+
+#: httplint/field/parsers/content_length.py:16
+msgid ""
+"The `Content-Length` header indicates the size of the content, in number "
+"of bytes. In responses to\n"
+"the HEAD method, it indicates the size of the content that would have "
+"been sent had the request\n"
+"been a GET.\n"
+"\n"
+"If Content-Length is incorrect, HTTP/1.1 persistent connections will not "
+"work, and caches may not\n"
+"store the response (since they can't be sure if they have the whole "
+"response)."
+msgstr ""
+"`Content-Length` 标头指示内容的字节数。对于 HEAD 方法的响应，它指示如果请求为 GET，将发送的内容的大小。\n"
+"\n"
+"如果 Content-Length 不正确，HTTP/1.1 "
+"持久连接将无法工作，并且缓存可能不会存储响应（因为它们无法确定是否已接收到完整的响应）。"
 
 #: httplint/field/parsers/content_length.py:44
 msgid "Content-Length and Transfer-Encoding should not be present together."
@@ -2207,6 +2478,40 @@ msgid ""
 "handle values this large."
 msgstr "`Content-Length` 标头的值大于 2^63-1。某些实现可能无法处理如此大的值。"
 
+#: httplint/field/parsers/content_location.py:8
+msgid ""
+"The `Content-Location` response header can used to supply an address for "
+"the\n"
+"representation when it is accessible from a location separate from the "
+"request\n"
+"URI."
+msgstr "`Content-Location` 响应头可用于提供资源的地址，当该资源可从与请求 URI 分离的位置访问时。"
+
+#: httplint/field/parsers/content_md5.py:8
+msgid ""
+"The `Content-MD5` header is an MD5 digest of the content, and provides an"
+" end-to-end message\n"
+"integrity check (MIC).\n"
+"\n"
+"Note that while a MIC is good for detecting accidental modification of "
+"content in transit, it is\n"
+"not proof against malicious attacks."
+msgstr ""
+"`Content-MD5` 报头是内容的 MD5 摘要，并提供端到端消息完整性检查 (MIC)。\n"
+"\n"
+"请注意，虽然 MIC 有助于检测传输过程中内容的意外修改，但它并不能防止恶意攻击。"
+
+#: httplint/field/parsers/content_range.py:11
+msgid ""
+"The `Content-Range` response header is sent in a `206` (Partial Content) "
+"response to indicate\n"
+"where in the full response content the partial content is located. It is "
+"also used\n"
+"in `416` (Requested Range Not Satisfiable) responses."
+msgstr ""
+"`Content-Range` 响应头用于 `206`（部分内容）响应，以指示部分内容在完整响应内容中的位置。它也用于 "
+"`416`（请求范围不满意）响应。"
+
 #: httplint/field/parsers/content_range.py:37
 msgid "This response shouldn't have a Content-Range header."
 msgstr "此响应不应带有 Content-Range 标头。"
@@ -2224,6 +2529,13 @@ msgstr ""
 "HTTP 仅在响应状态码为 `206` (部分内容) 或 `416` (请求范围不满足) 时定义 `Content-Range` 报头。\n"
 "\n"
 "由于状态码不是这两者之一，此 `Content-Range` 报头可能会混淆缓存和客户端。"
+
+#: httplint/field/parsers/content_security_policy.py:17
+msgid ""
+"The `Content-Security-Policy` response header allows web site "
+"administrators to declare approved\n"
+"sources of content that browsers are allowed to load on a page."
+msgstr "`Content-Security-Policy` 响应头允许网站管理员声明浏览器允许在页面上加载的已批准内容来源。"
 
 #: httplint/field/parsers/content_security_policy.py:126
 #, python-format
@@ -2371,6 +2683,36 @@ msgstr ""
 "\n"
 "%(directives_list)s"
 
+#: httplint/field/parsers/content_transfer_encoding.py:6
+msgid ""
+"The `Content-Transfer-Encoding` isn't part of HTTP, but it is used in "
+"MIME protocols in a manner\n"
+"analogous to `Transfer-Encoding`."
+msgstr ""
+"`Content-Transfer-Encoding` 不是 HTTP 的一部分，但在 MIME 协议中，它的使用方式类似于 `Transfer-"
+"Encoding`。"
+
+#: httplint/field/parsers/content_type.py:12
+msgid ""
+"The `Content-Type` header indicates the media type of the content sent to"
+" the recipient or, in the\n"
+"case of responses to the HEAD method, the media type that would have been"
+" sent had the request been\n"
+"a GET."
+msgstr ""
+"`Content-Type` 标头指示发送给接收者的内容的媒体类型，或者，在对 HEAD 方法的响应中，指示如果请求为 "
+"GET，则本应发送的媒体类型。"
+
+#: httplint/field/parsers/cross_origin_embedder_policy.py:12
+msgid ""
+"The `Cross-Origin-Embedder-Policy` header field prevents a document from "
+"loading any cross-origin\n"
+"resources that don't explicitly grant the document permission (using CORP"
+" or CORS)."
+msgstr ""
+"`Cross-Origin-Embedder-Policy` 标头字段可防止文档加载任何未通过（使用 CORP 或 "
+"CORS）明确授予文档权限的跨源资源。"
+
 #: httplint/field/parsers/cross_origin_embedder_policy.py:71
 #, python-format
 msgid "This response requires resources to have a CORP header%(report_only)s."
@@ -2470,6 +2812,13 @@ msgstr ""
 "响应不应同时包含 `Cross-Origin-Embedder-Policy` 和 `Cross-Origin-Embedder-Policy-"
 "Report-Only` 标头。report-only 标头将被忽略。"
 
+#: httplint/field/parsers/cross_origin_opener_policy.py:12
+msgid ""
+"The `Cross-Origin-Opener-Policy` header field allows a document to disown"
+" its opener, ensuring that\n"
+"it doesn't have a reference to the opener's window object."
+msgstr "`Cross-Origin-Opener-Policy` 标头字段允许文档放弃其打开者，确保它不持有打开者窗口对象的引用。"
+
 #: httplint/field/parsers/cross_origin_opener_policy.py:71
 #, python-format
 msgid ""
@@ -2557,6 +2906,13 @@ msgstr ""
 "响应不应同时包含 `Cross-Origin-Opener-Policy` 和 `Cross-Origin-Opener-Policy-"
 "Report-Only` 标头。report-only 标头将被忽略。"
 
+#: httplint/field/parsers/cross_origin_resource_policy.py:11
+msgid ""
+"The `Cross-Origin-Resource-Policy` header field allows a resource to "
+"indicate whether it can be\n"
+"loaded by a cross-origin document."
+msgstr "`Cross-Origin-Resource-Policy` 字段允许资源指示是否可以被跨源文档加载。"
+
 #: httplint/field/parsers/cross_origin_resource_policy.py:41
 msgid ""
 "This response is only available for reading to requests from the same "
@@ -2628,6 +2984,45 @@ msgid ""
 msgstr ""
 "`%(value)s` 不是 `Cross-Origin-Resource-Policy` 标头的一个有效值；\n"
 "它必须是 `same-origin`、`same-site` 或 `cross-origin` 之一。"
+
+#: httplint/field/parsers/cteonnt_length.py:5
+#, python-format
+msgid ""
+"The `%(field_name)s` field usually means that a HTTP load balancer, proxy"
+" or\n"
+"other intermediary in front of the server has rewritten the `Content-"
+"Length`\n"
+"header, to allow it to insert its own.\n"
+"\n"
+"Usually, this is done because an intermediary has dynamically compressed "
+"the\n"
+"message.\n"
+"\n"
+"It takes this form because the most efficient way of assuring that "
+"clients\n"
+"don't see the header is to rearrange or change individual characters in "
+"its\n"
+"name. "
+msgstr ""
+"`%(field_name)s` 字段通常表示服务器前面的 HTTP 负载均衡器、代理或其他中间组件重写了 `Content-Length` "
+"标头，以便插入自己的内容。\n"
+"\n"
+"通常，这样做是因为中间组件动态压缩了消息。\n"
+"\n"
+"之所以采用这种形式，是因为确保客户端看不到该标头最有效的方法是重新排列或更改其名称中的单个字符。"
+
+#: httplint/field/parsers/date.py:14
+msgid ""
+"The `Date` header represents the time when the message was generated, "
+"regardless of caching that\n"
+"happened since.\n"
+"\n"
+"It is used by caches as input to expiration calculations, and to detect "
+"clock drift."
+msgstr ""
+"`Date` 标头表示消息生成时的时间，与之后发生的缓存无关。\n"
+"\n"
+"缓存使用它作为过期计算的输入，以及用于检测时钟漂移。"
 
 #: httplint/field/parsers/date.py:51
 msgid "The server's clock is correct."
@@ -2713,6 +3108,17 @@ msgstr ""
 "\n"
 "有关更多信息，请参阅[这篇论文](https://www.usenix.org/legacy/events/usits01/full_papers/cohen/cohen_html/index.html)。"
 
+#: httplint/field/parsers/etag.py:13
+msgid "The `ETag` header provides an opaque identifier for the representation."
+msgstr "`ETag` 标头为此表示形式提供了一个不透明标识符。"
+
+#: httplint/field/parsers/expect.py:10
+msgid ""
+"The `Expect` header field in a request indicates behaviors (expectations)"
+" that need to be\n"
+"fulfilled by the server in order to properly handle the request."
+msgstr "请求中的 `Expect` 标头字段指示服务器为了正确处理请求而需要满足的行为（期望）。"
+
 #: httplint/field/parsers/expect.py:37
 #, python-format
 msgid "The '%(expectation)s' expectation is not supported."
@@ -2731,6 +3137,104 @@ msgstr "Expect 头在 HTTP/1.0 中不受支持。"
 #: httplint/field/parsers/expect.py:46
 msgid "The `Expect` header was added in HTTP/1.1; it has no meaning in HTTP/1.0."
 msgstr "`Expect` 标头是在 HTTP/1.1 中添加的；它在 HTTP/1.0 中没有意义。"
+
+#: httplint/field/parsers/expires.py:11
+msgid ""
+"The `Expires` response header gives a time after which the response is "
+"considered stale by\n"
+"caches."
+msgstr "`Expires` 响应头指定了一个缓存认为响应过时的截止时间。"
+
+#: httplint/field/parsers/from_field.py:9
+msgid ""
+"The `From` header field contains an Internet email address for the human "
+"user who controls the\n"
+"requesting user agent."
+msgstr "`From` 字段包含控制请求用户代理的人类用户的 Internet 电子邮件地址。"
+
+#: httplint/field/parsers/host.py:9
+msgid ""
+"The `Host` header field provides the host and port information from the "
+"target URI, enabling the\n"
+"origin server to distinguish between resources while servicing requests "
+"for multiple host names on\n"
+"a single IP address."
+msgstr "`Host` 报头字段提供了目标 URI 的主机和端口信息，使源服务器在处理单个 IP 地址上的多个主机名请求时能够区分资源。"
+
+#: httplint/field/parsers/if_match.py:9
+msgid ""
+"The `If-Match` header field makes the request method conditional on the "
+"recipient origin server\n"
+"having a current representation of the target resource."
+msgstr "`If-Match` 标头字段使请求方法以接收方源服务器拥有目标资源的当前表示为条件。"
+
+#: httplint/field/parsers/if_modified_since.py:9
+msgid ""
+"The `If-Modified-Since` header field makes a request method conditional "
+"on the\n"
+"selected representation's modification date being more recent than the "
+"date provided in the\n"
+"field-value."
+msgstr "`If-Modified-Since` 标头字段使请求方法有条件地取决于所选表示的修改日期是否比字段值中提供的日期更新。"
+
+#: httplint/field/parsers/if_none_match.py:9
+msgid ""
+"The `If-None-Match` header field makes the request method conditional on "
+"the\n"
+"absence of a matching entity tag, or if the field-value is \"*\", the "
+"absence of\n"
+"any current representation of the target resource."
+msgstr "`If-None-Match` 标头字段使请求方法以实体标签不匹配或字段值为 \"*\"（即目标资源当前不存在任何表示）为条件。"
+
+#: httplint/field/parsers/if_range.py:9
+msgid ""
+"The `If-Range` header field allows a client to \"short-circuit\" the "
+"second request. It means: if\n"
+"the representation is unchanged, send me the part(s) that I am missing; "
+"otherwise, send me the\n"
+"entire new representation."
+msgstr "`If-Range` 头部字段允许客户端“短路”第二个请求。它的意思是：如果表示未更改，则向我发送我缺少的部分；否则，向我发送全新的完整表示。"
+
+#: httplint/field/parsers/if_unmodified_since.py:9
+msgid ""
+"The `If-Unmodified-Since` header field makes the request method "
+"conditional on the selected\n"
+"representation's last modification date being earlier than or equal to "
+"the date provided in the\n"
+"field-value."
+msgstr "`If-Unmodified-Since` 标头字段使请求方法以选定表示形式的最后修改日期早于或等于字段值中提供的日期为条件。"
+
+#: httplint/field/parsers/keep_alive.py:13
+msgid ""
+"The `Keep-Alive` header is completely optional; it is defined primarily "
+"because the `keep-alive`\n"
+"connection token implies that such a header exists, not because anyone "
+"actually uses it.\n"
+"\n"
+"Some implementations (e.g., [Apache](http://httpd.apache.org/)) do "
+"generate a `Keep-Alive` header\n"
+"to convey how many requests they're willing to serve on a single "
+"connection, what the connection\n"
+"timeout is and other information. However, this isn't usually used by "
+"clients.\n"
+"\n"
+"It's safe to remove this header if you wish to save a few bytes."
+msgstr ""
+"`Keep-Alive` 标头完全是可选的；它主要被定义是因为 `keep-alive`\n"
+"连接令牌暗示了这样一个标头存在，而不是因为有人真的在使用它。\n"
+"\n"
+"一些实现（例如 [Apache](http://httpd.apache.org/)）确实会生成 `Keep-Alive` 标头\n"
+"来传达它们在单个连接上愿意服务的请求数量、连接\n"
+"超时时间和更多信息。然而，客户端通常不使用它。\n"
+"\n"
+"如果您想节省几个字节，可以安全地删除此标头。"
+
+#: httplint/field/parsers/last_modified.py:12
+msgid ""
+"The `Last-Modified` response header indicates the time that the origin "
+"server believes the\n"
+"representation was last modified."
+msgstr "`Last-Modified` 响应头指示源服务器认为表示最后修改的时间。"
 
 #: httplint/field/parsers/last_modified.py:44
 msgid "The Last-Modified time is in the future."
@@ -2765,6 +3269,17 @@ msgstr ""
 "`Last-Modified` 标头指示资源最后一次更改的时间点。它用于 HTTP 中验证缓存的响应，以及计算缓存的启发式新鲜度。\n"
 "\n"
 "此资源最后一次更改时间为 %(last_modified_string)s。"
+
+#: httplint/field/parsers/link.py:15
+msgid ""
+"The `Link` header allows links related to the content to be conveyed. A "
+"link can be viewed as a\n"
+"statement of the form \"[context IRI] has a [relation type] resource at "
+"[target IRI], which has\n"
+"[target attributes]."
+msgstr ""
+"`Link` 标头允许传达与内容相关的链接。链接可以看作是“[上下文 IRI] 拥有 [关系类型] 资源，位于 [目标 IRI]，该资源具有 "
+"[目标属性]”的语句。"
 
 #: httplint/field/parsers/link.py:52
 msgid "The 'rev' parameter on the Link header is deprecated."
@@ -2807,6 +3322,18 @@ msgstr ""
 "`anchor` 参数来定义链接的上下文 URI。\n"
 "\n"
 "此参数可以是绝对 URI 或相对 URI；然而，`%(anchor)s` 既不是。"
+
+#: httplint/field/parsers/location.py:14
+msgid ""
+"The `Location` response header is used in `3xx` responses to redirect the"
+" recipient to a different location\n"
+"to complete the request.\n"
+"\n"
+"In `201` (Created) responses, it identifies a newly created resource."
+msgstr ""
+"`Location` 响应头用于 `3xx` 响应，将接收方重定向到不同位置以完成请求。\n"
+"\n"
+"在 `201` (Created) 响应中，它标识一个新创建的资源。"
 
 #: httplint/field/parsers/location.py:51
 msgid "This status code doesn't define any meaning for the Location header."
@@ -2865,6 +3392,41 @@ msgid ""
 msgstr ""
 "`Max-Forwards` 标头仅为 `TRACE` 和 `OPTIONS` 请求定义；对于其他方法，它\n"
 "很可能被忽略。"
+
+#: httplint/field/parsers/max_forwards.py:19
+msgid ""
+"The `Max-Forwards` header field provides a mechanism to limit\n"
+"the number of times that the request is forwarded by intermediaries."
+msgstr "`Max-Forwards` 标头字段提供了一个机制，用于限制请求被中间节点转发的次数。"
+
+#: httplint/field/parsers/mime_version.py:8
+msgid ""
+"HTTP is not a MIME-compliant protocol. However, HTTP/1.1 messages can "
+"include a single MIME-Version\n"
+"header to indicate what version of the MIME protocol was used to "
+"construct the message. Use\n"
+"of the MIME-Version header indicates that the message is in full "
+"compliance with the MIME\n"
+"protocol."
+msgstr ""
+"HTTP 不是一个符合 MIME 标准的协议。然而，HTTP/1.1 消息可以包含一个单独的 MIME-Version\n"
+"头，以表明用于构造消息的 MIME 协议版本。使用\n"
+"MIME-Version 头表明消息完全符合 MIME\n"
+"协议。"
+
+#: httplint/field/parsers/p3p.py:6
+msgid ""
+"The `P3P` response header allows a server to describe its privacy policy "
+"in a\n"
+"machine-readable way. It has been deprecated, because client support was "
+"poor.\n"
+msgstr "`P3P` 响应头允许服务器以机器可读的方式描述其隐私政策。由于客户端支持不佳，它已被弃用。"
+
+#: httplint/field/parsers/permissions_policy.py:11
+msgid ""
+"The `Permissions-Policy` response header allows a site to control the use"
+" of browser features."
+msgstr "`Permissions-Policy` 响应头允许网站控制浏览器功能的用法。"
 
 #: httplint/field/parsers/permissions_policy.py:73
 msgid "This response sets a Permissions Policy."
@@ -2949,6 +3511,18 @@ msgstr ""
 "条目 `%(item)s` 不是允许列表的有效类型。\n"
 "允许列表应包含源（字符串）或关键字（令牌）。"
 
+#: httplint/field/parsers/pragma.py:11
+msgid ""
+"The `Pragma` header is used to include implementation-specific directives"
+" that might apply to any\n"
+"recipient along the request chain.\n"
+"\n"
+"This header is deprecated, in favour of `Cache-Control`."
+msgstr ""
+"`Pragma` 标头用于包含可能适用于请求链中任何接收者的实现特定的指令。\n"
+"\n"
+"此标头已弃用，改为使用 `Cache-Control`。"
+
 #: httplint/field/parsers/pragma.py:37
 msgid "Pragma: no-cache is a request directive, not a response directive."
 msgstr "Pragma: no-cache 是一个请求指令，而非响应指令。"
@@ -2972,6 +3546,36 @@ msgid ""
 "HTTP only defines `Pragma: no-cache`; other uses of this header are "
 "deprecated."
 msgstr "HTTP 仅定义 `Pragma: no-cache`；此标头的其他用法已弃用。"
+
+#: httplint/field/parsers/proxy_authenticate.py:7
+msgid ""
+"The `Proxy-Authenticate` response header consists of a challenge that "
+"indicates the authentication\n"
+"scheme and parameters applicable to the proxy for this request-target."
+msgstr "`Proxy-Authenticate` 响应头包含一个挑战，该挑战指示此请求目标代理适用的身份验证方案和参数。"
+
+#: httplint/field/parsers/proxy_authentication_info.py:9
+msgid ""
+"The `Proxy-Authentication-Info` header field is used to communicate "
+"information after\n"
+"the client's authentication credentials have been accepted by a proxy."
+msgstr "`Proxy-Authentication-Info` 报头字段用于在客户端的身份验证凭据被代理接受后通信信息。"
+
+#: httplint/field/parsers/proxy_authorization.py:9
+msgid ""
+"The `Proxy-Authorization` header field allows a user agent to "
+"authenticate itself with a proxy\n"
+"-- usually, but not necessarily, after receiving a 407 (Proxy "
+"Authentication Required) response."
+msgstr ""
+"`Proxy-Authorization` 标头字段允许用户代理向代理进行身份验证——通常是在收到 407 (Proxy "
+"Authentication Required) 响应后，但并非总是如此。"
+
+#: httplint/field/parsers/proxy_status.py:13
+msgid ""
+"The `Proxy-Status` header field indicates how intermediaries have handled"
+" the response."
+msgstr "`Proxy-Status` 标头字段指示中间服务器如何处理了响应。"
 
 #: httplint/field/parsers/proxy_status.py:139
 msgid "Information about intermediaries is available."
@@ -3017,6 +3621,13 @@ msgstr "`%(param)s` 参数在 Proxy-Status 规范中未定义。"
 msgid "The Proxy-Status header has an unknown value for '%(param)s'."
 msgstr "Proxy-Status 标头对 '%(param)s' 具有未知值。"
 
+#: httplint/field/parsers/range.py:9
+msgid ""
+"The `Range` header field on a GET request modifies the method semantics "
+"to request only those\n"
+"parts of the representation that are specified."
+msgstr "GET 请求中的 `Range` 标头字段会修改方法语义，仅请求表示的指定部分。"
+
 #: httplint/field/parsers/referer.py:17
 msgid "The Referer header is sent from a secure origin to an insecure target."
 msgstr "Referer 头从安全源发送到不安全目标。"
@@ -3058,6 +3669,20 @@ msgstr ""
 "\n"
 "详情请参阅 [RFC 9110 Section 10.1.3](https://www.rfc-"
 "editor.org/rfc/rfc9110.html#section-10.1.3)。"
+
+#: httplint/field/parsers/referer.py:41
+msgid ""
+"The `Referer` [sic] header field allows the user agent to specify a URI "
+"Reference for the\n"
+"resource from which the target URI was obtained (i.e., the \"referrer\")."
+msgstr "`Referer`（有误，应为 Referer）报头字段允许用户代理指定一个 URI 引用，该引用指向获取目标 URI 的资源（即“引用者”）。"
+
+#: httplint/field/parsers/referrer_policy.py:10
+msgid ""
+"The `Referrer-Policy` response header controls how much referrer "
+"information (sent via the `Referer`\n"
+"header) should be included with requests."
+msgstr "`Referrer-Policy` 响应头控制着请求中应包含多少引荐信息（通过 `Referer` 标头发送）。"
 
 #: httplint/field/parsers/referrer_policy.py:46
 msgid "This response's Referrer-Policy allows unsafe URLs."
@@ -3117,6 +3742,27 @@ msgstr ""
 "`Referrer-Policy` 标头包含多个有效策略。浏览器只会使用找到的最后一个有效策略，即 "
 "`%(effective)s`。之前的选项将被忽略。"
 
+#: httplint/field/parsers/retry_after.py:7
+msgid ""
+"The `Retry-After` response header can be used with a `503` (Service "
+"Unavailable) response to\n"
+"indicate how long the service is expected to be unavailable to the "
+"requesting client.\n"
+"\n"
+"The value of this field can be either a date or an integer number of "
+"seconds."
+msgstr ""
+"`Retry-After` 响应头可以与 `503`（服务不可用）响应一起使用，以指示服务预计在多长时间内对请求客户端不可用。\n"
+"\n"
+"此字段的值可以是日期或整数秒数。"
+
+#: httplint/field/parsers/server.py:13
+msgid ""
+"The `Server` response header contains information about the software used"
+" by the origin server to\n"
+"handle the request."
+msgstr "`Server` 响应头包含有关源服务器用来处理请求的软件的信息。"
+
 #: httplint/field/parsers/server.py:43
 msgid "The Server header is long."
 msgstr "Server 标头过长。"
@@ -3133,6 +3779,13 @@ msgstr ""
 "`Server` 标头长度为 %(server_length)s，这会浪费不必要的带宽，并可能向攻击者暴露后端系统的详细信息。\n"
 "\n"
 "考虑缩短它。"
+
+#: httplint/field/parsers/set_cookie.py:19
+msgid ""
+"The `Set-Cookie` response header sets a stateful \"cookie\" on the "
+"client, to be included in future\n"
+"requests to the server."
+msgstr "`Set-Cookie` 响应头会在客户端设置一个有状态的“cookie”，以便在未来发送给服务器的请求中包含。"
 
 #: httplint/field/parsers/set_cookie.py:359
 msgid "This response has a Set-Cookie header without a cookie-name."
@@ -3430,6 +4083,26 @@ msgstr ""
 "\n"
 "浏览器很可能接受所有这些 Cookie，但应用顺序可能会有所不同或令人困惑。"
 
+#: httplint/field/parsers/set_cookie2.py:6
+msgid "The `Set-Cookie2` header has been deprecated; use `Set-Cookie` instead."
+msgstr "`Set-Cookie2` 标头已被弃用；请改用 `Set-Cookie`。"
+
+#: httplint/field/parsers/soapaction.py:6
+msgid ""
+"The `SOAPAction` request header is used by SOAP, which isn't really HTTP."
+" Stop it."
+msgstr "`SOAPAction` 请求头由 SOAP 使用，SOAP 实际上并非 HTTP。请停止使用。"
+
+#: httplint/field/parsers/strict_transport_security.py:16
+msgid ""
+"The `Strict-Transport-Security` response header (often abbreviated as "
+"HSTS) lets a web site tell\n"
+"browsers that it should only be communicated with using HTTPS, instead of"
+" using HTTP."
+msgstr ""
+"`Strict-Transport-Security` 响应头（通常缩写为 HSTS）允许网站告知浏览器，它只能通过 HTTPS "
+"进行通信，而不是使用 HTTP。"
+
 #: httplint/field/parsers/strict_transport_security.py:129
 msgid "Strict Transport Security (HSTS) is enabled."
 msgstr "严格传输安全 (HSTS) 已启用。"
@@ -3643,6 +4316,69 @@ msgid ""
 "directive. It should not have an associated value."
 msgstr "`Strict-Transport-Security` 标头中的 `%(directive)s` 指令是一个无值的指令。它不应有相关的值。"
 
+#: httplint/field/parsers/tcn.py:7
+msgid ""
+"The `TCN` response header is part of an experimental transparent content "
+"negotiation scheme. It\n"
+"is not widely supported in clients.\n"
+msgstr ""
+"`TCN` 响应头是实验性透明内容协商方案的一部分。\n"
+"它在客户端中支持不广泛。"
+
+#: httplint/field/parsers/te.py:7
+msgid ""
+"The `TE` request header indicates what HTTP/1.1 transfer-codings the "
+"client is willing to accept in\n"
+"the response. Additionally, if it contains the special value `trailers` "
+"it indicates that the sender is willing to accept trailer fields after "
+"the content.\n"
+"\n"
+"The most common transfer-coding, `chunked`, doesn't need to be listed in "
+"`TE`.\n"
+"\n"
+"`TE` can only be used with the value `trailers` in HTTP/2 and HTTP/3.\n"
+msgstr ""
+"`TE` 请求标头指示客户端在响应中愿意接受哪些 HTTP/1.1 传输编码。此外，如果它包含特殊值 "
+"`trailers`，则表示发送者愿意在内容之后接受尾部字段。\n"
+"\n"
+"最常见的传输编码 `chunked` 不需要列在 `TE` 中。\n"
+"\n"
+"`TE` 在 HTTP/2 和 HTTP/3 中只能使用 `trailers` 的值。"
+
+#: httplint/field/parsers/trailer.py:8
+msgid ""
+"The `Trailer` header indicates that the given set of headers will be\n"
+"present in the trailer of the message, after the content."
+msgstr "`Trailer` 标头表明给定的一组标头将在消息内容之后，出现在消息的尾部。"
+
+#: httplint/field/parsers/transfer_encoding.py:12
+msgid ""
+"The `Transfer-Encoding` header indicates what (if any) type of "
+"transformation has been applied to\n"
+"the message content.\n"
+"\n"
+"This differs from `Content-Encoding` in that transfer codings are a "
+"property of the message, not of\n"
+"the representation; i.e., it will be removed by the next \"hop\", whereas"
+" content codings are\n"
+"end-to-end.\n"
+"\n"
+"The most commonly used transfer coding is `chunked`, which allows "
+"HTTP/1.1 persistent connections\n"
+"to be used without knowing the content's length.\n"
+"\n"
+"Transfer codings can only be used in HTTP/1; HTTP/2 and HTTP/3 do not "
+"support them.\n"
+msgstr ""
+"`Transfer-Encoding` 标头指示已应用于消息内容的（如果有的话）转换类型。\n"
+"\n"
+"这与 `Content-Encoding` "
+"的不同之处在于，传输编码是消息的属性，而不是表示的属性；也就是说，它将被下一个“跳”（hop）移除，而内容编码是端到端的。\n"
+"\n"
+"最常用的传输编码是 `chunked`，它允许在不知道内容长度的情况下使用 HTTP/1.1 持久连接。\n"
+"\n"
+"传输编码只能在 HTTP/1 中使用；HTTP/2 和 HTTP/3 不支持它们。"
+
 #: httplint/field/parsers/transfer_encoding.py:54
 msgid "The identity transfer-coding isn't necessary."
 msgstr "身份传输编码不是必需的。"
@@ -3702,6 +4438,42 @@ msgstr ""
 "HTTP 允许 `Transfer-Encoding` 标头中的传输编码具有可选参数，但它没有定义这些参数的含义。\n"
 "\n"
 "此消息包含带有此类参数的编码；尽管它们在技术上是允许的，但可能会导致互操作性问题。应将其删除。"
+
+#: httplint/field/parsers/upgrade.py:8
+msgid ""
+"The `Upgrade` header allows the client to specify what additional "
+"communication\n"
+"protocols it supports and would like to use if the server finds it "
+"appropriate\n"
+"to switch protocols. Servers use it to confirm upgrade to a specific\n"
+"protocol.\n"
+"\n"
+"`Upgrade` cannot be used in HTTP/2 or HTTP/3.\n"
+msgstr ""
+"`Upgrade` 标头允许客户端指定它支持且希望在服务器认为合适时切换到的附加通信协议。服务器使用它来确认升级到特定协议。\n"
+"\n"
+"`Upgrade` 不能在 HTTP/2 或 HTTP/3 中使用。"
+
+#: httplint/field/parsers/user_agent.py:9
+msgid ""
+"The `User-Agent` header field contains information about the user agent "
+"originating the request."
+msgstr "`User-Agent` 标头字段包含有关发起请求的用户代理的信息。"
+
+#: httplint/field/parsers/vary.py:11
+msgid ""
+"The `Vary` response header indicates the set of request headers that "
+"determines whether a cache is\n"
+"permitted to use the response to reply to a subsequent request without "
+"validation.\n"
+"\n"
+"In uncacheable or stale responses, the Vary field value advises the user "
+"agent about the criteria\n"
+"that were used to select the representation."
+msgstr ""
+"`Vary` 响应头表明了请求头集合，该集合决定了缓存是否允许使用该响应来回复后续未经验证的请求。\n"
+"\n"
+"在不可缓存或过期的响应中，Vary 字段值会告知用户代理用于选择表示形式的标准。"
 
 #: httplint/field/parsers/vary.py:43
 msgid "Vary: * effectively makes this response uncacheable."
@@ -3801,6 +4573,15 @@ msgstr ""
 "\n"
 "变化维度过多会使使用此信息变得不切实际。"
 
+#: httplint/field/parsers/via.py:10
+msgid ""
+"The `Via` header is added to requests and responses by proxies and other "
+"HTTP intermediaries. It\n"
+"can be used to help avoid request loops and identify the protocol "
+"capabilities of all senders along\n"
+"the request/response chain."
+msgstr "`Via` 头部由代理和其他 HTTP 中介机构添加到请求和响应中。它可以用来帮助避免请求循环，并识别请求/响应链中所有发送者的协议功能。"
+
 #: httplint/field/parsers/via.py:33
 msgid "One or more intermediaries are present."
 msgstr "存在一个或多个中间服务器。"
@@ -3829,6 +4610,44 @@ msgstr ""
 "\n"
 "该字段由三个用空格分隔的组件组成；首先是中间服务器接收到的消息的 HTTP "
 "版本，然后是中间服务器的标识（通常是其主机名，但不总是），最后是可选的产品标识符或注释（通常用于识别所使用的软件）。"
+
+#: httplint/field/parsers/warning.py:10
+msgid ""
+"The `Warning` response header was used to carry additional information "
+"about the status or\n"
+"transformation of a message that might not be reflected in it. It has "
+"been deprecated."
+msgstr "`Warning` 响应头曾用于携带消息状态或转换的附加信息，但这些信息可能不会在消息中得到反映。此头已被弃用。"
+
+#: httplint/field/parsers/www_authenticate.py:8
+msgid ""
+"The `WWW-Authenticate` response header consists of at least one challenge"
+" that\n"
+"indicates the authentication scheme(s) and parameters applicable."
+msgstr "`WWW-Authenticate` 响应头至少包含一个挑战，该挑战指示适用的身份验证方案和参数。"
+
+#: httplint/field/parsers/x_cache.py:6
+msgid ""
+"The `X-Cache` response header is used by some caches to indicate whether "
+"or not the response was\n"
+"served from cache; if it contains `HIT`, it was."
+msgstr "`X-Cache` 响应头由某些缓存用来指示响应是否从缓存提供；如果它包含 `HIT`，则表示是从缓存提供的。"
+
+#: httplint/field/parsers/x_cache_lookup.py:6
+msgid ""
+"The `X-Cache-Lookup` response header is used by some caches to show "
+"whether there was a response in\n"
+"cache for this URL; if it contains `HIT`, it was in cache (but not "
+"necessarily used)."
+msgstr ""
+"`X-Cache-Lookup` 响应头用于一些缓存，以显示此 URL 是否在缓存中有响应；如果它包含 "
+"`HIT`，则表示在缓存中（但不一定已使用）。"
+
+#: httplint/field/parsers/x_content_type_options.py:10
+msgid ""
+"Indicates that the client should not 'sniff' the `Content-Type` of the "
+"message from its content."
+msgstr "表明客户端不应从消息内容中“嗅探” `Content-Type`。"
 
 #: httplint/field/parsers/x_content_type_options.py:29
 msgid "This response instructs browsers not to 'sniff' its media type."
@@ -3873,6 +4692,14 @@ msgstr ""
 "\n"
 "有关此标头的更多信息，请参阅 [MDN](https://developer.mozilla.org/en-"
 "US/docs/Web/HTTP/Headers/X-Content-Type-Options)。"
+
+#: httplint/field/parsers/x_frame_options.py:28
+msgid ""
+"\n"
+"The X-Frame-Options response header declares a policy regarding whether "
+"the browser may display\n"
+"the transmitted content in frames that are part of other web pages.\n"
+msgstr "X-Frame-Options 响应头声明了一项策略，该策略规定了浏览器是否可以在其他网页的 frame 中显示传输的内容。"
 
 #: httplint/field/parsers/x_frame_options.py:53
 msgid "This response prevents some browsers from rendering it within a frame."
@@ -3940,4 +4767,25 @@ msgstr ""
 "\n"
 "有关更多信息，请参阅 [MDN](https://developer.mozilla.org/en-"
 "US/docs/Web/HTTP/Headers/X-Frame-Options)。"
+
+#: httplint/field/parsers/x_pad.py:6
+#, python-format
+msgid ""
+"    The `%(field_name)s` response header is used to \"pad\" the size of "
+"the response's headers.\n"
+"\n"
+"    Very old versions of the Netscape browser had a bug whereby a "
+"response whose headers were exactly\n"
+"    256 or 257 bytes long, the browser would consider the response "
+"invalid.\n"
+"\n"
+"    Since the affected browsers (specifically, Netscape 2.x, 3.x and 4.0 "
+"up to beta 2) are no longer\n"
+"    widely used, it's safe to omit this header."
+msgstr ""
+"`%(field_name)s` 响应头用于“填充”响应头的大小。\n"
+"\n"
+"Netscape 浏览器非常老的版本有一个 bug，即当响应头的大小恰好为 256 或 257 字节时，浏览器会认为响应无效。\n"
+"\n"
+"由于受影响的浏览器（特别是 Netscape 2.x、3.x 和 4.0 至 beta 2）已不再广泛使用，因此可以安全地省略此头。"
 
