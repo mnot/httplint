@@ -1,7 +1,7 @@
 
 # httplint
 
-This Python library _lints_ HTTP messages; it checks them for correctness and reports any issues it finds. httplint can report on 234 different aspects of your HTTP message.
+This Python library _lints_ HTTP messages; it checks them for correctness and reports any issues it finds. httplint can report on 237 different aspects of your HTTP message, including checks against 164 header fields.
 
 It performs all message-level checks for [REDbot](https://redbot.org/), but does not perform any 'active' checks by making requests to the network, and it does not have a Web user interface.
 

@@ -42,7 +42,7 @@ tidy: tidy_py
 
 .PHONY: update_readme
 update_readme: venv
-	PYTHONPATH=. $(VENV)/python test/update_readme.py
+	PYTHONPATH=. $(VENV)/python tools/update_readme.py
 
 .PHONY: run
 run: lint typecheck tidy
