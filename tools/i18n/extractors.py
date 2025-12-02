@@ -9,8 +9,8 @@ def extract_notes(
     """
     Extract messages from Note subclasses in Python source code.
 
-    This looks for classes that inherit from 'Note' (or have 'Note' in their bases)
-    and extracts the strings assigned to '_summary' and '_text'.
+    This looks for classes that inherit from 'Note' or 'HttpField' (or have them in their bases)
+    and extracts the strings assigned to '_summary', '_text', or 'description'.
 
     It also delegates to the standard Python extractor to find other messages.
     """
@@ -20,24 +20,28 @@ def extract_notes(
 
     for node in ast.walk(tree):
         if isinstance(node, ast.ClassDef):
-            # Check if class inherits from Note (simple check)
-            is_note = False
+            # Check if class inherits from Note or HttpField (simple check)
+            is_target = False
             for base in node.bases:
-                if isinstance(base, ast.Name) and base.id == "Note":
-                    is_note = True
+                if isinstance(base, ast.Name) and base.id in ["Note", "HttpField"]:
+                    is_target = True
                     break
-                # Handle module.Note
-                if isinstance(base, ast.Attribute) and base.attr == "Note":
-                    is_note = True
+                # Handle module.Note or module.HttpField
+                if isinstance(base, ast.Attribute) and base.attr in [
+                    "Note",
+                    "HttpField",
+                ]:
+                    is_target = True
                     break
 
-            if is_note:
+            if is_target:
                 for item in node.body:
                     if isinstance(item, ast.Assign):
                         for target in item.targets:
                             if isinstance(target, ast.Name) and target.id in [
                                 "_summary",
                                 "_text",
+                                "description",
                             ]:
                                 if isinstance(item.value, ast.Constant) and isinstance(
                                     item.value.value, str
