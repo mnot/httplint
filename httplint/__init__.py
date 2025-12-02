@@ -3,4 +3,4 @@ from httplint.message import HttpRequestLinter, HttpResponseLinter
 from httplint.note import Notes
 
 
-__version__ = "2025.11.9"
+__version__ = "2025.12.1"
