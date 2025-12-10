@@ -82,7 +82,7 @@ class StatusChecker:
                 "status", CREATED_SAFE_METHOD, method=self.request.method or ""
             )
         if "location" not in self.response.headers.parsed:
-            self.add_note("header-location", CREATED_WITHOUT_LOCATION)
+            self.add_note("field-location", CREATED_WITHOUT_LOCATION)
 
     def status202(self) -> None:  # Accepted
         pass
@@ -100,7 +100,7 @@ class StatusChecker:
         if self.request and not get_header(self.request.headers.text, "range"):
             self.add_note("", PARTIAL_NOT_REQUESTED)
         if "content-range" not in self.response.headers.parsed:
-            self.add_note("header-location", PARTIAL_WITHOUT_RANGE)
+            self.add_note("field-location", PARTIAL_WITHOUT_RANGE)
 
     def status207(self) -> None:  # Multi-Status
         pass
@@ -116,15 +116,15 @@ class StatusChecker:
 
     def status301(self) -> None:  # Moved Permanently
         if "location" not in self.response.headers.parsed:
-            self.add_note("header-location", REDIRECT_WITHOUT_LOCATION)
+            self.add_note("field-location", REDIRECT_WITHOUT_LOCATION)
 
     def status302(self) -> None:  # Found
         if "location" not in self.response.headers.parsed:
-            self.add_note("header-location", REDIRECT_WITHOUT_LOCATION)
+            self.add_note("field-location", REDIRECT_WITHOUT_LOCATION)
 
     def status303(self) -> None:  # See Other
         if "location" not in self.response.headers.parsed:
-            self.add_note("header-location", REDIRECT_WITHOUT_LOCATION)
+            self.add_note("field-location", REDIRECT_WITHOUT_LOCATION)
 
     def status304(self) -> None:  # Not Modified
         if "date" not in self.response.headers.parsed:
@@ -136,7 +136,7 @@ class StatusChecker:
                 prohibited_headers.append(header)
         if prohibited_headers:
             self.add_note(
-                "header-content-type",
+                "field-content-type",
                 HEADER_SHOULD_NOT_BE_IN_304,
                 headers="\n".join([f"* `{h}`" for h in prohibited_headers]),
             )
@@ -149,11 +149,11 @@ class StatusChecker:
 
     def status307(self) -> None:  # Temporary Redirect
         if "location" not in self.response.headers.parsed:
-            self.add_note("header-location", REDIRECT_WITHOUT_LOCATION)
+            self.add_note("field-location", REDIRECT_WITHOUT_LOCATION)
 
     def status308(self) -> None:  # Permanent Redirect
         if "location" not in self.response.headers.parsed:
-            self.add_note("header-location", REDIRECT_WITHOUT_LOCATION)
+            self.add_note("field-location", REDIRECT_WITHOUT_LOCATION)
 
     def status400(self) -> None:  # Bad Request
         self.add_note("", STATUS_BAD_REQUEST)

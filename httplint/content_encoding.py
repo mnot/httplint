@@ -53,7 +53,7 @@ class ContentEncodingProcessor:
                         return b""  # not a full header yet
                     except IOError as gzip_error:
                         self.message.notes.add(
-                            "header-content-encoding",
+                            "field-content-encoding",
                             BAD_GZIP,
                             gzip_error=str(gzip_error),
                         )
@@ -63,7 +63,7 @@ class ContentEncodingProcessor:
                     chunk = self._gzip_processor.decompress(chunk)
                 except zlib.error as zlib_error:
                     self.message.notes.add(
-                        "header-content-encoding",
+                        "field-content-encoding",
                         BAD_ZLIB,
                         zlib_error=str(zlib_error),
                         ok_zlib_len=f_num(self.message.content_length),

@@ -63,7 +63,7 @@ class ResponseCacheChecker:
             self.notes.add("", DATE_CLOCKLESS)
             if "expires" in text_fieldnames or "last-modified" in text_fieldnames:
                 self.notes.add(
-                    "header-expires header-last-modified", DATE_CLOCKLESS_BAD_HDR
+                    "field-expires field-last-modified", DATE_CLOCKLESS_BAD_HDR
                 )
 
         return True
@@ -84,16 +84,16 @@ class ResponseCacheChecker:
         # no-store
         if "no-store" in self.cc_dict:
             self.store_shared = self.store_private = False
-            self.notes.add("header-cache-control", STORE_NO_STORE)
+            self.notes.add("field-cache-control", STORE_NO_STORE)
             return False
 
         # private
         if "private" in self.cc_dict:
             self.store_shared = False
-            self.notes.add("header-cache-control", STORE_PRIVATE_CC)
+            self.notes.add("field-cache-control", STORE_PRIVATE_CC)
 
             if "public" in self.cc_dict:
-                self.notes.add("header-cache-control", STORE_PRIVATE_PUBLIC_CONFLICT)
+                self.notes.add("field-cache-control", STORE_PRIVATE_PUBLIC_CONFLICT)
 
         # authorization
         elif self._request and "authorization" in [
@@ -101,21 +101,21 @@ class ResponseCacheChecker:
         ]:
             if "public" in self.cc_dict:
                 self.notes.add(
-                    "header-cache-control", STORE_PUBLIC_AUTH, directive="public"
+                    "field-cache-control", STORE_PUBLIC_AUTH, directive="public"
                 )
             elif "must-revalidate" in self.cc_dict:
                 self.notes.add(
-                    "header-cache-control",
+                    "field-cache-control",
                     STORE_PUBLIC_AUTH,
                     directive="must-revalidate",
                 )
             elif "s-maxage" in self.cc_dict:
                 self.notes.add(
-                    "header-cache-control", STORE_PUBLIC_AUTH, directive="s-maxage"
+                    "field-cache-control", STORE_PUBLIC_AUTH, directive="s-maxage"
                 )
             else:
                 self.store_shared = False
-                self.notes.add("header-cache-control", STORE_PRIVATE_AUTH)
+                self.notes.add("field-cache-control", STORE_PRIVATE_AUTH)
         else:
             if (
                 "public" in self.cc_dict
@@ -124,11 +124,11 @@ class ResponseCacheChecker:
                 or "max-age" in self.cc_dict
                 or self._response.status_code in HEURISTIC_CACHEABLE_STATUS
             ):
-                self.notes.add("header-cache-control", STORE_STORABLE)
+                self.notes.add("field-cache-control", STORE_STORABLE)
             elif "s-maxage" in self.cc_dict:
-                self.notes.add("header-cache-control", STORE_STORABLE_SHARED_ONLY)
+                self.notes.add("field-cache-control", STORE_STORABLE_SHARED_ONLY)
             else:
-                self.notes.add("header-cache-control", STORE_UNSTORABLE)
+                self.notes.add("field-cache-control", STORE_UNSTORABLE)
                 return False
 
         return True
@@ -152,7 +152,7 @@ class ResponseCacheChecker:
 
         if self.age >= 1:
             age_str = relative_time(self.age, 0, 0)
-            self.notes.add("header-age header-date", CURRENT_AGE, age=age_str)
+            self.notes.add("field-age field-date", CURRENT_AGE, age=age_str)
         return True
 
     def check_freshness(self) -> bool:
@@ -162,11 +162,11 @@ class ResponseCacheChecker:
         ]
         self.has_explicit_freshness = False
         self.has_heuristic_freshness = False
-        freshness_hdrs = ["header-date"]
+        freshness_hdrs = ["field-date"]
         if expires_hdr_present and self.response_time:
             # An invalid Expires header means it's automatically stale
             self.has_explicit_freshness = True
-            freshness_hdrs.append("header-expires")
+            freshness_hdrs.append("field-expires")
             expires_lifetime = self.freshness_lifetime_shared = (
                 self.expires_value or 0
             ) - (self.date_value or int(self.response_time))
@@ -175,11 +175,11 @@ class ResponseCacheChecker:
         if "max-age" in self.cc_dict:
             self.freshness_lifetime_private = self.cc_dict["max-age"]
             self.freshness_lifetime_shared = self.cc_dict["max-age"]
-            freshness_hdrs.append("header-cache-control")
+            freshness_hdrs.append("field-cache-control")
             self.has_explicit_freshness = True
         if "s-maxage" in self.cc_dict:
             self.freshness_lifetime_shared = self.cc_dict["s-maxage"]
-            freshness_hdrs.append("header-cache-control")
+            freshness_hdrs.append("field-cache-control")
             self.has_explicit_freshness = True
 
         freshness_left = self.freshness_lifetime_private - self.age
@@ -201,9 +201,9 @@ class ResponseCacheChecker:
         # no-cache
         if "no-cache" in self.cc_dict:
             if self.lm_value is None and self.etag_value is None:
-                self.notes.add("header-cache-control", FRESHNESS_NO_CACHE_NO_VALIDATOR)
+                self.notes.add("field-cache-control", FRESHNESS_NO_CACHE_NO_VALIDATOR)
             else:
-                self.notes.add("header-cache-control", FRESHNESS_NO_CACHE)
+                self.notes.add("field-cache-control", FRESHNESS_NO_CACHE)
             return False
 
         # explicit freshness
@@ -236,12 +236,12 @@ class ResponseCacheChecker:
                     current_age=current_age_str,
                 )
             if "max-age" in self.cc_dict and expires_hdr_present:
-                self.notes.add("header-expires header-cache-control", CC_AND_EXPIRES)
+                self.notes.add("field-expires field-cache-control", CC_AND_EXPIRES)
 
         # heuristic freshness
         elif self._response.status_code in HEURISTIC_CACHEABLE_STATUS:
             self.has_heuristic_freshness = True
-            self.notes.add("header-last-modified", FRESHNESS_HEURISTIC)
+            self.notes.add("field-last-modified", FRESHNESS_HEURISTIC)
         else:
             self.notes.add("", FRESHNESS_NONE)
 
@@ -249,29 +249,29 @@ class ResponseCacheChecker:
         if "public" in self.cc_dict and (
             self.has_explicit_freshness or self.has_heuristic_freshness
         ):
-            self.notes.add("header-cache-control", STORE_PUBLIC_UNNECESSARY)
+            self.notes.add("field-cache-control", STORE_PUBLIC_UNNECESSARY)
         return True
 
     def check_stale(self) -> bool:
         # stale-while-revalidate
         if "stale-while-revalidate" in self.cc_dict:
-            self.notes.add("header-cache-control", STALE_WHILE_REVALIDATE)
+            self.notes.add("field-cache-control", STALE_WHILE_REVALIDATE)
 
         # stale revalidation
         if "stale-if-error" in self.cc_dict:
-            self.notes.add("header-cache-control", STALE_IF_ERROR)
+            self.notes.add("field-cache-control", STALE_IF_ERROR)
         elif "must-revalidate" in self.cc_dict:
             if self.is_fresh:
-                self.notes.add("header-cache-control", FRESH_MUST_REVALIDATE)
+                self.notes.add("field-cache-control", FRESH_MUST_REVALIDATE)
             elif self.has_explicit_freshness:
-                self.notes.add("header-cache-control", STALE_MUST_REVALIDATE)
+                self.notes.add("field-cache-control", STALE_MUST_REVALIDATE)
         elif "proxy-revalidate" in self.cc_dict or "s-maxage" in self.cc_dict:
             if self.is_shared_fresh:
-                self.notes.add("header-cache-control", FRESH_PROXY_REVALIDATE)
+                self.notes.add("field-cache-control", FRESH_PROXY_REVALIDATE)
             elif self.has_explicit_freshness:
-                self.notes.add("header-cache-control", STALE_PROXY_REVALIDATE)
+                self.notes.add("field-cache-control", STALE_PROXY_REVALIDATE)
         else:
-            self.notes.add("header-cache-control", STALE_SERVABLE)
+            self.notes.add("field-cache-control", STALE_SERVABLE)
         return True
 
 
