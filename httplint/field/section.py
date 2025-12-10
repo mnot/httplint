@@ -75,7 +75,7 @@ class FieldSection:
 
         if self.size > self.max_total_size:
             self.message.notes.add(
-                "header-block",
+                "field-block",
                 TOTAL_HEADER_SIZE_TOO_LARGE,
                 header_size=f_num(self.size),
             )

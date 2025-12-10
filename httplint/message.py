@@ -104,10 +104,10 @@ class HttpMessageLinter:
         if self.can_have_content():
             if "content-length" in self.headers.parsed:
                 if self.content_length == self.headers.parsed["content-length"]:
-                    self.notes.add("header-content-length", CL_CORRECT)
+                    self.notes.add("field-content-length", CL_CORRECT)
                 else:
                     self.notes.add(
-                        "header-content-length",
+                        "field-content-length",
                         CL_INCORRECT,
                         content_length=f_num(self.content_length),
                     )
@@ -183,7 +183,7 @@ class HttpRequestLinter(HttpMessageLinter):
 
     def post_checks(self) -> None:
         if "user-agent" not in self.headers.parsed:
-            self.notes.add("header-user-agent", MISSING_USER_AGENT)
+            self.notes.add("field-user-agent", MISSING_USER_AGENT)
 
 
 class HttpResponseLinter(HttpMessageLinter):

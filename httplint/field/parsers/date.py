@@ -35,7 +35,7 @@ It is used by caches as input to expiration calculations, and to detect clock dr
             age_value = self.message.headers.parsed.get("age", 0) or 0
             skew = self.value - int(self.message.start_time) + age_value
             if age_value > MAX_CLOCK_SKEW > (age_value - skew):
-                self.message.notes.add("header-date header-age", AGE_PENALTY)
+                self.message.notes.add("field-date field-age", AGE_PENALTY)
             elif abs(skew) > MAX_CLOCK_SKEW:
                 add_note(
                     DATE_INCORRECT,

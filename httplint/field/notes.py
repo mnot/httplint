@@ -1,5 +1,5 @@
 """
-Common header-related Notes.
+Common field-related Notes.
 """
 
 from httplint.note import Note, categories, levels

@@ -11,7 +11,7 @@ class clear_site_data(HttpField):
 The `Clear-Site-Data` header clears the data associated with the requesting website in the user's
 browser. It allows web developers to have more control over the data stored by a client for their
 origin."""
-    reference = "https://www.w3.org/TR/clear-site-data/#header-clear-site-data"
+    reference = "https://www.w3.org/TR/clear-site-data/#field-clear-site-data"
     syntax = list_rule(quoted_string, 1)
     list_header = True
     deprecated = False
