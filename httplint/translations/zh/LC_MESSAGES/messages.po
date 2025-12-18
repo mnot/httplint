@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2025-12-02 14:10+1100\n"
+"POT-Creation-Date: 2025-12-18 11:56+1100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: zh\n"
@@ -571,22 +571,22 @@ msgid ""
 "`%(sniffed_type)s`."
 msgstr "`Content-Type` 标头声明内容为 `%(declared_type)s`，但实际内容看起来是 `%(sniffed_type)s`。"
 
-#: httplint/message.py:240
+#: httplint/message.py:254
 msgid "The Content-Length header is correct."
 msgstr "Content-Length 头是正确的。"
 
-#: httplint/message.py:241
+#: httplint/message.py:255
 msgid ""
 "`Content-Length` is used by HTTP to delimit messages; that is, to mark "
 "the end of one message and\n"
 "the beginning of the next."
 msgstr "`Content-Length` 用于 HTTP 来分隔消息；也就是说，它标志着一条消息的结束和下一条消息的开始。"
 
-#: httplint/message.py:249
+#: httplint/message.py:263
 msgid "The Content-Length header is incorrect."
 msgstr "Content-Length 标头不正确。"
 
-#: httplint/message.py:250
+#: httplint/message.py:264
 #, python-format
 msgid ""
 "`Content-Length` is used by HTTP to delimit messages; that is, to mark "
@@ -602,41 +602,64 @@ msgstr ""
 "\n"
 "实际内容大小为 %(content_length)s 字节。"
 
-#: httplint/message.py:261
+#: httplint/message.py:275
+#, python-format
+msgid "%(message)s can not have content."
+msgstr "%(message)s 不能有内容。"
+
+#: httplint/message.py:285
+#, python-format
+msgid "The %(method)s doesn't define any meaning for content."
+msgstr "The %(method)s 没有定义内容的含义。"
+
+#: httplint/message.py:286
+#, python-format
+msgid ""
+"There are no defined semantics for content in %(method)s requests. While "
+"HTTP's framing layer\n"
+"allows content to appear, that does not mean it is valid for every "
+"request method, and\n"
+"including content in a %(method)s request can cause interoperability and "
+"security issues.\n"
+msgstr ""
+"对于 %(method)s 请求的内容没有定义语义。尽管 HTTP 的框架层允许出现内容，但这并不意味着它适用于每种请求方法，并且将内容包含在 "
+"%(method)s 请求中可能会导致互操作性和安全性问题。"
+
+#: httplint/message.py:296
 #, python-format
 msgid "The URI is very long (%(uri_len)s characters)."
 msgstr "URI 非常长（%(uri_len)s 个字符）。"
 
-#: httplint/message.py:262
+#: httplint/message.py:297
 msgid ""
 "Long URIs aren't supported by some implementations, including proxies. A "
 "reasonable upper size\n"
 "limit is 8192 characters."
 msgstr "长 URI 不被某些实现（包括代理）支持。一个合理的上限是 8192 个字符。"
 
-#: httplint/message.py:270
+#: httplint/message.py:305
 msgid "The URI's syntax isn't valid."
 msgstr "URI 的语法无效。"
 
-#: httplint/message.py:271
+#: httplint/message.py:306
 msgid ""
 "This isn't a valid URI. See\n"
 "[RFC3986](http://www.ietf.org/rfc/rfc3986.txt) for more information."
 msgstr "这不是一个有效的 URI。更多信息请参阅 [RFC3986](http://www.ietf.org/rfc/rfc3986.txt)。"
 
-#: httplint/message.py:279
+#: httplint/message.py:314
 msgid "The status code is not an integer."
 msgstr "状态码不是整数。"
 
-#: httplint/message.py:280
+#: httplint/message.py:315
 msgid "This isn't a valid status code; it needs to be an ASCII integer."
 msgstr "这并非一个有效的状态码；它需要是一个 ASCII 整数。"
 
-#: httplint/message.py:287
+#: httplint/message.py:322
 msgid "The status phrase contains non-ASCII characters."
 msgstr "状态短语包含非 ASCII 字符。"
 
-#: httplint/message.py:288
+#: httplint/message.py:323
 msgid "The status phrase can only contain ASCII characters."
 msgstr "状态短语只能包含 ASCII 字符。"
 
@@ -644,11 +667,11 @@ msgstr "状态短语只能包含 ASCII 字符。"
 msgid "message"
 msgstr "消息"
 
-#: httplint/message.py:150
+#: httplint/message.py:153
 msgid "request"
 msgstr "请求"
 
-#: httplint/message.py:194
+#: httplint/message.py:208
 msgid "response"
 msgstr "响应"
 
@@ -1619,57 +1642,63 @@ msgid ""
 "first will be ignored."
 msgstr "'%(context)s' 键 '%(key)s' 已重复。第一个实例之后的所有实例都将被忽略。"
 
-#: httplint/field/section.py:97
+#: httplint/field/section.py:101
 #, python-format
-msgid "The %(field_name)s header is very large (%(field_size)s bytes)."
-msgstr "%(field_name)s 标头非常大（%(field_size)s 字节）。"
+msgid "The %(field_name)s field is very large (%(field_size)s bytes)."
+msgstr "字段 %(field_name)s 非常大 (%(field_size)s 字节)。"
 
-#: httplint/field/section.py:98
-msgid "Some implementations limit the size of any single header line."
-msgstr "某些实现会限制单个标头行的长度。"
+#: httplint/field/section.py:102
+msgid "Some implementations limit the size of any single field line."
+msgstr "一些实现限制了任何单个字段行的大小。"
 
-#: httplint/field/section.py:105
+#: httplint/field/section.py:109
 #, python-format
-msgid "The total size of the headers is very large (%(header_size)s bytes)."
-msgstr "请求头总大小过大（%(header_size)s 字节）。"
+msgid "The %(field_type)s section is very large (%(section_size)s bytes)."
+msgstr "该 %(field_type)s 部分非常大 (%(section_size)s 字节)"
 
-#: httplint/field/section.py:106
+#: httplint/field/section.py:110
 msgid ""
-"Some implementations limit the total size of the header block. 32KB is a "
+"Some implementations limit the total size of a field section. 32KB is a "
 "reasonable\n"
 "upper limit."
-msgstr "某些实现会限制请求头块的总大小。32KB 是一个合理的上限。"
+msgstr "一些实现将限制字段部分的总大小。 32KB 是合理的上限。"
 
-#: httplint/field/section.py:114
+#: httplint/field/section.py:118
 #, python-format
-msgid "The %(field_name)s header's name contains non-ASCII characters."
-msgstr "%(field_name)s 报头字段的名称包含非 ASCII 字符。"
+msgid "The %(field_name)s field's name contains non-ASCII characters."
+msgstr "The %(field_name)s 字段名称包含非 ASCII 字符。"
 
-#: httplint/field/section.py:115
+#: httplint/field/section.py:119
 msgid "HTTP field names can only contain ASCII characters."
 msgstr "HTTP 字段名称只能包含 ASCII 字符。"
 
-#: httplint/field/section.py:122
+#: httplint/field/section.py:126
 #, python-format
-msgid "The %(field_name)s header's value contains non-ASCII characters."
-msgstr "“%(field_name)s” 标头的值包含非 ASCII 字符。"
+msgid "The %(field_name)s field's value contains non-ASCII characters."
+msgstr "The %(field_name)s 字段的值包含非 ASCII 字符。"
 
-#: httplint/field/section.py:123
+#: httplint/field/section.py:127
 msgid ""
 "HTTP fields notionally use the ISO-8859-1 character set, but in most "
 "cases are pure ASCII\n"
 "(a subset of this encoding).\n"
 "\n"
-"This header has non-ASCII characters, which have been interpreted as "
-"being encoded in\n"
+"This field has non-ASCII characters, which have been interpreted as being"
+" encoded in\n"
 "ISO-8859-1. If another encoding is used (e.g., UTF-8), the results may be"
 " unpredictable."
 msgstr ""
-"HTTP 字段名义上使用 ISO-8859-1 字符集，但在大多数情况下是纯 ASCII\n"
-"（此编码的子集）。\n"
+"HTTP 字段理论上使用 ISO-8859-1 字符集，但实际上在大多数情况下都是纯 ASCII（该编码的一个子集）。\n"
 "\n"
-"此标头包含非 ASCII 字符，已被解释为使用\n"
-"ISO-8859-1 编码。如果使用了其他编码（例如 UTF-8），结果可能会不可预测。"
+"此字段包含非 ASCII 字符，这些字符被解释为使用 ISO-8859-1 编码。如果使用其他编码（例如 UTF-8），结果可能会不稳定。"
+
+#: httplint/field/section.py:82 httplint/field/section.py:92
+msgid "trailer"
+msgstr "trailer"
+
+#: httplint/field/section.py:82 httplint/field/section.py:92
+msgid "header"
+msgstr "头"
 
 #: httplint/field/unnecessary.py:51
 #, python-format
@@ -3122,7 +3151,7 @@ msgstr "请求中的 `Expect` 标头字段指示服务器为了正确处理请�
 #: httplint/field/parsers/expect.py:37
 #, python-format
 msgid "The '%(expectation)s' expectation is not supported."
-msgstr "'% (expectation)s' 期望不受支持。"
+msgstr "该 '%(expectation)s' 期望不支持。"
 
 #: httplint/field/parsers/expect.py:38
 msgid ""
@@ -4788,4 +4817,7 @@ msgstr ""
 "Netscape 浏览器非常老的版本有一个 bug，即当响应头的大小恰好为 256 或 257 字节时，浏览器会认为响应无效。\n"
 "\n"
 "由于受影响的浏览器（特别是 Netscape 2.x、3.x 和 4.0 至 beta 2）已不再广泛使用，因此可以安全地省略此头。"
+
+#~ msgid "The total size of the headers is very large (%(header_size)s bytes)."
+#~ msgstr "请求头总大小过大（%(header_size)s 字节）。"
 

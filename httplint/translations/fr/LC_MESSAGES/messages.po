@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2025-12-02 14:10+1100\n"
+"POT-Creation-Date: 2025-12-18 11:56+1100\n"
 "PO-Revision-Date: 2025-11-27 19:01+1100\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: fr\n"
@@ -693,11 +693,11 @@ msgstr ""
 "L'en-tête `Content-Type` déclare le contenu comme étant "
 "`%(declared_type)s`, mais il semble être `%(sniffed_type)s`."
 
-#: httplint/message.py:240
+#: httplint/message.py:254
 msgid "The Content-Length header is correct."
 msgstr "L'en-tête Content-Length est correct."
 
-#: httplint/message.py:241
+#: httplint/message.py:255
 msgid ""
 "`Content-Length` is used by HTTP to delimit messages; that is, to mark "
 "the end of one message and\n"
@@ -706,11 +706,11 @@ msgstr ""
 "`Content-Length` est utilisé par HTTP pour délimiter les messages ; "
 "c'est-à-dire, pour marquer la fin d'un message et le début du suivant."
 
-#: httplint/message.py:249
+#: httplint/message.py:263
 msgid "The Content-Length header is incorrect."
 msgstr "L'en-tête Content-Length est incorrect."
 
-#: httplint/message.py:250
+#: httplint/message.py:264
 #, python-format
 msgid ""
 "`Content-Length` is used by HTTP to delimit messages; that is, to mark "
@@ -728,12 +728,38 @@ msgstr ""
 "\n"
 "La taille réelle du contenu était de %(content_length)s octets."
 
-#: httplint/message.py:261
+#: httplint/message.py:275
+#, python-format
+msgid "%(message)s can not have content."
+msgstr "%(message)s ne peut pas avoir de contenu."
+
+#: httplint/message.py:285
+#, python-format
+msgid "The %(method)s doesn't define any meaning for content."
+msgstr "Le %(method)s n' définit aucune signification pour le contenu."
+
+#: httplint/message.py:286
+#, python-format
+msgid ""
+"There are no defined semantics for content in %(method)s requests. While "
+"HTTP's framing layer\n"
+"allows content to appear, that does not mean it is valid for every "
+"request method, and\n"
+"including content in a %(method)s request can cause interoperability and "
+"security issues.\n"
+msgstr ""
+"Il n’y a pas de sémantique définie pour le contenu dans les %(method)s "
+"requêtes. Bien que la couche de framing HTTP permette l’apparition de "
+"contenu, cela ne signifie pas qu’il est valide pour chaque méthode de "
+"requête, et l’inclusion de contenu dans une %(method)s requête peut "
+"causer des problèmes d’interopérabilité et de sécurité."
+
+#: httplint/message.py:296
 #, python-format
 msgid "The URI is very long (%(uri_len)s characters)."
 msgstr "L'URI est très long (%(uri_len)s caractères)."
 
-#: httplint/message.py:262
+#: httplint/message.py:297
 msgid ""
 "Long URIs aren't supported by some implementations, including proxies. A "
 "reasonable upper size\n"
@@ -743,11 +769,11 @@ msgstr ""
 "charge les URI longs. Une limite supérieure raisonnable est de 8192 "
 "caractères."
 
-#: httplint/message.py:270
+#: httplint/message.py:305
 msgid "The URI's syntax isn't valid."
 msgstr "La syntaxe de l'URI n'est pas valide."
 
-#: httplint/message.py:271
+#: httplint/message.py:306
 msgid ""
 "This isn't a valid URI. See\n"
 "[RFC3986](http://www.ietf.org/rfc/rfc3986.txt) for more information."
@@ -755,31 +781,31 @@ msgstr ""
 "Ce n'est pas une URI valide. Voir\n"
 "[RFC3986](http://www.ietf.org/rfc/rfc3986.txt) pour plus d'informations."
 
-#: httplint/message.py:279
+#: httplint/message.py:314
 msgid "The status code is not an integer."
 msgstr "Le code d'état n'est pas un entier."
 
-#: httplint/message.py:280
+#: httplint/message.py:315
 msgid "This isn't a valid status code; it needs to be an ASCII integer."
 msgstr "Ce n'est pas un code d'état valide ; il doit s'agir d'un entier ASCII."
 
-#: httplint/message.py:287
+#: httplint/message.py:322
 msgid "The status phrase contains non-ASCII characters."
 msgstr "La phrase d'état contient des caractères non ASCII."
 
-#: httplint/message.py:288
+#: httplint/message.py:323
 msgid "The status phrase can only contain ASCII characters."
 msgstr "La phrase d'état ne peut contenir que des caractères ASCII."
 
 #: httplint/message.py:30
 msgid "message"
-msgstr ""
+msgstr "message"
 
-#: httplint/message.py:150
+#: httplint/message.py:153
 msgid "request"
 msgstr "requête"
 
-#: httplint/message.py:194
+#: httplint/message.py:208
 msgid "response"
 msgstr "réponse"
 
@@ -801,7 +827,7 @@ msgstr "Mise en cache"
 
 #: httplint/note.py:19
 msgid "Validation"
-msgstr ""
+msgstr "Validation"
 
 #: httplint/note.py:20
 msgid "Connection"
@@ -1917,66 +1943,70 @@ msgstr ""
 "La clé '%(key)s' pour le contexte '%(context)s' est dupliquée. Toutes les"
 " instances après la première seront ignorées."
 
-#: httplint/field/section.py:97
+#: httplint/field/section.py:101
 #, python-format
-msgid "The %(field_name)s header is very large (%(field_size)s bytes)."
-msgstr "L'en-tête %(field_name)s est très volumineux (%(field_size)s octets)."
+msgid "The %(field_name)s field is very large (%(field_size)s bytes)."
+msgstr "Le champ %(field_name)s est très grand (%(field_size)s octets)."
 
-#: httplint/field/section.py:98
-msgid "Some implementations limit the size of any single header line."
-msgstr ""
-"Certaines implémentations limitent la taille de toute ligne d'en-tête "
-"unique."
+#: httplint/field/section.py:102
+msgid "Some implementations limit the size of any single field line."
+msgstr "Certaines implémentations limitent la taille d'une seule ligne de champ."
 
-#: httplint/field/section.py:105
+#: httplint/field/section.py:109
 #, python-format
-msgid "The total size of the headers is very large (%(header_size)s bytes)."
-msgstr ""
-"La taille totale des en-têtes est très importante (%(header_size)s "
-"octets)."
+msgid "The %(field_type)s section is very large (%(section_size)s bytes)."
+msgstr "La section %(field_type)s est très grande (%(section_size)s octets)."
 
-#: httplint/field/section.py:106
+#: httplint/field/section.py:110
 msgid ""
-"Some implementations limit the total size of the header block. 32KB is a "
+"Some implementations limit the total size of a field section. 32KB is a "
 "reasonable\n"
 "upper limit."
 msgstr ""
-"Certaines implémentations limitent la taille totale du bloc d'en-tête. 32"
-" Ko est une limite supérieure raisonnable."
+"Certaines implémentations limitent la taille totale d'une section de "
+"champ. 32 Ko est une limite raisonnable."
 
-#: httplint/field/section.py:114
+#: httplint/field/section.py:118
 #, python-format
-msgid "The %(field_name)s header's name contains non-ASCII characters."
-msgstr "Le nom de l'en-tête %(field_name)s contient des caractères non ASCII."
+msgid "The %(field_name)s field's name contains non-ASCII characters."
+msgstr "Le nom du champ « %(field_name)s » contient des caractères non ASCII."
 
-#: httplint/field/section.py:115
+#: httplint/field/section.py:119
 msgid "HTTP field names can only contain ASCII characters."
 msgstr "Les noms de champs HTTP ne peuvent contenir que des caractères ASCII."
 
-#: httplint/field/section.py:122
+#: httplint/field/section.py:126
 #, python-format
-msgid "The %(field_name)s header's value contains non-ASCII characters."
-msgstr "La valeur de l'en-tête %(field_name)s contient des caractères non ASCII."
+msgid "The %(field_name)s field's value contains non-ASCII characters."
+msgstr "Le champ « %(field_name)s » contient des caractères non-ASCII."
 
-#: httplint/field/section.py:123
+#: httplint/field/section.py:127
 msgid ""
 "HTTP fields notionally use the ISO-8859-1 character set, but in most "
 "cases are pure ASCII\n"
 "(a subset of this encoding).\n"
 "\n"
-"This header has non-ASCII characters, which have been interpreted as "
-"being encoded in\n"
+"This field has non-ASCII characters, which have been interpreted as being"
+" encoded in\n"
 "ISO-8859-1. If another encoding is used (e.g., UTF-8), the results may be"
 " unpredictable."
 msgstr ""
-"Les champs HTTP utilisent notionnellement le jeu de caractères "
-"ISO-8859-1, mais dans la plupart des cas, ils sont en pur ASCII\n"
-"(un sous-ensemble de cet encodage).\n"
+"HTTP les champs utilisent théoriquement l'ensemble de caractères "
+"ISO-8859-1, mais dans la plupart des cas, ils sont simplement ASCII\n"
+"(une sous-ensemble de cette codage).\n"
 "\n"
-"Cet en-tête contient des caractères non-ASCII, qui ont été interprétés "
-"comme étant encodés en\n"
+"Ce champ contient des caractères non-ASCII, qui ont été interprétés comme"
+" étant encodés en\n"
 "ISO-8859-1. Si un autre encodage est utilisé (par exemple, UTF-8), les "
 "résultats peuvent être imprévisibles."
+
+#: httplint/field/section.py:82 httplint/field/section.py:92
+msgid "trailer"
+msgstr "trajet"
+
+#: httplint/field/section.py:82 httplint/field/section.py:92
+msgid "header"
+msgstr "en-tête"
 
 #: httplint/field/unnecessary.py:51
 #, python-format
@@ -5684,4 +5714,9 @@ msgstr ""
 "Étant donné que les navigateurs affectés (spécifiquement, Netscape 2.x, "
 "3.x et 4.0 jusqu'à la bêta 2) ne sont plus\n"
 "largement utilisés, il est sûr d'omettre cet en-tête."
+
+#~ msgid "The total size of the headers is very large (%(header_size)s bytes)."
+#~ msgstr ""
+#~ "La taille totale des en-têtes est"
+#~ " très importante (%(header_size)s octets)."
 

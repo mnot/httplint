@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2025-12-02 14:10+1100\n"
+"POT-Creation-Date: 2025-12-18 11:56+1100\n"
 "PO-Revision-Date: 2025-12-02 12:04+1100\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: ja\n"
@@ -591,11 +591,11 @@ msgstr ""
 "`Content-Type` ヘッダーはコンテンツを `%(declared_type)s` として宣言していますが、\n"
 "`%(sniffed_type)s` のようです。"
 
-#: httplint/message.py:240
+#: httplint/message.py:254
 msgid "The Content-Length header is correct."
 msgstr "Content-Length ヘッダーは正しいです。"
 
-#: httplint/message.py:241
+#: httplint/message.py:255
 msgid ""
 "`Content-Length` is used by HTTP to delimit messages; that is, to mark "
 "the end of one message and\n"
@@ -604,11 +604,11 @@ msgstr ""
 "`Content-Length` は、HTTP "
 "がメッセージを区切るために使用されます。つまり、あるメッセージの終わりと次のメッセージの始まりを示します。"
 
-#: httplint/message.py:249
+#: httplint/message.py:263
 msgid "The Content-Length header is incorrect."
 msgstr "Content-Length ヘッダーが正しくありません。"
 
-#: httplint/message.py:250
+#: httplint/message.py:264
 #, python-format
 msgid ""
 "`Content-Length` is used by HTTP to delimit messages; that is, to mark "
@@ -625,41 +625,65 @@ msgstr ""
 "\n"
 "実際のコンテンツサイズは %(content_length)s バイトでした。"
 
-#: httplint/message.py:261
+#: httplint/message.py:275
+#, python-format
+msgid "%(message)s can not have content."
+msgstr "%(message)s にはコンテンツを含めることができません。"
+
+#: httplint/message.py:285
+#, python-format
+msgid "The %(method)s doesn't define any meaning for content."
+msgstr "The %(method)s にはコンテンツの意味を定義する内容が含まれていません。"
+
+#: httplint/message.py:286
+#, python-format
+msgid ""
+"There are no defined semantics for content in %(method)s requests. While "
+"HTTP's framing layer\n"
+"allows content to appear, that does not mean it is valid for every "
+"request method, and\n"
+"including content in a %(method)s request can cause interoperability and "
+"security issues.\n"
+msgstr ""
+"コンテンツのセマンティクスは %(method)s リクエストで定義されていません。HTTP "
+"のフレーム層はコンテンツを許可しますが、すべてのリクエスト "
+"メソッドで有効であるとは限りません。リクエストにコンテンツを含めると、互換性とセキュリティの問題が発生する可能性があります。"
+
+#: httplint/message.py:296
 #, python-format
 msgid "The URI is very long (%(uri_len)s characters)."
 msgstr "URIが長すぎます（%(uri_len)s文字）。"
 
-#: httplint/message.py:262
+#: httplint/message.py:297
 msgid ""
 "Long URIs aren't supported by some implementations, including proxies. A "
 "reasonable upper size\n"
 "limit is 8192 characters."
 msgstr "一部の実装（プロキシなど）では、長いURIはサポートされていません。合理的な上限サイズは8192文字です。"
 
-#: httplint/message.py:270
+#: httplint/message.py:305
 msgid "The URI's syntax isn't valid."
 msgstr "URI の構文が無効です。"
 
-#: httplint/message.py:271
+#: httplint/message.py:306
 msgid ""
 "This isn't a valid URI. See\n"
 "[RFC3986](http://www.ietf.org/rfc/rfc3986.txt) for more information."
 msgstr "これは有効なURIではありません。[RFC3986](http://www.ietf.org/rfc/rfc3986.txt) を参照してください。"
 
-#: httplint/message.py:279
+#: httplint/message.py:314
 msgid "The status code is not an integer."
 msgstr "ステータスコードは整数ではありません。"
 
-#: httplint/message.py:280
+#: httplint/message.py:315
 msgid "This isn't a valid status code; it needs to be an ASCII integer."
 msgstr "これは有効なステータスコードではありません。ASCII整数である必要があります。"
 
-#: httplint/message.py:287
+#: httplint/message.py:322
 msgid "The status phrase contains non-ASCII characters."
 msgstr "ステータスフレーズにASCII以外の文字が含まれています。"
 
-#: httplint/message.py:288
+#: httplint/message.py:323
 msgid "The status phrase can only contain ASCII characters."
 msgstr "ステータスフレーズにはASCII文字のみを含めることができます。"
 
@@ -667,11 +691,11 @@ msgstr "ステータスフレーズにはASCII文字のみを含めることが�
 msgid "message"
 msgstr "メッセージ"
 
-#: httplint/message.py:150
+#: httplint/message.py:153
 msgid "request"
 msgstr "リクエスト"
 
-#: httplint/message.py:194
+#: httplint/message.py:208
 msgid "response"
 msgstr "レスポンス"
 
@@ -1668,57 +1692,65 @@ msgid ""
 "first will be ignored."
 msgstr "%(context)s のキー '%(key)s' が重複しています。最初のインスタンス以降は無視されます。"
 
-#: httplint/field/section.py:97
+#: httplint/field/section.py:101
 #, python-format
-msgid "The %(field_name)s header is very large (%(field_size)s bytes)."
-msgstr "%(field_name)s ヘッダーが非常に大きいです（%(field_size)s バイト）。"
+msgid "The %(field_name)s field is very large (%(field_size)s bytes)."
+msgstr "The %(field_name)s フィールドは非常に大きいです %(field_size)s バイト)."
 
-#: httplint/field/section.py:98
-msgid "Some implementations limit the size of any single header line."
-msgstr "一部の実装では、単一のヘッダー行のサイズが制限されています。"
+#: httplint/field/section.py:102
+msgid "Some implementations limit the size of any single field line."
+msgstr "一部の実施では、任意の単一のフィールド ラインのサイズに制限を課します。"
 
-#: httplint/field/section.py:105
+#: httplint/field/section.py:109
 #, python-format
-msgid "The total size of the headers is very large (%(header_size)s bytes)."
-msgstr "ヘッダーの合計サイズが大きすぎます（%(header_size)s バイト）。"
+msgid "The %(field_type)s section is very large (%(section_size)s bytes)."
+msgstr "The %(field_type)s セクションは非常に大きく (%(section_size)s バイト) です。"
 
-#: httplint/field/section.py:106
+#: httplint/field/section.py:110
 msgid ""
-"Some implementations limit the total size of the header block. 32KB is a "
+"Some implementations limit the total size of a field section. 32KB is a "
 "reasonable\n"
 "upper limit."
-msgstr "一部の実装では、ヘッダーブロックの合計サイズに制限があります。32KBは妥当な上限です。"
+msgstr "一部の実施では、フィールド セクションの合計サイズを制限します。 32KB は妥当な上限です。"
 
-#: httplint/field/section.py:114
+#: httplint/field/section.py:118
 #, python-format
-msgid "The %(field_name)s header's name contains non-ASCII characters."
-msgstr "ヘッダー「%(field_name)s」の名前にASCII以外の文字が含まれています。"
+msgid "The %(field_name)s field's name contains non-ASCII characters."
+msgstr "The %(field_name)s フィールドの名前には、非 ASCII 文字が含まれています。"
 
-#: httplint/field/section.py:115
+#: httplint/field/section.py:119
 msgid "HTTP field names can only contain ASCII characters."
 msgstr "HTTP フィールド名は ASCII 文字のみを含めることができます。"
 
-#: httplint/field/section.py:122
+#: httplint/field/section.py:126
 #, python-format
-msgid "The %(field_name)s header's value contains non-ASCII characters."
-msgstr "「%(field_name)s」ヘッダーの値にASCII以外の文字が含まれています。"
+msgid "The %(field_name)s field's value contains non-ASCII characters."
+msgstr "The %(field_name)s フィールドの値に ASCII 以外の文字が含まれています。"
 
-#: httplint/field/section.py:123
+#: httplint/field/section.py:127
 msgid ""
 "HTTP fields notionally use the ISO-8859-1 character set, but in most "
 "cases are pure ASCII\n"
 "(a subset of this encoding).\n"
 "\n"
-"This header has non-ASCII characters, which have been interpreted as "
-"being encoded in\n"
+"This field has non-ASCII characters, which have been interpreted as being"
+" encoded in\n"
 "ISO-8859-1. If another encoding is used (e.g., UTF-8), the results may be"
 " unpredictable."
 msgstr ""
-"HTTPフィールドは概念的にISO-8859-1文字セットを使用しますが、ほとんどの場合、純粋なASCII（このエンコーディングのサブセット）です。"
+"HTTP フィールドは ISO-8859-1 文字セットを使用すると考えられますが、実際には ASCII のサブセット (このエンコーディングの "
+"subset) を使用しています。\n"
 "\n"
-"\n"
-"このヘッダーにはASCII以外の文字が含まれており、ISO-8859-1でエンコードされていると解釈されました。別のエンコーディング（例: "
-"UTF-8）が使用されている場合、結果は予測不能になる可能性があります。"
+"このフィールドには、ISO-8859-1 でエンコードされた非 ASCII "
+"文字が含まれています。別のエンコーディング（例：UTF-8）が使用されている場合、予期しない結果になる可能性があります。"
+
+#: httplint/field/section.py:82 httplint/field/section.py:92
+msgid "trailer"
+msgstr "トレーラー"
+
+#: httplint/field/section.py:82 httplint/field/section.py:92
+msgid "header"
+msgstr "ヘッダー"
 
 #: httplint/field/unnecessary.py:51
 #, python-format
@@ -4986,4 +5018,7 @@ msgstr ""
 "\n"
 "影響を受けるブラウザー (具体的には Netscape 2.x, 3.x および 4.0 beta 2 まで) はもはや\n"
 "広く使用されていないため、このヘッダーを省略しても安全です。"
+
+#~ msgid "The total size of the headers is very large (%(header_size)s bytes)."
+#~ msgstr "ヘッダーの合計サイズが大きすぎます（%(header_size)s バイト）。"
 
