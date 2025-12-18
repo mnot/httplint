@@ -70,7 +70,7 @@ i18n-update: i18n-extract
 
 .PHONY: i18n-autotranslate
 i18n-autotranslate: venv
-	$(VENV)/python -m tools.i18n.autotranslate --locale_dir httplint/translations --model $(or $(MODEL),gemini-2.5-flash-lite) --rpm $(or $(RPM),15)
+	$(VENV)/python -m tools.i18n.autotranslate --locale_dir httplint/translations --model $(or $(MODEL), 'mlx-community/aya-23-8B-4bit') #--rpm $(or $(RPM),10)
 
 .PHONY: i18n-compile
 i18n-compile: venv
