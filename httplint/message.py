@@ -42,7 +42,7 @@ class HttpMessageLinter:
         self.version: str = ""
         self.base_uri: str = ""
         self.headers = FieldSection(self)
-        self.trailers = FieldSection(self)
+        self.trailers = FieldSection(self, is_trailer=True)
 
         self.content_length: int = 0
         self.content_hash: Optional[bytes] = None
@@ -111,6 +111,9 @@ class HttpMessageLinter:
                         CL_INCORRECT,
                         content_length=f_num(self.content_length),
                     )
+        else:
+            if self.content_length:
+                self.notes.add("message", CONTENT_NOT_ALLOWED)
         self.post_checks()
 
     def can_have_content(self) -> bool:
@@ -181,9 +184,20 @@ class HttpRequestLinter(HttpMessageLinter):
         if len(self.uri) > self.max_uri_chars:
             self.notes.add("uri", URI_TOO_LONG, uri_len=f_num(len(self.uri)))
 
+    def can_have_content(self) -> bool:
+        return True
+
     def post_checks(self) -> None:
         if "user-agent" not in self.headers.parsed:
             self.notes.add("field-user-agent", MISSING_USER_AGENT)
+        if self.content_length > 0 and self.method in [
+            "GET",
+            "HEAD",
+            "DELETE",
+            "CONNECT",
+            "TRACE",
+        ]:
+            self.notes.add("message", REQUEST_CONTENT_NOT_DEFINED, method=self.method)
 
 
 class HttpResponseLinter(HttpMessageLinter):
@@ -253,6 +267,27 @@ the beginning of the next. An incorrect `Content-Length` can cause security and 
 issues.
 
 The actual content size was %(content_length)s bytes."""
+
+
+class CONTENT_NOT_ALLOWED(Note):
+    category = categories.GENERAL
+    level = levels.BAD
+    _summary = "%(message)s can not have content."
+    _note = """\
+HTTP does not allow this message to have content; including it can cause security and
+interoperability issues.
+"""
+
+
+class REQUEST_CONTENT_NOT_DEFINED(Note):
+    category = categories.GENERAL
+    level = levels.BAD
+    _summary = "The %(method)s doesn't define any meaning for content."
+    _text = """\
+There are no defined semantics for content in %(method)s requests. While HTTP's framing layer
+allows content to appear, that does not mean it is valid for every request method, and
+including content in a %(method)s request can cause interoperability and security issues.
+"""
 
 
 class URI_TOO_LONG(Note):
