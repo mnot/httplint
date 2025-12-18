@@ -31,7 +31,7 @@ def autotranslate_file(po_file, lang, model_id, rpm):
             translation = response.text().strip()
             exception_count = 0
 
-            if translation and translation != message.id:
+            if translation:
                 message.string = translation
                 if "fuzzy" in message.flags:
                     message.flags.remove("fuzzy")
