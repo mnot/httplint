@@ -12,7 +12,7 @@ test: $(TEST_TARGETS) test_smoke
 .PHONY: test_fields
 test_fields: test/http-fields.xml venv
 	PYTHONPATH=. $(VENV)/python test/test_fields.py test/http-fields.xml
-	PYTHONPATH=. $(VENV)/pytest --md $(GITHUB_STEP_SUMMARY) -k "not FieldTest" --config-file pyproject.toml
+	PYTHONPATH=. $(VENV)/pytest --md $(GITHUB_STEP_SUMMARY) -k "not FieldTest" --config-file pyproject.toml httplint/field
 	rm -f throwaway
 
 test_field_%: venv
