@@ -213,7 +213,6 @@ class HttpResponseLinter(HttpMessageLinter):
         self.status_code: Optional[int] = None
         self.status_phrase: Optional[str] = None
         self.is_head_response = False
-        self.is_head_response = False
         self.caching: ResponseCacheChecker
         self.status_checker: StatusChecker
 
