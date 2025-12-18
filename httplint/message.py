@@ -214,7 +214,6 @@ class HttpResponseLinter(HttpMessageLinter):
         self.status_phrase: Optional[str] = None
         self.is_head_response = False
         self.caching: ResponseCacheChecker
-        self.status_checker: StatusChecker
 
     def process_response_topline(
         self, version: bytes, status_code: bytes, status_phrase: Optional[bytes] = None
@@ -241,9 +240,7 @@ class HttpResponseLinter(HttpMessageLinter):
 
     def post_checks(self) -> None:
         self.caching = ResponseCacheChecker(self)
-        self.status_checker = StatusChecker(
-            self, cast(Optional[HttpRequestLinter], self.related)
-        )
+        StatusChecker(self, cast(Optional[HttpRequestLinter], self.related))
         verify_content_type(self)
 
 
