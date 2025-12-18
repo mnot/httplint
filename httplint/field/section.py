@@ -3,6 +3,7 @@ from typing import Dict, TYPE_CHECKING
 
 from httplint.field import HttpField
 from httplint.field.finder import HttpFieldFinder
+from httplint.i18n import L_
 from httplint.note import Note, categories, levels
 from httplint.types import StrFieldListType, RawFieldListType, FieldDictType
 from httplint.util import f_num
@@ -19,13 +20,14 @@ class FieldSection:
     max_field_size = 8 * 1024
     max_total_size = 32 * 1024
 
-    def __init__(self, message: "HttpMessageLinter") -> None:
+    def __init__(self, message: "HttpMessageLinter", is_trailer: bool = False) -> None:
         self.message = message
+        self.is_trailer = is_trailer
         self.text: StrFieldListType = (
             []
         )  # unicode version of the field tuples as received
         self.parsed: FieldDictType = {}  # dictionary of parsed field values
-        self.size: int = 0  # size of textual header block w/o delimiters, in bytes
+        self.size: int = 0  # size of textual field block w/o delimiters, in bytes
         self.handlers: Dict[str, HttpField] = {}
         self._finder = HttpFieldFinder(message, self)
 
@@ -36,7 +38,7 @@ class FieldSection:
             - calculate the total section size
             - call msg.add_note as appropriate
         """
-        offset = 0  # what number header we're on
+        offset = 0  # what number field we're on
 
         for name, value in raw_fields:
             add_note = partial(self.message.notes.add, f"offset-{offset}")
@@ -76,8 +78,9 @@ class FieldSection:
         if self.size > self.max_total_size:
             self.message.notes.add(
                 "field-block",
-                TOTAL_HEADER_SIZE_TOO_LARGE,
-                header_size=f_num(self.size),
+                FIELD_SECTION_TOO_LARGE,
+                field_type=self.is_trailer and L_("trailer") or L_("header"),
+                section_size=f_num(self.size),
             )
 
         # check each of the complete header values and get the parsed value
@@ -86,6 +89,7 @@ class FieldSection:
                 self.message.notes.add,
                 f"field-{handler.canonical_name.lower()}",
                 field_name=handler.canonical_name,
+                field_type=self.is_trailer and L_("trailer") or L_("header"),
             )
             handler.finish(self.message, field_add_note)
             self.parsed[handler.norm_name] = handler.value
@@ -94,24 +98,24 @@ class FieldSection:
 class FIELD_TOO_LARGE(Note):
     category = categories.GENERAL
     level = levels.WARN
-    _summary = "The %(field_name)s header is very large (%(field_size)s bytes)."
+    _summary = "The %(field_name)s field is very large (%(field_size)s bytes)."
     _text = """\
-Some implementations limit the size of any single header line."""
+Some implementations limit the size of any single field line."""
 
 
-class TOTAL_HEADER_SIZE_TOO_LARGE(Note):
+class FIELD_SECTION_TOO_LARGE(Note):
     category = categories.GENERAL
     level = levels.WARN
-    _summary = "The total size of the headers is very large (%(header_size)s bytes)."
+    _summary = "The %(field_type)s section is very large (%(section_size)s bytes)."
     _text = """\
-Some implementations limit the total size of the header block. 32KB is a reasonable
+Some implementations limit the total size of a field section. 32KB is a reasonable
 upper limit."""
 
 
 class FIELD_NAME_ENCODING(Note):
     category = categories.GENERAL
     level = levels.BAD
-    _summary = "The %(field_name)s header's name contains non-ASCII characters."
+    _summary = "The %(field_name)s field's name contains non-ASCII characters."
     _text = """\
 HTTP field names can only contain ASCII characters."""
 
@@ -119,10 +123,10 @@ HTTP field names can only contain ASCII characters."""
 class FIELD_VALUE_ENCODING(Note):
     category = categories.GENERAL
     level = levels.WARN
-    _summary = "The %(field_name)s header's value contains non-ASCII characters."
+    _summary = "The %(field_name)s field's value contains non-ASCII characters."
     _text = """\
 HTTP fields notionally use the ISO-8859-1 character set, but in most cases are pure ASCII
 (a subset of this encoding).
 
-This header has non-ASCII characters, which have been interpreted as being encoded in
+This field has non-ASCII characters, which have been interpreted as being encoded in
 ISO-8859-1. If another encoding is used (e.g., UTF-8), the results may be unpredictable."""
