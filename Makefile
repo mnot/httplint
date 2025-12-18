@@ -76,6 +76,10 @@ i18n-autotranslate: venv
 i18n-compile: venv
 	$(VENV)/pybabel compile -d httplint/translations
 
+.PHONY: i18n-check
+i18n-check: venv
+	PYTHONPATH=. $(VENV)/python -m tools.i18n.check
+
 .PHONY: translations
 translations: i18n-update i18n-compile
 
