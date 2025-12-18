@@ -30,7 +30,6 @@ class ContentEncodingProcessor:
 
         self._brotli_processor = brotli.Decompressor()
 
-
     def feed_content(self, chunk: bytes) -> None:
         if self.decode_ok:
             decoded_chunk = self._process_content_codings(chunk)
