@@ -3,6 +3,9 @@ import hashlib
 from typing import List, Dict, Any, Callable, Optional, TYPE_CHECKING
 import zlib
 
+import brotli
+
+
 from httplint.note import Note, levels, categories
 from httplint.util import f_num, display_bytes
 
@@ -25,6 +28,9 @@ class ContentEncodingProcessor:
         self._in_gzip = False
         self._gzip_header_buffer = b""
 
+        self._brotli_processor = brotli.Decompressor()
+
+
     def feed_content(self, chunk: bytes) -> None:
         if self.decode_ok:
             decoded_chunk = self._process_content_codings(chunk)
@@ -38,7 +44,7 @@ class ContentEncodingProcessor:
         """
         Decode a chunk according to the message's content-encoding header.
 
-        Currently supports gzip.
+        Currently supports gzip and br.
         """
         content_codings = self.message.headers.parsed.get("content-encoding", [])
         content_codings.reverse()
@@ -67,6 +73,19 @@ class ContentEncodingProcessor:
                         BAD_ZLIB,
                         zlib_error=str(zlib_error),
                         ok_zlib_len=f_num(self.message.content_length),
+                        chunk_sample=display_bytes(chunk),
+                    )
+                    self.decode_ok = False
+                    return b""
+            elif coding == "br":
+                try:
+                    chunk = self._brotli_processor.process(chunk)
+                except brotli.error as brotli_error:
+                    self.message.notes.add(
+                        "field-content-encoding",
+                        BAD_BROTLI,
+                        brotli_error=str(brotli_error),
+                        ok_brotli_len=f_num(self.message.content_length),
                         chunk_sample=display_bytes(chunk),
                     )
                     self.decode_ok = False
@@ -150,6 +169,21 @@ wire. However, this response could not be decompressed; the error encountered wa
 "`%(zlib_error)s`".
 
 %(ok_zlib_len)s bytes were decompressed successfully before this; the erroneous chunk starts with (in hex):
+
+    %(chunk_sample)s
+"""
+
+
+class BAD_BROTLI(Note):
+    category = categories.CONNEG
+    level = levels.BAD
+    _summary = "This message was compressed using Brotli, but the data was corrupt."
+    _text = """\
+Brotli-compressed responses use brotli compression to reduce the number of bytes transferred on the
+wire. However, this response could not be decompressed; the error encountered was
+"`%(brotli_error)s`".
+
+%(ok_brotli_len)s bytes were decompressed successfully before this; the erroneous chunk starts with (in hex):
 
     %(chunk_sample)s
 """

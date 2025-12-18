@@ -25,12 +25,23 @@ dependencies = [
     "http-sf>=1.0.7",
     "sniffpy==1.0.0",
     "Babel",
+    "Brotli",
 ]
 
 [project.optional-dependencies]
 dev = [
-    "mypy", "black", "pylint", "pytest", "pytest-md", "validate-pyproject", "build",
-    "twine", "types-Markdown", "llm", "llm-gemini",
+    "mypy",
+    "black",
+    "pylint",
+    "pytest",
+    "pytest-md",
+    "validate-pyproject",
+    "build",
+    "twine",
+    "types-Markdown",
+    "llm",
+    "llm-mlx",
+    "brotli-stubs",
 ]
 
 [project.urls]
