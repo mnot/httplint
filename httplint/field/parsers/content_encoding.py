@@ -1,5 +1,6 @@
 from httplint.field import HttpField
-from httplint.field.tests import FieldTest
+from httplint.field.tests import FieldTest, FakeRequestLinter
+from httplint.message import HttpRequestLinter, HttpResponseLinter, HttpMessageLinter
 from httplint.note import Note, categories, levels
 from httplint.syntax import rfc9110
 from httplint.types import AddNoteMethodType
@@ -24,18 +25,27 @@ of its underlying media type; e.g., `gzip` and `deflate`."""
     def parse(self, field_value: str, add_note: AddNoteMethodType) -> str:
         # check to see if there are any non-gzip encodings, because
         # that's the only one we ask for.
-        if field_value.lower() != "gzip":
-            add_note(ENCODING_UNWANTED, unwanted_codings=field_value)
+        if isinstance(self.message, HttpResponseLinter) and isinstance(
+            self.message.related, HttpRequestLinter
+        ):
+            accept_encoding = [
+                a[0]
+                for a in self.message.related.headers.parsed.get("accept-encoding", [])
+            ]
+            if field_value.lower() not in accept_encoding:
+                add_note(ENCODING_UNWANTED, coding=field_value)
         return field_value.lower()
 
 
 class ENCODING_UNWANTED(Note):
     category = categories.CONNEG
     level = levels.WARN
-    _summary = "This response contained unwanted content-codings."
+    _summary = (
+        "This response uses the '%(coding)s' content-coding, but it wasn't requested."
+    )
     _text = """\
-This response's `Content-Encoding` header indicates it has content-codings applied
-(`%(unwanted_codings)s`) that the request didn't ask for.
+This response's `Content-Encoding` header indicates it has the `%(coding)s content-coding applied
+, but the client didn't indicate support for it in the request.
 
 Normally, clients ask for the encodings they want in the `Accept-Encoding` request header. Using
 encodings that the client doesn't explicitly request can lead to interoperability problems."""
@@ -58,3 +68,8 @@ class UnwantedContentEncodingTest(FieldTest):
     inputs = [b"gzip", b"foo"]
     expected_out = ["gzip", "foo"]
     expected_notes = [ENCODING_UNWANTED]
+
+    def set_context(self, message: HttpMessageLinter) -> None:
+        request = FakeRequestLinter()
+        request.headers.process([(b"accept-encoding", b"gzip")])
+        message.related = request
