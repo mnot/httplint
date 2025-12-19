@@ -1,5 +1,10 @@
+from typing import Tuple
+
 from httplint.field import HttpField
+from httplint.field.tests import FieldTest
 from httplint.syntax import rfc9110
+from httplint.types import AddNoteMethodType, ParamDictType
+from httplint.field.utils import parse_params
 
 
 class te(HttpField):
@@ -18,3 +23,20 @@ The most common transfer-coding, `chunked`, doesn't need to be listed in `TE`.
     deprecated = False
     valid_in_requests = True
     valid_in_responses = True
+
+    def parse(
+        self, field_value: str, add_note: AddNoteMethodType
+    ) -> Tuple[str, ParamDictType]:
+        try:
+            encoding, param_str = field_value.split(";", 1)
+        except ValueError:
+            encoding, param_str = field_value, ""
+        encoding = encoding.lower()
+        param_dict = parse_params(param_str, add_note, ["q"], delim=";")
+        return encoding, param_dict
+
+
+class TETest(FieldTest):
+    name = "TE"
+    inputs = [b"trailers, deflate; q=0.5"]
+    expected_out = [("trailers", {}), ("deflate", {"q": "0.5"})]
