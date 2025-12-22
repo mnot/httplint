@@ -123,6 +123,18 @@ class HttpField:
         Called when all field lines in the section are available.
         """
 
+        # check whether we're in the right message type
+        if self.message.message_type == "request":
+            if not self.valid_in_requests:
+                add_note(RESPONSE_HDR_IN_REQUEST)
+                self.value = None
+                return
+        else:
+            if not self.valid_in_responses:
+                add_note(REQUEST_HDR_IN_RESPONSE)
+                self.value = None
+                return
+
         # check field name syntax
         if not re.match(f"^{rfc9110.token}$", self.wire_name, RE_FLAGS):
             add_note(FIELD_NAME_BAD_SYNTAX)
@@ -177,10 +189,4 @@ class HttpField:
                 add_note(SINGLE_HEADER_REPEAT)
                 self.value = self.value[-1]
 
-        if self.message.message_type == "request":
-            if not self.valid_in_requests:
-                add_note(RESPONSE_HDR_IN_REQUEST)
-        else:
-            if not self.valid_in_responses:
-                add_note(REQUEST_HDR_IN_RESPONSE)
         self.evaluate(add_note)
