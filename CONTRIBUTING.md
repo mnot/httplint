@@ -5,9 +5,8 @@ Contributions - in the form of code, bugs, or ideas - are very welcome!
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 
-- [Intellectual Property](#intellectual-property)
-- [Coding Conventions](#coding-conventions)
 - [Setting up a Development Environment](#setting-up-a-development-environment)
+- [Coding Conventions](#coding-conventions)
 - [Before you Submit](#before-you-submit)
 - [Common Tasks](#common-tasks)
   - [Adding a New Field Handler](#adding-a-new-field-handler)
@@ -17,19 +16,9 @@ Contributions - in the form of code, bugs, or ideas - are very welcome!
     - [The _message_ instance variable](#the-_message_-instance-variable)
     - [Creating Notes](#creating-notes)
     - [Writing Tests](#writing-tests)
+- [Intellectual Property](#intellectual-property)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
-
-## Intellectual Property
-
-By contributing code, bugs or enhancements to this project (whether that be through pull requests, the issues list, e-mail or other means), you are licensing your contribution under the [project's terms](LICENSE.md).
-
-
-## Coding Conventions
-
-We use [black](https://pypi.org/project/black/) for Python formatting, which can be run with `make tidy`.
-
-All Python functions and methods need to have type annotations. See `pyproject.toml` for specific pylint and mypy settings.
 
 
 ## Setting up a Development Environment
@@ -47,6 +36,15 @@ Helpful make targets include:
 * `make tidy` - format Python source
 * `make test` - run the tests
 
+You can run the tests in an individual `field/parsers/foo_bar.py` file by running `make test_field_foo_bar`.
+
+
+## Coding Conventions
+
+* All user-visible strings need to be internationalised; see `TRANSLATION.md`.
+* Every new field and every new `Note` should have a test covering it.
+* All Python functions and methods need to have type annotations. See `pyproject.toml` for specific pylint and mypy settings.
+
 
 ## Before you Submit
 
@@ -55,7 +53,6 @@ The best way to submit a change is through a pull request. A few things to keep 
 * Run `make tidy`.
 * Check your code with `make lint` and address any issues found.
 * Check your code with `make typecheck` and address any issues found.
-* Every new field and every new `Note` should have a test covering it.
 
 If you're not sure how to dig in, feel free to ask for help, or sketch out an idea in an issue first.
 
@@ -164,12 +161,13 @@ variable.
 
 #### Creating Notes
 
-Field definitions should also include field specific _Note_ classes.
+Field checkers report their results using _Note_s.
 
-When writing new notes, it's important to keep in mind that the `text` field is expected to contain
-valid Markdown; any variables you pass to it will be escaped for you before rendering.
+The `_summary` field of a Note is plain text and should be reasonably short (e.g., about one line of text). In REDbot, it's what's displayed in the "Notes" section of the results.
 
-Common notes used by multiple fields should be in `httplint/field/notes.py`.
+The `_text` field of a Note is markdown. That means it should NOT be indented. In REDbot, it's what's displayed when you hover over the summary.
+
+Common notes used by multiple fields should be in `httplint/field/notes.py`. When possible, bias towards emitting a single note for a condition with details in `_text`, rather than creating multiple notes.
 
 Notes can also have child notes (sub-notes) attached to them. To do so, call `add_child` on the
 parent note instance (returned by `add_note`). `add_child` takes the Note class and any variables
@@ -196,3 +194,9 @@ Each field definition should also include tests, as subclasses of
 
 You can create any number of tests this way; they will be run automatically when
 _tests/test\_fields.py_ is run.
+
+
+## Intellectual Property
+
+By contributing code, bugs or enhancements to this project (whether that be through pull requests, the issues list, e-mail or other means), you are licensing your contribution under the [project's terms](LICENSE.md).
+
