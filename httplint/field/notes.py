@@ -202,3 +202,34 @@ class DUPLICATE_KEY(Note):
     _summary = "In %(field_name)s, the %(context)s key '%(key)s' is duplicated."
     _text = """\
 The %(context)s key '%(key)s' is duplicated. All instances after the first will be ignored."""
+
+
+class AVAILABLE_DICTIONARY_MISSING_AE(Note):
+    category = categories.GENERAL
+    level = levels.WARN
+    _summary = (
+        "This request advertises a dictionary for compression,"
+        "but the client doesn't support it."
+    )
+    _text = """\
+The `Available-Dictionary` header is present, but `Accept-Encoding` does not contain 'dcb' or 'dcz'.
+
+[RFC 9842 Section 6.1](https://www.rfc-editor.org/rfc/rfc9842.html#section-6.1) requires that if a
+client sends `Available-Dictionary`, it MUST also advertise support for dictionary-based content
+encoding (dcb or dcz) in `Accept-Encoding`."""
+
+
+class DICTIONARY_COMPRESSED_MISSING_VARY(Note):
+    category = categories.GENERAL
+    level = levels.WARN
+    _summary = (
+        "This response is compressed with a dictionary,"
+        "but is missing Vary: Available-Dictionary."
+    )
+    _text = """\
+The response is compressed with a dictionary (dcb or dcz) and is cacheable, but does not list
+`Available-Dictionary` in the `Vary` header.
+
+[RFC 9842 Section 6.2](https://www.rfc-editor.org/rfc/rfc9842.html#section-6.2) requires that
+cacheable dictionary-compressed responses MUST include `Available-Dictionary` in the `Vary` header
+to prevent serving compressed content to clients that do not have the dictionary."""
