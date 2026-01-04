@@ -142,10 +142,10 @@ the value shouldn't be remembered, raise `ValueError`.
 #### The _evaluate_ method
 
 _evaluate_ is called with one argument, `add_note`. As above, it allows setting _Note_s about the
-field field.
+complete field.
 
-_evaluate_ is called once all of the field fields are processed, to enable the entire set of the
-field field's values to be considered. To access the parsed value(s), use the _value_ instance
+_evaluate_ is called once all of the field lines are processed, to enable the entire set of the
+field's values to be considered. To access the parsed value(s), use the _value_ instance
 variable.
 
 When _list_header_ is `True`, _value_ is a list of the results of calling _parse_. When it is
