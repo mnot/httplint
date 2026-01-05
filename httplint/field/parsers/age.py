@@ -1,19 +1,18 @@
-from httplint.field import HttpField
+from httplint.field.singleton_field import SingletonField
 from httplint.field.tests import FieldTest
 from httplint.note import Note, categories, levels
 from httplint.syntax import rfc9111
 from httplint.types import AddNoteMethodType
-from httplint.field.notes import SINGLE_HEADER_REPEAT
+from httplint.field.singleton_field import SINGLE_HEADER_REPEAT
 
 
-class age(HttpField):
+class age(SingletonField):
     canonical_name = "Age"
     description = """\
 The `Age` response header conveys the sender's estimate of the amount of time since the response
 (or its validation) was generated at the origin server."""
     reference = f"{rfc9111.SPEC_URL}#field.age"
     syntax = False  # rfc9111.Age
-    list_header = False
     deprecated = False
     valid_in_requests = False
     valid_in_responses = True
@@ -69,7 +68,7 @@ class AgeTest(FieldTest):
 class MultipleAgeTest(FieldTest):
     name = "Age"
     inputs = [b"20", b"10"]
-    expected_out = 10
+    expected_out = 20
     expected_notes = [SINGLE_HEADER_REPEAT]
 
 

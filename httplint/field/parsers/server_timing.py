@@ -17,7 +17,6 @@ read/write, CPU time, file system access, etc.) in the developer tools in the br
 consumer of Server-Timing."""
     reference = "https://w3c.github.io/server-timing/#the-server-timing-header-field"
     syntax = rfc9110.list_rule(rf"{rfc9110.token} {rfc9110.parameters}")
-    list_header = True
     deprecated = False
     valid_in_requests = False
     valid_in_responses = True

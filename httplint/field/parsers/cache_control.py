@@ -88,7 +88,6 @@ handle the response. It can also occur in requests, but caches have the option o
 ignoring it there."""
     reference = f"{rfc9111.SPEC_URL}#field.cache-control"
     syntax = rfc9111.Cache_Control
-    list_header = True
     deprecated = False
     valid_in_requests = True
     valid_in_responses = True

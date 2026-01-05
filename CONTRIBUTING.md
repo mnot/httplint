@@ -76,33 +76,42 @@ If your field name doesn't work with this convention, please raise an issue.
 
 The easiest way to get started is to copy `httplint/field/parsers/field.tpl` to your new file.
 
-#### The _HttpField_ Class
+class vary(HttpField):
+    canonical_name = "Vary"
+    description = """..."""
+    reference = f"{rfc9110.SPEC_URL}#field.vary"
+    syntax = rfc9110.Vary
+    valid_in_requests = False
+    valid_in_responses = True
+~~~
 
-Each file should define exactly one `fields.HttpField` class, whose name is the same as the filename (e.g., `foo_example`, as per above).
+When using `HttpField`:
+- `parse` is called for each individual value in the list (separated by commas).
+- `value` (the property accessed in `evaluate`) is a list of the results of calling `parse`.
+- `syntax` (if provided) is checked against each individual value in the list.
 
-`HttpField` has a number of instance variables (which are often set as class variables):
+#### The _SingletonField_ Class
 
-* `canonical_name` - unicode string, the "normal" capitalisation of the field name. _required_
-* `description` - unicode string, general description of the field. Markdown formatting. _required_
-* `reference` - unicode string, URL to the most recent definition of the field.
-* `syntax` - string, regular expression for the field's syntax (evaluated with `re.VERBOSE` and `re.IGNORECASE`). _required_
-* `list_header` - boolean, indicates whether the field supports list syntax (see `parse`). _required_
-* `deprecated` - boolean, indicates whether the field has been deprecated.
-* `valid_in_requests` - boolean, indicates whether the field is valid in HTTP requests. _required_
-* `valid_in_responses` - boolean, indicates whether the field is valid in HTTP responses. _required_
-* `no_coverage` - boolean, turns off coverage checks for trivial fields.
+If the header you are adding strictly allows only one value (e.g., `Age`, `Date`), it should inherit from `httplint.field.singleton_field.SingletonField` (which itself inherits from `HttpField`).
 
-For example, `Age` starts with:
+`SingletonField` has no additional instance variables, but it alters how `parse` and `evaluate` work.
+
+When using `SingletonField`:
+- `parse` is called once for the entire field value.
+- `value` (the property accessed in `evaluate`) is a single value, representing the first call to `parse`.
+- `syntax` (if provided) is checked against the entire value.
+- If the field is repeated in a message, it will be flagged with a `SINGLE_HEADER_REPEAT` note and only the first value will be used.
+
+For example, a `SingletonField` like `Age` starts with:
 
 ~~~ python
-class age(HttpField):
+class age(SingletonField):
     canonical_name = "Age"
     description = """\
 The `Age` response header conveys the sender's estimate of the amount of time since the response
 (or its validation) was generated at the origin server."""
     reference = f"{rfc9111.SPEC_URL}#field.age"
     syntax = False  # rfc9111.Age
-    list_header = False
     deprecated = False
     valid_in_requests = False
     valid_in_responses = True
@@ -112,9 +121,8 @@ The `Age` response header conveys the sender's estimate of the amount of time si
 
 If the header you are adding is a [Structured Field](https://www.rfc-editor.org/rfc/rfc8941.html), it should inherit from `httplint.field.structured_field.StructuredField` (which itself inherits from `HttpField`).
 
-`StructuredField` has two additional instance variables:
+`StructuredField` has one additional instance variable:
 
-* `structured_field` - boolean, always `True`.
 * `sf_type` - string, the type of Structured Field (`item`, `list`, or `dictionary`). _required_
 
 When using `StructuredField`, you do not need to provide a `syntax` regex or implement a `parse` method; the base class handles parsing using the `http_sf` library.
@@ -147,13 +155,12 @@ Baz: "def, ghi"
 _parse_ will be called twice for `Foo` (once with the `field_value` _a_ and once with _b_) and once
 for `Bar` and once for `Baz` (with the `field_value`s _1, 2, 3_ and _"def, ghi"_ respectively).
 
-However, if the `list_header` class variable is `True`, this is altered; _parse_ will be called for
-each _value_, after separating on commas (excepting those inside quoted strings). In the example
-above, _parse_ would be called three times for `Bar` (with the `field_value`s _1_, _2_, and _3_),
-but still only once for `Baz`.
+_parse_ should return the parsed value corresponding to the `field_value`. If there is an error and
+the value shouldn't be remembered, raise `ValueError`.
 
-Note that `syntax` is checked against the `field_value` before _parse_ is called, subject to
-`list_header` processing.
+When using `HttpField`, _parse_ will be called for each _item_ in the list, after separating on commas (excepting those inside quoted strings). In the example above, if `Bar` were a `HttpField`, _parse_ would be called three times for `Bar` (with the `field_value`s _1_, _2_, and _3_), but still only once for `Baz`.
+
+Note that `syntax` is checked against each item before _parse_ is called in a `HttpField`.
 
 communicate something about the field_value. It returns the created _Note_ instance.
 
@@ -170,8 +177,11 @@ _evaluate_ is called once all of the field lines are processed, to enable the en
 field's values to be considered. To access the parsed value(s), use the _value_ instance
 variable.
 
-When _list_header_ is `True`, _value_ is a list of the results of calling _parse_. When it is
-`False`, it is a single value, representing the most recent call to _parse_.
+_evaluate_ is called once all of the field lines are processed, to enable the entire set of the
+field's values to be considered. To access the parsed value(s), use the _value_ instance
+variable.
+
+When using `HttpField`, _value_ is a list of the results of calling _parse_. When using `SingletonField`, it is a single value, representing the first call to _parse_.
 
 
 #### The _post_check_ method

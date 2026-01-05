@@ -1,17 +1,18 @@
 from typing import TYPE_CHECKING
 
-from httplint.field import HttpField
+from httplint.field.singleton_field import SingletonField
 from httplint.field.tests import FieldTest
 from httplint.syntax import rfc9110
 from httplint.types import AddNoteMethodType
-from httplint.field.notes import BAD_SYNTAX, SINGLE_HEADER_REPEAT
+from httplint.field.singleton_field import SINGLE_HEADER_REPEAT
+from httplint.field.notes import BAD_SYNTAX
 from httplint.note import Note, categories, levels
 
 if TYPE_CHECKING:
     from httplint.message import HttpMessageLinter
 
 
-class content_length(HttpField):
+class content_length(SingletonField):
     canonical_name = "Content-Length"
     description = """\
 The `Content-Length` header indicates the size of the content, in number of bytes. In responses to
@@ -22,7 +23,6 @@ If Content-Length is incorrect, HTTP/1.1 persistent connections will not work, a
 store the response (since they can't be sure if they have the whole response)."""
     reference = f"{rfc9110.SPEC_URL}#field.content-length"
     syntax = rfc9110.Content_Length
-    list_header = False
     deprecated = False
     valid_in_requests = True
     valid_in_responses = True
@@ -108,7 +108,7 @@ class ContentLengthCommaTest(FieldTest):
 class ContentLengthDiffTest(FieldTest):
     name = "Content-Length"
     inputs = [b"1", b"2"]
-    expected_out = 2
+    expected_out = 1
     expected_notes = [SINGLE_HEADER_REPEAT]
 
 

@@ -14,16 +14,12 @@ class cdn_cache_control(StructuredField):
 The `CDN-Cache-Control` header field targets cache directives to Content Delivery Networks."""
     reference = "https://www.rfc-editor.org/rfc/rfc9213.html"
     syntax = False  # SF
-    list_header = False
     deprecated = False
     valid_in_requests = False
     valid_in_responses = True
     sf_type = "dictionary"
 
     def evaluate(self, add_note: AddNoteMethodType) -> None:
-        if not self.value:
-            return
-
         add_note(CDN_CACHE_CONTROL_PRESENT)
 
         for directive_name, item in self.value.items():

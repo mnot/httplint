@@ -12,7 +12,6 @@ The `Expect` header field in a request indicates behaviors (expectations) that n
 fulfilled by the server in order to properly handle the request."""
     reference = f"{rfc9110.SPEC_URL}#field.expect"
     syntax = rfc9110.Expect
-    list_header = True
     deprecated = False
     valid_in_requests = True
     valid_in_responses = False

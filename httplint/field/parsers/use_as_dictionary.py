@@ -13,7 +13,6 @@ The `Use-As-Dictionary` header field is used by a server to indicate that the re
 as a compression dictionary for future requests."""
     reference = "https://www.rfc-editor.org/rfc/rfc9842.html"
     syntax = False  # Structured Field
-    list_header = False
     deprecated = False
     valid_in_requests = False
     valid_in_responses = True

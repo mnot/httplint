@@ -1,4 +1,4 @@
-from httplint.field import HttpField
+from httplint.field.singleton_field import SingletonField
 from httplint.field.tests import FieldTest, FakeRequestLinter
 from httplint.syntax import rfc9110
 from httplint.types import AddNoteMethodType
@@ -14,14 +14,13 @@ The `Max-Forwards` header is only defined for `TRACE` and `OPTIONS` requests; fo
 is likely to be ignored."""
 
 
-class max_forwards(HttpField):
+class max_forwards(SingletonField):
     canonical_name = "Max-Forwards"
     description = """\
 The `Max-Forwards` header field provides a mechanism to limit
 the number of times that the request is forwarded by intermediaries."""
     reference = f"{rfc9110.SPEC_URL}#field.max-forwards"
     syntax = rfc9110.Max_Forwards
-    list_header = False
     deprecated = False
     valid_in_requests = True
     valid_in_responses = False

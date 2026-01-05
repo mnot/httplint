@@ -10,7 +10,6 @@ class cache_groups(StructuredField):
 The `Cache-Groups` header field helps caches group responses together for invalidation."""
     reference = "https://www.rfc-editor.org/rfc/rfc9875.html"
     syntax = False  # Structured Field
-    list_header = False
     deprecated = False
     valid_in_requests = False
     valid_in_responses = True

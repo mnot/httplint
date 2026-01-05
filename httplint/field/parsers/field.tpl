@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
-from httplint.fields import HttpField
-from httplint.fields._test import HttpTest
+from httplint.field import HttpField
+from httplint.field.tests import FieldTest
 from httplint.note import Note, categories, levels
 from httplint.types import AddNoteMethodType
 
@@ -12,8 +12,6 @@ FIXME
 """
     reference = None
     syntax = False
-    list_header = False
-    structured_field = False
     structured_field_type = FIXME
     deprecated = False
     valid_in_requests = False
@@ -34,7 +32,7 @@ class SHORT_NAME_NOTE(Note):
 FIXME"""
 
 
-class SHORT_NAMETest(HeaderTest):
+class SHORT_NAMETest(FieldTest):
     name = 'SHORT_NAME'
     inputs = ['FIXME']
     expected_out = ('FIXME')

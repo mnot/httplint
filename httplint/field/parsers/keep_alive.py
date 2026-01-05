@@ -21,7 +21,6 @@ timeout is and other information. However, this isn't usually used by clients.
 It's safe to remove this header if you wish to save a few bytes."""
     reference = "https://www.rfc-editor.org/rfc/rfc2068.html#section-19.7.1"
     syntax = rfc9110.list_rule(rfc9110.parameter)
-    list_header = True
     deprecated = True
     valid_in_requests = True
     valid_in_responses = True

@@ -15,7 +15,6 @@ recipient along the request chain.
 This header is deprecated, in favour of `Cache-Control`."""
     reference = f"{rfc9111.SPEC_URL}#field.pragma"
     syntax = rfc9111.Pragma
-    list_header = True
     deprecated = True
     valid_in_requests = True
     valid_in_responses = False

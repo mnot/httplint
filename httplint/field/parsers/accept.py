@@ -11,7 +11,6 @@ The `Accept` header field can be used by user agents to specify response media t
 acceptable in responses."""
     reference = f"{rfc9110.SPEC_URL}#field.accept"
     syntax = rfc9110.Accept
-    list_header = True
     deprecated = False
     valid_in_requests = True
     valid_in_responses = False

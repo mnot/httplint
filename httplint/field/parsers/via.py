@@ -13,7 +13,6 @@ can be used to help avoid request loops and identify the protocol capabilities o
 the request/response chain."""
     reference = f"{rfc9110.SPEC_URL}#field.via"
     syntax = rfc9110.Via
-    list_header = True
     deprecated = False
     valid_in_requests = True
     valid_in_responses = True

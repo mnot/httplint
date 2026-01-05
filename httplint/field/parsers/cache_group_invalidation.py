@@ -11,7 +11,6 @@ The `Cache-Group-Invalidation` header field allows a response to invalidate a gr
 responses."""
     reference = "https://www.rfc-editor.org/rfc/rfc9875.html"
     syntax = False  # Structured Field
-    list_header = False
     deprecated = False
     valid_in_requests = False
     valid_in_responses = True

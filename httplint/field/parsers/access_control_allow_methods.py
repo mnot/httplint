@@ -15,7 +15,6 @@ The `Access-Control-Allow-Methods` response header specifies the method or metho
 accessing the resource in response to a CORS preflight request."""
     reference = "https://fetch.spec.whatwg.org/#http-access-control-allow-methods"
     syntax = rfc9110.token
-    list_header = True
     deprecated = False
     valid_in_requests = False
     valid_in_responses = True

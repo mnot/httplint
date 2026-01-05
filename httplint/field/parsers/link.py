@@ -1,6 +1,5 @@
 import re
 from typing import Tuple
-
 from httplint.field import HttpField
 from httplint.field.tests import FieldTest
 from httplint.note import Note, categories, levels
@@ -18,7 +17,6 @@ statement of the form "[context IRI] has a [relation type] resource at [target I
 [target attributes]."""
     reference = f"{rfc5988.SPEC_URL}#header.link"
     syntax = rfc5988.Link
-    list_header = True
     deprecated = False
     valid_in_requests = True
     valid_in_responses = True

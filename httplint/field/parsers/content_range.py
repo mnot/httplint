@@ -1,4 +1,4 @@
-from httplint.field import HttpField
+from httplint.field.singleton_field import SingletonField
 from httplint.field.tests import FieldTest
 from httplint.message import HttpMessageLinter, HttpResponseLinter
 from httplint.note import Note, categories, levels
@@ -6,7 +6,7 @@ from httplint.syntax import rfc9110
 from httplint.types import AddNoteMethodType
 
 
-class content_range(HttpField):
+class content_range(SingletonField):
     canonical_name = "Content-Range"
     description = """\
 The `Content-Range` response header is sent in a `206` (Partial Content) response to indicate
@@ -14,7 +14,6 @@ where in the full response content the partial content is located. It is also us
 in `416` (Requested Range Not Satisfiable) responses."""
     reference = f"{rfc9110.SPEC_URL}#field.content-range"
     syntax = rfc9110.Content_Range
-    list_header = False
     deprecated = False
     valid_in_requests = False
     valid_in_responses = True

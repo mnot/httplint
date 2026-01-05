@@ -13,7 +13,6 @@ The `Permissions-Policy` response header allows a site to control the use of bro
     reference = "https://www.w3.org/TR/permissions-policy/"
 
     syntax = False  # Uses SF parser
-    list_header = True
     deprecated = False
     valid_in_requests = False
     valid_in_responses = True

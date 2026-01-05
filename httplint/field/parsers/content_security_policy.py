@@ -20,7 +20,6 @@ sources of content that browsers are allowed to load on a page."""
     reference = "https://www.w3.org/TR/CSP3/"
 
     syntax = rf"(?: {csp_directive} (?: {rfc9110.OWS} ; (?: {rfc9110.OWS} {csp_directive} )? )* )"
-    list_header = True
     deprecated = False
     valid_in_requests = False
     valid_in_responses = True

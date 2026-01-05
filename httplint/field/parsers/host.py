@@ -1,10 +1,10 @@
-from httplint.field import HttpField
+from httplint.field.singleton_field import SingletonField
 from httplint.field.tests import FieldTest
 from httplint.syntax import rfc9110
 from httplint.types import AddNoteMethodType
 
 
-class host(HttpField):
+class host(SingletonField):
     canonical_name = "Host"
     description = """\
 The `Host` header field provides the host and port information from the target URI, enabling the
@@ -12,7 +12,6 @@ origin server to distinguish between resources while servicing requests for mult
 a single IP address."""
     reference = f"{rfc9110.SPEC_URL}#field.host"
     syntax = rfc9110.Host
-    list_header = False
     deprecated = False
     valid_in_requests = True
     valid_in_responses = False

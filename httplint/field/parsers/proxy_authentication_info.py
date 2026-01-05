@@ -11,7 +11,6 @@ The `Proxy-Authentication-Info` header field is used to communicate information 
 the client's authentication credentials have been accepted by a proxy."""
     reference = f"{rfc9110.SPEC_URL}#field.proxy-authentication-info"
     syntax = rfc9110.Proxy_Authentication_Info
-    list_header = True
     deprecated = False
     valid_in_requests = False
     valid_in_responses = True

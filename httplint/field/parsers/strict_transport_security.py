@@ -1,6 +1,6 @@
 from typing import Any
 
-from httplint.field import HttpField
+from httplint.field.singleton_field import SingletonField, SINGLE_HEADER_REPEAT
 from httplint.field.tests import FieldTest
 from httplint.message import HttpMessageLinter
 from httplint.note import Note, categories, levels
@@ -11,15 +11,13 @@ from httplint.types import AddNoteMethodType
 sts_dir = rf"(?: {rfc9110.token} (?: {rfc9110.BWS} = {rfc9110.BWS} {rfc9110.parameter_value} )? )"
 
 
-class strict_transport_security(HttpField):
+class strict_transport_security(SingletonField):
     canonical_name = "Strict-Transport-Security"
     description = """\
 The `Strict-Transport-Security` response header (often abbreviated as HSTS) lets a web site tell
 browsers that it should only be communicated with using HTTPS, instead of using HTTP."""
     reference = "https://www.rfc-editor.org/rfc/rfc6797"
     syntax = rf"(?: {sts_dir} (?: {rfc9110.OWS} ; {rfc9110.OWS} {sts_dir} )* )"
-    list_header = False
-    nonstandard_syntax = True
     deprecated = False
     valid_in_requests = False
     valid_in_responses = True
@@ -68,14 +66,11 @@ browsers that it should only be communicated with using HTTPS, instead of using 
         notes_to_add: list[type[Note]] = []
         is_valid = True
 
-        if len(self.value) > 1:
-            notes_to_add.append(HSTS_MULTIPLE_HEADERS)
-
         # RFC 6797 Section 8.1:
         # If a UA receives more than one STS header field in an HTTP
         # response message over secure transport, then the UA MUST process
         # only the first such header field.
-        parsed = self.value[0]
+        parsed = self.value  # already done by SingletonField
 
         if parsed["preload"]:
             if parsed["includesubdomains"] and parsed["max-age"] >= 1536000:
@@ -245,15 +240,6 @@ The `Strict-Transport-Security` header is ignored when sent over HTTP, unless it
 It should only be sent over HTTPS."""
 
 
-class HSTS_MULTIPLE_HEADERS(Note):
-    category = categories.SECURITY
-    level = levels.WARN
-    _summary = "This response has multiple HSTS headers."
-    _text = """\
-A response should only contain a single `Strict-Transport-Security` header.
-User agents are required to process only the first one and ignore the rest."""
-
-
 class HSTS_BAD_MAX_AGE(Note):
     category = categories.SECURITY
     level = levels.BAD
@@ -275,7 +261,7 @@ directive. It should not have an associated value."""
 class HSTSTest(FieldTest):
     name = "Strict-Transport-Security"
     inputs = [b"max-age=31536000; includeSubDomains"]
-    expected_out = [{"max-age": 31536000, "includesubdomains": True, "preload": False}]
+    expected_out = {"max-age": 31536000, "includesubdomains": True, "preload": False}
     expected_notes = [HSTS_SUBDOMAINS, HSTS_NO_PRELOAD, HSTS_VALID]
 
     def set_context(self, message: HttpMessageLinter) -> None:
@@ -285,7 +271,7 @@ class HSTSTest(FieldTest):
 class HSTSValidTest(FieldTest):
     name = "Strict-Transport-Security"
     inputs = [b"max-age=31536000; includeSubDomains; preload"]
-    expected_out = [{"max-age": 31536000, "includesubdomains": True, "preload": True}]
+    expected_out = {"max-age": 31536000, "includesubdomains": True, "preload": True}
     expected_notes = [HSTS_SUBDOMAINS, HSTS_PRELOAD, HSTS_VALID]
 
     def set_context(self, message: HttpMessageLinter) -> None:
@@ -295,7 +281,7 @@ class HSTSValidTest(FieldTest):
 class HSTSHttpTest(FieldTest):
     name = "Strict-Transport-Security"
     inputs = [b"max-age=31536000"]
-    expected_out = [{"max-age": 31536000, "includesubdomains": False, "preload": False}]
+    expected_out = {"max-age": 31536000, "includesubdomains": False, "preload": False}
     expected_notes = [HSTS_OVER_HTTP, HSTS_NO_SUBDOMAINS, HSTS_NO_PRELOAD, HSTS_INVALID]
 
     def set_context(self, message: HttpMessageLinter) -> None:
@@ -305,7 +291,7 @@ class HSTSHttpTest(FieldTest):
 class HSTSDuplicateTest(FieldTest):
     name = "Strict-Transport-Security"
     inputs = [b"max-age=31536000; max-age=100"]
-    expected_out = [{"max-age": 31536000, "includesubdomains": False, "preload": False}]
+    expected_out = {"max-age": 31536000, "includesubdomains": False, "preload": False}
     expected_notes = [
         HSTS_DUPLICATE_DIRECTIVE,
         HSTS_NO_SUBDOMAINS,
@@ -320,7 +306,7 @@ class HSTSDuplicateTest(FieldTest):
 class HSTSTripleDuplicateTest(FieldTest):
     name = "Strict-Transport-Security"
     inputs = [b"max-age=31536000; max-age=100; max-age=200"]
-    expected_out = [{"max-age": 31536000, "includesubdomains": False, "preload": False}]
+    expected_out = {"max-age": 31536000, "includesubdomains": False, "preload": False}
     expected_notes = [
         HSTS_DUPLICATE_DIRECTIVE,
         HSTS_NO_SUBDOMAINS,
@@ -335,12 +321,9 @@ class HSTSTripleDuplicateTest(FieldTest):
 class HSTSMultipleHeadersTest(FieldTest):
     name = "Strict-Transport-Security"
     inputs = [b"max-age=31536000", b"max-age=0"]
-    expected_out = [
-        {"max-age": 31536000, "includesubdomains": False, "preload": False},
-        {"max-age": 0, "includesubdomains": False, "preload": False},
-    ]
+    expected_out = {"max-age": 31536000, "includesubdomains": False, "preload": False}
     expected_notes = [
-        HSTS_MULTIPLE_HEADERS,
+        SINGLE_HEADER_REPEAT,
         HSTS_NO_SUBDOMAINS,
         HSTS_NO_PRELOAD,
         HSTS_VALID,
@@ -353,7 +336,7 @@ class HSTSMultipleHeadersTest(FieldTest):
 class HSTSPreloadNotSuitableTest(FieldTest):
     name = "Strict-Transport-Security"
     inputs = [b"max-age=100; includeSubDomains; preload"]
-    expected_out = [{"max-age": 100, "includesubdomains": True, "preload": True}]
+    expected_out = {"max-age": 100, "includesubdomains": True, "preload": True}
     expected_notes = [
         HSTS_SUBDOMAINS,
         HSTS_PRELOAD_NOT_SUITABLE,
@@ -368,7 +351,7 @@ class HSTSPreloadNotSuitableTest(FieldTest):
 class HSTSShortMaxAgeTest(FieldTest):
     name = "Strict-Transport-Security"
     inputs = [b"max-age=100"]
-    expected_out = [{"max-age": 100, "includesubdomains": False, "preload": False}]
+    expected_out = {"max-age": 100, "includesubdomains": False, "preload": False}
     expected_notes = [
         HSTS_NO_SUBDOMAINS,
         HSTS_NO_PRELOAD,
@@ -383,7 +366,7 @@ class HSTSShortMaxAgeTest(FieldTest):
 class HSTSMaxAgeZeroTest(FieldTest):
     name = "Strict-Transport-Security"
     inputs = [b"max-age=0"]
-    expected_out = [{"max-age": 0, "includesubdomains": False, "preload": False}]
+    expected_out = {"max-age": 0, "includesubdomains": False, "preload": False}
     expected_notes = [
         HSTS_NO_SUBDOMAINS,
         HSTS_NO_PRELOAD,
@@ -398,7 +381,7 @@ class HSTSMaxAgeZeroTest(FieldTest):
 class HSTSNoSubdomainsTest(FieldTest):
     name = "Strict-Transport-Security"
     inputs = [b"max-age=31536000"]
-    expected_out = [{"max-age": 31536000, "includesubdomains": False, "preload": False}]
+    expected_out = {"max-age": 31536000, "includesubdomains": False, "preload": False}
     expected_notes = [HSTS_NO_SUBDOMAINS, HSTS_NO_PRELOAD, HSTS_VALID]
 
     def set_context(self, message: HttpMessageLinter) -> None:

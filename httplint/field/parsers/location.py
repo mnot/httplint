@@ -1,7 +1,7 @@
 import re
 from urllib.parse import urljoin
 
-from httplint.field import HttpField
+from httplint.field.singleton_field import SingletonField
 from httplint.field.tests import FieldTest
 from httplint.message import HttpMessageLinter, HttpResponseLinter
 from httplint.note import Note, categories, levels
@@ -9,7 +9,7 @@ from httplint.syntax import rfc9110, rfc3986
 from httplint.types import AddNoteMethodType
 
 
-class location(HttpField):
+class location(SingletonField):
     canonical_name = "Location"
     description = """\
 The `Location` response header is used in `3xx` responses to redirect the recipient to a different location
@@ -18,7 +18,6 @@ to complete the request.
 In `201` (Created) responses, it identifies a newly created resource."""
     reference = f"{rfc9110.SPEC_URL}#field.location"
     syntax = rfc9110.Location
-    list_header = False
     deprecated = False
     valid_in_requests = False
     valid_in_responses = True

@@ -12,7 +12,6 @@ The `Warning` response header was used to carry additional information about the
 transformation of a message that might not be reflected in it. It has been deprecated."""
     reference = f"{rfc9111.SPEC_URL}#field.warning"
     syntax = rfc9111.Warning_
-    list_header = True
     deprecated = True
     valid_in_requests = False
     valid_in_responses = True

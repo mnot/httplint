@@ -1,6 +1,6 @@
 from typing import cast
 
-from httplint.field import HttpField
+from httplint.field.singleton_field import SingletonField
 from httplint.field.cors import check_preflight_response, CORS_PREFLIGHT_ONLY
 from httplint.field.tests import FieldTest, FakeRequest
 from httplint.message import HttpMessageLinter
@@ -8,7 +8,7 @@ from httplint.syntax import rfc9110
 from httplint.types import AddNoteMethodType
 
 
-class access_control_max_age(HttpField):
+class access_control_max_age(SingletonField):
     canonical_name = "Access-Control-Max-Age"
     description = """\
 The `Access-Control-Max-Age` response header indicates how long the results of a CORS preflight
@@ -16,7 +16,6 @@ request (as scoped by the `Access-Control-Allow-Methods` and
 `Access-Control-Allow-Headers` request headers) can be cached."""
     reference = "https://fetch.spec.whatwg.org/#http-access-control-max-age"
     syntax = rfc9110.delay_seconds
-    list_header = False
     deprecated = False
     valid_in_requests = False
     valid_in_responses = True

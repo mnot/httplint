@@ -15,7 +15,6 @@ The `Server` response header contains information about the software used by the
 handle the request."""
     reference = f"{rfc9110.SPEC_URL}#field.server"
     syntax = rfc9110.Server
-    list_header = True
     deprecated = False
     valid_in_requests = False
     valid_in_responses = True

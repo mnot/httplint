@@ -5,16 +5,6 @@ Common field-related Notes.
 from httplint.note import Note, categories, levels
 
 
-class SINGLE_HEADER_REPEAT(Note):
-    category = categories.GENERAL
-    level = levels.BAD
-    _summary = "Only one %(field_name)s field is allowed in a response's headers."
-    _text = """\
-This field is designed to only occur once in a message. When it occurs more than once, a receiver
-needs to choose the one to use, which can lead to interoperability problems, since different
-implementations may make different choices."""
-
-
 class FIELD_NAME_BAD_SYNTAX(Note):
     category = categories.GENERAL
     level = levels.BAD

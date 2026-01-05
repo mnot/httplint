@@ -12,7 +12,6 @@ The `Content-Language` header describes the natural language(s) of the intended 
 messsage. Note that this might not convey all of the languages used."""
     reference = f"{rfc9110.SPEC_URL}#field.content-language"
     syntax = rfc9110.Content_Language
-    list_header = True
     deprecated = False
     valid_in_requests = True
     valid_in_responses = True

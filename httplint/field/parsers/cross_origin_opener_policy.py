@@ -14,7 +14,6 @@ The `Cross-Origin-Opener-Policy` header field allows a document to disown its op
 it doesn't have a reference to the opener's window object."""
     reference = "https://html.spec.whatwg.org/multipage/origin.html#coop"
     syntax = False  # Structured Field
-    list_header = False
     deprecated = False
     valid_in_requests = False
     valid_in_responses = True

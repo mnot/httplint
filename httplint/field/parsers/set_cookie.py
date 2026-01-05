@@ -3,7 +3,8 @@ from re import match, split
 from urllib.parse import urlsplit
 from typing import List, Tuple, Union, Optional
 
-from httplint.field import HttpField, RFC6265
+from httplint.field.broken_field import BrokenField
+from httplint.field import RFC6265
 from httplint.field.tests import FieldTest
 from httplint.note import Note, categories, levels
 from httplint.types import AddNoteMethodType
@@ -14,14 +15,13 @@ CookieType = Tuple[str, str, List[Tuple[str, Union[str, int]]]]
 MAX_SET_COOKIE_VALUE_LENGTH = 128
 
 
-class set_cookie(HttpField):
+class set_cookie(BrokenField):
     canonical_name = "Set-Cookie"
     description = """\
 The `Set-Cookie` response header sets a stateful "cookie" on the client, to be included in future
 requests to the server."""
     syntax = False
     reference = RFC6265
-    list_header = False
     nonstandard_syntax = True
     deprecated = False
     valid_in_requests = False

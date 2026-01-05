@@ -1,9 +1,9 @@
-from httplint.field import HttpField
+from httplint.field.singleton_field import SingletonField
 from httplint.field.tests import FieldTest
 from httplint.field.notes import FIELD_DEPRECATED
 
 
-class content_md5(HttpField):
+class content_md5(SingletonField):
     canonical_name = "Content-MD5"
     description = """\
 The `Content-MD5` header is an MD5 digest of the content, and provides an end-to-end message
@@ -13,7 +13,6 @@ Note that while a MIC is good for detecting accidental modification of content i
 not proof against malicious attacks."""
     reference = "https://www.rfc-editor.org/rfc/rfc1864"
     syntax = r"(?: [A-Za-z0-9+/]{22} ={2} )"
-    list_header = False
     deprecated = True
     valid_in_requests = True
     valid_in_responses = True

@@ -11,7 +11,6 @@ The `Authentication-Info` header field is used to communicate information after
 the client's authentication credentials have been accepted."""
     reference = f"{rfc9110.SPEC_URL}#field.authentication-info"
     syntax = rfc9110.Authentication_Info
-    list_header = True
     deprecated = False
     valid_in_requests = False
     valid_in_responses = True

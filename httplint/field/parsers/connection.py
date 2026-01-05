@@ -15,7 +15,6 @@ it should not be reused.
 Connection is only valid in HTTP/1.x; HTTP/2 and HTTP/3 forbit it."""
     reference = f"{rfc9110.SPEC_URL}#field.connection"
     syntax = rfc9110.Connection
-    list_header = True
     deprecated = False
     valid_in_requests = True
     valid_in_responses = True

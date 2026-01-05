@@ -1,15 +1,16 @@
 from typing import Tuple
 
-from httplint.field import HttpField
+from httplint.field.singleton_field import SingletonField
 from httplint.field.tests import FieldTest
 from httplint.note import Note, categories, levels
 from httplint.syntax import rfc9110
 from httplint.types import AddNoteMethodType, ParamDictType
 from httplint.field.utils import parse_params
-from httplint.field.notes import SINGLE_HEADER_REPEAT, PARAM_STAR_QUOTED
+from httplint.field.singleton_field import SINGLE_HEADER_REPEAT
+from httplint.field.notes import PARAM_STAR_QUOTED
 
 
-class content_disposition(HttpField):
+class content_disposition(SingletonField):
     canonical_name = "Content-Disposition"
     description = """\
 The `Content-Disposition` header suggests a name to use when saving the file.
@@ -18,7 +19,6 @@ When the disposition (the first value) is set to `attachment`, it also prompts b
 the file, rather than display it."""
     reference = "https://www.rfc-editor.org/rfc/rfc6266.html"
     syntax = rf"(?:{rfc9110.token}(?:\s*;\s*{rfc9110.parameter})*)"
-    list_header = False
     deprecated = False
     valid_in_requests = True
     valid_in_responses = True
@@ -127,7 +127,7 @@ class InlineCDTest(FieldTest):
 class RepeatCDTest(FieldTest):
     name = "Content-Disposition"
     inputs = [b"attachment; filename=foo.txt", b"inline; filename=bar.txt"]
-    expected_out = ("inline", {"filename": "bar.txt"})
+    expected_out = ("attachment", {"filename": "foo.txt"})
     expected_notes = [SINGLE_HEADER_REPEAT]
 
 

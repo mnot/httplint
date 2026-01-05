@@ -8,7 +8,6 @@ The `X-Cache-Lookup` response header is used by some caches to show whether ther
 cache for this URL; if it contains `HIT`, it was in cache (but not necessarily used)."""
     reference = "https://lyte.id.au/2014/08/28/x-cache-and-x-cache-lookupheaders/"
     syntax = False
-    list_header = True
     deprecated = False
     no_coverage = True
     valid_in_requests = False

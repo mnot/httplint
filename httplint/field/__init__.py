@@ -1,15 +1,9 @@
-from copy import copy
 from functools import partial
 import re
-import sys
 from typing import (
     Any,
-    Callable,
     List,
     Dict,
-    Optional,
-    Tuple,
-    Type,
     Union,
     TYPE_CHECKING,
 )
@@ -23,14 +17,8 @@ from httplint.types import (
     FieldDictType,
     AddNoteMethodType,
 )
-from httplint.util import f_num
 
-from httplint.field.utils import (
-    RE_FLAGS,
-    parse_http_date,
-    split_string,
-    split_list_field,
-)
+from httplint.field.utils import RE_FLAGS, split_list_field
 from httplint.field.notes import *
 
 if TYPE_CHECKING:
@@ -57,11 +45,8 @@ class HttpField:
     syntax: Union[
         str, rfc9110.list_rule, bool
     ]  # Verbose regular expression to match, or False to indicate no syntax.
-    # If structured_field is True, this is ignored.
-    list_header: bool  # Can be split into values on commas.
     valid_in_requests: bool
     valid_in_responses: bool
-    nonstandard_syntax: bool = False  # Don't check for a single value at the end.
     deprecated: bool = False
     no_coverage: bool = False  # Turns off coverage checks.
 
@@ -96,13 +81,8 @@ class HttpField:
         Basic input processing on a new field value.
         """
 
-        # split before processing if a list field
-        if self.list_header:
-            values = split_list_field(field_value)
-        else:
-            values = [field_value]
+        values = split_list_field(field_value)
         for value in values:
-            # check field value syntax
             if self.syntax:
                 element_syntax = (
                     self.syntax.element
@@ -114,42 +94,43 @@ class HttpField:
             try:
                 parsed_value = self.parse(value.strip(), add_note)
             except ValueError:
-                continue  # we assume that the parser made a note of the problem.
+                continue
             self.value.append(parsed_value)
 
-    def finish(self, message: "HttpMessageLinter", add_note: AddNoteMethodType) -> None:
+    def pre_check(
+        self, message: "HttpMessageLinter", add_note: AddNoteMethodType
+    ) -> bool:
         """
-        Called when all field lines in the section are available.
+        Called before parsing or evaluating the field.
+        If False is returned, processing is aborted.
         """
-
         # check whether we're in the right message type
         if self.message.message_type == "request":
             if not self.valid_in_requests:
                 add_note(RESPONSE_HDR_IN_REQUEST)
                 self.value = None
-                return
+                return False
         else:
             if not self.valid_in_responses:
                 add_note(REQUEST_HDR_IN_RESPONSE)
                 self.value = None
-                return
+                return False
 
         # check field name syntax
         if not re.match(f"^{rfc9110.token}$", self.wire_name, RE_FLAGS):
             add_note(FIELD_NAME_BAD_SYNTAX)
+            return False
 
         if self.deprecated:
             deprecation_ref = getattr(self, "deprecation_ref", self.reference)
             add_note(FIELD_DEPRECATED, deprecation_ref=deprecation_ref)
 
-        if not self.list_header and not self.nonstandard_syntax:
-            if not self.value:
-                self.value = None
-            elif len(self.value) == 1:
-                self.value = self.value[-1]
-            elif len(self.value) > 1:
-                add_note(SINGLE_HEADER_REPEAT)
-                self.value = self.value[-1]
+        return True
+
+    def finish(self, message: "HttpMessageLinter", add_note: AddNoteMethodType) -> None:
+        """
+        Called when all field lines in the section are available.
+        """
 
         if self.value is not None:
             self.evaluate(add_note)

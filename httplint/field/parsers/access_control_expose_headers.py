@@ -11,7 +11,6 @@ headers should be made available to scripts running in the browser, in response 
 request."""
     reference = "https://fetch.spec.whatwg.org/#http-access-control-expose-headers"
     syntax = rfc9110.token
-    list_header = True
     deprecated = False
     valid_in_requests = False
     valid_in_responses = True

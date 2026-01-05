@@ -23,13 +23,15 @@ class StructuredField(HttpField):
     """
 
     nonstandard_syntax = True
-    structured_field = True
     sf_type: str = "item"  # item, list, dict
 
     def handle_input(self, field_value: str, add_note: AddNoteMethodType) -> None:
         self.value.append(field_value)
 
     def finish(self, message: "HttpMessageLinter", add_note: AddNoteMethodType) -> None:
+        if not self.value:
+            return
+
         combined_value = ", ".join(self.value).strip()
         parsed_value: Any = None
 

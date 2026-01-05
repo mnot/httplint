@@ -1,4 +1,4 @@
-from httplint.field import HttpField
+from httplint.field.singleton_field import SingletonField
 from httplint.field.tests import FieldTest
 from httplint.field.notes import BAD_SYNTAX
 from httplint.note import Note, levels, categories
@@ -6,14 +6,13 @@ from httplint.syntax import rfc9110
 from httplint.types import AddNoteMethodType
 
 
-class access_control_allow_origin(HttpField):
+class access_control_allow_origin(SingletonField):
     canonical_name = "Access-Control-Allow-Origin"
     description = """\
 The `Access-Control-Allow-Origin` response header indicates whether the response can be shared with
 requesting code from the given origin."""
     reference = "https://fetch.spec.whatwg.org/#http-access-control-allow-origin"
     syntax = rf"(?:\*|null|{rfc9110.URI_reference})"
-    list_header = False
     deprecated = False
     valid_in_requests = False
     valid_in_responses = True

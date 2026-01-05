@@ -1,10 +1,10 @@
-from httplint.field import HttpField
+from httplint.field.singleton_field import SingletonField
 from httplint.field.tests import FieldTest
 from httplint.syntax import rfc9110
 from httplint.types import AddNoteMethodType
 
 
-class if_modified_since(HttpField):
+class if_modified_since(SingletonField):
     canonical_name = "If-Modified-Since"
     description = """\
 The `If-Modified-Since` header field makes a request method conditional on the
@@ -12,7 +12,6 @@ selected representation's modification date being more recent than the date prov
 field-value."""
     reference = f"{rfc9110.SPEC_URL}#field.if-modified-since"
     syntax = rfc9110.If_Modified_Since
-    list_header = False
     deprecated = False
     valid_in_requests = True
     valid_in_responses = False

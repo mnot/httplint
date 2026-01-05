@@ -1,4 +1,4 @@
-from httplint.field import HttpField
+from httplint.field.singleton_field import SingletonField
 from httplint.field.tests import FieldTest
 from httplint.syntax import rfc9110
 from httplint.types import AddNoteMethodType
@@ -7,14 +7,13 @@ from httplint.field.notes import Note, categories, levels, BAD_DATE_SYNTAX
 from httplint.field.utils import parse_http_date
 
 
-class last_modified(HttpField):
+class last_modified(SingletonField):
     canonical_name = "Last-Modified"
     description = """\
 The `Last-Modified` response header indicates the time that the origin server believes the
 representation was last modified."""
     reference = f"{rfc9110.SPEC_URL}#field.last-modified"
     syntax = False  # rfc9110.Last_Modified
-    list_header = False
     deprecated = False
     valid_in_requests = False
     valid_in_responses = True

@@ -66,6 +66,8 @@ class FieldSection:
                 add_note,
                 field_name=handler.canonical_name,
             )
+            if not handler.pre_check(self.message, field_add_note):
+                continue
             handler.handle_input(str_value, field_add_note)
 
             if field_size > self.max_field_size:

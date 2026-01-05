@@ -11,7 +11,6 @@ The `Accept-Language` header field can be used by user agents to indicate the se
 preferred in the response."""
     reference = f"{rfc9110.SPEC_URL}#field.accept-language"
     syntax = rfc9110.Accept_Language
-    list_header = True
     deprecated = False
     valid_in_requests = True
     valid_in_responses = False

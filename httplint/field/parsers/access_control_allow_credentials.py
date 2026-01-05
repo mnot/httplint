@@ -1,10 +1,10 @@
-from httplint.field import HttpField
+from httplint.field.singleton_field import SingletonField
 from httplint.field.tests import FieldTest
 from httplint.note import Note, levels, categories
 from httplint.types import AddNoteMethodType
 
 
-class access_control_allow_credentials(HttpField):
+class access_control_allow_credentials(SingletonField):
     canonical_name = "Access-Control-Allow-Credentials"
     description = """\
 The `Access-Control-Allow-Credentials` response header tells browsers whether to expose the response
@@ -12,7 +12,6 @@ to frontend code when the request's credentials mode (`Request.credentials`) is
 `include`."""
     reference = "https://fetch.spec.whatwg.org/#http-access-control-allow-credentials"
     syntax = False
-    list_header = False
     deprecated = False
     valid_in_requests = False
     valid_in_responses = True

@@ -12,7 +12,6 @@ The `Referrer-Policy` response header controls how much referrer information (se
 header) should be included with requests."""
     reference = "https://www.w3.org/TR/referrer-policy/"
     syntax = rfc9110.token
-    list_header = True
     deprecated = False
     valid_in_requests = False
     valid_in_responses = True

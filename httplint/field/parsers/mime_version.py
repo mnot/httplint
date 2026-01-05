@@ -1,9 +1,9 @@
-from httplint.field import HttpField
+from httplint.field.singleton_field import SingletonField
 
 from httplint.field import RFC2616
 
 
-class mime_version(HttpField):
+class mime_version(SingletonField):
     canonical_name = "MIME-Version"
     description = """\
 HTTP is not a MIME-compliant protocol. However, HTTP/1.1 messages can include a single MIME-Version
@@ -12,7 +12,6 @@ of the MIME-Version header indicates that the message is in full compliance with
 protocol."""
     reference = f"{RFC2616}#section-19.4.1"
     syntax = False
-    list_header = False
     deprecated = True
     valid_in_requests = True
     valid_in_responses = True

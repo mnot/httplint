@@ -19,7 +19,6 @@ resources identifying the origin serving the field."""
         f"{rfc9110.token} = {rfc9110.quoted_string}"
         f"(?: {rfc9110.OWS} ; {rfc9110.OWS} {rfc9110.parameter} )* ) )"
     )
-    list_header = True
     valid_in_requests = False
     valid_in_responses = True
 

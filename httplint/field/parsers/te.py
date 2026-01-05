@@ -19,7 +19,6 @@ The most common transfer-coding, `chunked`, doesn't need to be listed in `TE`.
 """
     reference = f"{rfc9110.SPEC_URL}#field.te"
     syntax = rfc9110.TE
-    list_header = True
     deprecated = False
     valid_in_requests = True
     valid_in_responses = True

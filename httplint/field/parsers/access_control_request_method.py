@@ -1,6 +1,6 @@
 from typing import List, Tuple, cast
 
-from httplint.field import HttpField
+from httplint.field.singleton_field import SingletonField
 from httplint.field.cors import (
     check_preflight_request_header,
     CORS_PREFLIGHT_REQ_METHOD_WRONG,
@@ -12,7 +12,7 @@ from httplint.syntax import rfc9110
 from httplint.types import AddNoteMethodType
 
 
-class access_control_request_method(HttpField):
+class access_control_request_method(SingletonField):
     canonical_name = "Access-Control-Request-Method"
     description = """\
 The `Access-Control-Request-Method` request header is used by browsers when issuing a CORS
@@ -20,7 +20,6 @@ preflight request, to let the server know which HTTP method will be used when th
 is made."""
     reference = "https://fetch.spec.whatwg.org/#http-access-control-request-method"
     syntax = rfc9110.token
-    list_header = False
     deprecated = False
     valid_in_requests = True
     valid_in_responses = False

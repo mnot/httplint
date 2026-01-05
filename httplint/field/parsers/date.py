@@ -1,4 +1,4 @@
-from httplint.field import HttpField
+from httplint.field.singleton_field import SingletonField
 from httplint.field.tests import FieldTest
 from httplint.syntax import rfc9110
 from httplint.types import AddNoteMethodType
@@ -9,7 +9,7 @@ from httplint.field.utils import parse_http_date
 MAX_CLOCK_SKEW = 5  # seconds
 
 
-class date(HttpField):
+class date(SingletonField):
     canonical_name = "Date"
     description = """\
 The `Date` header represents the time when the message was generated, regardless of caching that
@@ -18,7 +18,6 @@ happened since.
 It is used by caches as input to expiration calculations, and to detect clock drift."""
     reference = f"{rfc9110.SPEC_URL}#field.date"
     syntax = False  # rfc9110.Date
-    list_header = False
     deprecated = False
     valid_in_requests = True
     valid_in_responses = True

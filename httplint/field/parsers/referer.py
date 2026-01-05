@@ -1,7 +1,7 @@
 from typing import cast, TYPE_CHECKING
 from urllib.parse import urlparse
 
-from httplint.field import HttpField
+from httplint.field.singleton_field import SingletonField
 from httplint.field.tests import FieldTest
 from httplint.syntax import rfc9110
 from httplint.types import AddNoteMethodType
@@ -36,14 +36,13 @@ See [RFC 9110 Section 10.1.3](https://www.rfc-editor.org/rfc/rfc9110.html#sectio
 for details."""
 
 
-class referer(HttpField):
+class referer(SingletonField):
     canonical_name = "Referer"
     description = """\
 The `Referer` [sic] header field allows the user agent to specify a URI Reference for the
 resource from which the target URI was obtained (i.e., the "referrer")."""
     reference = f"{rfc9110.SPEC_URL}#field.referer"
     syntax = rfc9110.Referer
-    list_header = False
     deprecated = False
     valid_in_requests = True
     valid_in_responses = False

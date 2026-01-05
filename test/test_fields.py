@@ -73,8 +73,6 @@ def checkFieldClass(field_cls):
         ("description", [str], True),
         ("valid_in_requests", [bool, type(None)], True),
         ("valid_in_responses", [bool, type(None)], True),
-        ("syntax", [str, list_rule], True),
-        ("list_header", [bool], True),
         ("deprecated", [bool], False),
     ]
     for attr_name, attr_types, attr_required in checks:

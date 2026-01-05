@@ -1,19 +1,18 @@
 from typing import Any
 
-from httplint.field import HttpField
+from httplint.field.singleton_field import SingletonField
 from httplint.field.tests import FieldTest
 from httplint.note import Note, categories, levels
 from httplint.types import AddNoteMethodType
 
 
-class cross_origin_resource_policy(HttpField):
+class cross_origin_resource_policy(SingletonField):
     canonical_name = "Cross-Origin-Resource-Policy"
     description = """\
 The `Cross-Origin-Resource-Policy` header field allows a resource to indicate whether it can be
 loaded by a cross-origin document."""
     reference = "https://fetch.spec.whatwg.org/#cross-origin-resource-policy-header"
     syntax = False  # Not a Structured Field in the strict sense, but uses token
-    list_header = False
     deprecated = False
     valid_in_requests = False
     valid_in_responses = True

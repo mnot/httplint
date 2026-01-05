@@ -10,7 +10,6 @@ is not widely supported in clients.
 """
     reference = "https://www.rfc-editor.org/rfc/rfc2295"
     syntax = False
-    list_header = True
     deprecated = False
     valid_in_requests = False
     valid_in_responses = True

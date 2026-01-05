@@ -14,7 +14,6 @@ class proxy_status(StructuredField):
 The `Proxy-Status` header field indicates how intermediaries have handled the response."""
     reference = "https://www.rfc-editor.org/rfc/rfc9209.html#section-2"
     syntax = False  # Structured Field
-    list_header = False
     deprecated = False
     valid_in_requests = False
     valid_in_responses = True

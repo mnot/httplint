@@ -14,7 +14,6 @@ The `Accept-Encoding` header field can be used by user agents to indicate what r
 acceptable in the response."""
     reference = f"{rfc9110.SPEC_URL}#field.accept-encoding"
     syntax = rfc9110.Accept_Encoding
-    list_header = True
     deprecated = False
     valid_in_requests = True
     valid_in_responses = False

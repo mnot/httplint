@@ -15,7 +15,6 @@ The `Cache-Status` header field indicates how caches have handled the response, 
 debugging caches."""
     reference = "https://www.rfc-editor.org/rfc/rfc9211.html#section-2"
     syntax = False  # Structured Field
-    list_header = False
     deprecated = False
     valid_in_requests = False
     valid_in_responses = True

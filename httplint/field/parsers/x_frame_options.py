@@ -1,4 +1,4 @@
-from httplint.field import HttpField
+from httplint.field.singleton_field import SingletonField
 from httplint.field.tests import FieldTest
 from httplint.note import Note, categories, levels
 from httplint.syntax import rfc3986, rfc9110
@@ -22,7 +22,7 @@ X_Frame_Options = rf"""(?:
 )"""
 
 
-class x_frame_options(HttpField):
+class x_frame_options(SingletonField):
     canonical_name = "X-Frame-Options"
     reference = "https://www.rfc-editor.org/rfc/rfc7034"
     description = """
@@ -30,7 +30,6 @@ The X-Frame-Options response header declares a policy regarding whether the brow
 the transmitted content in frames that are part of other web pages.
 """
     syntax = X_Frame_Options
-    list_header = False
     deprecated = False
     valid_in_requests = False
     valid_in_responses = True

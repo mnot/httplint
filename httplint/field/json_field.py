@@ -15,22 +15,22 @@ class JsonField(HttpField):
     See: https://reschke.github.io/json-fields/
     """
 
-    list_header = False
     nonstandard_syntax = True
     syntax = False
-    structured_field = False
 
     def handle_input(self, field_value: str, add_note: AddNoteMethodType) -> None:
         self.value.append(field_value)
 
     def finish(self, message: "HttpMessageLinter", add_note: AddNoteMethodType) -> None:
-        if self.value:
-            combined_value = f"[{', '.join(self.value)}]"
-            try:
-                self.value = json.loads(combined_value)
-            except json.JSONDecodeError as why:
-                add_note(BAD_JSON, error=str(why))
-                self.value = None
+        if not self.value:
+            return
+
+        combined_value = f"[{', '.join(self.value)}]"
+        try:
+            self.value = json.loads(combined_value)
+        except json.JSONDecodeError as why:
+            add_note(BAD_JSON, error=str(why))
+            self.value = None
 
         super().finish(message, add_note)
 

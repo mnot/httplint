@@ -15,7 +15,6 @@ The `Access-Control-Allow-Headers` response header is used in response to a CORS
 request to indicate which HTTP headers can be used during the actual request."""
     reference = "https://fetch.spec.whatwg.org/#http-access-control-allow-headers"
     syntax = rfc9110.token
-    list_header = True
     deprecated = False
     valid_in_requests = False
     valid_in_responses = True

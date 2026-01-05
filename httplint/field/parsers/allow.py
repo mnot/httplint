@@ -9,7 +9,6 @@ class allow(HttpField):
 The `Allow` response header advertises the set of methods that are supported by the resource."""
     reference = f"{rfc9110.SPEC_URL}#field.allow"
     syntax = rfc9110.Allow
-    list_header = True
     deprecated = False
     valid_in_requests = False
     valid_in_responses = True
