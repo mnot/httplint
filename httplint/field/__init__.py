@@ -82,7 +82,12 @@ class HttpField:
         """
 
         values = split_list_field(field_value)
+        i = 0
         for value in values:
+            offset_add_note = partial(
+                self.message.notes.add, f"offset-{i}", field_name=self.canonical_name
+            )
+            i += 1
             if self.syntax:
                 element_syntax = (
                     self.syntax.element
@@ -90,9 +95,9 @@ class HttpField:
                     else self.syntax
                 )
                 if not re.match(rf"^\s*(?:{element_syntax})\s*$", value, RE_FLAGS):
-                    add_note(BAD_SYNTAX, ref_uri=self.reference)
+                    offset_add_note(BAD_SYNTAX, ref_uri=self.reference)
             try:
-                parsed_value = self.parse(value.strip(), add_note)
+                parsed_value = self.parse(value.strip(), offset_add_note)
             except ValueError:
                 continue
             self.value.append(parsed_value)

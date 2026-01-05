@@ -1,3 +1,4 @@
+from functools import partial
 import re
 from typing import TYPE_CHECKING, List
 
@@ -26,7 +27,13 @@ class BrokenField(HttpField):
         self, message: "HttpMessageLinter", add_note: "AddNoteMethodType"
     ) -> None:
         parsed_values = []
+        i = 0
         for raw_value in self.raw_values:
+            # override add_note's subject to be offset-based
+            add_note = partial(
+                message.notes.add, f"offset-{i}", field_name=self.canonical_name
+            )
+            i += 1
             if self.syntax:
                 if not re.match(rf"^\s*(?:{self.syntax})\s*$", raw_value, RE_FLAGS):
                     add_note(BAD_SYNTAX, ref_uri=self.reference)
