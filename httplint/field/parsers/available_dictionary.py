@@ -5,7 +5,6 @@ from httplint.field.tests import FieldTest, FakeRequestLinter
 from httplint.note import Note, categories, levels
 from httplint.types import AddNoteMethodType
 from httplint.message import HttpRequestLinter
-from httplint.field.notes import AVAILABLE_DICTIONARY_MISSING_AE
 
 if TYPE_CHECKING:
     from httplint.message import HttpMessageLinter
@@ -42,6 +41,21 @@ dictionary available for use in compressing the response."""
                 break
         if not has_dictionary_support:
             add_note(AVAILABLE_DICTIONARY_MISSING_AE)
+
+
+class AVAILABLE_DICTIONARY_MISSING_AE(Note):
+    category = categories.GENERAL
+    level = levels.WARN
+    _summary = (
+        "This request advertises a dictionary for compression,"
+        "but the client doesn't support it."
+    )
+    _text = """\
+The `Available-Dictionary` header is present, but `Accept-Encoding` does not contain 'dcb' or 'dcz'.
+
+[RFC 9842 Section 6.1](https://www.rfc-editor.org/rfc/rfc9842.html#section-6.1) requires that if a
+client sends `Available-Dictionary`, it MUST also advertise support for dictionary-based content
+encoding (dcb or dcz) in `Accept-Encoding`."""
 
 
 class AVAILABLE_DICTIONARY_BAD_TYPE(Note):

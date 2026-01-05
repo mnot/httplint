@@ -4,10 +4,7 @@ from typing import Any, TYPE_CHECKING
 import http_sf
 
 from httplint.field import HttpField
-from httplint.field.notes import (
-    DUPLICATE_KEY,
-    STRUCTURED_FIELD_PARSE_ERROR,
-)
+from httplint.note import Note, categories, levels
 from httplint.types import AddNoteMethodType
 
 if TYPE_CHECKING:
@@ -65,3 +62,25 @@ class StructuredField(HttpField):
             self.value = None
 
         super().finish(message, add_note)
+
+
+class DUPLICATE_KEY(Note):
+    category = categories.GENERAL
+    level = levels.WARN
+    _summary = "In %(field_name)s, the %(context)s key '%(key)s' is duplicated."
+    _text = """\
+The %(context)s key '%(key)s' is duplicated. All instances after the first will be ignored."""
+
+
+class STRUCTURED_FIELD_PARSE_ERROR(Note):
+    category = categories.GENERAL
+    level = levels.BAD
+    _summary = "The %(field_name)s field value isn't a valid Structured Field."
+    _text = """\
+The %(field_name)s field is defined as a
+[Structured Field](https://www.rfc-editor.org/rfc/rfc9651.html),
+but its value can't be parsed as one. As a result, this field is likely
+to be ignored.
+
+The parser reports this error:
+    %(error)s."""

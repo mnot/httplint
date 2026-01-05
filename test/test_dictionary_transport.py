@@ -1,9 +1,7 @@
 import unittest
 from httplint.message import HttpRequestLinter, HttpResponseLinter
-from httplint.field.notes import (
-    AVAILABLE_DICTIONARY_MISSING_AE,
-    DICTIONARY_COMPRESSED_MISSING_VARY,
-)
+from httplint.field.parsers.available_dictionary import AVAILABLE_DICTIONARY_MISSING_AE
+from httplint.field.parsers.content_encoding import DICTIONARY_COMPRESSED_MISSING_VARY
 
 class TestDictionaryTransport(unittest.TestCase):
     def test_request_valid(self):

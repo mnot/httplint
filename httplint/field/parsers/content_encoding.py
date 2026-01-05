@@ -7,7 +7,6 @@ from httplint.message import HttpRequestLinter, HttpResponseLinter, HttpMessageL
 from httplint.note import Note, categories, levels
 from httplint.syntax import rfc9110
 from httplint.types import AddNoteMethodType
-from httplint.field.notes import DICTIONARY_COMPRESSED_MISSING_VARY
 
 
 class content_encoding(HttpField):
@@ -53,6 +52,22 @@ of its underlying media type; e.g., `gzip` and `deflate`."""
                 vary_values = message.headers.parsed.get("vary", set())
                 if "available-dictionary" not in vary_values:
                     add_note(DICTIONARY_COMPRESSED_MISSING_VARY)
+
+
+class DICTIONARY_COMPRESSED_MISSING_VARY(Note):
+    category = categories.GENERAL
+    level = levels.WARN
+    _summary = (
+        "This response is compressed with a dictionary,"
+        "but is missing Vary: Available-Dictionary."
+    )
+    _text = """\
+The response is compressed with a dictionary (dcb or dcz) and is cacheable, but does not list
+`Available-Dictionary` in the `Vary` header.
+
+[RFC 9842 Section 6.2](https://www.rfc-editor.org/rfc/rfc9842.html#section-6.2) requires that
+cacheable dictionary-compressed responses MUST include `Available-Dictionary` in the `Vary` header
+to prevent serving compressed content to clients that do not have the dictionary."""
 
 
 class ENCODING_UNWANTED(Note):
