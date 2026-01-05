@@ -1,38 +1,21 @@
-from typing import Any
-import json
-
-from httplint.field import HttpField
+from httplint.field.json_field import JsonField, BAD_JSON
 from httplint.field.tests import FieldTest
 from httplint.note import Note, categories, levels
 from httplint.types import AddNoteMethodType
 
 
-class nel(HttpField):
+class nel(JsonField):
     canonical_name = "NEL"
     description = """\
 The `NEL` header field configures Network Error Logging policies. 
 It allows websites to declare that they want to receive reports about network errors."""
     reference = "https://w3c.github.io/network-error-logging/#nel-header-field"
-    syntax = False  # JSON
-    list_header = False  # JSON array
     deprecated = False
     valid_in_requests = False
     valid_in_responses = True
-    structured_field = False
-
-    def parse(self, field_value: str, add_note: AddNoteMethodType) -> Any:
-        try:
-            return json.loads(field_value)
-        except json.JSONDecodeError as e:
-            add_note(BAD_JSON, error=str(e))
-            raise ValueError from e
 
     def evaluate(self, add_note: AddNoteMethodType) -> None:
         if self.value is None:
-            return
-
-        if not isinstance(self.value, list):
-            add_note(NEL_BAD_STRUCTURE)
             return
 
         # Spec: "User agent MUST only process the first valid policy..."
@@ -82,17 +65,6 @@ It allows websites to declare that they want to receive reports about network er
                     )
 
 
-class BAD_JSON(Note):
-    category = categories.GENERAL
-    level = levels.BAD
-    _summary = "The NEL header is not valid JSON."
-    _text = """\
-The `NEL` header value must be valid JSON.
-
-The JSON parsing error was: %(error)s
-"""
-
-
 class NEL_BAD_STRUCTURE(Note):
     category = categories.GENERAL
     level = levels.BAD
@@ -130,8 +102,8 @@ Details: %(details)s"""
 class NelTest(FieldTest):
     name = "NEL"
     inputs = [
-        b'[{"report_to": "group1", "max_age": 2592000, "include_subdomains": true, '
-        b'"success_fraction": 0.5}]'
+        b'{"report_to": "group1", "max_age": 2592000, "include_subdomains": true, '
+        b'"success_fraction": 0.5}'
     ]
     expected_out = [
         {
@@ -144,39 +116,35 @@ class NelTest(FieldTest):
     expected_notes = []
 
 
-class NelListTest(FieldTest):
+class NelMultiLineTest(FieldTest):
     name = "NEL"
     inputs = [
-        b'[{"report_to": "group1", "max_age": 2592000, "include_subdomains": true, '
-        b'"success_fraction": 0.5}]'
+        b'{"report_to": "group1", "max_age": 2592000}',
+        b'{"report_to": "group2", "max_age": 3600}',
     ]
     expected_out = [
-        {
-            "report_to": "group1",
-            "max_age": 2592000,
-            "include_subdomains": True,
-            "success_fraction": 0.5,
-        }
+        {"report_to": "group1", "max_age": 2592000},
+        {"report_to": "group2", "max_age": 3600},
     ]
     expected_notes = []
 
 
 class NelMissingReportToTest(FieldTest):
     name = "NEL"
-    inputs = [b'[{"max_age": 100}]']
+    inputs = [b'{"max_age": 100}']
     expected_out = [{"max_age": 100}]
     expected_notes = [NEL_MISSING_KEY]
 
 
 class NelBadFractionTest(FieldTest):
     name = "NEL"
-    inputs = [b'[{"report_to": "a", "max_age": 1, "success_fraction": 1.5}]']
+    inputs = [b'{"report_to": "a", "max_age": 1, "success_fraction": 1.5}']
     expected_out = [{"report_to": "a", "max_age": 1, "success_fraction": 1.5}]
     expected_notes = [NEL_BAD_VALUE]
 
 
 class NelBadJsonTest(FieldTest):
     name = "NEL"
-    inputs = [b"[{unquoted: key}]"]
+    inputs = [b"{unquoted: key}"]
     expected_out = None
     expected_notes = [BAD_JSON]

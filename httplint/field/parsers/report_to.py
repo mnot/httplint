@@ -1,38 +1,21 @@
-from typing import Any
-import json
-
-from httplint.field import HttpField
+from httplint.field.json_field import JsonField, BAD_JSON
 from httplint.field.tests import FieldTest
 from httplint.note import Note, categories, levels
 from httplint.types import AddNoteMethodType
 
 
-class report_to(HttpField):
+class report_to(JsonField):
     canonical_name = "Report-To"
     description = """\
 The `Report-To` header field configures the browser to send reports to specified endpoints.
 It is part of the legacy Reporting API."""
     reference = "https://w3c.github.io/reporting/#header"
-    syntax = False  # JSON
-    list_header = False  # JSON array
     deprecated = False
     valid_in_requests = False
     valid_in_responses = True
-    structured_field = False
-
-    def parse(self, field_value: str, add_note: AddNoteMethodType) -> Any:
-        try:
-            return json.loads(field_value)
-        except json.JSONDecodeError as e:
-            add_note(BAD_JSON, error=str(e))
-            raise ValueError from e
 
     def evaluate(self, add_note: AddNoteMethodType) -> None:
         if self.value is None:
-            return
-
-        if not isinstance(self.value, list):
-            add_note(REPORT_TO_BAD_STRUCTURE)
             return
 
         for group in self.value:
@@ -67,17 +50,6 @@ It is part of the legacy Reporting API."""
                         )
 
 
-class BAD_JSON(Note):
-    category = categories.GENERAL
-    level = levels.BAD
-    _summary = "The Report-To header value is not valid JSON."
-    _text = """\
-The `Report-To` header value must be valid JSON.
-
-The JSON parsing error was: %(error)s
-"""
-
-
 class REPORT_TO_BAD_STRUCTURE(Note):
     category = categories.GENERAL
     level = levels.BAD
@@ -106,7 +78,7 @@ The `%(key)s` key must be of type %(expected)s."""
 class ReportToTest(FieldTest):
     name = "Report-To"
     inputs = [
-        b'[{"max_age": 10886400, "endpoints": [{"url": "https://example.com/reports"}]}]'
+        b'{"max_age": 10886400, "endpoints": [{"url": "https://example.com/reports"}]}'
     ]
     expected_out = [
         {"max_age": 10886400, "endpoints": [{"url": "https://example.com/reports"}]}
@@ -114,26 +86,28 @@ class ReportToTest(FieldTest):
     expected_notes = []
 
 
-class ReportToListTest(FieldTest):
+class ReportToMultiLineTest(FieldTest):
     name = "Report-To"
     inputs = [
-        b'[{"max_age": 10886400, "endpoints": [{"url": "https://example.com/reports"}]}]'
+        b'{"group": "a", "max_age": 1, "endpoints": [{"url": "https://a.com"}]}',
+        b'{"group": "b", "max_age": 2, "endpoints": [{"url": "https://b.com"}]}',
     ]
     expected_out = [
-        {"max_age": 10886400, "endpoints": [{"url": "https://example.com/reports"}]}
+        {"group": "a", "max_age": 1, "endpoints": [{"url": "https://a.com"}]},
+        {"group": "b", "max_age": 2, "endpoints": [{"url": "https://b.com"}]},
     ]
     expected_notes = []
 
 
 class ReportToMissingMaxAgeTest(FieldTest):
     name = "Report-To"
-    inputs = [b'[{"endpoints": [{"url": "https://a.com"}]}]']
+    inputs = [b'{"endpoints": [{"url": "https://a.com"}]}']
     expected_out = [{"endpoints": [{"url": "https://a.com"}]}]
     expected_notes = [REPORT_TO_MISSING_KEY]
 
 
 class ReportToBadJsonTest(FieldTest):
     name = "Report-To"
-    inputs = [b'[{unquoted: "keys"}]']
+    inputs = [b'{unquoted: "keys"}']
     expected_out = None
     expected_notes = [BAD_JSON]

@@ -60,6 +60,9 @@ def checkFieldClass(field_cls):
     Given a field class, make sure it's complete. Complain on STDERR if not.
     """
 
+    if not hasattr(field_cls, "canonical_name"):
+        return 0
+
     errors = 0
     message = FakeResponseLinter()
     field = field_cls("warning", None)
