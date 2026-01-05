@@ -91,8 +91,6 @@ Each file should define exactly one `fields.HttpField` class, whose name is the 
 * `valid_in_requests` - boolean, indicates whether the field is valid in HTTP requests. _required_
 * `valid_in_responses` - boolean, indicates whether the field is valid in HTTP responses. _required_
 * `no_coverage` - boolean, turns off coverage checks for trivial fields.
-* `structured_field` - boolean, indicates whether the field is a Structured Field.
-* `structured_field_type` - string, the type of Structured Field (`item`, `list`, or `dictionary`).
 
 For example, `Age` starts with:
 
@@ -108,7 +106,31 @@ The `Age` response header conveys the sender's estimate of the amount of time si
     deprecated = False
     valid_in_requests = False
     valid_in_responses = True
-~~~~
+~~~
+
+#### The _StructuredField_ Class
+
+If the header you are adding is a [Structured Field](https://www.rfc-editor.org/rfc/rfc8941.html), it should inherit from `httplint.field.structured_field.StructuredField` (which itself inherits from `HttpField`).
+
+`StructuredField` has two additional instance variables:
+
+* `structured_field` - boolean, always `True`.
+* `sf_type` - string, the type of Structured Field (`item`, `list`, or `dictionary`). _required_
+
+When using `StructuredField`, you do not need to provide a `syntax` regex or implement a `parse` method; the base class handles parsing using the `http_sf` library.
+
+For example, a `StructuredField` like `Cache-Status` starts with:
+
+~~~ python
+class cache_status(StructuredField):
+    canonical_name = "Cache-Status"
+    reference = "https://www.rfc-editor.org/rfc/rfc9211.html"
+    description = """..."""
+    valid_in_requests = False
+    valid_in_responses = True
+    sf_type = "list"
+~~~
+
 
 #### The _parse_ method
 

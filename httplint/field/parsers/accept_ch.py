@@ -2,7 +2,7 @@ from typing import TYPE_CHECKING, cast, Any
 from types import SimpleNamespace
 
 from http_sf import Token
-from httplint.field import HttpField
+from httplint.field.structured_field import StructuredField
 from httplint.field.tests import FieldTest, FakeResponseLinter, FakeRequestLinter
 from httplint.note import Note, categories, levels
 from httplint.field.notes import BAD_SYNTAX
@@ -13,7 +13,7 @@ if TYPE_CHECKING:
     from httplint.message import HttpMessageLinter
 
 
-class accept_ch(HttpField):
+class accept_ch(StructuredField):
     canonical_name = "Accept-CH"
     description = """\
 The `Accept-CH` response header field allows servers to indicate that they are
@@ -24,7 +24,6 @@ willing to process the specified Client Hints."""
     deprecated = False
     valid_in_requests = False
     valid_in_responses = True
-    structured_field = True
     sf_type = "list"
 
     def evaluate(self, add_note: AddNoteMethodType) -> None:

@@ -1,14 +1,14 @@
 from typing import Any, Dict
 from http_sf import Token
 
-from httplint.field import HttpField
+from httplint.field.structured_field import StructuredField
 from httplint.field.tests import FieldTest
 from httplint.note import Note, categories, levels
 from httplint.field.utils import check_sf_params
 from httplint.types import AddNoteMethodType
 
 
-class cache_status(HttpField):
+class cache_status(StructuredField):
     canonical_name = "Cache-Status"
     description = """\
 The `Cache-Status` header field indicates how caches have handled the response, to help with
@@ -19,7 +19,6 @@ debugging caches."""
     deprecated = False
     valid_in_requests = False
     valid_in_responses = True
-    structured_field = True
     sf_type = "list"
 
     def evaluate(self, add_note: AddNoteMethodType) -> None:

@@ -1,12 +1,12 @@
 from http_sf import Token
 
-from httplint.field import HttpField
+from httplint.field.structured_field import StructuredField
 from httplint.field.tests import FieldTest
 from httplint.note import Note, categories, levels
 from httplint.types import AddNoteMethodType
 
 
-class permissions_policy(HttpField):
+class permissions_policy(StructuredField):
     canonical_name = "Permissions-Policy"
     description = """\
 The `Permissions-Policy` response header allows a site to control the use of browser features."""
@@ -17,7 +17,6 @@ The `Permissions-Policy` response header allows a site to control the use of bro
     deprecated = False
     valid_in_requests = False
     valid_in_responses = True
-    structured_field = True
     sf_type = "dictionary"
 
     def evaluate(self, add_note: AddNoteMethodType) -> None:

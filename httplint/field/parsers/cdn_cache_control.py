@@ -1,6 +1,6 @@
 from http_sf import Token
 
-from httplint.field import HttpField
+from httplint.field.structured_field import StructuredField
 from httplint.field.tests import FieldTest, FakeRequestLinter
 from httplint.field.parsers.cache_control import KNOWN_CC
 from httplint.types import AddNoteMethodType
@@ -8,7 +8,7 @@ from httplint.note import Note, categories, levels
 from httplint.field.notes import RESPONSE_HDR_IN_REQUEST
 
 
-class cdn_cache_control(HttpField):
+class cdn_cache_control(StructuredField):
     canonical_name = "CDN-Cache-Control"
     description = """\
 The `CDN-Cache-Control` header field targets cache directives to Content Delivery Networks."""
@@ -18,7 +18,6 @@ The `CDN-Cache-Control` header field targets cache directives to Content Deliver
     deprecated = False
     valid_in_requests = False
     valid_in_responses = True
-    structured_field = True
     sf_type = "dictionary"
 
     def evaluate(self, add_note: AddNoteMethodType) -> None:

@@ -15,7 +15,6 @@ from typing import (
 )
 import unittest
 
-import http_sf
 
 from httplint.syntax import rfc9110
 from httplint.types import (
@@ -65,8 +64,6 @@ class HttpField:
     nonstandard_syntax: bool = False  # Don't check for a single value at the end.
     deprecated: bool = False
     no_coverage: bool = False  # Turns off coverage checks.
-    structured_field: bool = False
-    sf_type: str = "item"  # item, list, dict
 
     def __init__(self, wire_name: str, message: "HttpMessageLinter") -> None:
         self.wire_name = wire_name.strip()
@@ -98,11 +95,6 @@ class HttpField:
         """
         Basic input processing on a new field value.
         """
-
-        # handle structured fields separately during finish
-        if self.structured_field:
-            self.value.append(field_value)
-            return
 
         # split before processing if a list field
         if self.list_header:
@@ -146,48 +138,11 @@ class HttpField:
         if not re.match(f"^{rfc9110.token}$", self.wire_name, RE_FLAGS):
             add_note(FIELD_NAME_BAD_SYNTAX)
 
-        if self.structured_field:
-            combined_value = ", ".join(self.value).strip()
-            parsed_value: Any = None
-
-            def on_duplicate_key(key: str, context: str) -> None:
-                add_note(DUPLICATE_KEY, key=key, context=context)
-
-            try:
-                if self.sf_type == "list":
-                    _, parsed_value = http_sf.parse_list(
-                        combined_value.encode("utf-8"),
-                        on_duplicate_key=on_duplicate_key,
-                    )
-                elif self.sf_type == "dictionary":
-                    _, parsed_value = http_sf.parse_dictionary(
-                        combined_value.encode("utf-8"),
-                        on_duplicate_key=on_duplicate_key,
-                    )
-                elif self.sf_type == "item":
-                    _, parsed_value = http_sf.parse_item(
-                        combined_value.encode("utf-8"),
-                        on_duplicate_key=on_duplicate_key,
-                    )
-                else:
-                    raise ValueError(f"Unknown sf_type: {self.sf_type}")
-                self.value = parsed_value
-            except ValueError as why:
-                add_note(STRUCTURED_FIELD_PARSE_ERROR, error=f"{why}")
-                self.value = None
-            except Exception as why:  # pylint: disable=broad-except
-                add_note(STRUCTURED_FIELD_PARSE_ERROR, error=f"{why}")
-                self.value = None
-
         if self.deprecated:
             deprecation_ref = getattr(self, "deprecation_ref", self.reference)
             add_note(FIELD_DEPRECATED, deprecation_ref=deprecation_ref)
 
-        if (
-            not self.list_header
-            and not self.nonstandard_syntax
-            and not self.structured_field
-        ):
+        if not self.list_header and not self.nonstandard_syntax:
             if not self.value:
                 self.value = None
             elif len(self.value) == 1:
@@ -196,4 +151,5 @@ class HttpField:
                 add_note(SINGLE_HEADER_REPEAT)
                 self.value = self.value[-1]
 
-        self.evaluate(add_note)
+        if self.value is not None:
+            self.evaluate(add_note)

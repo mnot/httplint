@@ -1,10 +1,10 @@
-from httplint.field import HttpField
+from httplint.field.structured_field import StructuredField
 from httplint.field.tests import FieldTest
 from httplint.note import Note, categories, levels
 from httplint.types import AddNoteMethodType
 
 
-class cache_group_invalidation(HttpField):
+class cache_group_invalidation(StructuredField):
     canonical_name = "Cache-Group-Invalidation"
     description = """\
 The `Cache-Group-Invalidation` header field allows a response to invalidate a group of cached
@@ -15,7 +15,6 @@ responses."""
     deprecated = False
     valid_in_requests = False
     valid_in_responses = True
-    structured_field = True
     sf_type = "list"
 
     def evaluate(self, add_note: AddNoteMethodType) -> None:

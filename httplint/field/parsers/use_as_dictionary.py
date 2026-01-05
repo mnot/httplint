@@ -1,12 +1,12 @@
 from typing import List, Union
 
-from httplint.field import HttpField
+from httplint.field.structured_field import StructuredField
 from httplint.field.tests import FieldTest
 from httplint.note import Note, categories, levels
 from httplint.types import AddNoteMethodType
 
 
-class use_as_dictionary(HttpField):
+class use_as_dictionary(StructuredField):
     canonical_name = "Use-As-Dictionary"
     description = """\
 The `Use-As-Dictionary` header field is used by a server to indicate that the response can be used
@@ -17,7 +17,6 @@ as a compression dictionary for future requests."""
     deprecated = False
     valid_in_requests = False
     valid_in_responses = True
-    structured_field = True
     sf_type = "dictionary"
 
     def evaluate(self, add_note: AddNoteMethodType) -> None:
