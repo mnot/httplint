@@ -1,4 +1,5 @@
-from typing import NamedTuple, Optional
+from dataclasses import dataclass
+from typing import Optional
 
 from httplint.field.singleton_field import SingletonField
 from httplint.field.tests import FieldTest
@@ -9,7 +10,8 @@ from httplint.syntax import rfc9110
 from httplint.types import AddNoteMethodType
 
 
-class ContentRangeValue(NamedTuple):
+@dataclass
+class ContentRangeValue:
     unit: str
     first_byte_pos: Optional[int]
     last_byte_pos: Optional[int]

@@ -1,4 +1,5 @@
-from typing import NamedTuple, Optional
+from dataclasses import dataclass
+from typing import Optional
 
 from httplint.field import HttpField
 from httplint.field.tests import FieldTest
@@ -9,7 +10,8 @@ from httplint.types import AddNoteMethodType
 from httplint.note import Note, categories, levels
 
 
-class AcceptLanguageValue(NamedTuple):
+@dataclass
+class AcceptLanguageValue:
     language: str
     q: Optional[float]
 

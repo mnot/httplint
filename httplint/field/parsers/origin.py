@@ -1,4 +1,5 @@
-from typing import List, NamedTuple, Union
+from dataclasses import dataclass
+from typing import List, Union
 import re
 
 from httplint.field.singleton_field import SingletonField
@@ -8,7 +9,8 @@ from httplint.types import AddNoteMethodType
 from httplint.note import Note, categories, levels
 
 
-class OriginValue(NamedTuple):
+@dataclass
+class OriginValue:
     scheme: str
     host: str
     port: Union[int, None]

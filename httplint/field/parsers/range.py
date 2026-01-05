@@ -1,4 +1,5 @@
-from typing import NamedTuple, List, Tuple, Optional
+from dataclasses import dataclass
+from typing import List, Tuple, Optional
 
 from httplint.field.singleton_field import SingletonField
 from httplint.field.tests import FieldTest
@@ -8,7 +9,8 @@ from httplint.syntax import rfc9110
 from httplint.types import AddNoteMethodType
 
 
-class RangeValue(NamedTuple):
+@dataclass
+class RangeValue:
     unit: str
     ranges: List[Tuple[Optional[int], Optional[int]]]
 
