@@ -152,6 +152,13 @@ When _list_header_ is `True`, _value_ is a list of the results of calling _parse
 `False`, it is a single value, representing the most recent call to _parse_.
 
 
+#### The _post_check_ method
+
+_post_check_ is called with two arguments, `message` (the message linter instance) and `add_note`.
+
+It is called after the entire message has been processed, including the body and other post-parsing steps (like checking for cacheability). This is the appropriate place for checks that rely on the state of the message derived from other fields or the body.
+
+
 #### The _message_ instance variable
 
 Some checks may need to access other parts of the message; for example, the HTTP status code. You

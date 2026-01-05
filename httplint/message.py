@@ -1,3 +1,4 @@
+from functools import partial
 import codecs
 import hashlib
 import re
@@ -119,6 +120,16 @@ class HttpMessageLinter:
             if self.content_length:
                 self.notes.add("message", CONTENT_NOT_ALLOWED)
         self.post_checks()
+
+        for section in [self.headers, self.trailers]:
+            for handler in section.handlers.values():
+                field_add_note = partial(
+                    self.notes.add,
+                    f"field-{handler.canonical_name.lower()}",
+                    field_name=handler.canonical_name,
+                    field_type=section.is_trailer and L_("trailer") or L_("header"),
+                )
+                handler.post_check(self, field_add_note)
 
     def can_have_content(self) -> bool:
         "Say whether this message can have content."

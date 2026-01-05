@@ -87,6 +87,13 @@ class HttpField:
         field's values.
         """
 
+    def post_check(
+        self, message: "HttpMessageLinter", add_note: AddNoteMethodType
+    ) -> None:
+        """
+        Called after the message is complete and other processing has occurred.
+        """
+
     def handle_input(self, field_value: str, add_note: AddNoteMethodType) -> None:
         """
         Basic input processing on a new field value.

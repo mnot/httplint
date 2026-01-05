@@ -1,6 +1,8 @@
 from typing import Any, List, Tuple, Type, Iterable
+from functools import partial
 import unittest
 
+from httplint.i18n import L_
 from httplint.note import Note
 from httplint.message import HttpResponseLinter, HttpMessageLinter, HttpRequestLinter
 
@@ -67,6 +69,16 @@ class FieldTest(unittest.TestCase):
             return self.skipTest("no name")
         name = self.name.encode("utf-8")
         self.message.headers.process([(name, val) for val in self.inputs])
+        if self.name.lower() in self.message.headers.handlers:
+            handler = self.message.headers.handlers[self.name.lower()]
+            field_add_note = partial(
+                self.message.notes.add,
+                f"field-{handler.canonical_name.lower()}",
+                field_name=handler.canonical_name,
+                field_type=L_("header"),
+            )
+            handler.post_check(self.message, field_add_note)
+
         out = self.message.headers.parsed.get(
             self.name.lower(), "HEADER HANDLER NOT FOUND"
         )
