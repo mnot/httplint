@@ -77,8 +77,9 @@ class ACCEPT_CH_IN_PLAIN_HTTP(Note):
     level = levels.WARN
     _summary = "Accept-CH is ignored over plain HTTP."
     _text = """\
-The `Accept-CH` header field should only be used on secure (HTTPS) responses. Using it over plain HTTP
-exposes the user's information to network observers. Because of this, browsers will ignore the header."""
+The `Accept-CH` header field should only be used on secure (HTTPS) responses. Using it over plain
+HTTP exposes the user's information to network observers. Because of this, browsers will ignore the
+header."""
 
 
 class ACCEPT_CH_MISSING_VARY(Note):
