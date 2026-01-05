@@ -474,9 +474,8 @@ class SET_COOKIE_VALUE_TOO_LARGE(Note):
     level = levels.INFO
     _summary = "The %(cookie_name)s Set-Cookie value is large."
     _text = """\
-The `Set-Cookie` value is %(set_cookie_value_length)s long.
-
-This may be wasteful."""
+This `Set-Cookie` value is %(set_cookie_value_length)s long.
+"""
 
 
 class ValueTooLargeSCTest(FieldTest):

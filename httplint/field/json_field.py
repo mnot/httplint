@@ -18,7 +18,9 @@ class JsonField(HttpField):
     nonstandard_syntax = True
     syntax = False
 
-    def handle_input(self, field_value: str, add_note: AddNoteMethodType) -> None:
+    def handle_input(
+        self, field_value: str, add_note: AddNoteMethodType, offset: int
+    ) -> None:
         self.value.append(field_value)
 
     def finish(self, message: "HttpMessageLinter", add_note: AddNoteMethodType) -> None:

@@ -76,7 +76,9 @@ class HttpField:
         Called after the message is complete and other processing has occurred.
         """
 
-    def handle_input(self, field_value: str, add_note: AddNoteMethodType) -> None:
+    def handle_input(
+        self, field_value: str, add_note: AddNoteMethodType, offset: int
+    ) -> None:
         """
         Basic input processing on a new field value.
         """
@@ -85,7 +87,9 @@ class HttpField:
         i = 0
         for value in values:
             offset_add_note = partial(
-                self.message.notes.add, f"offset-{i}", field_name=self.canonical_name
+                self.message.notes.add,
+                f"offset-{offset}",
+                field_name=self.canonical_name,
             )
             i += 1
             if self.syntax:

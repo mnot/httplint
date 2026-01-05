@@ -20,7 +20,9 @@ class SingletonField(HttpField):
         super().__init__(wire_name, message)
         self.raw_values: List[str] = []
 
-    def handle_input(self, field_value: str, add_note: "AddNoteMethodType") -> None:
+    def handle_input(
+        self, field_value: str, add_note: "AddNoteMethodType", offset: int
+    ) -> None:
         self.raw_values.append(field_value)
 
     def finish(

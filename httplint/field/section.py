@@ -42,7 +42,6 @@ class FieldSection:
 
         for name, value in raw_fields:
             add_note = partial(self.message.notes.add, f"offset-{offset}")
-            offset += 1
 
             # track size
             field_size = len(name) + len(value)
@@ -68,7 +67,7 @@ class FieldSection:
             )
             if not handler.pre_check(self.message, field_add_note):
                 continue
-            handler.handle_input(str_value, field_add_note)
+            handler.handle_input(str_value, field_add_note, offset)
 
             if field_size > self.max_field_size:
                 add_note(
@@ -76,6 +75,7 @@ class FieldSection:
                     field_name=handler.canonical_name,
                     field_size=f_num(field_size),
                 )
+            offset += 1
 
         if self.size > self.max_total_size:
             self.message.notes.add(
