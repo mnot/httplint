@@ -9,7 +9,7 @@ if TYPE_CHECKING:
 
 # pylint: disable=line-too-long
 DEPRECATED_FIELDS = {
-    "Accept-CH-Lifetime": "https://datatracker.ietf.org/doc/html/draft-ietf-httpbis-client-hints-08#appendix-B.8"
+    "Accept-CH-Lifetime": "https://datatracker.ietf.org/doc/html/draft-ietf-httpbis-client-hints-08#appendix-B.8",
     "Accept-Charset": "https://www.rfc-editor.org/rfc/rfc9110.html#name-accept-charset",
     "C-PEP-Info": "https://datatracker.ietf.org/doc/status-change-http-experiments-to-historic/",
     "Pragma": "https://www.rfc-editor.org/rfc/rfc9111.html#name-pragma",
