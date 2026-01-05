@@ -16,8 +16,6 @@ from httplint.status import StatusChecker
 from httplint.content_type import verify_content_type
 from httplint.field.notes import (
     MISSING_USER_AGENT,
-    AVAILABLE_DICTIONARY_MISSING_AE,
-    DICTIONARY_COMPRESSED_MISSING_VARY,
 )
 from httplint.i18n import L_, translate
 
@@ -205,15 +203,6 @@ class HttpRequestLinter(HttpMessageLinter):
     def post_checks(self) -> None:
         if "user-agent" not in self.headers.parsed:
             self.notes.add("field-user-agent", MISSING_USER_AGENT)
-        if "available-dictionary" in self.headers.parsed:
-            ae_values = self.headers.parsed.get("accept-encoding", [])
-            has_dictionary_support = False
-            for enc, _params in ae_values:
-                if enc in ["dcb", "dcz"]:
-                    has_dictionary_support = True
-                    break
-            if not has_dictionary_support:
-                self.notes.add("field-accept-encoding", AVAILABLE_DICTIONARY_MISSING_AE)
 
         if self.content_length > 0 and self.method in [
             "GET",
@@ -267,13 +256,6 @@ class HttpResponseLinter(HttpMessageLinter):
         self.caching = ResponseCacheChecker(self)
         StatusChecker(self, cast(Optional[HttpRequestLinter], self.related))
         verify_content_type(self)
-
-        ce_values = self.headers.parsed.get("content-encoding", [])
-        if any(enc in ["dcb", "dcz"] for enc in ce_values):
-            if self.caching.store_shared or self.caching.store_private:
-                vary_values = self.headers.parsed.get("vary", set())
-                if "available-dictionary" not in vary_values:
-                    self.notes.add("field-vary", DICTIONARY_COMPRESSED_MISSING_VARY)
 
 
 class CL_CORRECT(Note):
