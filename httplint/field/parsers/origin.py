@@ -66,7 +66,9 @@ the string "null"."""
 class OriginTest(FieldTest):
     name = "Origin"
     inputs = [b"https://example.com"]
-    expected_out: Union[str, List[OriginValue]] = [OriginValue("https", "example.com", None)]
+    expected_out: Union[str, List[OriginValue]] = [
+        OriginValue("https", "example.com", None)
+    ]
 
     def test_null(self) -> None:
         self.inputs = [b"null"]

@@ -65,17 +65,12 @@ The `Cookie` header field contains stored HTTP cookies previously sent by the se
 class CookieTest(FieldTest):
     name = "Cookie"
     inputs = [b"SID=31d4d96e407aad42"]
-    expected_out = [
-        [CookiePair("SID", "31d4d96e407aad42")]
-    ]
+    expected_out = [[CookiePair("SID", "31d4d96e407aad42")]]
 
     def test_multiple_pairs(self) -> None:
         self.inputs = [b"SID=31d4d96e407aad42; lang=en-US"]
         self.expected_out = [
-            [
-                CookiePair("SID", "31d4d96e407aad42"),
-                CookiePair("lang", "en-US")
-            ]
+            [CookiePair("SID", "31d4d96e407aad42"), CookiePair("lang", "en-US")]
         ]
         self.setUp()
         self.test_header()
@@ -86,7 +81,7 @@ class CookieTest(FieldTest):
         # Each parse returns a list of CookiePairs.
         self.expected_out = [
             [CookiePair("SID", "31d4d96e407aad42")],
-            [CookiePair("lang", "en-US")]
+            [CookiePair("lang", "en-US")],
         ]
         self.setUp()
         self.test_header()
