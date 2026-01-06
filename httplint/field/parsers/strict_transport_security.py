@@ -73,7 +73,11 @@ browsers that it should only be communicated with using HTTPS, instead of using 
         parsed = self.value  # already done by SingletonField
 
         if parsed["preload"]:
-            if parsed["includesubdomains"] and parsed["max-age"] >= 1536000:
+            if (
+                parsed["includesubdomains"]
+                and parsed["max-age"] is not None
+                and parsed["max-age"] >= 1536000
+            ):
                 notes_to_add.append(HSTS_PRELOAD)
             else:
                 notes_to_add.append(HSTS_PRELOAD_NOT_SUITABLE)
@@ -383,6 +387,20 @@ class HSTSNoSubdomainsTest(FieldTest):
     inputs = [b"max-age=31536000"]
     expected_out = {"max-age": 31536000, "includesubdomains": False, "preload": False}
     expected_notes = [HSTS_NO_SUBDOMAINS, HSTS_NO_PRELOAD, HSTS_VALID]
+
+    def set_context(self, message: HttpMessageLinter) -> None:
+        message.base_uri = "https://www.example.com/"
+
+class HSTSPreloadMissingMaxAgeTest(FieldTest):
+    name = "Strict-Transport-Security"
+    inputs = [b"includeSubDomains; preload"]
+    expected_out = {"max-age": None, "includesubdomains": True, "preload": True}
+    expected_notes = [
+        HSTS_PRELOAD_NOT_SUITABLE,
+        HSTS_NO_MAX_AGE,
+        HSTS_SUBDOMAINS,
+        HSTS_INVALID,
+    ]
 
     def set_context(self, message: HttpMessageLinter) -> None:
         message.base_uri = "https://www.example.com/"
