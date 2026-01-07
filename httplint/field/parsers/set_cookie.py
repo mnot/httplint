@@ -419,7 +419,9 @@ class SET_COOKIE_NOT_SECURE(Note):
     _text = """\
 The `Secure` attribute on this `Set-Cookie` header is missing.
 
-Browsers will ignore it."""
+Because the `SameSite` attribute is set to `None`, the `Secure` attribute is required.
+
+Browsers will ignore this cookie."""
 
 
 class SET_COOKIE_UNKNOWN_ATTRIBUTE(Note):
