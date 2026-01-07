@@ -409,6 +409,9 @@ class SET_COOKIE_EMPTY_DOMAIN(Note):
     _text = """\
 The `domain` parameter on this `Set-Cookie` header is empty.
 
+Note that handling of empty domains is 
+[not interoperable](https://chromestatus.com/feature/5674723800252416).
+
 Browsers will probably ignore it as a result."""
 
 
