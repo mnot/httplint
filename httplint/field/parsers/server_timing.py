@@ -61,7 +61,7 @@ class SERVER_TIMING_BAD_PARAM(Note):
     category = categories.GENERAL
     level = levels.WARN
     _summary = (
-        "The '%(param)s' parameter on the '%(metric)s' metric has an invalid value."
+        "The '%(param)s' parameter on the '%(metric)s' metric has a non-numeric value."
     )
     _text = """\
 The `%(param)s` parameter on the `%(metric)s` metric of the Server-Timing header requires a
@@ -71,20 +71,24 @@ valid number, but `%(value)s` was found.
 
 class SERVER_TIMING_MISSING_DUR(Note):
     category = categories.GENERAL
-    level = levels.WARN
+    level = levels.INFO
     _summary = "The '%(metric)s' metric is missing the 'dur' parameter."
     _text = """\
 The `%(metric)s` metric in the Server-Timing header is missing the `dur` (duration) parameter.
-It is recommended to include a duration for all metrics."""
+
+This parameter isn't required, but without it browsers may not be able to usefully display it.
+"""
 
 
 class SERVER_TIMING_MISSING_DESC(Note):
     category = categories.GENERAL
-    level = levels.WARN
+    level = levels.INFO
     _summary = "The '%(metric)s' metric is missing the 'desc' parameter."
     _text = """\
 The `%(metric)s` metric in the Server-Timing header is missing the `desc` (description) parameter.
-It is recommended to include a description for all metrics."""
+
+Descriptions can help contextualise a metric when displayed.
+"""
 
 
 class ServerTimingTest(FieldTest):
