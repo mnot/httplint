@@ -11,26 +11,26 @@ from httplint.field.utils import unquote_string
 
 
 # known cache directives; assumed to not allow duplicates
-# values are (valid_in_requests, valid_in_responses, value_type)
-KNOWN_CC: Dict[str, Tuple[bool, bool, Union[None, Callable]]] = {
-    "immutable": (False, True, None),
-    "max-age": (True, True, int),
-    "max-stale": (True, False, int),
-    "min-fresh": (True, False, int),
-    "must-revalidate": (False, True, None),
-    "must-understand": (False, True, None),
-    "no-cache": (True, True, unquote_string),
-    "no-store": (True, True, None),
-    "no-transform": (True, True, None),
-    "only-if-cached": (True, False, None),
-    "private": (False, True, unquote_string),
-    "proxy-revalidate": (False, True, None),
-    "public": (False, True, None),
-    "s-maxage": (False, True, int),
-    "stale-if-error": (False, True, int),
-    "stale-while-revalidate": (False, True, int),
-    "pre-check": (False, True, int),
-    "post-check": (False, True, int),
+# values are (valid_in_requests, valid_in_responses, value_type, value_type_str)
+KNOWN_CC: Dict[str, Tuple[bool, bool, Union[None, Callable], str]] = {
+    "immutable": (False, True, None, "none"),
+    "max-age": (True, True, int, "integer"),
+    "max-stale": (True, False, int, "integer"),
+    "min-fresh": (True, False, int, "integer"),
+    "must-revalidate": (False, True, None, "none"),
+    "must-understand": (False, True, None, "none"),
+    "no-cache": (True, True, unquote_string, "quoted string"),
+    "no-store": (True, True, None, "none"),
+    "no-transform": (True, True, None, "none"),
+    "only-if-cached": (True, False, None, "none"),
+    "private": (False, True, unquote_string, "quoted string"),
+    "proxy-revalidate": (False, True, None, "none"),
+    "public": (False, True, None, "none"),
+    "s-maxage": (False, True, int, "integer"),
+    "stale-if-error": (False, True, int, "integer"),
+    "stale-while-revalidate": (False, True, int, "integer"),
+    "pre-check": (False, True, int, "integer"),
+    "post-check": (False, True, int, "integer"),
 }
 
 # cache directives and those they override. Listed in order of
@@ -112,7 +112,7 @@ ignoring it there."""
             value_func = KNOWN_CC[directive_name][2]
             if value_func is None:
                 if directive_val is not None:
-                    add_note(BAD_CC_SYNTAX, bad_directive=directive_name)
+                    add_note(CC_SHOULD_NOT_HAVE_VALUE, directive=directive_name)
             else:
                 try:
                     val = value_func(directive_val)
@@ -120,7 +120,13 @@ ignoring it there."""
                         add_note(CC_MAX_AGE_TOO_LARGE, directive=directive_name)
                     return (directive_name, val)
                 except (ValueError, TypeError):
-                    add_note(BAD_CC_SYNTAX, bad_directive=directive_name)
+                    expected_type = KNOWN_CC[directive_name][3]
+                    add_note(
+                        CC_BAD_VALUE_TYPE,
+                        directive=directive_name,
+                        expected_type=expected_type,
+                        value=directive_val,
+                    )
                     raise ValueError  # pylint: disable=raise-missing-from
         return (directive_name, directive_val)
 
@@ -193,11 +199,21 @@ ignoring it there."""
                         )
 
 
-class BAD_CC_SYNTAX(Note):
+class CC_SHOULD_NOT_HAVE_VALUE(Note):
     category = categories.CACHING
     level = levels.BAD
-    _summary = "The %(bad_directive)s cache directive's syntax is incorrect."
-    _text = "This value must be an integer."
+    _summary = "The %(directive)s cache directive does not accept a value."
+    _text = "The `%(directive)s` cache directive is a flag; it shouldn't have a value."
+
+
+class CC_BAD_VALUE_TYPE(Note):
+    category = categories.CACHING
+    level = levels.BAD
+    _summary = "The %(directive)s cache directive's value is incorrect."
+    _text = (
+        "The `%(directive)s` cache directive type is %(expected_type)s, "
+        "but `%(value)s` was found."
+    )
 
 
 class CC_MAX_AGE_TOO_LARGE(Note):
@@ -359,7 +375,7 @@ class CacheControlMaxAgeTest(FieldTest):
 class CacheControlBadMaxAgeTest(FieldTest):
     name = "Cache-Control"
     inputs = [b"max-age=foo"]
-    expected_notes = [BAD_CC_SYNTAX]
+    expected_notes = [CC_BAD_VALUE_TYPE]
 
 
 class CacheControlBigTest(FieldTest):
@@ -367,6 +383,13 @@ class CacheControlBigTest(FieldTest):
     inputs = [b"max-age=2147483649"]
     expected_out = [("max-age", 2147483649)]
     expected_notes = [CC_MAX_AGE_TOO_LARGE]
+
+
+class CacheControlValueNotAllowedTest(FieldTest):
+    name = "Cache-Control"
+    inputs = [b"no-store=foo"]
+    expected_out = [("no-store", "foo")]
+    expected_notes = [CC_SHOULD_NOT_HAVE_VALUE]
 
 
 class CacheControlDupTest(FieldTest):
