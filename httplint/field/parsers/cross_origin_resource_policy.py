@@ -74,7 +74,7 @@ class CROSS_ORIGIN_RESOURCE_POLICY_BAD_VALUE(Note):
     level = levels.WARN
     _summary = "Cross-Origin-Resource-Policy has an invalid value."
     _text = """\
-`%(value)s` is not a valid value for the `Cross-Origin-Resource-Policy` header;
+`%(value)s` is not a valid in the `Cross-Origin-Resource-Policy` header;
 it must be one of `same-origin`, `same-site`, or `cross-origin`.
 """
 
