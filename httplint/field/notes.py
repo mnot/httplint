@@ -25,6 +25,17 @@ The value for this field doesn't conform to its specified syntax; see [its
 definition](%(ref_uri)s) for more information."""
 
 
+class BAD_SYNTAX_DETAILED(BAD_SYNTAX):
+    category = categories.GENERAL
+    level = levels.BAD
+    _summary = "The %(field_name)s field value isn't valid."
+    _text = """\
+The value `%(value)s` for this field doesn't conform to its specified syntax; see [its
+definition](%(ref_uri)s) for more information.
+
+%(problem)s"""
+
+
 class PARAM_STAR_QUOTED(Note):
     category = categories.GENERAL
     level = levels.BAD

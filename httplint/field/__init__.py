@@ -99,7 +99,18 @@ class HttpField:
                     else self.syntax
                 )
                 if not re.match(rf"^\s*(?:{element_syntax})\s*$", value, RE_FLAGS):
-                    offset_add_note(BAD_SYNTAX, ref_uri=self.reference)
+                    match = re.match(rf"^\s*(?:{element_syntax})", value, RE_FLAGS)
+                    if match:
+                        bad_char_index = match.end()
+                        problem = f"The invalid character '{value[bad_char_index]}' was found at position {bad_char_index}."
+                    else:
+                        problem = "The value does not start with a valid character."
+                    offset_add_note(
+                        BAD_SYNTAX_DETAILED,
+                        ref_uri=self.reference,
+                        value=value,
+                        problem=problem,
+                    )
             try:
                 parsed_value = self.parse(value.strip(), offset_add_note)
             except ValueError:

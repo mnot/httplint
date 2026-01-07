@@ -92,9 +92,22 @@ class FieldTest(unittest.TestCase):
 
         collect_notes(self.message.notes)
 
-        diff = {n.__name__ for n in self.expected_notes}.symmetric_difference(
-            {n.__class__.__name__ for n in all_notes}
-        )
+        actual_notes = {n.__class__ for n in all_notes}
+        expected_notes_set = set(self.expected_notes)
+
+        missing_expected = {
+            n.__name__
+            for n in expected_notes_set
+            if not any(issubclass(a, n) for a in actual_notes)
+        }
+
+        unexpected_actual = {
+            n.__name__
+            for n in actual_notes
+            if not any(issubclass(n, e) for e in expected_notes_set)
+        }
+
+        diff = missing_expected | unexpected_actual
         for message in all_notes:  # check formatting
             message.vars.update({"field_name": self.name, "response": "response"})
             self.assertTrue(message.detail)

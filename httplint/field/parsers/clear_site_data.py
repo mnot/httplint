@@ -3,6 +3,7 @@ from httplint.field.tests import FieldTest
 from httplint.note import Note, categories, levels
 from httplint.syntax.rfc9110 import list_rule, quoted_string
 from httplint.types import AddNoteMethodType
+from httplint.field.notes import BAD_SYNTAX
 
 
 class clear_site_data(HttpField):
@@ -85,3 +86,10 @@ class ClearSiteDataTrulyEmptyTest(FieldTest):
     inputs = [b""]
     expected_out = []
     expected_notes = [CSD_EMPTY]
+
+
+class ClearSiteDataBadSyntaxTest(FieldTest):
+    name = "Clear-Site-Data"
+    inputs = [b"foo"]
+    expected_out = ["o"]
+    expected_notes = [BAD_SYNTAX, CSD_UNKNOWN_VALUE]
