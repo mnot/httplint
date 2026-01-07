@@ -1,4 +1,5 @@
 from typing import Any
+from urllib.parse import urljoin, urlsplit
 
 from httplint.field.structured_field import StructuredField
 from httplint.field.tests import FieldTest
@@ -25,7 +26,9 @@ API."""
                 add_note(BAD_REPORTING_ENDPOINT_SYNTAX, name=name, value=url)
                 continue
 
-            if not url.startswith("https://"):
+            target = urljoin(self.message.base_uri, url)
+            parsed = urlsplit(target)
+            if parsed.scheme and parsed.scheme.lower() not in ["https", "wss"]:
                 add_note(ENDPOINT_NOT_SECURE, name=name, url=url)
 
 
@@ -63,3 +66,23 @@ class ReportingEndpointsBadSyntaxTest(FieldTest):
     inputs = [b"endpoint=123"]
     expected_out: Any = {"endpoint": (123, {})}
     expected_notes = [BAD_REPORTING_ENDPOINT_SYNTAX]
+
+
+class ReportingEndpointsRelativeTest(FieldTest):
+    name = "Reporting-Endpoints"
+    inputs = [b'endpoint="/reports"']
+    expected_out: Any = {"endpoint": ("/reports", {})}
+    expected_notes = []
+
+    def set_context(self, message: Any) -> None:
+        message.base_uri = "https://example.com/"
+
+
+class ReportingEndpointsInsecureBaseTest(FieldTest):
+    name = "Reporting-Endpoints"
+    inputs = [b'endpoint="/reports"']
+    expected_out: Any = {"endpoint": ("/reports", {})}
+    expected_notes = [ENDPOINT_NOT_SECURE]
+
+    def set_context(self, message: Any) -> None:
+        message.base_uri = "http://example.com/"
