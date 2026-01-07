@@ -164,7 +164,7 @@ def _process_cookie_attribute(  # pylint: disable=too-many-branches,too-many-arg
         if attribute_value == "":
             add_note(SET_COOKIE_EMPTY_MAX_AGE, cookie_name=cookie_name)
             return lifetime_note_added
-        if attribute_value[0] == "0":
+        if attribute_value[0] == "0" and len(attribute_value) > 1:
             add_note(SET_COOKIE_LEADING_ZERO_MAX_AGE, cookie_name=cookie_name)
         if not attribute_value.isdigit():
             add_note(SET_COOKIE_NON_DIGIT_MAX_AGE, cookie_name=cookie_name)
