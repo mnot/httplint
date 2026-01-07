@@ -391,6 +391,7 @@ class HSTSNoSubdomainsTest(FieldTest):
     def set_context(self, message: HttpMessageLinter) -> None:
         message.base_uri = "https://www.example.com/"
 
+
 class HSTSPreloadMissingMaxAgeTest(FieldTest):
     name = "Strict-Transport-Security"
     inputs = [b"includeSubDomains; preload"]

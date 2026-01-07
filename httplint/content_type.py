@@ -27,9 +27,9 @@ def verify_content_type(linter: "HttpMessageLinter") -> None:
 
     # Don't verify content type for responses that don't carry a full representation
     status_code = getattr(linter, "status_code", None)
-    if status_code in [204, 205, 304, 206] + list(range(100, 199)):
-        return
-    if getattr(linter, "is_head_response", False):
+    if status_code in [204, 205, 304, 206] + list(range(100, 199)) or getattr(
+        linter, "is_head_response", False
+    ):
         return
 
     # Get the declared content type
@@ -46,6 +46,12 @@ def verify_content_type(linter: "HttpMessageLinter") -> None:
         return
 
     if str(sniffed_type) != declared_type:
+        # workaround for https://github.com/mnot/httplint/issues/112
+        if declared_type == "text/html" and str(sniffed_type) in [
+            "application/rss+xml",
+            "application/atom+xml",
+        ]:
+            return
         linter.notes.add(
             "content-type",
             CONTENT_TYPE_MISMATCH,
