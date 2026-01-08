@@ -24,6 +24,7 @@ that were used to select the representation."""
         return field_value.lower()
 
     def evaluate(self, add_note: AddNoteMethodType) -> None:
+        self.value = list(dict.fromkeys(self.value))
         if "*" in self.value:
             add_note(VARY_ASTERISK)
         if len(self.value) > 3:
@@ -111,3 +112,10 @@ class VaryNegotiateTest(FieldTest):
     inputs = [b"Negotiate"]
     expected_out = ["negotiate"]
     expected_notes = [VARY_NEGOTIATE]
+
+
+class VaryDuplicateTest(FieldTest):
+    name = "Vary"
+    inputs = [b"a, b", b"a, c"]
+    expected_out = ["a", "b", "c"]
+    expected_notes = []
