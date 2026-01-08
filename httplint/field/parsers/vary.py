@@ -24,6 +24,8 @@ that were used to select the representation."""
         return field_value.lower()
 
     def evaluate(self, add_note: AddNoteMethodType) -> None:
+        if len(self.value) != len(set(self.value)):
+            add_note(VARY_DUPLICATE)
         self.value = list(dict.fromkeys(self.value))
         if "*" in self.value:
             add_note(VARY_ASTERISK)
@@ -89,6 +91,17 @@ is not widely supported.
 Consider removing it."""
 
 
+class VARY_DUPLICATE(Note):
+    category = categories.CACHING
+    level = levels.WARN
+    _summary = "The Vary header contains duplicate values."
+    _text = """\
+The `Vary` header allows you to list the parts of the request that effectively change the response
+representation.
+
+Listing the same header more than once is redundant and can be confusing."""
+
+
 class VARY_COMPLEX(Note):
     category = categories.CACHING
     level = levels.WARN
@@ -118,4 +131,4 @@ class VaryDuplicateTest(FieldTest):
     name = "Vary"
     inputs = [b"a, b", b"a, c"]
     expected_out = ["a", "b", "c"]
-    expected_notes = []
+    expected_notes = [VARY_DUPLICATE]
