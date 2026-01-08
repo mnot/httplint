@@ -102,7 +102,10 @@ class HttpField:
                     match = re.match(rf"^\s*(?:{element_syntax})", value, RE_FLAGS)
                     if match:
                         bad_char_index = match.end()
-                        problem = f"The invalid character '{value[bad_char_index]}' was found at position {bad_char_index}."
+                        problem = (
+                            f"The invalid character '{value[bad_char_index]}'"
+                            f"was found at position {bad_char_index}."
+                        )
                     else:
                         problem = "The value does not start with a valid character."
                     offset_add_note(
