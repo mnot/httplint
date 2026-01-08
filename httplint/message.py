@@ -208,13 +208,18 @@ class HttpRequestLinter(HttpMessageLinter):
         if "user-agent" not in self.headers.parsed:
             self.notes.add("field-user-agent", MISSING_USER_AGENT)
 
-        if self.content_length > 0 and self.method in [
-            "GET",
-            "HEAD",
-            "DELETE",
-            "CONNECT",
-            "TRACE",
-        ] and not self.no_content:
+        if (
+            self.content_length > 0
+            and self.method
+            in [
+                "GET",
+                "HEAD",
+                "DELETE",
+                "CONNECT",
+                "TRACE",
+            ]
+            and not self.no_content
+        ):
             self.notes.add("message", REQUEST_CONTENT_NOT_DEFINED, method=self.method)
 
 
