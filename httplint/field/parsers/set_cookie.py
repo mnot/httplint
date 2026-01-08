@@ -8,6 +8,7 @@ from httplint.field import RFC6265
 from httplint.field.tests import FieldTest
 from httplint.note import Note, categories, levels
 from httplint.types import AddNoteMethodType
+from httplint.util import relative_time
 
 CookieType = Tuple[str, str, List[Tuple[str, Union[str, int]]]]
 
@@ -157,7 +158,11 @@ def _process_cookie_attribute(  # pylint: disable=too-many-branches,too-many-arg
             and expiry_time > current_time + 34560000
             and not lifetime_note_added
         ):
-            add_note(SET_COOKIE_LIFETIME_TOO_LONG, cookie_name=cookie_name)
+            add_note(
+                SET_COOKIE_LIFETIME_TOO_LONG,
+                cookie_name=cookie_name,
+                duration=relative_time(expiry_time, current_time, show_sign=0),
+            )
             lifetime_note_added = True
 
     elif case_norm_attribute_name == "max-age":
@@ -172,7 +177,11 @@ def _process_cookie_attribute(  # pylint: disable=too-many-branches,too-many-arg
         delta_seconds = int(attribute_value)
         cookie_attribute_list.append(("Max-Age", delta_seconds))
         if delta_seconds > 34560000 and not lifetime_note_added:
-            add_note(SET_COOKIE_LIFETIME_TOO_LONG, cookie_name=cookie_name)
+            add_note(
+                SET_COOKIE_LIFETIME_TOO_LONG,
+                cookie_name=cookie_name,
+                duration=relative_time(delta_seconds, 0, show_sign=0),
+            )
             lifetime_note_added = True
 
     elif case_norm_attribute_name == "domain":
@@ -495,7 +504,8 @@ class SET_COOKIE_LIFETIME_TOO_LONG(Note):
     level = levels.WARN
     _summary = "The %(cookie_name)s Set-Cookie header has a lifetime that is too long."
     _text = """\
-The `Set-Cookie` header has a lifetime (Max-Age or Expires) that is greater than 400 days.
+The `Set-Cookie` header has a lifetime (Max-Age or Expires) of %(duration)s, which is greater than
+400 days.
 
 Browsers will cap the lifetime to 400 days."""
 
