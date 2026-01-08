@@ -235,6 +235,12 @@ def _process_cookie_attribute(  # pylint: disable=too-many-branches,too-many-arg
     elif case_norm_attribute_name == "partitioned":
         cookie_attribute_list.append(("Partitioned", ""))
 
+    elif case_norm_attribute_name == "priority":
+        add_note(SET_COOKIE_PRIORITY, cookie_name=cookie_name)
+
+    elif case_norm_attribute_name == "version":
+        add_note(SET_COOKIE_VERSION, cookie_name=cookie_name)
+
     else:
         add_note(
             SET_COOKIE_UNKNOWN_ATTRIBUTE,
@@ -444,6 +450,29 @@ class SET_COOKIE_UNKNOWN_ATTRIBUTE(Note):
 This cookie has an extra parameter, "%(attribute)s".
 
 Browsers will ignore it."""
+
+
+class SET_COOKIE_PRIORITY(Note):
+    category = categories.GENERAL
+    level = levels.WARN
+    _summary = "The 'Priority' Set-Cookie attribute is deprecated."
+    _text = """\
+The `Priority` attribute was an experiment, and is no longer supported.
+"""
+
+
+class SET_COOKIE_VERSION(Note):
+    category = categories.GENERAL
+    level = levels.WARN
+    _summary = "The 'Version Set-Cookie attribute is deprecated."
+    _text = """\
+The `Version` attribute is no longer part of the `Set-Cookie` specification,
+and is ignored by browsers.
+
+Because some software still interprets cookies differently when it is present,
+[it can cause security 
+issues](https://portswigger.net/research/bypassing-wafs-with-the-phantom-version-cookie).
+"""
 
 
 class SET_COOKIE_UNKNOWN_ATTRIBUTE_VALUE(Note):
@@ -735,3 +764,17 @@ class SetCookieNameDupTest(FieldTest):
     inputs = [b"a=1; Path=/", b"a=2; Path=/"]
     expected_out = [("a", "1", [("Path", "/")]), ("a", "2", [("Path", "/")])]
     expected_notes = [SET_COOKIE_NAME_DUP]
+
+
+class SetCookiePriorityTest(FieldTest):
+    name = "Set-Cookie"
+    inputs = [b"a=1; Priority=High"]
+    expected_out = [("a", "1", [])]
+    expected_notes = [SET_COOKIE_PRIORITY]
+
+
+class SetCookieVersionTest(FieldTest):
+    name = "Set-Cookie"
+    inputs = [b"a=1; Version=1"]
+    expected_out = [("a", "1", [])]
+    expected_notes = [SET_COOKIE_VERSION]
