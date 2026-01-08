@@ -190,6 +190,8 @@ _post_check_ is called with two arguments, `message` (the message linter instanc
 
 It is called after the entire message has been processed, including the body and other post-parsing steps (like checking for cacheability). This is the appropriate place for checks that rely on the state of the message derived from other fields or the body.
 
+Note that if `message.no_content` is set, the body will not be processed, so checks relying on it should be skipped.
+
 
 #### The _message_ instance variable
 
@@ -207,6 +209,8 @@ The `_summary` field of a Note is plain text and should be reasonably short (e.g
 The `_text` field of a Note is markdown. That means it should NOT be indented. In REDbot, it's what's displayed when you hover over the summary.
 
 Common notes used by multiple fields should be in `httplint/field/notes.py`. When possible, bias towards emitting a single note for a condition with details in `_text`, rather than creating multiple notes.
+
+When reporting a syntax error, prefer `BAD_SYNTAX_DETAILED` over `BAD_SYNTAX` if you can provide the specific value that failed and the reason why. `BAD_SYNTAX_DETAILED` takes `value` and `problem` arguments to populate the note details.
 
 Notes can also have child notes (sub-notes) attached to them. To do so, call `add_child` on the
 parent note instance (returned by `add_note`). `add_child` takes the Note class and any variables

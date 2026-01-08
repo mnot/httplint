@@ -34,6 +34,12 @@ linter.feed_content(b'67890')
 linter.finish_content(True)
 ~~~
 
+You can also enable `no_content` mode if you do not have the message body, or do not wish to check it:
+
+~~~ python
+linter = HttpResponseLinter(no_content=True)
+~~~
+
 ## Using httplint from the Command Line
 
 httplint can also be used from the command line. For example:

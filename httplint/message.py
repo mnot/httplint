@@ -23,6 +23,7 @@ from httplint.i18n import L_, translate
 class HttpMessageParams(TypedDict):
     start_time: NotRequired[Optional[float]]
     related: NotRequired["HttpMessageLinter"]
+    no_content: NotRequired[bool]
 
 
 class HttpMessageLinter:
@@ -36,11 +37,13 @@ class HttpMessageLinter:
         self,
         start_time: Optional[float] = None,
         related: Optional["HttpMessageLinter"] = None,
+        no_content: bool = False,
     ) -> None:
         self.notes = Notes({"message_type": translate(self.message_type)})
         self.related = related
         self.start_time = start_time
         self.finish_time: Optional[float] = None
+        self.no_content = no_content
 
         self.version: str = ""
         self.base_uri: str = ""
@@ -88,8 +91,9 @@ class HttpMessageLinter:
         Each processor in content_processors will be run over the chunk.
         """
         self.content_length += len(chunk)
-        self._hash_processor.update(chunk)
-        self.decoded.feed_content(chunk)
+        if not self.no_content:
+            self._hash_processor.update(chunk)
+            self.decoded.feed_content(chunk)
 
     def finish_content(
         self, complete: bool, trailers: Optional[RawFieldListType] = None
@@ -105,7 +109,7 @@ class HttpMessageLinter:
         self.decoded.finish_content()
 
         if self.can_have_content():
-            if "content-length" in self.headers.parsed:
+            if "content-length" in self.headers.parsed and not self.no_content:
                 if self.content_length == self.headers.parsed["content-length"]:
                     self.notes.add("field-content-length", CL_CORRECT)
                 else:
@@ -115,7 +119,7 @@ class HttpMessageLinter:
                         content_length=f_num(self.content_length),
                     )
         else:
-            if self.content_length:
+            if self.content_length and not self.no_content:
                 self.notes.add("message", CONTENT_NOT_ALLOWED)
         self.post_checks()
 
@@ -210,7 +214,7 @@ class HttpRequestLinter(HttpMessageLinter):
             "DELETE",
             "CONNECT",
             "TRACE",
-        ]:
+        ] and not self.no_content:
             self.notes.add("message", REQUEST_CONTENT_NOT_DEFINED, method=self.method)
 
 
@@ -255,7 +259,8 @@ class HttpResponseLinter(HttpMessageLinter):
     def post_checks(self) -> None:
         self.caching = ResponseCacheChecker(self)
         StatusChecker(self, cast(Optional[HttpRequestLinter], self.related))
-        verify_content_type(self)
+        if not self.no_content:
+            verify_content_type(self)
 
 
 class CL_CORRECT(Note):
