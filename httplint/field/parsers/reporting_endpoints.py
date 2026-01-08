@@ -23,7 +23,12 @@ API."""
             # item is (value, params)
             url = item[0]
             if not isinstance(url, str):
-                add_note(BAD_REPORTING_ENDPOINT_SYNTAX, name=name, value=url)
+                add_note(
+                    BAD_REPORTING_ENDPOINT_SYNTAX,
+                    name=name,
+                    value=url,
+                    found_type=type(url).__name__,
+                )
                 continue
 
             target = urljoin(self.message.base_uri, url)
@@ -45,7 +50,7 @@ class BAD_REPORTING_ENDPOINT_SYNTAX(Note):
     level = levels.BAD
     _summary = "The %(name)s reporting endpoint is invalid."
     _text = """\
-The reporting endpoint `%(name)s` must be a string URL. Found: %(value)s."""
+The reporting endpoint `%(name)s` must be a string URL. Found: %(value)s (type `%(found_type)s`)."""
 
 
 class ReportingEndpointsTest(FieldTest):
