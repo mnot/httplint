@@ -1,5 +1,5 @@
 import re
-from typing import Any, TYPE_CHECKING
+from typing import TYPE_CHECKING
 
 import http_sf
 
@@ -32,30 +32,27 @@ class StructuredField(HttpField):
             return
 
         combined_value = ", ".join(self.value).strip()
-        parsed_value: Any = None
 
         def on_duplicate_key(key: str, context: str) -> None:
             add_note(DUPLICATE_KEY, key=key, context=context)
 
         try:
-            if self.sf_type == "list":
-                _, parsed_value = http_sf.parse_list(
-                    combined_value.encode("utf-8"),
-                    on_duplicate_key=on_duplicate_key,
-                )
-            elif self.sf_type == "dictionary":
-                _, parsed_value = http_sf.parse_dictionary(
-                    combined_value.encode("utf-8"),
-                    on_duplicate_key=on_duplicate_key,
-                )
-            elif self.sf_type == "item":
-                _, parsed_value = http_sf.parse_item(
-                    combined_value.encode("utf-8"),
-                    on_duplicate_key=on_duplicate_key,
-                )
-            else:
-                raise ValueError(f"Unknown sf_type: {self.sf_type}")
-            self.value = parsed_value
+            self.value = http_sf.parse(
+                combined_value.encode("utf-8"),
+                tltype=self.sf_type,
+                on_duplicate_key=on_duplicate_key,
+            )
+        except http_sf.StructuredFieldError as why:
+            problem = f"{why}"
+            if hasattr(why, "position") and why.position is not None:
+                bad_char_index = why.position
+                context_start = max(0, bad_char_index - 20)
+                context_end = min(len(combined_value), bad_char_index + 20)
+                context = combined_value[context_start:context_end]
+                pointer = " " * (bad_char_index - context_start) + "^"
+                problem += f"\n\n    {context}\n    {pointer}"
+            add_note(STRUCTURED_FIELD_PARSE_ERROR, error=problem)
+            self.value = None
         except ValueError as why:
             add_note(STRUCTURED_FIELD_PARSE_ERROR, error=f"{why}")
             self.value = None
@@ -84,5 +81,6 @@ The %(field_name)s field is defined as a
 but its value can't be parsed as one. As a result, this field is likely
 to be ignored.
 
-The parser reports this error:
-    %(error)s."""
+    The parser reports this error:
+
+%(error)s"""
