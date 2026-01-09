@@ -81,6 +81,6 @@ The %(field_name)s field is defined as a
 but its value can't be parsed as one. As a result, this field is likely
 to be ignored.
 
-    The parser reports this error:
+The parser reports this error:
 
 %(error)s"""
