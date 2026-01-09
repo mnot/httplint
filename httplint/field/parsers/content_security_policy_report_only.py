@@ -24,5 +24,5 @@ the effects of a content security policy without enforcing it."""
 class CSPROTest(FieldTest):
     name = "Content-Security-Policy-Report-Only"
     inputs = [b"default-src 'self'; script-src 'unsafe-inline'"]
-    expected_out = ["default-src 'self'; script-src 'unsafe-inline'"]
+    expected_out = [{"default-src": "'self'", "script-src": "'unsafe-inline'"}]
     expected_notes = [CONTENT_SECURITY_POLICY, CSP_UNSAFE_INLINE]

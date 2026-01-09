@@ -1,5 +1,8 @@
+from typing import Any, Dict, List, Tuple
+
 from httplint.field import HttpField
 from httplint.field.tests import FieldTest
+from httplint.message import HttpMessageLinter
 from httplint.note import Note, categories, levels
 from httplint.syntax import rfc9110
 from httplint.types import AddNoteMethodType
@@ -9,6 +12,8 @@ from httplint.types import AddNoteMethodType
 DIRECTIVE_NAME = r"[a-zA-Z0-9-]+"
 # directive-value = *( WSP / <VCHAR except ";" and ","> )
 DIRECTIVE_VALUE = r"[ \t\x21-\x2B\x2D-\x3A\x3C-\x7E]*"
+
+
 csp_directive = rf"(?: {DIRECTIVE_NAME} (?: {rfc9110.RWS} {DIRECTIVE_VALUE} )? )"
 
 
@@ -26,8 +31,39 @@ sources of content that browsers are allowed to load on a page."""
     report_only_string = ""
     report_only_text = ""
 
-    def parse(self, field_value: str, add_note: AddNoteMethodType) -> str:
-        return field_value
+    def __init__(self, wire_name: str, message: "HttpMessageLinter") -> None:
+        super().__init__(wire_name, message)
+        self._deferred_notes: List[Tuple[Any, Dict[str, Any]]] = []
+
+    def parse(self, field_value: str, add_note: AddNoteMethodType) -> Dict[str, str]:
+        parsed_directives: Dict[str, str] = {}
+        directives = [d.strip() for d in field_value.split(";")]
+        duplicate_directives: List[str] = []
+
+        for directive in directives:
+            if not directive:
+                continue
+            parts = directive.split(None, 1)
+            name = parts[0].lower()
+            value = parts[1] if len(parts) > 1 else ""
+
+            if name in parsed_directives:
+                duplicate_directives.append(name)
+                continue
+            parsed_directives[name] = value
+
+        if duplicate_directives:
+            self._deferred_notes.append(
+                (
+                    CSP_DUPLICATE_DIRECTIVE,
+                    {
+                        "directives_list": self._make_list(duplicate_directives),
+                        "report_only_text": self.report_only_text,
+                    },
+                )
+            )
+
+        return parsed_directives
 
     def evaluate(self, add_note: AddNoteMethodType) -> None:
         if self.value:
@@ -39,28 +75,16 @@ sources of content that browsers are allowed to load on a page."""
         else:
             return
 
+        for note_cls, note_params in self._deferred_notes:
+            parent.add_child(note_cls, **note_params)
+
         unsafe_inline_directives = []
         unsafe_eval_directives = []
         http_uri_directives = []
         wide_open_directives = []
-        duplicate_directives = []
         deprecated_report_uri = False
 
-        for policy in self.value:
-            parsed_directives = {}
-            directives = [d.strip() for d in policy.split(";")]
-            for directive in directives:
-                if not directive:
-                    continue
-                parts = directive.split(None, 1)
-                name = parts[0].lower()
-                value = parts[1] if len(parts) > 1 else ""
-
-                if name in parsed_directives:
-                    duplicate_directives.append(name)
-                    continue
-                parsed_directives[name] = value
-
+        for parsed_directives in self.value:
             for name, value in parsed_directives.items():
                 if name == "report-uri":
                     deprecated_report_uri = True
@@ -79,12 +103,6 @@ sources of content that browsers are allowed to load on a page."""
                     if "http:" in value.split():
                         http_uri_directives.append(name)
 
-        if duplicate_directives:
-            parent.add_child(
-                CSP_DUPLICATE_DIRECTIVE,
-                directives_list=self._make_list(duplicate_directives),
-                report_only_text=self.report_only_text,
-            )
         if deprecated_report_uri:
             parent.add_child(
                 CSP_DEPRECATED_REPORT_URI,
@@ -210,40 +228,40 @@ It was found in the following directives:
 class CSPTest(FieldTest):
     name = "Content-Security-Policy"
     inputs = [b"default-src 'self'; script-src 'unsafe-inline'"]
-    expected_out = ["default-src 'self'; script-src 'unsafe-inline'"]
+    expected_out = [{"default-src": "'self'", "script-src": "'unsafe-inline'"}]
     expected_notes = [CONTENT_SECURITY_POLICY, CSP_UNSAFE_INLINE]
 
 
 class CSPMultipleTest(FieldTest):
     name = "Content-Security-Policy"
     inputs = [b"default-src 'self'", b"script-src 'unsafe-eval'"]
-    expected_out = ["default-src 'self'", "script-src 'unsafe-eval'"]
+    expected_out = [{"default-src": "'self'"}, {"script-src": "'unsafe-eval'"}]
     expected_notes = [CONTENT_SECURITY_POLICY, CSP_UNSAFE_EVAL]
 
 
 class CSPDuplicateTest(FieldTest):
     name = "Content-Security-Policy"
     inputs = [b"default-src 'self'; default-src 'none'"]
-    expected_out = ["default-src 'self'; default-src 'none'"]
+    expected_out = [{"default-src": "'self'"}]
     expected_notes = [CONTENT_SECURITY_POLICY, CSP_DUPLICATE_DIRECTIVE]
 
 
 class CSPReportUriTest(FieldTest):
     name = "Content-Security-Policy"
     inputs = [b"report-uri /csp-report"]
-    expected_out = ["report-uri /csp-report"]
+    expected_out = [{"report-uri": "/csp-report"}]
     expected_notes = [CONTENT_SECURITY_POLICY, CSP_DEPRECATED_REPORT_URI]
 
 
 class CSPWideOpenTest(FieldTest):
     name = "Content-Security-Policy"
     inputs = [b"script-src *"]
-    expected_out = ["script-src *"]
+    expected_out = [{"script-src": "*"}]
     expected_notes = [CONTENT_SECURITY_POLICY, CSP_WIDE_OPEN]
 
 
 class CSPTrailingSemiTest(FieldTest):
     name = "Content-Security-Policy"
     inputs = [b"default-src 'self'; script-src 'self';"]
-    expected_out = ["default-src 'self'; script-src 'self';"]
+    expected_out = [{"default-src": "'self'", "script-src": "'self'"}]
     expected_notes = [CONTENT_SECURITY_POLICY]
