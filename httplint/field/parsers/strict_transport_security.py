@@ -22,6 +22,10 @@ browsers that it should only be communicated with using HTTPS, instead of using 
     valid_in_requests = False
     valid_in_responses = True
 
+    def __init__(self, wire_name: str, message: "HttpMessageLinter") -> None:
+        super().__init__(wire_name, message)
+        self._deferred_notes: list[tuple[type[Note], dict[str, Any]]] = []
+
     def parse(self, field_value: str, add_note: AddNoteMethodType) -> dict[str, Any]:
         parsed: dict[str, Any] = {
             "max-age": None,
@@ -36,7 +40,7 @@ browsers that it should only be communicated with using HTTPS, instead of using 
             value = parts[1].strip() if len(parts) > 1 else None
 
             if name in seen_directives:
-                add_note(HSTS_DUPLICATE_DIRECTIVE, directive=name)
+                self._deferred_notes.append((HSTS_DUPLICATE_DIRECTIVE, {"directive": name}))
                 continue
             seen_directives.add(name)
 
@@ -44,15 +48,19 @@ browsers that it should only be communicated with using HTTPS, instead of using 
                 try:
                     parsed["max-age"] = int(value)  # type: ignore
                 except (ValueError, TypeError):
-                    add_note(HSTS_BAD_MAX_AGE, max_age=str(value))
+                    self._deferred_notes.append((HSTS_BAD_MAX_AGE, {"max_age": str(value)}))
             elif name == "includesubdomains":
                 parsed["includesubdomains"] = True
                 if value is not None:
-                    add_note(HSTS_VALUE_NOT_ALLOWED, directive="includeSubDomains")
+                    self._deferred_notes.append(
+                        (HSTS_VALUE_NOT_ALLOWED, {"directive": "includeSubDomains"})
+                    )
             elif name == "preload":
                 parsed["preload"] = True
                 if value is not None:
-                    add_note(HSTS_VALUE_NOT_ALLOWED, directive="preload")
+                    self._deferred_notes.append(
+                        (HSTS_VALUE_NOT_ALLOWED, {"directive": "preload"})
+                    )
             else:
                 # Unknown directive, ignore
                 pass
@@ -85,7 +93,9 @@ browsers that it should only be communicated with using HTTPS, instead of using 
             notes_to_add.append(HSTS_NO_PRELOAD)
 
         if parsed["max-age"] is None:
-            notes_to_add.append(HSTS_NO_MAX_AGE)
+            has_bad_max_age = any(n[0] is HSTS_BAD_MAX_AGE for n in self._deferred_notes)
+            if not has_bad_max_age:
+                notes_to_add.append(HSTS_NO_MAX_AGE)
             is_valid = False
         elif parsed["max-age"] == 0:
             notes_to_add.append(HSTS_MAX_AGE_ZERO)
@@ -108,6 +118,11 @@ browsers that it should only be communicated with using HTTPS, instead of using 
             HSTS_VALUE_NOT_ALLOWED,
         )
 
+        for note_cls, _ in self._deferred_notes:
+            if note_cls in invalidating_notes:
+                is_valid = False
+                break
+
         for note in self.message.notes:
             if isinstance(note, invalidating_notes):
                 is_valid = False
@@ -117,6 +132,9 @@ browsers that it should only be communicated with using HTTPS, instead of using 
             parent = add_note(HSTS_VALID)
         else:
             parent = add_note(HSTS_INVALID)
+
+        for note_cls, note_kwargs in self._deferred_notes:
+            parent.add_child(note_cls, **note_kwargs)
 
         for note_cls in notes_to_add:
             parent.add_child(note_cls)
@@ -400,6 +418,21 @@ class HSTSPreloadMissingMaxAgeTest(FieldTest):
         HSTS_PRELOAD_NOT_SUITABLE,
         HSTS_NO_MAX_AGE,
         HSTS_SUBDOMAINS,
+        HSTS_INVALID,
+    ]
+
+    def set_context(self, message: HttpMessageLinter) -> None:
+        message.base_uri = "https://www.example.com/"
+
+
+class HSTSBadMaxAgeValueTest(FieldTest):
+    name = "Strict-Transport-Security"
+    inputs = [b"max-age=foo"]
+    expected_out = {"max-age": None, "includesubdomains": False, "preload": False}
+    expected_notes = [
+        HSTS_BAD_MAX_AGE,
+        HSTS_NO_SUBDOMAINS,
+        HSTS_NO_PRELOAD,
         HSTS_INVALID,
     ]
 
