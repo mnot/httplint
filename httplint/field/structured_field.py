@@ -2,6 +2,7 @@ import re
 from typing import TYPE_CHECKING
 
 import http_sf
+from markupsafe import Markup, escape
 
 from httplint.field import HttpField
 from httplint.note import Note, categories, levels
@@ -11,7 +12,7 @@ if TYPE_CHECKING:
     from httplint.message import HttpMessageLinter
 
 RE_FLAGS = re.VERBOSE | re.IGNORECASE
-
+CONTEXT_CHARS = 35
 
 class StructuredField(HttpField):
     """
@@ -43,21 +44,22 @@ class StructuredField(HttpField):
                 on_duplicate_key=on_duplicate_key,
             )
         except http_sf.StructuredFieldError as why:
-            problem = f"{why}"
+            problem = escape(f"{why}")
+            context = Markup("")
             if hasattr(why, "position") and why.position is not None:
                 bad_char_index = why.position
-                context_start = max(0, bad_char_index - 20)
-                context_end = min(len(combined_value), bad_char_index + 20)
-                context = combined_value[context_start:context_end]
+                context_start = max(0, bad_char_index - CONTEXT_CHARS)
+                context_end = min(len(combined_value), bad_char_index + CONTEXT_CHARS)
+                context_str = combined_value[context_start:context_end]
                 pointer = " " * (bad_char_index - context_start) + "^"
-                problem += f"\n\n    {context}\n    {pointer}"
-            add_note(STRUCTURED_FIELD_PARSE_ERROR, error=problem)
+                context = Markup(f"\n\n    {context_str}\n    {pointer}")
+            add_note(STRUCTURED_FIELD_PARSE_ERROR, problem=problem, context=context)
             self.value = None
         except ValueError as why:
-            add_note(STRUCTURED_FIELD_PARSE_ERROR, error=f"{why}")
+            add_note(STRUCTURED_FIELD_PARSE_ERROR, problem=f"{why}", context=Markup(""))
             self.value = None
         except Exception as why:  # pylint: disable=broad-except
-            add_note(STRUCTURED_FIELD_PARSE_ERROR, error=f"{why}")
+            add_note(STRUCTURED_FIELD_PARSE_ERROR, problem=f"{why}", context=Markup(""))
             self.value = None
 
         super().finish(message, add_note)
@@ -81,6 +83,6 @@ The %(field_name)s field is defined as a
 but its value can't be parsed as one. As a result, this field is likely
 to be ignored.
 
-The parser reports this error:
+The parser reports this error: %(problem)s
 
-%(error)s"""
+%(context)s"""

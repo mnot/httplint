@@ -1,7 +1,7 @@
 from typing import Any
 from urllib.parse import urljoin, urlsplit
 
-from httplint.field.structured_field import StructuredField
+from httplint.field.structured_field import StructuredField, STRUCTURED_FIELD_PARSE_ERROR
 from httplint.field.tests import FieldTest
 from httplint.note import Note, categories, levels
 from httplint.types import AddNoteMethodType
@@ -97,3 +97,10 @@ class SpeculationRulesRelativeInsecureTest(FieldTest):
 
     def set_context(self, message: Any) -> None:
         message.base_uri = "http://example.com/"
+
+
+class SpeculationRulesInvalidSFTest(FieldTest):
+    name = "Speculation-Rules"
+    inputs = [b"<script>"]
+    expected_out: Any = None
+    expected_notes = [STRUCTURED_FIELD_PARSE_ERROR]

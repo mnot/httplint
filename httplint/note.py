@@ -104,7 +104,7 @@ class Note:
         return Markup(
             self._markdown.reset().convert(
                 translate(self._text)
-                % {k: escape(str(v)) for k, v in self.vars.items()}
+                % {k: escape(v) for k, v in self.vars.items()}
             )
         )
 
