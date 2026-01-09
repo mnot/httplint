@@ -22,7 +22,7 @@ dependencies = [
     "MarkupSafe",
     "thor",
     "typing_extensions",
-    "http-sf>=1.1.0",
+    "http-sf>=1.1.1",
     "sniffpy==1.0.0",
     "Babel",
     "Brotli",
