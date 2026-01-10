@@ -3,7 +3,7 @@ from typing import Tuple
 from httplint.field import HttpField
 from httplint.field.tests import FieldTest
 from httplint.note import Note, categories, levels
-from httplint.syntax import rfc3986, rfc5988
+from httplint.syntax import rfc3986, rfc8288, rfc9110
 from httplint.types import AddNoteMethodType, ParamDictType
 from httplint.field.utils import parse_params
 from httplint.field.notes import BAD_SYNTAX, PARAM_REPEATS
@@ -15,8 +15,8 @@ class link(HttpField):
 The `Link` header allows links related to the content to be conveyed. A link can be viewed as a
 statement of the form "[context IRI] has a [relation type] resource at [target IRI], which has
 [target attributes]."""
-    reference = f"{rfc5988.SPEC_URL}#header.link"
-    syntax = rfc5988.Link
+    reference = f"{rfc8288.SPEC_URL}#header.link"
+    syntax = rfc8288.Link
     deprecated = False
     valid_in_requests = True
     valid_in_responses = True
@@ -41,6 +41,11 @@ statement of the form "[context IRI] has a [relation type] resource at [target I
                 rf"^\s*{rfc3986.URI_reference}\s*$", param_dict["anchor"], re.VERBOSE
             ):
                 add_note(LINK_BAD_ANCHOR, link=link_value, anchor=param_dict["anchor"])
+        if "type" in param_dict and param_dict["type"]:
+            if not re.match(
+                rf"^\s*{rfc9110.media_type}\s*$", param_dict["type"], re.VERBOSE
+            ):
+                add_note(LINK_BAD_TYPE, link=link_value, type=param_dict["type"])
         return link_value, param_dict
 
 
@@ -49,7 +54,7 @@ class LINK_REV(Note):
     level = levels.WARN
     _summary = "The 'rev' parameter on the Link header is deprecated."
     _text = """\
-The `Link` header, defined by [RFC5988](https://www.rfc-editor.org/rfc/rfc5988#section-5), uses the
+The `Link` header, defined by [RFC 8288](https://www.rfc-editor.org/rfc/rfc8288#section-3), uses the
 `rel` parameter to communicate the type of a link. `rev` is deprecated by that specification
 because it is often confusing.
 
@@ -61,10 +66,21 @@ class LINK_BAD_ANCHOR(Note):
     level = levels.WARN
     _summary = "The 'anchor' parameter on the %(link)s Link header isn't a URI."
     _text = """\
-The `Link` header, defined by [RFC5988](https://www.rfc-editor.org/rfc/rfc5988#section-5), uses the
+The `Link` header, defined by [RFC 8288](https://www.rfc-editor.org/rfc/rfc8288#section-3), uses the
 `anchor` parameter to define the context URI for the link.
 
 This parameter can be an absolute or relative URI; however, `%(anchor)s` is neither."""
+
+
+class LINK_BAD_TYPE(Note):
+    category = categories.GENERAL
+    level = levels.WARN
+    _summary = "The 'type' parameter on the %(link)s Link header isn't a media type."
+    _text = """\
+The `Link` header, defined by [RFC 8288](https://www.rfc-editor.org/rfc/rfc8288#section-3), uses the
+`type` parameter to define the media type of the link target.
+
+However, `%(type)s` is not a valid media type."""
 
 
 class BasicLinkTest(FieldTest):
@@ -111,3 +127,10 @@ class BadAnchorLinkTest(FieldTest):
     inputs = [b'</foo>; rel="bar"; anchor="{blah}"']
     expected_out = [("/foo", {"rel": "bar", "anchor": "{blah}"})]
     expected_notes = [LINK_BAD_ANCHOR]
+
+
+class BadTypeLinkTest(FieldTest):
+    name = "Link"
+    inputs = [b'</foo>; rel="bar"; type="{blah}"']
+    expected_out = [("/foo", {"rel": "bar", "type": "{blah}"})]
+    expected_notes = [LINK_BAD_TYPE]
