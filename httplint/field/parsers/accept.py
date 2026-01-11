@@ -3,7 +3,7 @@ from typing import Optional
 
 from httplint.field import HttpField
 from httplint.field.tests import FieldTest
-from httplint.field.notes import BAD_SYNTAX
+from httplint.field import BAD_SYNTAX
 from httplint.field.utils import parse_params
 from httplint.syntax import rfc9110
 from httplint.types import AddNoteMethodType, ParamDictType

@@ -5,7 +5,7 @@ from httplint.field.tests import FieldTest
 from httplint.syntax import rfc9110
 from httplint.types import AddNoteMethodType
 from httplint.field.utils import unquote_string
-from httplint.field.notes import BAD_SYNTAX
+from httplint.field import BAD_SYNTAX
 
 
 class etag(SingletonField):

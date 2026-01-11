@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, List, Tuple
 
 from httplint.field import HttpField
 from httplint.field.utils import RE_FLAGS
-from httplint.field.notes import BAD_SYNTAX
+from httplint.field import BAD_SYNTAX
 
 if TYPE_CHECKING:
     from httplint.message import HttpMessageLinter

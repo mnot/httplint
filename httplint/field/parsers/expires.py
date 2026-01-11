@@ -2,7 +2,7 @@ from httplint.field.singleton_field import SingletonField
 from httplint.field.tests import FieldTest
 from httplint.syntax import rfc9111
 from httplint.types import AddNoteMethodType
-from httplint.field.notes import BAD_DATE_SYNTAX
+from httplint.field.utils import BAD_DATE_SYNTAX
 from httplint.field.utils import parse_http_date
 
 

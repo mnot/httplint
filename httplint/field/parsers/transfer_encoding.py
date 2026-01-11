@@ -6,7 +6,7 @@ from httplint.note import Note, categories, levels
 from httplint.syntax import rfc9112
 from httplint.types import AddNoteMethodType, ParamDictType
 from httplint.field.utils import parse_params
-from httplint.field.notes import BAD_SYNTAX
+from httplint.field import BAD_SYNTAX
 from httplint.message import HttpResponseLinter, HttpRequestLinter, HttpMessageLinter
 
 

@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING, List
 
 from httplint.field import HttpField
 from httplint.field.utils import RE_FLAGS
-from httplint.field.notes import BAD_SYNTAX
+from httplint.field import BAD_SYNTAX
 from httplint.note import Note, categories, levels
 
 if TYPE_CHECKING:

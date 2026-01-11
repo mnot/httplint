@@ -6,7 +6,8 @@ from httplint.note import Note, categories, levels
 from httplint.syntax import rfc3986, rfc8288, rfc9110
 from httplint.types import AddNoteMethodType, ParamDictType
 from httplint.field.utils import parse_params
-from httplint.field.notes import BAD_SYNTAX, PARAM_REPEATS
+from httplint.field.utils import PARAM_REPEATS
+from httplint.field import BAD_SYNTAX
 
 
 class link(HttpField):

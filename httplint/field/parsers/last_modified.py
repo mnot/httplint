@@ -3,7 +3,8 @@ from httplint.field.tests import FieldTest
 from httplint.syntax import rfc9110
 from httplint.types import AddNoteMethodType
 from httplint.util import relative_time
-from httplint.field.notes import Note, categories, levels, BAD_DATE_SYNTAX
+from httplint.note import Note, categories, levels
+from httplint.field.utils import BAD_DATE_SYNTAX
 from httplint.field.utils import parse_http_date
 
 

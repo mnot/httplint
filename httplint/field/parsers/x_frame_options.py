@@ -3,7 +3,7 @@ from httplint.field.tests import FieldTest
 from httplint.note import Note, categories, levels
 from httplint.syntax import rfc3986, rfc9110
 from httplint.types import AddNoteMethodType
-from httplint.field.notes import BAD_SYNTAX
+from httplint.field import BAD_SYNTAX
 
 
 # X-Frame-Options = "DENY"

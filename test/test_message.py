@@ -1,6 +1,6 @@
 import unittest
 from httplint.message import HttpRequestLinter, HttpResponseLinter
-from httplint.field.notes import MISSING_USER_AGENT
+from httplint.message import MISSING_USER_AGENT
 from httplint.field.parsers.referer import (
     REFERER_SECURE_TO_INSECURE,
     REFERER_SECURE_TO_DIFFERENT_ORIGIN,

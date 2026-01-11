@@ -3,7 +3,7 @@ from typing import Optional
 
 from httplint.field.singleton_field import SingletonField
 from httplint.field.tests import FieldTest
-from httplint.field.notes import BAD_SYNTAX
+from httplint.field import BAD_SYNTAX
 from httplint.message import HttpMessageLinter, HttpResponseLinter
 from httplint.note import Note, categories, levels
 from httplint.syntax import rfc9110

@@ -3,7 +3,7 @@ from httplint.field.tests import FieldTest
 from httplint.field.utils import parse_http_date
 from httplint.message import HttpMessageLinter
 from httplint.note import Note, categories, levels
-from httplint.field.notes import BAD_DATE_SYNTAX
+from httplint.field.utils import BAD_DATE_SYNTAX
 from httplint.types import AddNoteMethodType
 
 

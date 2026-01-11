@@ -5,7 +5,7 @@ from httplint.field.tests import FieldTest
 from httplint.syntax import rfc9110
 from httplint.types import AddNoteMethodType
 from httplint.field.singleton_field import SINGLE_HEADER_REPEAT
-from httplint.field.notes import BAD_SYNTAX
+from httplint.field import BAD_SYNTAX
 from httplint.note import Note, categories, levels
 
 if TYPE_CHECKING:

@@ -9,18 +9,8 @@ from http_sf import Token
 
 from httplint.syntax import rfc9110
 from httplint.types import AddNoteMethodType, ParamDictType
-from httplint.note import Note
-from httplint.field.notes import (
-    PARAM_REPEATS,
-    PARAM_SINGLE_QUOTED,
-    PARAM_STAR_BAD,
-    PARAM_STAR_QUOTED,
-    PARAM_STAR_ERROR,
-    PARAM_STAR_NOCHARSET,
-    PARAM_STAR_CHARSET,
-    BAD_DATE_SYNTAX,
-    DATE_OBSOLETE,
-)
+from httplint.note import Note, categories, levels
+
 
 RE_FLAGS = re.VERBOSE | re.IGNORECASE
 
@@ -225,3 +215,110 @@ def check_sf_item_token(
             add_note(invalid_note, value=val, **kwargs)
     else:
         add_note(invalid_note, value=field_value, **kwargs)
+
+
+class PARAM_REPEATS(Note):
+    category = categories.GENERAL
+    level = levels.WARN
+    _summary = "The '%(param)s' parameter repeats in the %(field_name)s header."
+    _text = """\
+Parameters on the %(field_name)s field should not repeat; implementations may handle them
+differently."""
+
+
+class PARAM_SINGLE_QUOTED(Note):
+    category = categories.GENERAL
+    level = levels.WARN
+    _summary = (
+        "The '%(param)s' parameter on the %(field_name)s header is single-quoted."
+    )
+    _text = """\
+The `%(param)s`'s value on the %(field_name)s field starts and ends with a single quote (').
+However, single quotes don't mean anything there.
+
+This means that the value will be interpreted as `%(param_val)s`, **not**
+`%(param_val_unquoted)s`. If you intend the latter, remove the single quotes."""
+
+
+class PARAM_STAR_BAD(Note):
+    category = categories.GENERAL
+    level = levels.BAD
+    _summary = "The %(param)s* parameter isn't allowed on the %(field_name)s field."
+    _text = """\
+Parameter values that end in '*' are reserved for non-ascii text, as explained in
+[RFC5987](https://www.rfc-editor.org/rfc/rfc5987).
+
+The `%(param)s` parameter on the `%(field_name)s` field does not allow this; you should use
+%(param)s without the "*" on the end (and without the associated encoding)."""
+
+
+class PARAM_STAR_QUOTED(Note):
+    category = categories.GENERAL
+    level = levels.BAD
+    _summary = "The '%(param)s' parameter's value cannot be quoted."
+    _text = """\
+Parameter values that end in '*' have a specific format, defined in
+[RFC5987](https://www.rfc-editor.org/rfc/rfc5987), to allow non-ASCII text.
+
+The `%(param)s` parameter on the `%(field_name)s` field has double-quotes around it, which is not
+valid."""
+
+
+class PARAM_STAR_ERROR(Note):
+    category = categories.GENERAL
+    level = levels.BAD
+    _summary = "The %(param)s parameter's value is invalid."
+    _text = """\
+Parameter values that end in '*' have a specific format, defined in
+[RFC5987](https://www.rfc-editor.org/rfc/rfc5987), to allow non-ASCII text.
+
+The `%(param)s` parameter on the `%(field_name)s` field is not valid; it needs to have three
+parts, separated by single quotes (')."""
+
+
+class PARAM_STAR_NOCHARSET(Note):
+    category = categories.GENERAL
+    level = levels.WARN
+    _summary = "The %(param)s parameter's value doesn't define an encoding."
+    _text = """\
+Parameter values that end in '*' have a specific format, defined in
+[RFC5987](https://www.rfc-editor.org/rfc/rfc5987), to allow non-ASCII text.
+
+The `%(param)s` parameter on the `%(field_name)s` header doesn't declare its character encoding,
+which means that recipients can't understand it. It should be `UTF-8`."""
+
+
+class PARAM_STAR_CHARSET(Note):
+    category = categories.GENERAL
+    level = levels.WARN
+    _summary = "The %(param)s parameter's value uses an encoding other than UTF-8."
+    _text = """\
+Parameter values that end in '*' have a specific format, defined in
+[RFC5987](https://www.rfc-editor.org/rfc/rfc5987), to allow non-ASCII text.
+
+The `%(param)s` parameter on the `%(field_name)s` header uses the `'%(enc)s` encoding, which has
+interoperability issues with some browsers. It should be `UTF-8`."""
+
+
+class BAD_DATE_SYNTAX(Note):
+    category = categories.GENERAL
+    level = levels.BAD
+    _summary = "The %(field_name)s header's value isn't a valid date."
+    _text = """\
+HTTP dates have specific syntax, and sending an invalid date can cause a number of problems,
+especially with caching. Common problems include sending "1 May" instead of "01 May" (the month
+is a fixed-width field), and sending a date in a timezone other than GMT.
+
+See [the HTTP specification](https://www.rfc-editor.org/rfc/rfc9110.html#name-date-time-formats) for more
+information."""
+
+
+class DATE_OBSOLETE(Note):
+    category = categories.GENERAL
+    level = levels.WARN
+    _summary = "The %(field_name)s header's value uses an obsolete format."
+    _text = """\
+HTTP has a number of defined date formats for historical reasons. This header is using an old
+format that are now obsolete. See [the
+specification](https://www.rfc-editor.org/rfc/rfc9110.html#name-obsolete-date-formats) for more information.
+"""

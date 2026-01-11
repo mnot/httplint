@@ -14,9 +14,6 @@ from httplint.types import RawFieldListType
 from httplint.util import iri_to_uri, f_num
 from httplint.status import StatusChecker
 from httplint.content_type import verify_content_type
-from httplint.field.notes import (
-    MISSING_USER_AGENT,
-)
 from httplint.i18n import L_, translate
 
 
@@ -342,3 +339,14 @@ class STATUS_PHRASE_ENCODING(Note):
     _summary = "The status phrase contains non-ASCII characters."
     _text = """\
 The status phrase can only contain ASCII characters."""
+
+
+class MISSING_USER_AGENT(Note):
+    category = categories.GENERAL
+    level = levels.WARN
+    _summary = "The User-Agent header is missing."
+    _text = """\
+Clients SHOULD send a `User-Agent` header field.
+
+See [RFC 9110 Section 10.1.5](https://www.rfc-editor.org/rfc/rfc9110.html#section-10.1.5)
+for details."""

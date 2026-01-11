@@ -19,7 +19,8 @@ from httplint.types import (
 )
 
 from httplint.field.utils import RE_FLAGS, split_list_field
-from httplint.field.notes import *
+from httplint.note import Note, categories, levels
+
 
 if TYPE_CHECKING:
     from httplint.message import (
@@ -162,3 +163,63 @@ class HttpField:
 
         if self.value is not None:
             self.evaluate(add_note)
+
+
+class FIELD_NAME_BAD_SYNTAX(Note):
+    category = categories.GENERAL
+    level = levels.BAD
+    _summary = '"%(field_name)s" is not a valid field name.'
+    _text = """\
+Field names are limited to the `token` production in HTTP; i.e., they can't contain parenthesis,
+angle brackets (<>), ampersands (@), commas, semicolons, colons, backslashes (\\), forward
+slashes (/), quotes, square brackets ([]), question marks, equals signs (=), curly brackets ({})
+spaces or tabs."""
+
+
+class BAD_SYNTAX(Note):
+    category = categories.GENERAL
+    level = levels.BAD
+    _summary = "The %(field_name)s field value isn't valid."
+    _text = """\
+The value for this field doesn't conform to its specified syntax; see [its
+definition](%(ref_uri)s) for more information."""
+
+
+class BAD_SYNTAX_DETAILED(BAD_SYNTAX):
+    category = categories.GENERAL
+    level = levels.BAD
+    _summary = "The %(field_name)s field value isn't valid."
+    _text = """\
+The value `%(value)s` for this field doesn't conform to its specified syntax; see [its
+definition](%(ref_uri)s) for more information.
+
+%(problem)s"""
+
+
+class REQUEST_HDR_IN_RESPONSE(Note):
+    category = categories.GENERAL
+    level = levels.BAD
+    _summary = '"%(field_name)s" isn\'t valid in a response.'
+    _text = """\
+The %(field_name)s field only has meaning in requests. Sending it a response
+doesn't do anything."""
+
+
+class RESPONSE_HDR_IN_REQUEST(Note):
+    category = categories.GENERAL
+    level = levels.BAD
+    _summary = '"%(field_name)s" isn\'t valid in a request.'
+    _text = """\
+The %(field_name)s field only has meaning in responses. Sending it in a request
+doesn't do anything."""
+
+
+class FIELD_DEPRECATED(Note):
+    category = categories.GENERAL
+    level = levels.WARN
+    _summary = "The %(field_name)s header is deprecated."
+    _text = """\
+This field is no longer recommended for use, because of interoperability problems and/or
+lack of use.
+
+See [the deprecation notice](%(deprecation_ref)s) for more information."""

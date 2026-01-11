@@ -7,7 +7,7 @@ from httplint.syntax import rfc9110
 from httplint.types import AddNoteMethodType, ParamDictType
 from httplint.field.utils import parse_params
 from httplint.field.singleton_field import SINGLE_HEADER_REPEAT
-from httplint.field.notes import PARAM_STAR_QUOTED
+from httplint.field.utils import PARAM_STAR_QUOTED
 
 
 class content_disposition(SingletonField):
