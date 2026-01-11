@@ -4,6 +4,7 @@ from httplint.note import Note, categories, levels
 from httplint.syntax.rfc9110 import list_rule, quoted_string
 from httplint.types import AddNoteMethodType
 from httplint.field import BAD_SYNTAX
+from httplint.message import HttpMessageLinter
 
 
 class clear_site_data(HttpField):
@@ -18,9 +19,19 @@ origin."""
     valid_in_requests = False
     valid_in_responses = True
 
+    KNOWN_VALUES = {"cache", "cookies", "storage", "executionContexts", "*"}
+
+    def __init__(self, wire_name: str, message: "HttpMessageLinter") -> None:
+        super().__init__(wire_name, message)
+        self._unquoted_values: list[str] = []
+
     def parse(self, field_value: str, add_note: AddNoteMethodType) -> str:
-        # Remove quotes
-        value = field_value[1:-1]
+        if len(field_value) >= 2 and field_value[0] == '"' and field_value[-1] == '"':
+            value = field_value[1:-1]
+        else:
+            value = field_value
+            if value in self.KNOWN_VALUES:
+                self._unquoted_values.append(value)
 
         # Check for empty value
         if value == "":
@@ -28,12 +39,14 @@ origin."""
             return value
 
         # Check for valid values
-        if value not in ["cache", "cookies", "storage", "executionContexts", "*"]:
+        if value not in self.KNOWN_VALUES:
             add_note(CSD_UNKNOWN_VALUE, value=value)
 
         return value
 
     def evaluate(self, add_note: AddNoteMethodType) -> None:
+        if self._unquoted_values:
+            add_note(CSD_UNQUOTED, values=", ".join(self._unquoted_values))
         if not self.value:
             add_note(CSD_EMPTY)
 
@@ -53,6 +66,16 @@ class CSD_EMPTY(Note):
     _summary = "The Clear-Site-Data header has an empty value."
     _text = """\
 The `Clear-Site-Data` header value is empty. It should contain at least one directive."""
+
+
+class CSD_UNQUOTED(Note):
+    category = categories.SECURITY
+    level = levels.INFO
+    _summary = "Clear-Site-Data contains unquoted values."
+    _text = """\
+Values in the `Clear-Site-Data` header must be quoted; unquoted values will be ignored. 
+
+The following values were found unquoted: %(values)s."""
 
 
 class ClearSiteDataTest(FieldTest):
@@ -91,5 +114,19 @@ class ClearSiteDataTrulyEmptyTest(FieldTest):
 class ClearSiteDataBadSyntaxTest(FieldTest):
     name = "Clear-Site-Data"
     inputs = [b"foo"]
-    expected_out = ["o"]
+    expected_out = ["foo"]
     expected_notes = [BAD_SYNTAX, CSD_UNKNOWN_VALUE]
+
+
+class ClearSiteDataUnquotedTest(FieldTest):
+    name = "Clear-Site-Data"
+    inputs = [b"cache"]
+    expected_out = ["cache"]
+    expected_notes = [BAD_SYNTAX, CSD_UNQUOTED]
+
+
+class ClearSiteDataMultipleUnquotedTest(FieldTest):
+    name = "Clear-Site-Data"
+    inputs = [b"cache, cookies"]
+    expected_out = ["cache", "cookies"]
+    expected_notes = [BAD_SYNTAX, CSD_UNQUOTED]
