@@ -62,7 +62,7 @@ url: venv
 
 .PHONY: i18n-extract
 i18n-extract: venv
-	PYTHONPATH=. $(VENV)/pybabel extract --omit-header -F tools/i18n/babel.cfg -o httplint/translations/messages.pot .
+	PYTHONPATH=. $(VENV)/pybabel extract --omit-header --ignore-dirs="build dist .venv" -F tools/i18n/babel.cfg -o httplint/translations/messages.pot .
 
 .PHONY: i18n-update
 i18n-update: i18n-extract
