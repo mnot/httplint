@@ -14,6 +14,7 @@ class categories(Enum):
 
     GENERAL = L_("General")
     SECURITY = L_("Browser Security")
+    COOKIES = L_("Cookies")
     CONNEG = L_("Content Negotiation")
     CACHING = L_("Caching")
     VALIDATION = L_("Validation")

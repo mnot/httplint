@@ -1,7 +1,7 @@
 from calendar import timegm
 from re import match, split
+from typing import List, Tuple, Union, Optional, Any, Callable, TYPE_CHECKING
 from urllib.parse import urlsplit
-from typing import List, Tuple, Union, Optional
 
 from httplint.field.broken_field import BrokenField
 from httplint.field import RFC6265
@@ -9,6 +9,9 @@ from httplint.field.tests import FieldTest
 from httplint.note import Note, categories, levels
 from httplint.types import AddNoteMethodType
 from httplint.util import relative_time
+
+if TYPE_CHECKING:
+    from httplint.message import HttpMessageLinter
 
 CookieType = Tuple[str, str, List[Tuple[str, Union[str, int]]]]
 
@@ -28,9 +31,16 @@ requests to the server."""
     valid_in_requests = False
     valid_in_responses = True
 
+    def __init__(self, wire_name: str, message: "HttpMessageLinter") -> None:
+        super().__init__(wire_name, message)
+        self._deferred_notes: List[Tuple[Callable, type[Note], dict]] = []
+
     def parse(self, field_value: str, add_note: AddNoteMethodType) -> CookieType:
+        def deferred_add_note(note: type[Note], **kwargs: Any) -> Any:
+            self._deferred_notes.append((add_note, note, kwargs))
+
         path = urlsplit(self.message.base_uri).path
-        return loose_parse(field_value, path, self.message.start_time, add_note)
+        return loose_parse(field_value, path, self.message.start_time, deferred_add_note)
 
     def evaluate(self, add_note: AddNoteMethodType) -> None:
         cookie_names = [c[0] for c in self.value]
@@ -42,6 +52,9 @@ requests to the server."""
                     duplicates.add(name)
                 seen.add(name)
             add_note(SET_COOKIE_NAME_DUP, cookie_names=", ".join(sorted(duplicates)))
+
+        for note_adder, note, kwargs in self._deferred_notes:
+            note_adder(note, **kwargs)
 
 
 def loose_parse(  # pylint: disable=too-many-branches
@@ -365,7 +378,7 @@ def loose_date_parse(cookie_date: str) -> int:
 
 
 class SET_COOKIE_NO_NAME(Note):
-    category = categories.GENERAL
+    category = categories.COOKIES
     level = levels.BAD
     _summary = "This response has a Set-Cookie header without a cookie-name."
     _text = """\
@@ -375,7 +388,7 @@ Browsers will ignore this cookie."""
 
 
 class SET_COOKIE_BAD_DATE(Note):
-    category = categories.GENERAL
+    category = categories.COOKIES
     level = levels.WARN
     _summary = "The %(cookie_name)s cookie has an invalid Expires date."
     _text = """\
@@ -384,7 +397,7 @@ The `expires` date on this `Set-Cookie` header isn't valid; see
 
 
 class SET_COOKIE_EMPTY_MAX_AGE(Note):
-    category = categories.GENERAL
+    category = categories.COOKIES
     level = levels.WARN
     _summary = "The %(cookie_name)s cookie has an empty Max-Age."
     _text = """\
@@ -394,7 +407,7 @@ Browsers will ignore the `max-age` value as a result."""
 
 
 class SET_COOKIE_LEADING_ZERO_MAX_AGE(Note):
-    category = categories.GENERAL
+    category = categories.COOKIES
     level = levels.WARN
     _summary = "The %(cookie_name)s cookie has a Max-Age with a leading zero."
     _text = """\
@@ -404,7 +417,7 @@ Browsers will ignore the `max-age` value as a result."""
 
 
 class SET_COOKIE_NON_DIGIT_MAX_AGE(Note):
-    category = categories.GENERAL
+    category = categories.COOKIES
     level = levels.WARN
     _summary = "The %(cookie_name)s cookie has a non-numeric Max-Age."
     _text = """\
@@ -414,7 +427,7 @@ Browsers will ignore the `max-age` value as a result."""
 
 
 class SET_COOKIE_EMPTY_DOMAIN(Note):
-    category = categories.GENERAL
+    category = categories.COOKIES
     level = levels.WARN
     _summary = "The %(cookie_name)s cookie has an empty domain."
     _text = """\
@@ -427,7 +440,7 @@ Browsers will probably ignore it as a result."""
 
 
 class SET_COOKIE_NOT_SECURE(Note):
-    category = categories.GENERAL
+    category = categories.COOKIES
     level = levels.WARN
     _summary = "The %(cookie_name)s cookie is missing the Secure attribute."
     _text = """\
@@ -439,7 +452,7 @@ Browsers will ignore this cookie."""
 
 
 class SET_COOKIE_UNKNOWN_ATTRIBUTE(Note):
-    category = categories.GENERAL
+    category = categories.COOKIES
     level = levels.WARN
     _summary = "The %(cookie_name)s cookie has an unknown attribute, '%(attribute)s'."
     _text = """\
@@ -449,7 +462,7 @@ Browsers will ignore it."""
 
 
 class SET_COOKIE_PRIORITY(Note):
-    category = categories.GENERAL
+    category = categories.COOKIES
     level = levels.WARN
     _summary = "The 'Priority' Set-Cookie attribute is deprecated."
     _text = """\
@@ -458,7 +471,7 @@ The `Priority` attribute was an experiment, and is no longer supported.
 
 
 class SET_COOKIE_VERSION(Note):
-    category = categories.GENERAL
+    category = categories.COOKIES
     level = levels.WARN
     _summary = "The 'Version Set-Cookie attribute is deprecated."
     _text = """\
@@ -472,7 +485,7 @@ issues](https://portswigger.net/research/bypassing-wafs-with-the-phantom-version
 
 
 class SET_COOKIE_UNKNOWN_ATTRIBUTE_VALUE(Note):
-    category = categories.GENERAL
+    category = categories.COOKIES
     level = levels.WARN
     _summary = "The %(cookie_name)s cookie has an unknown '%(attribute_name)s' attribute value."
     _text = """\
@@ -482,7 +495,7 @@ Browsers will probably ignore it as a result."""
 
 
 class SET_COOKIE_PARTITIONED_NO_SECURE(Note):
-    category = categories.GENERAL
+    category = categories.COOKIES
     level = levels.WARN
     _summary = (
         "The %(cookie_name)s cookie has the Partitioned attribute "
@@ -496,7 +509,7 @@ Browsers will ignore the `Partitioned` attribute as a result."""
 
 
 class SET_COOKIE_TOO_LARGE(Note):
-    category = categories.GENERAL
+    category = categories.COOKIES
     level = levels.BAD
     _summary = "The %(cookie_name)s Set-Cookie header is too large."
     _text = """\
@@ -506,7 +519,7 @@ Browsers will ignore this cookie."""
 
 
 class SET_COOKIE_VALUE_TOO_LARGE(Note):
-    category = categories.GENERAL
+    category = categories.COOKIES
     level = levels.INFO
     _summary = "The %(cookie_name)s Set-Cookie value is large."
     _text = """\
@@ -522,7 +535,7 @@ class ValueTooLargeSCTest(FieldTest):
 
 
 class SET_COOKIE_LIFETIME_TOO_LONG(Note):
-    category = categories.GENERAL
+    category = categories.COOKIES
     level = levels.WARN
     _summary = "The %(cookie_name)s Set-Cookie header has a lifetime that is too long."
     _text = """\
@@ -533,7 +546,7 @@ Browsers will cap the lifetime to 400 days."""
 
 
 class SET_COOKIE_PREFIX_SECURE_MISSING(Note):
-    category = categories.GENERAL
+    category = categories.COOKIES
     level = levels.BAD
     _summary = "The %(cookie_name)s Set-Cookie header requires the Secure attribute."
     _text = """\
@@ -544,7 +557,7 @@ Browsers will reject this cookie."""
 
 
 class SET_COOKIE_PREFIX_HOST_BAD_DOMAIN(Note):
-    category = categories.GENERAL
+    category = categories.COOKIES
     level = levels.BAD
     _summary = "The %(cookie_name)s Set-Cookie header has a __Host- prefix but sets a Domain."
     _text = """\
@@ -554,7 +567,7 @@ Browsers will reject this cookie."""
 
 
 class SET_COOKIE_PREFIX_HOST_BAD_PATH(Note):
-    category = categories.GENERAL
+    category = categories.COOKIES
     level = levels.BAD
     _summary = "The %(cookie_name)s Set-Cookie header has a __Host- prefix but does not set Path=/."
     _text = """\
@@ -564,7 +577,7 @@ Browsers will reject this cookie."""
 
 
 class SET_COOKIE_ATTRIBUTE_DUP(Note):
-    category = categories.GENERAL
+    category = categories.COOKIES
     level = levels.WARN
     _summary = "The %(cookie_name)s Set-Cookie header has duplicate '%(attribute)s' attributes."
     _text = """\
@@ -574,7 +587,7 @@ Browsers will only use the last occurrence."""
 
 
 class SET_COOKIE_NAME_DUP(Note):
-    category = categories.GENERAL
+    category = categories.COOKIES
     level = levels.WARN
     _summary = "This response sets duplicate cookies."
     _text = """\
