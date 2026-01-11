@@ -14,6 +14,7 @@ if TYPE_CHECKING:
 RE_FLAGS = re.VERBOSE | re.IGNORECASE
 CONTEXT_CHARS = 35
 
+
 class StructuredField(HttpField):
     """
     A HTTP field that uses the Structured Fields encoding.

@@ -103,8 +103,7 @@ class Note:
         """
         return Markup(
             self._markdown.reset().convert(
-                translate(self._text)
-                % {k: escape(v) for k, v in self.vars.items()}
+                translate(self._text) % {k: escape(v) for k, v in self.vars.items()}
             )
         )
 
