@@ -81,6 +81,7 @@ class vary(HttpField):
     description = """..."""
     reference = f"{rfc9110.SPEC_URL}#field.vary"
     syntax = rfc9110.Vary
+    category = categories.CONNEG
     valid_in_requests = False
     valid_in_responses = True
 ~~~
@@ -88,7 +89,10 @@ class vary(HttpField):
 When using `HttpField`:
 - `parse` is called for each individual value in the list (separated by commas).
 - `value` (the property accessed in `evaluate`) is a list of the results of calling `parse`.
-- `syntax` (if provided) is checked against each individual value in the list.
+- `syntax` (if provided) is checked against each individual value in the list, automatically adding notes if the syntax is invalid.
+- `valid_in_requests` and `valid_in_responses` are used to automatically add notes if the field is used in an invalid context.
+- `deprecated` is used to automatically add notes if the field is deprecated.
+- `category` (if provided) is used to group automatically added notes.
 
 #### The _SingletonField_ Class
 
