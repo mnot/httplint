@@ -109,6 +109,7 @@ max-locals=35
 max-branches=25
 max-statements=100
 max-attributes=40
+max-returns=8
 min-public-methods=1
 
 [tool.pylint.similarities]
