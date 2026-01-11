@@ -148,28 +148,31 @@ sources of content that browsers are allowed to load on a page."""
 
         for parsed_directives in self.value:
             for name, value in parsed_directives.items():
-                if name == "report-to":
-                    if value not in known_endpoints:
-                        # Find the parent note
-                        parent_note = None
-                        for note in message.notes:
-                            if isinstance(note, CONTENT_SECURITY_POLICY):
-                                parent_note = note
-                                break
+                if name != "report-to":
+                    continue
+                if value in known_endpoints:
+                    continue
 
-                        if parent_note:
-                            parent_note.add_child(
-                                CSP_REPORT_TO_MISSING,
-                                endpoint=value,
-                                report_only_text=self.report_only_text,
-                            )
-                        else:
-                            # Fallback if parent not found (should be rare)
-                            add_note(
-                                CSP_REPORT_TO_MISSING,
-                                endpoint=value,
-                                report_only_text=self.report_only_text,
-                            )
+                # Find the parent note
+                parent_note = None
+                for note in message.notes:
+                    if isinstance(note, CONTENT_SECURITY_POLICY):
+                        parent_note = note
+                        break
+
+                if parent_note:
+                    parent_note.add_child(
+                        CSP_REPORT_TO_MISSING,
+                        endpoint=value,
+                        report_only_text=self.report_only_text,
+                    )
+                else:
+                    # Fallback if parent not found (should be rare)
+                    add_note(
+                        CSP_REPORT_TO_MISSING,
+                        endpoint=value,
+                        report_only_text=self.report_only_text,
+                    )
 
     def _make_list(self, items: list[str]) -> str:
         return "\n".join([f"* `{item}`" for item in items])

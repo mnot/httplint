@@ -24,6 +24,10 @@ class StructuredField(HttpField):
     nonstandard_syntax = True
     sf_type: str = "item"  # item, list, dict
 
+    def __init__(self, wire_name: str, message: "HttpMessageLinter") -> None:
+        super().__init__(wire_name, message)
+        self._sf_parsed = False
+
     def handle_input(
         self, field_value: str, add_note: AddNoteMethodType, offset: int
     ) -> None:
