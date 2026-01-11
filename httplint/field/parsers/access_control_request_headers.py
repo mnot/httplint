@@ -9,6 +9,7 @@ from httplint.field.cors import (
 )
 from httplint.field.tests import FieldTest
 from httplint.message import HttpMessageLinter, HttpRequestLinter
+from httplint.note import categories
 from httplint.syntax import rfc9110
 from httplint.types import AddNoteMethodType
 
@@ -21,6 +22,7 @@ preflight request, to let the server know which HTTP headers the client might se
 request is made."""
     reference = "https://fetch.spec.whatwg.org/#http-access-control-request-headers"
     syntax = rfc9110.token
+    category = categories.SECURITY
     deprecated = False
     valid_in_requests = True
     valid_in_responses = False

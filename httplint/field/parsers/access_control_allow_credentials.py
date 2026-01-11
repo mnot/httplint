@@ -12,6 +12,7 @@ to frontend code when the request's credentials mode (`Request.credentials`) is
 `include`."""
     reference = "https://fetch.spec.whatwg.org/#http-access-control-allow-credentials"
     syntax = False
+    category = categories.SECURITY
     deprecated = False
     valid_in_requests = False
     valid_in_responses = True

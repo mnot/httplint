@@ -8,6 +8,7 @@ from httplint.field.cors import (
 )
 from httplint.field.tests import FieldTest
 from httplint.message import HttpMessageLinter, HttpRequestLinter
+from httplint.note import categories
 from httplint.syntax import rfc9110
 from httplint.types import AddNoteMethodType
 
@@ -20,6 +21,7 @@ preflight request, to let the server know which HTTP method will be used when th
 is made."""
     reference = "https://fetch.spec.whatwg.org/#http-access-control-request-method"
     syntax = rfc9110.token
+    category = categories.SECURITY
     deprecated = False
     valid_in_requests = True
     valid_in_responses = False

@@ -13,6 +13,7 @@ The `Age` response header conveys the sender's estimate of the amount of time si
 (or its validation) was generated at the origin server."""
     reference = f"{rfc9111.SPEC_URL}#field.age"
     syntax = False  # rfc9111.Age
+    category = categories.CACHING
     deprecated = False
     valid_in_requests = False
     valid_in_responses = True

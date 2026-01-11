@@ -6,6 +6,7 @@ from httplint.field.tests import FieldTest, FakeRequest
 from httplint.message import HttpMessageLinter
 from httplint.syntax import rfc9110
 from httplint.types import AddNoteMethodType
+from httplint.note import categories
 
 
 class access_control_max_age(SingletonField):
@@ -16,6 +17,7 @@ request (as scoped by the `Access-Control-Allow-Methods` and
 `Access-Control-Allow-Headers` request headers) can be cached."""
     reference = "https://fetch.spec.whatwg.org/#http-access-control-max-age"
     syntax = rfc9110.delay_seconds
+    category = categories.SECURITY
     deprecated = False
     valid_in_requests = False
     valid_in_responses = True

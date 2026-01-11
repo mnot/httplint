@@ -14,6 +14,7 @@ class cdn_cache_control(StructuredField):
 The `CDN-Cache-Control` header field targets cache directives to Content Delivery Networks."""
     reference = "https://www.rfc-editor.org/rfc/rfc9213.html"
     syntax = False  # SF
+    category = categories.CACHING
     deprecated = False
     valid_in_requests = False
     valid_in_responses = True

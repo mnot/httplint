@@ -25,6 +25,7 @@ class set_cookie(BrokenField):
 The `Set-Cookie` response header sets a stateful "cookie" on the client, to be included in future
 requests to the server."""
     syntax = False
+    category = categories.COOKIES
     reference = RFC6265
     nonstandard_syntax = True
     deprecated = False

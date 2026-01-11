@@ -30,6 +30,7 @@ The X-Frame-Options response header declares a policy regarding whether the brow
 the transmitted content in frames that are part of other web pages.
 """
     syntax = X_Frame_Options
+    category = categories.SECURITY
     deprecated = False
     valid_in_requests = False
     valid_in_responses = True

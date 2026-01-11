@@ -6,6 +6,7 @@ from httplint.syntax import rfc9110
 from httplint.types import AddNoteMethodType
 from httplint.field.utils import unquote_string
 from httplint.field import BAD_SYNTAX
+from httplint.note import categories
 
 
 class etag(SingletonField):
@@ -14,6 +15,7 @@ class etag(SingletonField):
 The `ETag` header provides an opaque identifier for the representation."""
     reference = f"{rfc9110.SPEC_URL}#field.etag"
     syntax = rfc9110.ETag
+    category = categories.CACHING
     deprecated = False
     valid_in_requests = True
     valid_in_responses = True

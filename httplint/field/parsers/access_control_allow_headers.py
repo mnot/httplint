@@ -6,6 +6,7 @@ from httplint.field.tests import FieldTest, FakeRequest
 from httplint.message import HttpMessageLinter
 from httplint.syntax import rfc9110
 from httplint.types import AddNoteMethodType
+from httplint.note import categories
 
 
 class access_control_allow_headers(HttpField):
@@ -15,6 +16,7 @@ The `Access-Control-Allow-Headers` response header is used in response to a CORS
 request to indicate which HTTP headers can be used during the actual request."""
     reference = "https://fetch.spec.whatwg.org/#http-access-control-allow-headers"
     syntax = rfc9110.token
+    category = categories.SECURITY
     deprecated = False
     valid_in_requests = False
     valid_in_responses = True

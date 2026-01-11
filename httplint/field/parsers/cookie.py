@@ -3,6 +3,7 @@ from typing import List
 
 from httplint.field.broken_field import BrokenField
 from httplint.field.tests import FieldTest
+from httplint.note import categories
 from httplint.types import AddNoteMethodType
 
 
@@ -19,6 +20,7 @@ The `Cookie` header field contains stored HTTP cookies previously sent by the se
 `Set-Cookie` header."""
     reference = "https://www.rfc-editor.org/rfc/rfc6265.html#section-4.2"
     syntax = False
+    category = categories.COOKIES
     deprecated = False
     valid_in_requests = True
     valid_in_responses = False

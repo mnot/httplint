@@ -17,6 +17,7 @@ The `Available-Dictionary` header field is used by a client to indicate that it 
 dictionary available for use in compressing the response."""
     reference = "https://www.rfc-editor.org/rfc/rfc9842.html"
     syntax = False  # Structured Field
+    category = categories.CONNEG
     deprecated = False
     valid_in_requests = True
     valid_in_responses = False

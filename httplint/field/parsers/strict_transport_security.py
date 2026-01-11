@@ -20,6 +20,7 @@ browsers that it should only be communicated with using HTTPS, instead of using 
     syntax = (
         rf"(?: {sts_dir} (?: {rfc9110.OWS} ; {rfc9110.OWS} {sts_dir} )* (?: {rfc9110.OWS} ;)? )"
     )
+    category = categories.SECURITY
     deprecated = False
     valid_in_requests = False
     valid_in_responses = True

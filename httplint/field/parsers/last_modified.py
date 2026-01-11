@@ -15,6 +15,7 @@ The `Last-Modified` response header indicates the time that the origin server be
 representation was last modified."""
     reference = f"{rfc9110.SPEC_URL}#field.last-modified"
     syntax = False  # rfc9110.Last_Modified
+    category = categories.CACHING
     deprecated = False
     valid_in_requests = False
     valid_in_responses = True

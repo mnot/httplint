@@ -13,6 +13,7 @@ The `Access-Control-Allow-Origin` response header indicates whether the response
 requesting code from the given origin."""
     reference = "https://fetch.spec.whatwg.org/#http-access-control-allow-origin"
     syntax = rf"(?:\*|null|{rfc9110.URI_reference})"
+    category = categories.SECURITY
     deprecated = False
     valid_in_requests = False
     valid_in_responses = True

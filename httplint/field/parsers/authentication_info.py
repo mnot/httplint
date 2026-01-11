@@ -1,5 +1,6 @@
 from httplint.field import HttpField
 from httplint.field.tests import FieldTest
+from httplint.note import categories
 from httplint.syntax import rfc9110
 from httplint.types import AddNoteMethodType
 
@@ -11,6 +12,7 @@ The `Authentication-Info` header field is used to communicate information after
 the client's authentication credentials have been accepted."""
     reference = f"{rfc9110.SPEC_URL}#field.authentication-info"
     syntax = rfc9110.Authentication_Info
+    category = categories.SECURITY
     deprecated = False
     valid_in_requests = False
     valid_in_responses = True

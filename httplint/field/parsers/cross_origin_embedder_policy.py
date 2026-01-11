@@ -17,6 +17,7 @@ The `Cross-Origin-Embedder-Policy` header field prevents a document from loading
 resources that don't explicitly grant the document permission (using CORP or CORS)."""
     reference = "https://html.spec.whatwg.org/multipage/origin.html#coep"
     syntax = False  # Structured Field
+    category = categories.SECURITY
     deprecated = False
     valid_in_requests = False
     valid_in_responses = True

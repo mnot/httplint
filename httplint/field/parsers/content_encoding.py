@@ -20,6 +20,7 @@ Content-Encoding is primarily used to allow a document to be compressed without 
 of its underlying media type; e.g., `gzip` and `deflate`."""
     reference = f"{rfc9110.SPEC_URL}#field.content-encoding"
     syntax = rfc9110.Content_Encoding
+    category = categories.CONNEG
     deprecated = False
     valid_in_requests = True
     valid_in_responses = True
@@ -52,7 +53,7 @@ of its underlying media type; e.g., `gzip` and `deflate`."""
 
 
 class DICTIONARY_COMPRESSED_MISSING_VARY(Note):
-    category = categories.GENERAL
+    category = categories.CONNEG
     level = levels.WARN
     _summary = (
         "This response is compressed with a dictionary,"

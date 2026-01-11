@@ -1,4 +1,5 @@
 from httplint.field import HttpField
+from httplint.note import categories
 
 
 class x_cache(HttpField):
@@ -8,6 +9,7 @@ The `X-Cache` response header is used by some caches to indicate whether or not 
 served from cache; if it contains `HIT`, it was."""
     reference = "https://lyte.id.au/2014/08/28/x-cache-and-x-cache-lookupheaders/"
     syntax = False
+    category = categories.CACHING
     deprecated = False
     no_coverage = True
     valid_in_requests = False

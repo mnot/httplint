@@ -16,6 +16,7 @@ In uncacheable or stale responses, the Vary field value advises the user agent a
 that were used to select the representation."""
     reference = f"{rfc9110.SPEC_URL}#field.vary"
     syntax = rfc9110.Vary
+    category = categories.CACHING
     deprecated = False
     valid_in_requests = False
     valid_in_responses = True

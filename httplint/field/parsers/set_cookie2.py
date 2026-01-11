@@ -1,5 +1,6 @@
 from httplint.field import HttpField
 from httplint.field import RFC6265
+from httplint.note import categories
 
 
 class set_cookie2(HttpField):
@@ -8,6 +9,7 @@ class set_cookie2(HttpField):
 The `Set-Cookie2` header has been deprecated; use `Set-Cookie` instead."""
     reference = RFC6265
     syntax = False
+    category = categories.COOKIES
     deprecated = True
     valid_in_requests = False
     valid_in_responses = True

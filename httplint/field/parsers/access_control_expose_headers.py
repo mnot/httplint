@@ -1,6 +1,7 @@
 from httplint.field import HttpField
 from httplint.field.tests import FieldTest
 from httplint.syntax import rfc9110
+from httplint.note import categories
 
 
 class access_control_expose_headers(HttpField):
@@ -11,6 +12,7 @@ headers should be made available to scripts running in the browser, in response 
 request."""
     reference = "https://fetch.spec.whatwg.org/#http-access-control-expose-headers"
     syntax = rfc9110.token
+    category = categories.SECURITY
     deprecated = False
     valid_in_requests = False
     valid_in_responses = True

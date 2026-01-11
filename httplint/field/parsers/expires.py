@@ -4,6 +4,7 @@ from httplint.syntax import rfc9111
 from httplint.types import AddNoteMethodType
 from httplint.field.utils import BAD_DATE_SYNTAX
 from httplint.field.utils import parse_http_date
+from httplint.note import categories
 
 
 class expires(SingletonField):
@@ -13,6 +14,7 @@ The `Expires` response header gives a time after which the response is considere
 caches."""
     reference = f"{rfc9111.SPEC_URL}#field.expires"
     syntax = False  # rfc9111.Expires
+    category = categories.CACHING
     deprecated = False
     valid_in_requests = False
     valid_in_responses = True

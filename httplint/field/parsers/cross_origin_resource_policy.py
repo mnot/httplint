@@ -13,6 +13,7 @@ The `Cross-Origin-Resource-Policy` header field allows a resource to indicate wh
 loaded by a cross-origin document."""
     reference = "https://fetch.spec.whatwg.org/#cross-origin-resource-policy-header"
     syntax = False  # Not a Structured Field in the strict sense, but uses token
+    category = categories.SECURITY
     deprecated = False
     valid_in_requests = False
     valid_in_responses = True

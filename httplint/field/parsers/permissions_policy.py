@@ -11,8 +11,8 @@ class permissions_policy(StructuredField):
     description = """\
 The `Permissions-Policy` response header allows a site to control the use of browser features."""
     reference = "https://www.w3.org/TR/permissions-policy/"
-
     syntax = False  # Uses SF parser
+    category = categories.SECURITY
     deprecated = False
     valid_in_requests = False
     valid_in_responses = True

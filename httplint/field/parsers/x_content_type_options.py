@@ -11,6 +11,7 @@ class x_content_type_options(HttpField):
 Indicates that the client should not 'sniff' the `Content-Type` of the message from its content."""
     canonical_name = "X-Content-Type-Options"
     syntax = "nosniff"
+    category = categories.SECURITY
     deprecated = False
     valid_in_requests = False
     valid_in_responses = True

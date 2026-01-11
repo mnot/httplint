@@ -19,6 +19,7 @@ The `Accept-CH` response header field allows servers to indicate that they are
 willing to process the specified Client Hints."""
     reference = "https://www.rfc-editor.org/rfc/rfc8942.html#section-3.1"
     syntax = False  # SF
+    category = categories.CONNEG
     deprecated = False
     valid_in_requests = False
     valid_in_responses = True

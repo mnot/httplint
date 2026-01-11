@@ -12,6 +12,7 @@ The `Accept-Ranges` response header allows the server to indicate that it accept
 for a resource."""
     reference = f"{rfc9110.SPEC_URL}#field.accept-ranges"
     syntax = rfc9110.Accept_Ranges
+    category = categories.RANGE
     deprecated = False
     valid_in_requests = False
     valid_in_responses = True

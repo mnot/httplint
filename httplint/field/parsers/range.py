@@ -22,6 +22,7 @@ The `Range` header field on a GET request modifies the method semantics to reque
 parts of the representation that are specified."""
     reference = f"{rfc9110.SPEC_URL}#field.range"
     syntax = rfc9110.Range
+    category = categories.RANGE
     deprecated = False
     valid_in_requests = True
     valid_in_responses = False
