@@ -28,9 +28,13 @@ class StructuredField(HttpField):
         self, field_value: str, add_note: AddNoteMethodType, offset: int
     ) -> None:
         self.value.append(field_value)
+        self._sf_parsed = False
 
     def finish(self, message: "HttpMessageLinter", add_note: AddNoteMethodType) -> None:
         if not self.value:
+            return
+
+        if getattr(self, "_sf_parsed", False):
             return
 
         combined_value = ", ".join(self.value).strip()
@@ -63,6 +67,7 @@ class StructuredField(HttpField):
             add_note(STRUCTURED_FIELD_PARSE_ERROR, problem=f"{why}", context=Markup(""))
             self.value = None
 
+        self._sf_parsed = True
         super().finish(message, add_note)
 
 
