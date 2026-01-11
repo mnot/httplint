@@ -78,7 +78,7 @@ header."""
 
 
 class ACCEPT_CH_MISSING_VARY(Note):
-    category = categories.CACHING
+    category = categories.CONNEG
     level = levels.WARN
     _summary = "Accept-CH lists fields that are missing from Vary."
     _text = """\
