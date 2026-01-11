@@ -156,7 +156,7 @@ sources of content that browsers are allowed to load on a page."""
                             if isinstance(note, CONTENT_SECURITY_POLICY):
                                 parent_note = note
                                 break
-                        
+
                         if parent_note:
                             parent_note.add_child(
                                 CSP_REPORT_TO_MISSING,
@@ -306,7 +306,6 @@ class CSPWideOpenTest(FieldTest):
     inputs = [b"script-src *"]
     expected_out = [{"script-src": "*"}]
     expected_notes = [CONTENT_SECURITY_POLICY, CSP_WIDE_OPEN]
-
 
 
 class CSPTrailingSemiTest(FieldTest):
