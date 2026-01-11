@@ -178,20 +178,29 @@ spaces or tabs."""
 
 class BAD_SYNTAX(Note):
     category = categories.GENERAL
-    level = levels.BAD
-    _summary = "The %(field_name)s field value isn't valid."
+    level = levels.WARN
+    _summary = "The %(field_name)s field value doesn't conform to its specified syntax."
     _text = """\
-The value for this field doesn't conform to its specified syntax; see [its
-definition](%(ref_uri)s) for more information."""
+The value for this field has syntax specified using 
+[Augmented BNF](https://www.rfc-editor.org/rfc/rfc5234.html),
+but doesn't conform to it. See [the field's ABNF](%(ref_uri)s) for more information.
+
+This error may or may not prevent recipients from parsing the field; fixing it will
+improve interoperability.
+"""
 
 
 class BAD_SYNTAX_DETAILED(BAD_SYNTAX):
     category = categories.GENERAL
     level = levels.BAD
-    _summary = "The %(field_name)s field value isn't valid."
+    _summary = "The %(field_name)s field value doesn't conform to its specified syntax."
     _text = """\
-The value `%(value)s` for this field doesn't conform to its specified syntax; see [its
-definition](%(ref_uri)s) for more information.
+The value for this field has syntax specified using 
+[Augmented BNF](https://www.rfc-editor.org/rfc/rfc5234.html),
+but doesn't conform to it. See [the field's ABNF](%(ref_uri)s) for more information.
+
+This error may or may not prevent recipients from parsing the field; fixing it will
+improve interoperability.
 
 %(problem)s"""
 
@@ -202,7 +211,7 @@ class REQUEST_HDR_IN_RESPONSE(Note):
     _summary = '"%(field_name)s" isn\'t valid in a response.'
     _text = """\
 The %(field_name)s field only has meaning in requests. Sending it a response
-doesn't do anything."""
+doesn't do anything. REDbot (and most recipients) will ignore it."""
 
 
 class RESPONSE_HDR_IN_REQUEST(Note):
@@ -211,7 +220,7 @@ class RESPONSE_HDR_IN_REQUEST(Note):
     _summary = '"%(field_name)s" isn\'t valid in a request.'
     _text = """\
 The %(field_name)s field only has meaning in responses. Sending it in a request
-doesn't do anything."""
+doesn't do anything. REDbot (and most recipients) will ignore it."""
 
 
 class FIELD_DEPRECATED(Note):
@@ -220,6 +229,6 @@ class FIELD_DEPRECATED(Note):
     _summary = "The %(field_name)s header is deprecated."
     _text = """\
 This field is no longer recommended for use, because of interoperability problems and/or
-lack of use.
+lack of use. This field should probably be removed.
 
 See [the deprecation notice](%(deprecation_ref)s) for more information."""
