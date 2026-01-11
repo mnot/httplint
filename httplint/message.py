@@ -58,9 +58,7 @@ class HttpMessageLinter:
         self.transfer_length: int = 0
         self.complete: bool = False
 
-    def process_request_topline(
-        self, method: bytes, iri: bytes, version: bytes
-    ) -> None: ...
+    def process_request_topline(self, method: bytes, iri: bytes, version: bytes) -> None: ...
 
     def process_response_topline(
         self, version: bytes, status_code: bytes, status_phrase: Optional[bytes] = None
@@ -92,9 +90,7 @@ class HttpMessageLinter:
             self._hash_processor.update(chunk)
             self.decoded.feed_content(chunk)
 
-    def finish_content(
-        self, complete: bool, trailers: Optional[RawFieldListType] = None
-    ) -> None:
+    def finish_content(self, complete: bool, trailers: Optional[RawFieldListType] = None) -> None:
         """
         Signal that the content is done. Complete should be True if we
         know it's complete according to message framing.
@@ -172,9 +168,7 @@ class HttpRequestLinter(HttpMessageLinter):
         self.iri: Optional[str] = None
         self.uri: Optional[str] = None
 
-    def process_request_topline(
-        self, method: bytes, iri: bytes, version: bytes
-    ) -> None:
+    def process_request_topline(self, method: bytes, iri: bytes, version: bytes) -> None:
         self.method = method.decode("ascii", "replace")
         self.set_uri(iri.decode("utf-8", "replace"))
         self.version = version.decode("ascii", "replace")

@@ -50,7 +50,9 @@ obs_text = r"[\x80-\xff]"
 #   tchar = "!" / "#" / "$" / "%" / "&" / "'" / "*" / "+" / "-" / "."
 #           / "^" / "_" / "`" / "|" / "~" / DIGIT / ALPHA
 
-tchar = rf"(?: ! | \# | \$ | % | & | ' | \* | \+ | \- | \. | \^ | _ | ` | \| | \~ | {DIGIT} | {ALPHA} )"
+tchar = (
+    rf"(?: ! | \# | \$ | % | & | ' | \* | \+ | \- | \. | \^ | _ | ` | \| | \~ | {DIGIT} | {ALPHA} )"
+)
 
 #   token = 1*tchar
 
@@ -94,10 +96,8 @@ class list_rule:
         if self.minimum and self.minimum > 1:
             # <n>#<m>element => element <n-1>*<m-1>( OWS "," OWS element )
             adj_min = self.minimum - 1
-            return (
-                r"(?: {element} (?: {OWS} , {OWS} {element} ){{{adj_min},}} )".format(
-                    element=self.element, OWS=OWS, adj_min=adj_min
-                )
+            return r"(?: {element} (?: {OWS} , {OWS} {element} ){{{adj_min},}} )".format(
+                element=self.element, OWS=OWS, adj_min=adj_min
             )
         # element => [ 1#element ]
         return r"(?: {element} (?: {OWS} , {OWS} {element} )* )?".format(
@@ -143,9 +143,7 @@ media_type = rf"(?: {_type} / {subtype} {parameters} )"
 
 #   media-range = ( "*/*" / ( type "/*" ) / ( type "/" subtype ) ) parameters
 
-media_range = (
-    rf"(?: (?: \*/\* | (?: {_type} /\* ) | (?: {_type} / {subtype} ) ) {parameters} )"
-)
+media_range = rf"(?: (?: \*/\* | (?: {_type} /\* ) | (?: {_type} / {subtype} ) ) {parameters} )"
 
 #   Accept = [ ( media-range [ weight ] ) *( OWS "," OWS ( media-range [ weight ] ) ) ]
 
@@ -170,9 +168,7 @@ Accept_Encoding = list_rule(rf"(?: {codings} {weight}? )")
 
 #   language-range = <language-range, see [RFC4647], Section 2.1>
 
-language_range = (
-    rf"(?: (?: {ALPHA}{{1,8}} (?: \- (?: {ALPHA} | {DIGIT} ){{1,8}} )* ) | \* )"
-)
+language_range = rf"(?: (?: {ALPHA}{{1,8}} (?: \- (?: {ALPHA} | {DIGIT} ){{1,8}} )* ) | \* )"
 
 #   Accept-Language = [ ( language-range [ weight ] )
 #                       *( OWS "," OWS ( language-range [ weight ] ) ) ]
@@ -371,9 +367,7 @@ IMF_fixdate = rf"(?: {day_name} , {SP} {date1} {SP} {time_of_day} {SP} {GMT} )"
 #    / %x53.61.74.75.72.64.61.79 ; Saturday
 #    / %x53.75.6E.64.61.79 ; Sunday
 
-day_name_l = (
-    r"(?: Monday | Tuesday | Wednesday | Thursday | Friday | Saturday | Sunday )"
-)
+day_name_l = r"(?: Monday | Tuesday | Wednesday | Thursday | Friday | Saturday | Sunday )"
 
 #   date2 = day "-" month "-" 2DIGIT
 
@@ -634,9 +628,7 @@ received_by = rf"(?: (?: {uri_host} (?: : {port} )? ) | {pseudonym} )"
 #   Via = [ ( received-protocol RWS received-by [ RWS comment ] )
 #           *( OWS "," OWS ( received-protocol RWS received-by [ RWS comment ] ) ) ]
 
-Via = list_rule(
-    rf"(?: {received_protocol} {RWS} {received_by} (?: {RWS} {comment} )? )"
-)
+Via = list_rule(rf"(?: {received_protocol} {RWS} {received_by} (?: {RWS} {comment} )? )")
 
 #   WWW-Authenticate = [ challenge *( OWS "," OWS challenge ) ]
 

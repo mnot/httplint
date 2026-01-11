@@ -153,11 +153,7 @@ def _process_cookie_attribute(  # pylint: disable=too-many-branches,too-many-arg
             add_note(SET_COOKIE_BAD_DATE, why=str(why), cookie_name=cookie_name)
             return lifetime_note_added
         cookie_attribute_list.append(("Expires", expiry_time))
-        if (
-            current_time
-            and expiry_time > current_time + 34560000
-            and not lifetime_note_added
-        ):
+        if current_time and expiry_time > current_time + 34560000 and not lifetime_note_added:
             add_note(
                 SET_COOKIE_LIFETIME_TOO_LONG,
                 cookie_name=cookie_name,
@@ -478,10 +474,7 @@ issues](https://portswigger.net/research/bypassing-wafs-with-the-phantom-version
 class SET_COOKIE_UNKNOWN_ATTRIBUTE_VALUE(Note):
     category = categories.GENERAL
     level = levels.WARN
-    _summary = (
-        "The %(cookie_name)s cookie has an unknown "
-        "'%(attribute_name)s' attribute value."
-    )
+    _summary = "The %(cookie_name)s cookie has an unknown '%(attribute_name)s' attribute value."
     _text = """\
 This `Set-Cookie` header has an unknown "%(attribute_name)s" attribute value, "%(attribute_value)s".
 
@@ -553,9 +546,7 @@ Browsers will reject this cookie."""
 class SET_COOKIE_PREFIX_HOST_BAD_DOMAIN(Note):
     category = categories.GENERAL
     level = levels.BAD
-    _summary = (
-        "The %(cookie_name)s Set-Cookie header has a __Host- prefix but sets a Domain."
-    )
+    _summary = "The %(cookie_name)s Set-Cookie header has a __Host- prefix but sets a Domain."
     _text = """\
 The `Set-Cookie` header has a `__Host-` prefix, but it sets a `Domain` attribute.
 
@@ -602,9 +593,7 @@ class BasicSCTest(FieldTest):
 class ParameterSCTest(FieldTest):
     name = "Set-Cookie"
     inputs = [b"SID=31d4d96e407aad42; Path=/; Domain=example.com"]
-    expected_out = [
-        ("SID", "31d4d96e407aad42", [("Path", "/"), ("Domain", "example.com")])
-    ]
+    expected_out = [("SID", "31d4d96e407aad42", [("Path", "/"), ("Domain", "example.com")])]
 
 
 class TwoSCTest(FieldTest):
@@ -652,10 +641,7 @@ class RemoveSCTest(FieldTest):
 
 class WolframSCTest(FieldTest):
     name = "Set-Cookie"
-    inputs = [
-        b"WR_SID=50.56.234.188.1398; path=/; max-age=315360000; "
-        b"domain=.wolframalpha.com"
-    ]
+    inputs = [b"WR_SID=50.56.234.188.1398; path=/; max-age=315360000; " b"domain=.wolframalpha.com"]
     expected_out = [
         (
             "WR_SID",

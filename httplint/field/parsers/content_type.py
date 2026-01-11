@@ -19,9 +19,7 @@ a GET."""
     valid_in_requests = True
     valid_in_responses = True
 
-    def parse(
-        self, field_value: str, add_note: AddNoteMethodType
-    ) -> Tuple[str, ParamDictType]:
+    def parse(self, field_value: str, add_note: AddNoteMethodType) -> Tuple[str, ParamDictType]:
         try:
             media_type, param_str = field_value.split(";", 1)
         except ValueError:

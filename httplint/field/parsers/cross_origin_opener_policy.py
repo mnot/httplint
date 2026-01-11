@@ -65,9 +65,7 @@ it doesn't have a reference to the opener's window object."""
                 report_only=self.report_only_string,
             )
 
-    def post_check(
-        self, message: "HttpMessageLinter", add_note: AddNoteMethodType
-    ) -> None:
+    def post_check(self, message: "HttpMessageLinter", add_note: AddNoteMethodType) -> None:
         if not self.value or not isinstance(self.value, tuple):
             return
 
@@ -94,9 +92,7 @@ it doesn't have a reference to the opener's window object."""
 class COOP_SAME_ORIGIN(Note):
     category = categories.SECURITY
     level = levels.GOOD
-    _summary = (
-        "This response isolates the browsing context to the same origin%(report_only)s."
-    )
+    _summary = "This response isolates the browsing context to the same origin%(report_only)s."
     _text = """\
 The `same-origin`
 [Cross-Origin Opener Policy](https://html.spec.whatwg.org/multipage/origin.html#coop)
@@ -107,9 +103,7 @@ with cross-origin documents in supporting browsers.%(report_only_text)s"""
 class COOP_SAME_ORIGIN_ALLOW_POPUPS(Note):
     category = categories.SECURITY
     level = levels.GOOD
-    _summary = (
-        "This response isolates the browsing context but allows popups%(report_only)s."
-    )
+    _summary = "This response isolates the browsing context but allows popups%(report_only)s."
     _text = """\
 The `same-origin-allow-popups`
 [Cross-Origin Opener Policy](https://html.spec.whatwg.org/multipage/origin.html#coop)

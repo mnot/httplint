@@ -28,9 +28,7 @@ The `CDN-Cache-Control` header field targets cache directives to Content Deliver
 
             # Check for known directives
             if directive_name in KNOWN_CC:
-                _valid_req, _valid_res, value_func, value_type_str = KNOWN_CC[
-                    directive_name
-                ]
+                _valid_req, _valid_res, value_func, value_type_str = KNOWN_CC[directive_name]
 
                 # Check value type compatibility
                 if value_func is None:

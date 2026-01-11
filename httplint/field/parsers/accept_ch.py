@@ -43,9 +43,7 @@ willing to process the specified Client Hints."""
                 )
                 return
 
-    def post_check(
-        self, message: "HttpMessageLinter", add_note: AddNoteMethodType
-    ) -> None:
+    def post_check(self, message: "HttpMessageLinter", add_note: AddNoteMethodType) -> None:
         if not isinstance(message, HttpResponseLinter):
             return
 
@@ -136,6 +134,4 @@ class AcceptCHMissingVaryTest(FieldTest):
 
     def set_context(self, message: "HttpMessageLinter") -> None:
         message = cast(FakeResponseLinter, message)
-        message.caching = cast(
-            Any, SimpleNamespace(store_shared=True, store_private=True)
-        )
+        message.caching = cast(Any, SimpleNamespace(store_shared=True, store_private=True))

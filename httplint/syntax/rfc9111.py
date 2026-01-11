@@ -71,9 +71,7 @@ warn_date = rf"(?: {DQUOTE} {HTTP_date} {DQUOTE} )"
 
 #   warning-value = warn-code SP warn-agent SP warn-text [ SP warn-date ]
 
-warning_value = (
-    rf"(?: {warn_code} {SP} {warn_agent} {SP} {warn_text} (?: {SP} {warn_date} )? )"
-)
+warning_value = rf"(?: {warn_code} {SP} {warn_agent} {SP} {warn_text} (?: {SP} {warn_date} )? )"
 
 #   Warning = 1#warning-value
 # Note: RFC 9111 defines Warning as 1#warning-value, but doesn't show the ABNF

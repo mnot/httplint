@@ -41,8 +41,7 @@ sf_date = rf"@{sf_integer}"
 
 # bare-item = sf-integer / sf-decimal / sf-string / sf-token / sf-binary / sf-boolean / sf-date
 bare_item = (
-    rf"(?:{sf_decimal}|{sf_integer}|{sf_string}|{sf_token}|"
-    rf"{sf_binary}|{sf_boolean}|{sf_date})"
+    rf"(?:{sf_decimal}|{sf_integer}|{sf_string}|{sf_token}|" rf"{sf_binary}|{sf_boolean}|{sf_date})"
 )
 
 # key = ( lcalpha / "*" ) *( lcalpha / DIGIT / "_" / "-" / "." / "*" )

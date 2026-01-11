@@ -69,9 +69,7 @@ class CookieTest(FieldTest):
 
     def test_multiple_pairs(self) -> None:
         self.inputs = [b"SID=31d4d96e407aad42; lang=en-US"]
-        self.expected_out = [
-            [CookiePair("SID", "31d4d96e407aad42"), CookiePair("lang", "en-US")]
-        ]
+        self.expected_out = [[CookiePair("SID", "31d4d96e407aad42"), CookiePair("lang", "en-US")]]
         self.setUp()
         self.test_header()
 

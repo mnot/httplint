@@ -55,9 +55,7 @@ class StatusChecker:
         status_method()
 
     def status100(self) -> None:  # Continue
-        if self.request and not "100-continue" in get_header(
-            self.request.headers.text, "expect"
-        ):
+        if self.request and not "100-continue" in get_header(self.request.headers.text, "expect"):
             self.add_note("status", UNEXPECTED_CONTINUE)
 
     def status101(self) -> None:  # Switching Protocols
@@ -78,9 +76,7 @@ class StatusChecker:
 
     def status201(self) -> None:  # Created
         if self.request and self.request.method in safe_methods:
-            self.add_note(
-                "status", CREATED_SAFE_METHOD, method=self.request.method or ""
-            )
+            self.add_note("status", CREATED_SAFE_METHOD, method=self.request.method or "")
         if "location" not in self.response.headers.parsed:
             self.add_note("field-location", CREATED_WITHOUT_LOCATION)
 
@@ -171,11 +167,7 @@ class StatusChecker:
         self.add_note("", STATUS_NOT_FOUND)
 
     def status405(self) -> None:  # Method Not Allowed
-        if (
-            self.request
-            and self.request.method
-            and "allow" in self.response.headers.parsed
-        ):
+        if self.request and self.request.method and "allow" in self.response.headers.parsed:
             if self.request.method in self.response.headers.parsed["allow"]:
                 self.add_note("field-allow", STATUS_405_METHOD_IN_ALLOW)
                 return
@@ -189,9 +181,7 @@ class StatusChecker:
                 "accept-encoding",
                 "accept-language",
             ]
-            if not any(
-                get_header(self.request.headers.text, h) for h in negotiation_headers
-            ):
+            if not any(get_header(self.request.headers.text, h) for h in negotiation_headers):
                 self.add_note("", STATUS_406_WITHOUT_NEGOTIATION)
                 return
         self.add_note("", STATUS_NOT_ACCEPTABLE)
@@ -332,9 +322,7 @@ circumstances."""
 class HEADER_SHOULD_NOT_BE_IN_304(Note):
     category = categories.GENERAL
     level = levels.WARN
-    _summary = (
-        "This 304 (Not Modified) response contains headers that should not be sent."
-    )
+    _summary = "This 304 (Not Modified) response contains headers that should not be sent."
     _text = """\
 These headers are representation metadata that should not be sent in a 304 response unless
 they are being used to guide cache updates:
@@ -507,9 +495,7 @@ The server couldn't find any resource to serve for the given URI."""
 class STATUS_NOT_ACCEPTABLE(Note):
     category = categories.GENERAL
     level = levels.INFO
-    _summary = (
-        "The resource cannot produce a response that is acceptable to the client."
-    )
+    _summary = "The resource cannot produce a response that is acceptable to the client."
     _text = """\
 The `406 (Not Acceptable)` status code indicates that the resource cannot produce a response matching
 the list of acceptable values defined in the request's proactive negotiation header fields, such
@@ -572,9 +558,7 @@ class STATUS_UNSUPPORTED_MEDIA_TYPE(Note):
 class STATUS_IM_A_TEAPOT(Note):
     category = categories.GENERAL
     level = levels.WARN
-    _summary = (
-        "The server returned 418 (I'm a Teapot), an easter egg defined in RFC 2324."
-    )
+    _summary = "The server returned 418 (I'm a Teapot), an easter egg defined in RFC 2324."
     _text = """\
 RFC 2324 was an April Fools' Day RFC that lampooned the various ways HTTP was abused; one such abuse
 was the definition of the application-specific `418 (I'm a Teapot)` status code. In the
@@ -728,9 +712,7 @@ avoid enumerating the internal members of multiple bindings to the same collecti
 class STATUS_MISDIRECTED_REQUEST(Note):
     category = categories.GENERAL
     level = levels.INFO
-    _summary = (
-        "The request was directed at a server that is not able to produce a response."
-    )
+    _summary = "The request was directed at a server that is not able to produce a response."
     _text = """\
 The `421 (Misdirected Request)` status code indicates that the request was directed at a server
 that is not able to produce a response. This can happen when a connection is reused."""
@@ -739,9 +721,7 @@ that is not able to produce a response. This can happen when a connection is reu
 class STATUS_TOO_EARLY(Note):
     category = categories.GENERAL
     level = levels.INFO
-    _summary = (
-        "The server is unwilling to risk processing a request that might be replayed."
-    )
+    _summary = "The server is unwilling to risk processing a request that might be replayed."
     _text = """\
 The `425 (Too Early)` status code indicates that the server is unwilling to risk processing a
 request that might be replayed."""
@@ -786,9 +766,7 @@ the resource as a consequence of a legal demand."""
 class STATUS_LOOP_DETECTED(Note):
     category = categories.GENERAL
     level = levels.INFO
-    _summary = (
-        "The server terminated an operation because it encountered an infinite loop."
-    )
+    _summary = "The server terminated an operation because it encountered an infinite loop."
     _text = """\
 The `508 (Loop Detected)` status code indicates that the server terminated an operation because it
 encountered an infinite loop while processing a request with "Depth: infinity"."""

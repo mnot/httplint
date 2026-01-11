@@ -26,9 +26,7 @@ parts of the representation that are specified."""
     valid_in_requests = True
     valid_in_responses = False
 
-    def parse(
-        self, field_value: str, add_note: AddNoteMethodType
-    ) -> Optional[RangeValue]:
+    def parse(self, field_value: str, add_note: AddNoteMethodType) -> Optional[RangeValue]:
         try:
             unit, rest = field_value.split("=", 1)
         except ValueError:

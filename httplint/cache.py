@@ -62,23 +62,15 @@ class ResponseCacheChecker:
         if "date" not in text_fieldnames:
             self.notes.add("", DATE_CLOCKLESS)
             if "expires" in text_fieldnames or "last-modified" in text_fieldnames:
-                self.notes.add(
-                    "field-expires field-last-modified", DATE_CLOCKLESS_BAD_HDR
-                )
+                self.notes.add("field-expires field-last-modified", DATE_CLOCKLESS_BAD_HDR)
 
         return True
 
     def check_storable(self) -> bool:
         # method
-        if (
-            self._request
-            and self._request.method
-            and self._request.method not in CACHEABLE_METHODS
-        ):
+        if self._request and self._request.method and self._request.method not in CACHEABLE_METHODS:
             self.store_shared = self.store_private = False
-            self._request.notes.add(
-                "method", STORE_METHOD_UNCACHEABLE, method=self._request.method
-            )
+            self._request.notes.add("method", STORE_METHOD_UNCACHEABLE, method=self._request.method)
             return False
 
         # no-store
@@ -100,9 +92,7 @@ class ResponseCacheChecker:
             k.lower() for k, v in self._request.headers.text
         ]:
             if "public" in self.cc_dict:
-                self.notes.add(
-                    "field-cache-control", STORE_PUBLIC_AUTH, directive="public"
-                )
+                self.notes.add("field-cache-control", STORE_PUBLIC_AUTH, directive="public")
             elif "must-revalidate" in self.cc_dict:
                 self.notes.add(
                     "field-cache-control",
@@ -110,9 +100,7 @@ class ResponseCacheChecker:
                     directive="must-revalidate",
                 )
             elif "s-maxage" in self.cc_dict:
-                self.notes.add(
-                    "field-cache-control", STORE_PUBLIC_AUTH, directive="s-maxage"
-                )
+                self.notes.add("field-cache-control", STORE_PUBLIC_AUTH, directive="s-maxage")
             else:
                 self.store_shared = False
                 self.notes.add("field-cache-control", STORE_PRIVATE_AUTH)
@@ -157,9 +145,7 @@ class ResponseCacheChecker:
 
     def check_freshness(self) -> bool:
         # check to see if there's an Expires, even if it's invalid
-        expires_hdr_present = "expires" in [
-            n.lower() for (n, v) in self._response.headers.text
-        ]
+        expires_hdr_present = "expires" in [n.lower() for (n, v) in self._response.headers.text]
         self.has_explicit_freshness = False
         self.has_heuristic_freshness = False
         freshness_hdrs = ["field-date"]
@@ -167,9 +153,9 @@ class ResponseCacheChecker:
             # An invalid Expires header means it's automatically stale
             self.has_explicit_freshness = True
             freshness_hdrs.append("field-expires")
-            expires_lifetime = self.freshness_lifetime_shared = (
-                self.expires_value or 0
-            ) - (self.date_value or int(self.response_time))
+            expires_lifetime = self.freshness_lifetime_shared = (self.expires_value or 0) - (
+                self.date_value or int(self.response_time)
+            )
             self.freshness_lifetime_private = expires_lifetime
             self.freshness_lifetime_shared = expires_lifetime
         if "max-age" in self.cc_dict:
@@ -184,15 +170,11 @@ class ResponseCacheChecker:
 
         freshness_left = self.freshness_lifetime_private - self.age
         freshness_left_str = relative_time(abs(int(freshness_left)), 0, 0)
-        freshness_lifetime_str = relative_time(
-            int(self.freshness_lifetime_private), 0, 0
-        )
+        freshness_lifetime_str = relative_time(int(self.freshness_lifetime_private), 0, 0)
 
         shared_freshness_left = self.freshness_lifetime_shared - self.age
         shared_freshness_left_str = relative_time(abs(int(shared_freshness_left)), 0, 0)
-        shared_freshness_lifetime_str = relative_time(
-            int(self.freshness_lifetime_shared), 0, 0
-        )
+        shared_freshness_lifetime_str = relative_time(int(self.freshness_lifetime_shared), 0, 0)
 
         self.is_fresh = freshness_left > 0
         self.is_shared_fresh = shared_freshness_left > 0
@@ -345,8 +327,7 @@ class STORE_PUBLIC_AUTH(Note):
     category = categories.CACHING
     level = levels.INFO
     _summary = (
-        "This response can be stored by all caches, "
-        "even though the request was authenticated."
+        "This response can be stored by all caches, even though the request was authenticated."
     )
     _text = """\
 Usually, responses to authenticated requests can't be stored by shared caches. However, because
@@ -486,9 +467,7 @@ e.g., when they lose contact with the origin server. This is subject to a number
 class FRESHNESS_HEURISTIC(Note):
     category = categories.CACHING
     level = levels.WARN
-    _summary = (
-        "This response allows caches to assign their own freshness lifetimes to it."
-    )
+    _summary = "This response allows caches to assign their own freshness lifetimes to it."
     _text = """\
 When a response doesn't have explicit freshness information (like a `Cache-Control: max-age`
 directive, or `Expires` header), caches are allowed to estimate how fresh it is using a heuristic
@@ -545,9 +524,7 @@ See [RFC 5861](https://www.rfc-editor.org/rfc/rfc5861) for more information."""
 class STALE_WHILE_REVALIDATE(Note):
     category = categories.CACHING
     level = levels.INFO
-    _summary = (
-        "This response can be served stale from a cache while it is being revalidated."
-    )
+    _summary = "This response can be served stale from a cache while it is being revalidated."
     _text = """\
 The `stale-while-revalidate` cache directive allows a cache to serve a stale response while a
 revalidation request is happening in the background.

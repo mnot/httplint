@@ -27,9 +27,7 @@ dictionary available for use in compressing the response."""
         if not isinstance(self.value[0], bytes):
             add_note(AVAILABLE_DICTIONARY_BAD_TYPE, got=type(self.value[0]).__name__)
 
-    def post_check(
-        self, message: "HttpMessageLinter", add_note: AddNoteMethodType
-    ) -> None:
+    def post_check(self, message: "HttpMessageLinter", add_note: AddNoteMethodType) -> None:
         if not isinstance(message, HttpRequestLinter):
             return
 
@@ -47,8 +45,7 @@ class AVAILABLE_DICTIONARY_MISSING_AE(Note):
     category = categories.GENERAL
     level = levels.WARN
     _summary = (
-        "This request advertises a dictionary for compression,"
-        "but the client doesn't support it."
+        "This request advertises a dictionary for compression, but the client doesn't support it."
     )
     _text = """\
 The `Available-Dictionary` header is present, but `Accept-Encoding` does not contain 'dcb' or 'dcz'.

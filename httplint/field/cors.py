@@ -89,9 +89,7 @@ A preflight request requires the `Origin` header to be present."""
 class CORS_PREFLIGHT_REQ_NO_METHOD(Note):
     category = categories.SECURITY
     level = levels.BAD
-    _summary = (
-        "The %(field_name)s header requires the Access-Control-Request-Method header."
-    )
+    _summary = "The %(field_name)s header requires the Access-Control-Request-Method header."
     _text = """\
 The `%(field_name)s` header is only used in a Cross-Origin Resource Sharing (CORS) preflight
 request.

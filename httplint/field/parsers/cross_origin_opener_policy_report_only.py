@@ -18,9 +18,7 @@ The `Cross-Origin-Opener-Policy-Report-Only` header field allows a document to r
 potential violations of its Cross-Origin Opener Policy without enforcing them."""
     reference = "https://html.spec.whatwg.org/multipage/origin.html#coop"
     report_only_string = " (for reporting only)"
-    report_only_text = (
-        "\n\nBrowsers will only report violations of this policy, not enforce it."
-    )
+    report_only_text = "\n\nBrowsers will only report violations of this policy, not enforce it."
 
     def evaluate(self, add_note: AddNoteMethodType) -> None:
         if "cross-origin-opener-policy" in self.message.headers.handlers:

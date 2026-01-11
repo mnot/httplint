@@ -11,9 +11,7 @@ class x_pad(SingletonField):
 
     Since the affected browsers (specifically, Netscape 2.x, 3.x and 4.0 up to beta 2) are no longer
     widely used, it's safe to omit this header."""
-    reference = (
-        "https://www.oreilly.com/library/view/http-the-definitive/1565925092/re61.html"
-    )
+    reference = "https://www.oreilly.com/library/view/http-the-definitive/1565925092/re61.html"
     syntax = False
     deprecated = True
     valid_in_requests = False

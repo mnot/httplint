@@ -28,9 +28,7 @@ class StructuredField(HttpField):
         super().__init__(wire_name, message)
         self._sf_parsed = False
 
-    def handle_input(
-        self, field_value: str, add_note: AddNoteMethodType, offset: int
-    ) -> None:
+    def handle_input(self, field_value: str, add_note: AddNoteMethodType, offset: int) -> None:
         self.value.append(field_value)
         self._sf_parsed = False
 

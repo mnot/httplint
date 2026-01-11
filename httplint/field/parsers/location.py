@@ -23,9 +23,7 @@ In `201` (Created) responses, it identifies a newly created resource."""
     valid_in_responses = True
 
     def parse(self, field_value: str, add_note: AddNoteMethodType) -> str:
-        if isinstance(
-            self.message, HttpResponseLinter
-        ) and self.message.status_code not in [
+        if isinstance(self.message, HttpResponseLinter) and self.message.status_code not in [
             201,
             300,
             301,

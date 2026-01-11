@@ -22,9 +22,7 @@ consumer of Server-Timing."""
     valid_in_responses = True
     structured_field = False
 
-    def parse(
-        self, field_value: str, add_note: AddNoteMethodType
-    ) -> Tuple[str, ParamDictType]:
+    def parse(self, field_value: str, add_note: AddNoteMethodType) -> Tuple[str, ParamDictType]:
         try:
             metric_name, param_str = field_value.split(";", 1)
         except ValueError:
@@ -60,9 +58,7 @@ consumer of Server-Timing."""
 class SERVER_TIMING_BAD_PARAM(Note):
     category = categories.GENERAL
     level = levels.WARN
-    _summary = (
-        "The '%(param)s' parameter on the '%(metric)s' metric has a non-numeric value."
-    )
+    _summary = "The '%(param)s' parameter on the '%(metric)s' metric has a non-numeric value."
     _text = """\
 The `%(param)s` parameter on the `%(metric)s` metric of the Server-Timing header requires a
 valid number, but `%(value)s` was found.

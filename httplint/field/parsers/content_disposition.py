@@ -23,9 +23,7 @@ the file, rather than display it."""
     valid_in_requests = True
     valid_in_responses = True
 
-    def parse(
-        self, field_value: str, add_note: AddNoteMethodType
-    ) -> Tuple[str, ParamDictType]:
+    def parse(self, field_value: str, add_note: AddNoteMethodType) -> Tuple[str, ParamDictType]:
         try:
             disposition, param_str = field_value.split(";", 1)
         except ValueError:
@@ -71,8 +69,7 @@ class DISPOSITION_FILENAME_PERCENT(Note):
     category = categories.GENERAL
     level = levels.WARN
     _summary = (
-        "The 'filename' parameter on the Content-Disposition header "
-        "contains a '%%' character."
+        "The 'filename' parameter on the Content-Disposition header contains a '%%' character."
     )
     _text = """\
 The `Content-Disposition` header suggests a filename for clients to use when saving the file
@@ -90,9 +87,7 @@ correct encoding in the `filename*` parameter instead."""
 class DISPOSITION_FILENAME_PATH_CHAR(Note):
     category = categories.GENERAL
     level = levels.WARN
-    _summary = (
-        "The filename in the Content-Disposition header contains a path character."
-    )
+    _summary = "The filename in the Content-Disposition header contains a path character."
     _text = """\
 The `Content-Disposition` header suggests a filename for clients to use when saving the file
 locally, using the `filename` and `filename*` parameters.

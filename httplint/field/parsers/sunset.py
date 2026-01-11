@@ -22,11 +22,7 @@ specified timestamp."""
         return parse_http_date(field_value, add_note)
 
     def evaluate(self, add_note: AddNoteMethodType) -> None:
-        if (
-            self.message.start_time
-            and self.value
-            and self.value < self.message.start_time
-        ):
+        if self.message.start_time and self.value and self.value < self.message.start_time:
             add_note(SUNSET_PAST)
 
 

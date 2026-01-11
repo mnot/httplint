@@ -128,9 +128,7 @@ origin_form = rf"(?: {absolute_path} (?: {query} )? )"
 
 #   request-target = origin-form / absolute-form / authority-form / asterisk-form
 
-request_target = (
-    rf"(?: {origin_form} | {absolute_form} | {authority_form} | {asterisk_form} )"
-)
+request_target = rf"(?: {origin_form} | {absolute_form} | {authority_form} | {asterisk_form} )"
 
 #   request-line = method SP request-target SP HTTP-version CRLF
 
@@ -161,6 +159,4 @@ message_body = rf"(?: {OCTET}* )"
 
 #   HTTP-message = start-line *( header-field CRLF ) CRLF [ message-body ]
 
-HTTP_message = (
-    rf"(?: {start_line} (?: {header_field} {CRLF} )* {CRLF} (?: {message_body} )? )"
-)
+HTTP_message = rf"(?: {start_line} (?: {header_field} {CRLF} )* {CRLF} (?: {message_body} )? )"

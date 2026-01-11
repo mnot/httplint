@@ -27,11 +27,7 @@ It is used by caches as input to expiration calculations, and to detect clock dr
         return parse_http_date(field_value, add_note)
 
     def evaluate(self, add_note: AddNoteMethodType) -> None:
-        if (
-            self.message.message_type == "response"
-            and self.message.start_time
-            and self.value
-        ):
+        if self.message.message_type == "response" and self.message.start_time and self.value:
             age_value = self.message.headers.parsed.get("age", 0) or 0
             skew = self.value - int(self.message.start_time) + age_value
             if age_value > MAX_CLOCK_SKEW > (age_value - skew):

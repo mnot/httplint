@@ -45,9 +45,7 @@ It is part of the legacy Reporting API."""
                     if "url" not in endpoint:
                         add_note(REPORT_TO_MISSING_KEY, key="endpoints[].url")
                     elif not isinstance(endpoint["url"], str):
-                        add_note(
-                            REPORT_TO_BAD_TYPE, key="endpoints[].url", expected="string"
-                        )
+                        add_note(REPORT_TO_BAD_TYPE, key="endpoints[].url", expected="string")
 
 
 class REPORT_TO_BAD_STRUCTURE(Note):
@@ -77,12 +75,8 @@ The `%(key)s` key must be of type %(expected)s."""
 
 class ReportToTest(FieldTest):
     name = "Report-To"
-    inputs = [
-        b'{"max_age": 10886400, "endpoints": [{"url": "https://example.com/reports"}]}'
-    ]
-    expected_out = [
-        {"max_age": 10886400, "endpoints": [{"url": "https://example.com/reports"}]}
-    ]
+    inputs = [b'{"max_age": 10886400, "endpoints": [{"url": "https://example.com/reports"}]}']
+    expected_out = [{"max_age": 10886400, "endpoints": [{"url": "https://example.com/reports"}]}]
     expected_notes = []
 
 

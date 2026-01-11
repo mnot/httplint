@@ -69,9 +69,7 @@ It allows websites to declare that they want to receive reports about network er
                         details="it must be between 0.0 and 1.0",
                     )
 
-    def post_check(
-        self, message: "HttpMessageLinter", add_note: AddNoteMethodType
-    ) -> None:
+    def post_check(self, message: "HttpMessageLinter", add_note: AddNoteMethodType) -> None:
         if not self.value:
             return
 
@@ -151,9 +149,7 @@ class NelTest(FieldTest):
     expected_notes = []
 
     def set_context(self, message: "HttpMessageLinter") -> None:
-        message.headers.process(
-            [(b"Reporting-Endpoints", b'group1="https://example.com/reports"')]
-        )
+        message.headers.process([(b"Reporting-Endpoints", b'group1="https://example.com/reports"')])
 
 
 class NelMultiLineTest(FieldTest):
@@ -193,9 +189,7 @@ class NelBadFractionTest(FieldTest):
     expected_notes = [NEL_BAD_VALUE]
 
     def set_context(self, message: "HttpMessageLinter") -> None:
-        message.headers.process(
-            [(b"Reporting-Endpoints", b'a="https://example.com/reports"')]
-        )
+        message.headers.process([(b"Reporting-Endpoints", b'a="https://example.com/reports"')])
 
 
 class NelBadJsonTest(FieldTest):
@@ -213,9 +207,7 @@ class NelReportToTest(FieldTest):
     expected_notes = []
 
     def set_context(self, message: "HttpMessageLinter") -> None:
-        message.headers.process(
-            [(b"Reporting-Endpoints", b'group1="https://example.com/reports"')]
-        )
+        message.headers.process([(b"Reporting-Endpoints", b'group1="https://example.com/reports"')])
 
 
 class NelReportToMissingTest(FieldTest):

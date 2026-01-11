@@ -40,9 +40,7 @@ browsers that it should only be communicated with using HTTPS, instead of using 
             value = parts[1].strip() if len(parts) > 1 else None
 
             if name in seen_directives:
-                self._deferred_notes.append(
-                    (HSTS_DUPLICATE_DIRECTIVE, {"directive": name})
-                )
+                self._deferred_notes.append((HSTS_DUPLICATE_DIRECTIVE, {"directive": name}))
                 continue
             seen_directives.add(name)
 
@@ -50,9 +48,7 @@ browsers that it should only be communicated with using HTTPS, instead of using 
                 try:
                     parsed["max-age"] = int(value)  # type: ignore
                 except (ValueError, TypeError):
-                    self._deferred_notes.append(
-                        (HSTS_BAD_MAX_AGE, {"max_age": str(value)})
-                    )
+                    self._deferred_notes.append((HSTS_BAD_MAX_AGE, {"max_age": str(value)}))
             elif name == "includesubdomains":
                 parsed["includesubdomains"] = True
                 if value is not None:
@@ -62,9 +58,7 @@ browsers that it should only be communicated with using HTTPS, instead of using 
             elif name == "preload":
                 parsed["preload"] = True
                 if value is not None:
-                    self._deferred_notes.append(
-                        (HSTS_VALUE_NOT_ALLOWED, {"directive": "preload"})
-                    )
+                    self._deferred_notes.append((HSTS_VALUE_NOT_ALLOWED, {"directive": "preload"}))
             else:
                 # Unknown directive, ignore
                 pass
@@ -97,9 +91,7 @@ browsers that it should only be communicated with using HTTPS, instead of using 
             notes_to_add.append(HSTS_NO_PRELOAD)
 
         if parsed["max-age"] is None:
-            has_bad_max_age = any(
-                n[0] is HSTS_BAD_MAX_AGE for n in self._deferred_notes
-            )
+            has_bad_max_age = any(n[0] is HSTS_BAD_MAX_AGE for n in self._deferred_notes)
             if not has_bad_max_age:
                 notes_to_add.append(HSTS_NO_MAX_AGE)
             is_valid = False

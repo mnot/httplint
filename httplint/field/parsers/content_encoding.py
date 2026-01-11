@@ -31,16 +31,13 @@ of its underlying media type; e.g., `gzip` and `deflate`."""
             self.message.related, HttpRequestLinter
         ):
             accept_encoding = [
-                a[0]
-                for a in self.message.related.headers.parsed.get("accept-encoding", [])
+                a[0] for a in self.message.related.headers.parsed.get("accept-encoding", [])
             ]
             if field_value.lower() not in accept_encoding:
                 add_note(ENCODING_UNWANTED, coding=field_value)
         return field_value.lower()
 
-    def post_check(
-        self, message: "HttpMessageLinter", add_note: AddNoteMethodType
-    ) -> None:
+    def post_check(self, message: "HttpMessageLinter", add_note: AddNoteMethodType) -> None:
         if not isinstance(message, HttpResponseLinter):
             return
 
@@ -73,9 +70,7 @@ to prevent serving compressed content to clients that do not have the dictionary
 class ENCODING_UNWANTED(Note):
     category = categories.CONNEG
     level = levels.WARN
-    _summary = (
-        "This response uses the '%(coding)s' content-coding, but it wasn't requested."
-    )
+    _summary = "This response uses the '%(coding)s' content-coding, but it wasn't requested."
     _text = """\
 This response's `Content-Encoding` header indicates it has the `%(coding)s content-coding applied
 , but the client didn't indicate support for it in the request.
@@ -116,8 +111,6 @@ class ContentEncodingMissingVaryTest(FieldTest):
 
     def set_context(self, message: "HttpMessageLinter") -> None:
         message = cast(FakeResponseLinter, message)
-        message.caching = cast(
-            Any, SimpleNamespace(store_shared=True, store_private=True)
-        )
+        message.caching = cast(Any, SimpleNamespace(store_shared=True, store_private=True))
         # Vary missing 'Available-Dictionary'
         message.headers.parsed["vary"] = set()

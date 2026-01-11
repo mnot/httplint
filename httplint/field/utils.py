@@ -63,9 +63,7 @@ def split_string(instr: str, item: str, split: str) -> List[str]:
     """
     if not instr:
         return []
-    return [
-        h.strip() for h in re.findall(rf"{item}(?={split}|\s*$)", instr, re.VERBOSE)
-    ]
+    return [h.strip() for h in re.findall(rf"{item}(?={split}|\s*$)", instr, re.VERBOSE)]
 
 
 def split_list_field(field_value: str) -> List[str]:
@@ -73,8 +71,7 @@ def split_list_field(field_value: str) -> List[str]:
     return [
         f.strip()
         for f in re.findall(
-            r'((?:[^",]|%s)+)(?=%s|\s*$)'
-            % (rfc9110.quoted_string, r"(?:\s*(?:,\s*)+)"),
+            r'((?:[^",]|%s)+)(?=%s|\s*$)' % (rfc9110.quoted_string, r"(?:\s*(?:,\s*)+)"),
             field_value,
             RE_FLAGS,
         )
@@ -181,9 +178,7 @@ def check_sf_params(
                 if param_value is True:
                     param_list.append(f"* {known_params[param_name]['desc']}")
                 else:
-                    param_list.append(
-                        f"* {known_params[param_name]['desc'] % param_value}"
-                    )
+                    param_list.append(f"* {known_params[param_name]['desc'] % param_value}")
             else:
                 if param_value is True:
                     param_list.append(f"* `{param_name}`")
@@ -229,9 +224,7 @@ differently."""
 class PARAM_SINGLE_QUOTED(Note):
     category = categories.GENERAL
     level = levels.WARN
-    _summary = (
-        "The '%(param)s' parameter on the %(field_name)s header is single-quoted."
-    )
+    _summary = "The '%(param)s' parameter on the %(field_name)s header is single-quoted."
     _text = """\
 The `%(param)s`'s value on the %(field_name)s field starts and ends with a single quote (').
 However, single quotes don't mean anything there.

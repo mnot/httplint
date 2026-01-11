@@ -18,11 +18,7 @@ the request/response chain."""
     valid_in_responses = True
 
     def evaluate(self, add_note: AddNoteMethodType) -> None:
-        via_list = (
-            "<ul>"
-            + "\n".join([f"<li><code>{v}</code></li>" for v in self.value])
-            + "</ul>"
-        )
+        via_list = "<ul>" + "\n".join([f"<li><code>{v}</code></li>" for v in self.value]) + "</ul>"
         add_note(VIA_PRESENT, via_list=via_list)
 
 

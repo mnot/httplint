@@ -65,8 +65,7 @@ class FRAME_OPTIONS_SAMEORIGIN(Note):
     category = categories.SECURITY
     level = levels.INFO
     _summary = (
-        "This response prevents some browsers from rendering it "
-        "within a frame on another site."
+        "This response prevents some browsers from rendering it within a frame on another site."
     )
     # Original URL:
     # http://blogs.msdn.com/b/ie/archive/2009/01/27/ie8-security-part-vii-clickjacking-defenses.aspx

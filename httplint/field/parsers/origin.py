@@ -33,9 +33,7 @@ Request Forgery (CSRF) and in Cross-Origin Resource Sharing (CORS)."""
         re.VERBOSE,
     )
 
-    def parse(
-        self, field_value: str, add_note: AddNoteMethodType
-    ) -> Union[str, List[OriginValue]]:
+    def parse(self, field_value: str, add_note: AddNoteMethodType) -> Union[str, List[OriginValue]]:
         if field_value == "null":
             return "null"
 
@@ -66,9 +64,7 @@ the string "null"."""
 class OriginTest(FieldTest):
     name = "Origin"
     inputs = [b"https://example.com"]
-    expected_out: Union[str, List[OriginValue]] = [
-        OriginValue("https", "example.com", None)
-    ]
+    expected_out: Union[str, List[OriginValue]] = [OriginValue("https", "example.com", None)]
 
     def test_null(self) -> None:
         self.inputs = [b"null"]

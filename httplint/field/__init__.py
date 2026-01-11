@@ -70,16 +70,12 @@ class HttpField:
         field's values.
         """
 
-    def post_check(
-        self, message: "HttpMessageLinter", add_note: AddNoteMethodType
-    ) -> None:
+    def post_check(self, message: "HttpMessageLinter", add_note: AddNoteMethodType) -> None:
         """
         Called after the message is complete and other processing has occurred.
         """
 
-    def handle_input(
-        self, field_value: str, add_note: AddNoteMethodType, offset: int
-    ) -> None:
+    def handle_input(self, field_value: str, add_note: AddNoteMethodType, offset: int) -> None:
         """
         Basic input processing on a new field value.
         """
@@ -126,9 +122,7 @@ class HttpField:
                 continue
             self.value.append(parsed_value)
 
-    def pre_check(
-        self, message: "HttpMessageLinter", add_note: AddNoteMethodType
-    ) -> bool:
+    def pre_check(self, message: "HttpMessageLinter", add_note: AddNoteMethodType) -> bool:
         """
         Called before parsing or evaluating the field.
         If False is returned, processing is aborted.
@@ -176,6 +170,7 @@ slashes (/), quotes, square brackets ([]), question marks, equals signs (=), cur
 spaces or tabs."""
 
 
+# BAD_SYNTAX should NOT be used by specific Notes.
 class BAD_SYNTAX(Note):
     category = categories.GENERAL
     level = levels.WARN
@@ -190,6 +185,7 @@ improve interoperability.
 """
 
 
+# BAD_SYNTAX_DETAILED should NOT be used by specific Notes.
 class BAD_SYNTAX_DETAILED(BAD_SYNTAX):
     category = categories.GENERAL
     level = levels.BAD

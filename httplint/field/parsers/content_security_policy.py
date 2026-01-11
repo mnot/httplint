@@ -133,9 +133,7 @@ sources of content that browsers are allowed to load on a page."""
                 report_only_text=self.report_only_text,
             )
 
-    def post_check(
-        self, message: "HttpMessageLinter", add_note: AddNoteMethodType
-    ) -> None:
+    def post_check(self, message: "HttpMessageLinter", add_note: AddNoteMethodType) -> None:
         if not self.value:
             return
 
@@ -344,6 +342,4 @@ class CSPReportToMismatchTest(FieldTest):
     expected_notes = [CONTENT_SECURITY_POLICY, CSP_REPORT_TO_MISSING]
 
     def set_context(self, message: "HttpMessageLinter") -> None:
-        message.headers.process(
-            [(b"Reporting-Endpoints", b'endpoint-2="https://example.com"')]
-        )
+        message.headers.process([(b"Reporting-Endpoints", b'endpoint-2="https://example.com"')])

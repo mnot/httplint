@@ -18,9 +18,7 @@ acceptable in the response."""
     valid_in_requests = True
     valid_in_responses = False
 
-    def parse(
-        self, field_value: str, add_note: AddNoteMethodType
-    ) -> Tuple[str, ParamDictType]:
+    def parse(self, field_value: str, add_note: AddNoteMethodType) -> Tuple[str, ParamDictType]:
         try:
             encoding, param_str = field_value.split(";", 1)
         except ValueError:

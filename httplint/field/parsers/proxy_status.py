@@ -58,54 +58,36 @@ KNOWN_PARAMS: Dict[str, Dict[str, Any]] = {
             Token(
                 "destination_not_found"
             ): "The proxy could not determine the IP address of the next hop.",
-            Token(
-                "destination_unavailable"
-            ): "The proxy could not connect to the next hop.",
+            Token("destination_unavailable"): "The proxy could not connect to the next hop.",
             Token(
                 "destination_ip_prohibited"
             ): "The proxy was configured to block access to the next hop IP.",
             Token(
                 "destination_ip_unroutable"
             ): "The proxy could not route packets to the next hop IP.",
-            Token(
-                "connection_refused"
-            ): "The proxy's connection to the next hop was refused.",
-            Token(
-                "connection_terminated"
-            ): "The proxy's connection to the next hop was closed.",
-            Token(
-                "connection_timeout"
-            ): "The proxy's connection to the next hop timed out.",
+            Token("connection_refused"): "The proxy's connection to the next hop was refused.",
+            Token("connection_terminated"): "The proxy's connection to the next hop was closed.",
+            Token("connection_timeout"): "The proxy's connection to the next hop timed out.",
             Token(
                 "connection_read_timeout"
             ): "The proxy encountered a timeout while waiting for data.",
             Token(
                 "connection_write_timeout"
             ): "The proxy encountered a timeout while writing data.",
-            Token(
-                "connection_limit_reached"
-            ): "The proxy reached a limit on open connections.",
+            Token("connection_limit_reached"): "The proxy reached a limit on open connections.",
             Token("tls_protocol_error"): "The proxy encountered a TLS error.",
-            Token(
-                "tls_certificate_error"
-            ): "The proxy encountered a certificate error.",
+            Token("tls_certificate_error"): "The proxy encountered a certificate error.",
             Token("tls_alert_received"): "The proxy received a TLS alert.",
             Token(
                 "http_request_error"
             ): "The proxy encountered an error while generating the request.",
             Token("http_request_denied"): "The proxy denied the request.",
-            Token(
-                "http_response_incomplete"
-            ): "The proxy received an incomplete response.",
+            Token("http_response_incomplete"): "The proxy received an incomplete response.",
             Token(
                 "http_response_header_section_size"
             ): "The proxy received a header section that was too large.",
-            Token(
-                "http_response_header_size"
-            ): "The proxy received a header that was too large.",
-            Token(
-                "http_response_body_size"
-            ): "The proxy received a body that was too large.",
+            Token("http_response_header_size"): "The proxy received a header that was too large.",
+            Token("http_response_body_size"): "The proxy received a body that was too large.",
             Token(
                 "http_response_transfer_coding"
             ): "The proxy encountered an error decoding the transfer coding.",
@@ -118,9 +100,7 @@ KNOWN_PARAMS: Dict[str, Dict[str, Any]] = {
             Token("http_upgrade_failed"): "The proxy failed to upgrade the connection.",
             Token("http_protocol_error"): "The proxy encountered a protocol error.",
             Token("proxy_internal_error"): "The proxy encountered an internal error.",
-            Token(
-                "proxy_configuration_error"
-            ): "The proxy encountered a configuration error.",
+            Token("proxy_configuration_error"): "The proxy encountered a configuration error.",
             Token("proxy_loop_detected"): "The proxy detected a loop.",
         },
     },

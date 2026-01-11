@@ -63,9 +63,7 @@ KNOWN_PARAMS: Dict[str, Dict[str, Any]] = {
         ],
         "value_desc": {
             Token("bypass"): "The cache was configured to bypass the cache.",
-            Token(
-                "method"
-            ): "The request method's semantics require the request to be forwarded.",
+            Token("method"): "The request method's semantics require the request to be forwarded.",
             Token("uri-miss"): "The cache did not contain a response for the URI.",
             Token(
                 "vary-miss"

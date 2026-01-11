@@ -18,9 +18,7 @@ The `Cross-Origin-Embedder-Policy-Report-Only` header field allows a document to
 potential violations of its Cross-Origin Embedder Policy without enforcing them."""
     reference = "https://html.spec.whatwg.org/multipage/origin.html#coep"
     report_only_string = " (for reporting only)"
-    report_only_text = (
-        "\n\nBrowsers will only report violations of this policy, not enforce it."
-    )
+    report_only_text = "\n\nBrowsers will only report violations of this policy, not enforce it."
 
     def evaluate(self, add_note: AddNoteMethodType) -> None:
         if "cross-origin-embedder-policy" in self.message.headers.handlers:

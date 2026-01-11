@@ -65,9 +65,7 @@ resources that don't explicitly grant the document permission (using CORP or COR
                 report_only=self.report_only_string,
             )
 
-    def post_check(
-        self, message: "HttpMessageLinter", add_note: AddNoteMethodType
-    ) -> None:
+    def post_check(self, message: "HttpMessageLinter", add_note: AddNoteMethodType) -> None:
         if not self.value or not isinstance(self.value, tuple):
             return
 
@@ -105,9 +103,7 @@ requires that all cross-origin resources must explicitly grant permission to be 
 class COEP_CREDENTIALLESS(Note):
     category = categories.SECURITY
     level = levels.GOOD
-    _summary = (
-        "This response loads cross-origin resources without credentials%(report_only)s."
-    )
+    _summary = "This response loads cross-origin resources without credentials%(report_only)s."
     _text = """\
 The `credentialless`
 [Cross-Origin Embedder Policy](https://fetch.spec.whatwg.org/#cross-origin-embedder-policy-header)
@@ -120,8 +116,7 @@ class COEP_UNSAFE_NONE(Note):
     category = categories.SECURITY
     level = levels.WARN
     _summary = (
-        "This response allows loading cross-origin resources without restriction"
-        "%(report_only)s."
+        "This response allows loading cross-origin resources without restriction%(report_only)s."
     )
     _text = """\
 The `unsafe-none`

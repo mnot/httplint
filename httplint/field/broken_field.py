@@ -20,14 +20,10 @@ class BrokenField(HttpField):
         super().__init__(wire_name, message)
         self.raw_values: List[Tuple[str, int]] = []
 
-    def handle_input(
-        self, field_value: str, add_note: "AddNoteMethodType", offset: int
-    ) -> None:
+    def handle_input(self, field_value: str, add_note: "AddNoteMethodType", offset: int) -> None:
         self.raw_values.append((field_value, offset))
 
-    def finish(
-        self, message: "HttpMessageLinter", add_note: "AddNoteMethodType"
-    ) -> None:
+    def finish(self, message: "HttpMessageLinter", add_note: "AddNoteMethodType") -> None:
         parsed_values = []
         for raw_value, offset in self.raw_values:
             # override add_note's subject to be offset-based

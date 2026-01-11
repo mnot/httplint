@@ -37,9 +37,7 @@ loaded by a cross-origin document."""
 class CORP_SAME_ORIGIN(Note):
     category = categories.SECURITY
     level = levels.INFO
-    _summary = (
-        "This response is only available for reading to requests from the same origin."
-    )
+    _summary = "This response is only available for reading to requests from the same origin."
     _text = """\
 The `same-origin`
 [Cross-Origin Resource Policy](https://fetch.spec.whatwg.org/#cross-origin-resource-policy-header)

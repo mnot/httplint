@@ -67,9 +67,7 @@ class AccessControlRequestHeadersPreflightTest(FieldTest):
         process_headers = []
         for name, value in headers:
             if name.lower() == b"access-control-request-method":
-                self.message.headers.parsed["access-control-request-method"] = (
-                    value.decode("ascii")
-                )
+                self.message.headers.parsed["access-control-request-method"] = value.decode("ascii")
             else:
                 process_headers.append((name, value))
 

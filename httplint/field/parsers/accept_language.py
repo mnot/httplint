@@ -27,9 +27,7 @@ preferred in the response."""
     valid_in_requests = True
     valid_in_responses = False
 
-    def parse(
-        self, field_value: str, add_note: AddNoteMethodType
-    ) -> AcceptLanguageValue:
+    def parse(self, field_value: str, add_note: AddNoteMethodType) -> AcceptLanguageValue:
         try:
             language, param_str = field_value.split(";", 1)
         except ValueError:

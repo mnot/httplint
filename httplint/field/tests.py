@@ -79,9 +79,7 @@ class FieldTest(unittest.TestCase):
             )
             handler.post_check(self.message, field_add_note)
 
-        out = self.message.headers.parsed.get(
-            self.name.lower(), "HEADER HANDLER NOT FOUND"
-        )
+        out = self.message.headers.parsed.get(self.name.lower(), "HEADER HANDLER NOT FOUND")
         self.assertEqual(self.expected_out, out)
         all_notes: List[Note] = []
 
@@ -118,9 +116,7 @@ class FieldTest(unittest.TestCase):
     def set_context(self, message: "HttpMessageLinter") -> None:
         pass
 
-    def assert_note(
-        self, input_bytes: bytes, note: Type[Note], expected_out: Any = None
-    ) -> None:
+    def assert_note(self, input_bytes: bytes, note: Type[Note], expected_out: Any = None) -> None:
         self.inputs = [input_bytes]
         self.expected_notes = [note]
         self.expected_out = expected_out

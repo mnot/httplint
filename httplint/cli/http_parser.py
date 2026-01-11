@@ -28,10 +28,7 @@ class HttpCliParser(HttpMessageHandler):
 
     def handle_input(self, inbytes: bytes) -> None:
         HttpMessageHandler.handle_input(self, inbytes)
-        if (
-            self._input_delimit == Delimiters.CLOSE
-            and self._input_state == States.HEADERS_DONE
-        ):
+        if self._input_delimit == Delimiters.CLOSE and self._input_state == States.HEADERS_DONE:
             self.input_end([])
 
     def input_start(
@@ -48,9 +45,7 @@ class HttpCliParser(HttpMessageHandler):
             method, iri, version = self.request_topline(top_line)
             self.linter.process_request_topline(method, iri, version)
             self.linter.process_headers(hdr_tuples)
-            allows_body = bool(content_length and content_length > 0) or (
-                transfer_codes != []
-            )
+            allows_body = bool(content_length and content_length > 0) or (transfer_codes != [])
             is_final = True
         if self.mode == modes.RESPONSE:
             self.linter = HttpResponseLinter(start_time=self.start_time)

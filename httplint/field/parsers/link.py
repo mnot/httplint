@@ -22,9 +22,7 @@ statement of the form "[context IRI] has a [relation type] resource at [target I
     valid_in_requests = True
     valid_in_responses = True
 
-    def parse(
-        self, field_value: str, add_note: AddNoteMethodType
-    ) -> Tuple[str, ParamDictType]:
+    def parse(self, field_value: str, add_note: AddNoteMethodType) -> Tuple[str, ParamDictType]:
         try:
             link_value, param_str = field_value.split(";", 1)
         except ValueError:
@@ -38,14 +36,10 @@ statement of the form "[context IRI] has a [relation type] resource at [target I
         if "rev" in param_dict:
             add_note(LINK_REV, link=link_value, rev=str(param_dict["rev"]))
         if "anchor" in param_dict and param_dict["anchor"]:  # URI-Reference
-            if not re.match(
-                rf"^\s*{rfc3986.URI_reference}\s*$", param_dict["anchor"], re.VERBOSE
-            ):
+            if not re.match(rf"^\s*{rfc3986.URI_reference}\s*$", param_dict["anchor"], re.VERBOSE):
                 add_note(LINK_BAD_ANCHOR, link=link_value, anchor=param_dict["anchor"])
         if "type" in param_dict and param_dict["type"]:
-            if not re.match(
-                rf"^\s*{rfc9110.media_type}\s*$", param_dict["type"], re.VERBOSE
-            ):
+            if not re.match(rf"^\s*{rfc9110.media_type}\s*$", param_dict["type"], re.VERBOSE):
                 add_note(LINK_BAD_TYPE, link=link_value, type=param_dict["type"])
         return link_value, param_dict
 

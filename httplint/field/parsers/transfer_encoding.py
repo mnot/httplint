@@ -31,9 +31,7 @@ Transfer codings can only be used in HTTP/1; HTTP/2 and HTTP/3 do not support th
     valid_in_requests = True
     valid_in_responses = True
 
-    def parse(
-        self, field_value: str, add_note: AddNoteMethodType
-    ) -> Tuple[str, ParamDictType]:
+    def parse(self, field_value: str, add_note: AddNoteMethodType) -> Tuple[str, ParamDictType]:
         try:
             coding, param_str = field_value.split(";", 1)
         except ValueError:
@@ -75,9 +73,7 @@ You can remove this token to save a few bytes."""
 class TRANSFER_CODING_UNWANTED(Note):
     category = categories.CONNECTION
     level = levels.BAD
-    _summary = (
-        "This response uses the '%(coding)s' transfer-coding, but it wasn't requested."
-    )
+    _summary = "This response uses the '%(coding)s' transfer-coding, but it wasn't requested."
     _text = """\
 This response's `Transfer-Encoding` header indicates it has the `%(coding)s` transfer-coding applied,
 but the client didn't indicate support for it in the request.
