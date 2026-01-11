@@ -90,7 +90,7 @@ that caches store separate responses for different client hints."""
 
 
 class ACCEPT_CH_BAD_SYNTAX(Note):
-    category = categories.GENERAL
+    category = categories.CONNEG
     level = levels.BAD
     _summary = "The Accept-CH header isn't a List of Tokens."
     _text = """\
