@@ -17,7 +17,9 @@ class strict_transport_security(SingletonField):
 The `Strict-Transport-Security` response header (often abbreviated as HSTS) lets a web site tell
 browsers that it should only be communicated with using HTTPS, instead of using HTTP."""
     reference = "https://www.rfc-editor.org/rfc/rfc6797"
-    syntax = rf"(?: {sts_dir} (?: {rfc9110.OWS} ; {rfc9110.OWS} {sts_dir} )* )"
+    syntax = (
+        rf"(?: {sts_dir} (?: {rfc9110.OWS} ; {rfc9110.OWS} {sts_dir} )* (?: {rfc9110.OWS} ;)? )"
+    )
     deprecated = False
     valid_in_requests = False
     valid_in_responses = True
@@ -33,6 +35,10 @@ browsers that it should only be communicated with using HTTPS, instead of using 
             "preload": False,
         }
         directives = [d.strip() for d in field_value.split(";")]
+        if directives and directives[-1] == "":
+            directives.pop()
+            self._deferred_notes.append((HSTS_TRAILING_SEMICOLON, {}))
+
         seen_directives = set()
         for directive in directives:
             parts = directive.split("=", 1)
@@ -251,6 +257,16 @@ The `%(directive)s` directive appears more than once in the `Strict-Transport-Se
 Directives must only appear once."""
 
 
+class HSTS_TRAILING_SEMICOLON(Note):
+    category = categories.SECURITY
+    level = levels.INFO
+    _summary = "The Strict-Transport-Security header has a trailing semicolon."
+    _text = """\
+The `Strict-Transport-Security` header contains a trailing semicolon. Technically, this violates
+the grammar, so strict implementations might find it confusing. However, most implementations
+should ignore it."""
+
+
 class HSTS_OVER_HTTP(Note):
     category = categories.SECURITY
     level = levels.WARN
@@ -433,6 +449,16 @@ class HSTSBadMaxAgeValueTest(FieldTest):
         HSTS_NO_PRELOAD,
         HSTS_INVALID,
     ]
+
+    def set_context(self, message: HttpMessageLinter) -> None:
+        message.base_uri = "https://www.example.com/"
+
+
+class HSTSTrailingSemicolonTest(FieldTest):
+    name = "Strict-Transport-Security"
+    inputs = [b"max-age=31536000;includeSubdomains;"]
+    expected_out = {"max-age": 31536000, "includesubdomains": True, "preload": False}
+    expected_notes = [HSTS_SUBDOMAINS, HSTS_NO_PRELOAD, HSTS_VALID, HSTS_TRAILING_SEMICOLON]
 
     def set_context(self, message: HttpMessageLinter) -> None:
         message.base_uri = "https://www.example.com/"
