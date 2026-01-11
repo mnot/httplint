@@ -1,7 +1,12 @@
+from typing import TYPE_CHECKING
+
 from httplint.field.json_field import JsonField, BAD_JSON
 from httplint.field.tests import FieldTest
 from httplint.note import Note, categories, levels
 from httplint.types import AddNoteMethodType
+
+if TYPE_CHECKING:
+    from httplint.message import HttpMessageLinter
 
 
 class nel(JsonField):
@@ -64,6 +69,26 @@ It allows websites to declare that they want to receive reports about network er
                         details="it must be between 0.0 and 1.0",
                     )
 
+    def post_check(
+        self, message: "HttpMessageLinter", add_note: AddNoteMethodType
+    ) -> None:
+        if not self.value:
+            return
+
+        reporting_endpoints_field = message.headers.parsed.get("reporting-endpoints")
+        reporting_endpoints = (
+            list(reporting_endpoints_field.keys()) if reporting_endpoints_field else []
+        )
+        known_endpoints = set(reporting_endpoints)
+
+        for policy in self.value:
+            if not isinstance(policy, dict):
+                continue
+            report_to = policy.get("report_to")
+            if report_to and isinstance(report_to, str):
+                if report_to not in known_endpoints:
+                    add_note(NEL_REPORT_TO_MISSING, key="report_to", value=report_to)
+
 
 class NEL_BAD_STRUCTURE(Note):
     category = categories.GENERAL
@@ -99,6 +124,16 @@ The `%(key)s` key has an invalid value; %(details)s.
 Details: %(details)s"""
 
 
+class NEL_REPORT_TO_MISSING(Note):
+    category = categories.GENERAL
+    level = levels.WARN
+    _summary = "The report_to endpoint '%(value)s' is not defined."
+    _text = """\
+The `report_to` member in the [Network Error Logging](https://w3c.github.io/network-error-logging/)
+policy specifies a reporting endpoint, but no matching endpoint refers to it in the
+`Reporting-Endpoints` header."""
+
+
 class NelTest(FieldTest):
     name = "NEL"
     inputs = [
@@ -115,6 +150,11 @@ class NelTest(FieldTest):
     ]
     expected_notes = []
 
+    def set_context(self, message: "HttpMessageLinter") -> None:
+        message.headers.process(
+            [(b"Reporting-Endpoints", b'group1="https://example.com/reports"')]
+        )
+
 
 class NelMultiLineTest(FieldTest):
     name = "NEL"
@@ -127,6 +167,16 @@ class NelMultiLineTest(FieldTest):
         {"report_to": "group2", "max_age": 3600},
     ]
     expected_notes = []
+
+    def set_context(self, message: "HttpMessageLinter") -> None:
+        message.headers.process(
+            [
+                (
+                    b"Reporting-Endpoints",
+                    b'group1="https://example.com/1", group2="https://example.com/2"',
+                )
+            ]
+        )
 
 
 class NelMissingReportToTest(FieldTest):
@@ -142,9 +192,34 @@ class NelBadFractionTest(FieldTest):
     expected_out = [{"report_to": "a", "max_age": 1, "success_fraction": 1.5}]
     expected_notes = [NEL_BAD_VALUE]
 
+    def set_context(self, message: "HttpMessageLinter") -> None:
+        message.headers.process(
+            [(b"Reporting-Endpoints", b'a="https://example.com/reports"')]
+        )
+
 
 class NelBadJsonTest(FieldTest):
     name = "NEL"
     inputs = [b"{unquoted: key}"]
     expected_out = None
+    expected_out = None
     expected_notes = [BAD_JSON]
+
+
+class NelReportToTest(FieldTest):
+    name = "NEL"
+    inputs = [b'{"report_to": "group1", "max_age": 100}']
+    expected_out = [{"report_to": "group1", "max_age": 100}]
+    expected_notes = []
+
+    def set_context(self, message: "HttpMessageLinter") -> None:
+        message.headers.process(
+            [(b"Reporting-Endpoints", b'group1="https://example.com/reports"')]
+        )
+
+
+class NelReportToMissingTest(FieldTest):
+    name = "NEL"
+    inputs = [b'{"report_to": "group1", "max_age": 100}']
+    expected_out = [{"report_to": "group1", "max_age": 100}]
+    expected_notes = [NEL_REPORT_TO_MISSING]

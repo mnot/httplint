@@ -1,10 +1,13 @@
-from typing import Any
+from typing import Any, TYPE_CHECKING
 from http_sf import Token
 
 from httplint.field.structured_field import StructuredField
 from httplint.field.tests import FieldTest
 from httplint.note import Note, categories, levels
 from httplint.types import AddNoteMethodType
+
+if TYPE_CHECKING:
+    from httplint.message import HttpMessageLinter
 
 
 class cross_origin_embedder_policy(StructuredField):
@@ -62,6 +65,31 @@ resources that don't explicitly grant the document permission (using CORP or COR
                 report_only=self.report_only_string,
             )
 
+    def post_check(
+        self, message: "HttpMessageLinter", add_note: AddNoteMethodType
+    ) -> None:
+        if not self.value or not isinstance(self.value, tuple):
+            return
+
+        # self.value is (item, params)
+        params = self.value[1]
+        report_to = params.get("report-to")
+        if not report_to:
+            return
+
+        reporting_endpoints_field = message.headers.parsed.get("reporting-endpoints")
+        reporting_endpoints = (
+            list(reporting_endpoints_field.keys()) if reporting_endpoints_field else []
+        )
+        known_endpoints = set(reporting_endpoints)
+
+        if report_to not in known_endpoints:
+            add_note(
+                COEP_REPORT_TO_MISSING,
+                endpoint=report_to,
+                report_only=self.report_only_string,
+            )
+
 
 class COEP_REQUIRE_CORP(Note):
     category = categories.SECURITY
@@ -114,6 +142,17 @@ The `%(field_name)s` header must be one of `require-corp`, `credentialless`, or
 """
 
 
+class COEP_REPORT_TO_MISSING(Note):
+    category = categories.SECURITY
+    level = levels.WARN
+    _summary = "The report-to endpoint '%(endpoint)s' is not defined%(report_only)s."
+    _text = """\
+The `report-to` parameter in the
+[Cross-Origin Embedder Policy](https://fetch.spec.whatwg.org/#cross-origin-embedder-policy-header)
+header specifies a reporting endpoint, but no matching endpoint refers to it in the
+`Reporting-Endpoints` header."""
+
+
 class CrossOriginEmbedderPolicyRequireCorpTest(FieldTest):
     name = "Cross-Origin-Embedder-Policy"
     inputs = [b"require-corp"]
@@ -140,3 +179,22 @@ class CrossOriginEmbedderPolicyBadValueTest(FieldTest):
     inputs = [b"foo"]
     expected_out: Any = (Token("foo"), {})
     expected_notes = [CROSS_ORIGIN_EMBEDDER_POLICY_BAD_VALUE]
+
+
+class CrossOriginEmbedderPolicyReportToTest(FieldTest):
+    name = "Cross-Origin-Embedder-Policy"
+    inputs = [b"require-corp; report-to=endpoint"]
+    expected_out: Any = (Token("require-corp"), {"report-to": "endpoint"})
+    expected_notes = [COEP_REQUIRE_CORP]
+
+    def set_context(self, message: "HttpMessageLinter") -> None:
+        message.headers.process(
+            [(b"Reporting-Endpoints", b'endpoint="https://example.com/reports"')]
+        )
+
+
+class CrossOriginEmbedderPolicyReportToMissingTest(FieldTest):
+    name = "Cross-Origin-Embedder-Policy"
+    inputs = [b"require-corp; report-to=endpoint"]
+    expected_out: Any = (Token("require-corp"), {"report-to": "endpoint"})
+    expected_notes = [COEP_REQUIRE_CORP, COEP_REPORT_TO_MISSING]

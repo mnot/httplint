@@ -1,10 +1,13 @@
-from typing import Any
+from typing import Any, TYPE_CHECKING
 from http_sf import Token
 
 from httplint.field.structured_field import StructuredField
 from httplint.field.tests import FieldTest
 from httplint.note import Note, categories, levels
 from httplint.types import AddNoteMethodType
+
+if TYPE_CHECKING:
+    from httplint.message import HttpMessageLinter
 
 
 class cross_origin_opener_policy(StructuredField):
@@ -62,6 +65,31 @@ it doesn't have a reference to the opener's window object."""
                 report_only=self.report_only_string,
             )
 
+    def post_check(
+        self, message: "HttpMessageLinter", add_note: AddNoteMethodType
+    ) -> None:
+        if not self.value or not isinstance(self.value, tuple):
+            return
+
+        # self.value is (item, params)
+        params = self.value[1]
+        report_to = params.get("report-to")
+        if not report_to:
+            return
+
+        reporting_endpoints_field = message.headers.parsed.get("reporting-endpoints")
+        reporting_endpoints = (
+            list(reporting_endpoints_field.keys()) if reporting_endpoints_field else []
+        )
+        known_endpoints = set(reporting_endpoints)
+
+        if report_to not in known_endpoints:
+            add_note(
+                COOP_REPORT_TO_MISSING,
+                endpoint=report_to,
+                report_only=self.report_only_string,
+            )
+
 
 class COOP_SAME_ORIGIN(Note):
     category = categories.SECURITY
@@ -113,6 +141,17 @@ or `unsafe-none`.
 """
 
 
+class COOP_REPORT_TO_MISSING(Note):
+    category = categories.SECURITY
+    level = levels.WARN
+    _summary = "The report-to endpoint '%(endpoint)s' is not defined%(report_only)s."
+    _text = """\
+The `report-to` parameter in the
+[Cross-Origin Opener Policy](https://html.spec.whatwg.org/multipage/origin.html#coop)
+header specifies a reporting endpoint, but no matching endpoint refers to it in the
+`Reporting-Endpoints` header."""
+
+
 class CrossOriginOpenerPolicySameOriginTest(FieldTest):
     name = "Cross-Origin-Opener-Policy"
     inputs = [b"same-origin"]
@@ -139,3 +178,22 @@ class CrossOriginOpenerPolicyBadValueTest(FieldTest):
     inputs = [b"foo"]
     expected_out: Any = (Token("foo"), {})
     expected_notes = [CROSS_ORIGIN_OPENER_POLICY_BAD_VALUE]
+
+
+class CrossOriginOpenerPolicyReportToTest(FieldTest):
+    name = "Cross-Origin-Opener-Policy"
+    inputs = [b"same-origin; report-to=endpoint"]
+    expected_out: Any = (Token("same-origin"), {"report-to": "endpoint"})
+    expected_notes = [COOP_SAME_ORIGIN]
+
+    def set_context(self, message: "HttpMessageLinter") -> None:
+        message.headers.process(
+            [(b"Reporting-Endpoints", b'endpoint="https://example.com/reports"')]
+        )
+
+
+class CrossOriginOpenerPolicyReportToMissingTest(FieldTest):
+    name = "Cross-Origin-Opener-Policy"
+    inputs = [b"same-origin; report-to=endpoint"]
+    expected_out: Any = (Token("same-origin"), {"report-to": "endpoint"})
+    expected_notes = [COOP_SAME_ORIGIN, COOP_REPORT_TO_MISSING]
