@@ -171,9 +171,29 @@ class StatusChecker:
         self.add_note("", STATUS_NOT_FOUND)
 
     def status405(self) -> None:  # Method Not Allowed
-        pass
+        if (
+            self.request
+            and self.request.method
+            and "allow" in self.response.headers.parsed
+        ):
+            if self.request.method in self.response.headers.parsed["allow"]:
+                self.add_note("field-allow", STATUS_405_METHOD_IN_ALLOW)
+                return
+        self.add_note("", STATUS_METHOD_NOT_ALLOWED)
 
     def status406(self) -> None:  # Not Acceptable
+        if self.request:
+            negotiation_headers = [
+                "accept",
+                "accept-charset",
+                "accept-encoding",
+                "accept-language",
+            ]
+            if not any(
+                get_header(self.request.headers.text, h) for h in negotiation_headers
+            ):
+                self.add_note("", STATUS_406_WITHOUT_NEGOTIATION)
+                return
         self.add_note("", STATUS_NOT_ACCEPTABLE)
 
     def status407(self) -> None:  # Proxy Authentication Required
@@ -202,6 +222,8 @@ class StatusChecker:
             ]
             if not any(get_header(self.request.headers.text, h) for h in match_headers):
                 self.add_note("", STATUS_412_WITHOUT_PRECONDITION)
+                return
+        self.add_note("", STATUS_PRECONDITION_FAILED)
 
     def status413(self) -> None:  # Request Entity Too Large
         self.add_note("", STATUS_REQUEST_ENTITY_TOO_LARGE)
@@ -225,8 +247,11 @@ class StatusChecker:
             expect_headers = get_header(self.request.headers.text, "expect")
             if not expect_headers:
                 self.add_note("", STATUS_417_WITHOUT_EXPECT)
-            elif "100-continue" in expect_headers:
+                return
+            if "100-continue" in expect_headers:
                 self.add_note("", STATUS_417_WITH_100_CONTINUE)
+                return
+        self.add_note("", STATUS_EXPECTATION_FAILED)
 
     def status418(self) -> None:
         self.add_note("", STATUS_IM_A_TEAPOT)
@@ -450,6 +475,27 @@ class STATUS_FORBIDDEN(Note):
 """
 
 
+class STATUS_METHOD_NOT_ALLOWED(Note):
+    category = categories.GENERAL
+    level = levels.INFO
+    _summary = "The resource does not allow the %(method)s method."
+    _text = """\
+The `405 (Method Not Allowed)` status code indicates that the HTTP method is
+known by the origin server but not supported by the target resource."""
+
+
+class STATUS_405_METHOD_IN_ALLOW(Note):
+    category = categories.GENERAL
+    level = levels.WARN
+    _summary = "%(method)s is not allowed, but the resource lists it in Allow."
+    _text = """\
+The `405 (Method Not Allowed)` status code indicates that the HTTP method is
+known by the origin server but not supported by the target resource.
+
+However, the `Allow` header field listed in the response contains the method used,
+indicating that it is allowed."""
+
+
 class STATUS_NOT_FOUND(Note):
     category = categories.GENERAL
     level = levels.INFO
@@ -461,9 +507,26 @@ The server couldn't find any resource to serve for the given URI."""
 class STATUS_NOT_ACCEPTABLE(Note):
     category = categories.GENERAL
     level = levels.INFO
-    _summary = "The resource could not be found."
+    _summary = (
+        "The resource cannot produce a response that is acceptable to the client."
+    )
     _text = """\
+The `406 (Not Acceptable)` status code indicates that the resource cannot produce a response matching
+the list of acceptable values defined in the request's proactive negotiation header fields, such
+as `Accept`, `Accept-Charset`, `Accept-Encoding`, or `Accept-Language`.
 """
+
+
+class STATUS_406_WITHOUT_NEGOTIATION(Note):
+    category = categories.GENERAL
+    level = levels.WARN
+    _summary = "The 406 (Not Acceptable) status code appears to be misused."
+    _text = """\
+The `406 (Not Acceptable)` status code indicates that the request cannot produce a response matching
+the list of acceptable values defined in the request's proactive negotiation header fields.
+
+However, this request didn't contain any proactive negotiation headers (such as `Accept`,
+`Accept-Charset`, `Accept-Encoding`, or `Accept-Language`)."""
 
 
 class STATUS_CONFLICT(Note):
@@ -568,6 +631,25 @@ class STATUS_VERSION_NOT_SUPPORTED(Note):
     _summary = "The request HTTP version isn't supported."
     _text = """\
 """
+
+
+class STATUS_PRECONDITION_FAILED(Note):
+    category = categories.GENERAL
+    level = levels.INFO
+    _summary = "The request precondition failed."
+    _text = """\
+The `412 (Precondition Failed)` status code indicates that one or more conditions given in the
+request header fields (typically, those starting with `If-`)evaluated to false when tested 
+on the server."""
+
+
+class STATUS_EXPECTATION_FAILED(Note):
+    category = categories.GENERAL
+    level = levels.INFO
+    _summary = "The request expectation failed."
+    _text = """\
+The `417 (Expectation Failed)` status code indicates that the expectation given in the request's
+`Expect` header field could not be met by at least one of the inbound servers."""
 
 
 class STATUS_412_WITHOUT_PRECONDITION(Note):
