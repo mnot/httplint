@@ -38,7 +38,11 @@ parts of the representation that are specified."""
         for rng in rest.split(","):
             rng = rng.strip()
             if "-" not in rng:
-                add_note(BAD_SYNTAX, ref_uri=self.reference)
+                add_note(
+                    RANGE_BAD_SYNTAX,
+                    ref_uri=self.reference,
+                    problem="the range specifier must contain a hyphen",
+                )
                 return None
 
             first_str, last_str = rng.split("-", 1)
@@ -47,18 +51,30 @@ parts of the representation that are specified."""
 
             if first_str:
                 if not first_str.isdigit():
-                    add_note(BAD_SYNTAX, ref_uri=self.reference)
+                    add_note(
+                        RANGE_BAD_SYNTAX,
+                        ref_uri=self.reference,
+                        problem="the first position in the range must be an integer",
+                    )
                     return None
                 first_byte_pos = int(first_str)
 
             if last_str:
                 if not last_str.isdigit():
-                    add_note(BAD_SYNTAX, ref_uri=self.reference)
+                    add_note(
+                        RANGE_BAD_SYNTAX,
+                        ref_uri=self.reference,
+                        problem="the last position in the range must be an integer",
+                    )
                     return None
                 last_byte_pos = int(last_str)
 
             if first_byte_pos is None and last_byte_pos is None:
-                add_note(BAD_SYNTAX, ref_uri=self.reference)
+                add_note(
+                    RANGE_BAD_SYNTAX,
+                    ref_uri=self.reference,
+                    problem="at least one of the first or last positions must be specified",
+                )
                 return None
 
             if (
@@ -80,6 +96,16 @@ class RANGE_INVALID(Note):
     _text = """\
 The values indicated by the `Range` header are not valid. The first position must be less
 than or equal to the last position."""
+
+
+class RANGE_BAD_SYNTAX(Note):
+    category = categories.RANGE
+    level = levels.BAD
+    _summary = "The Range header value isn't valid."
+    _text = """\
+The value for this field doesn't conform to its specified syntax; %(problem)s.
+
+See [its definition](%(ref_uri)s) for more information."""
 
 
 class RangeTest(FieldTest):
@@ -117,7 +143,7 @@ class RangeSyntaxErrorTest(FieldTest):
     name = "Range"
     inputs = [b"bytes=a-b"]
     expected_out = None
-    expected_notes = [BAD_SYNTAX]
+    expected_notes = [RANGE_BAD_SYNTAX]
 
 
 class RangeNoSplitTest(FieldTest):

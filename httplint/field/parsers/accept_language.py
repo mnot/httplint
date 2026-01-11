@@ -55,7 +55,7 @@ preferred in the response."""
 
         if param_dict:
             # RFC 9110 only defines q parameter for Accept-Language
-            add_note(BAD_SYNTAX, ref_uri=self.reference)
+            add_note(ACCEPT_LANGUAGE_BAD_SYNTAX, ref_uri=self.reference)
 
         return AcceptLanguageValue(language, q_val)
 
@@ -69,6 +69,15 @@ class BAD_Q_VALUE(Note):
     _summary = "The q value on '{language}' is invalid."
     _text = """\
 The `q` parameter must be a decimal number between 0 and 1, with at most 3 digits of precision."""
+
+
+class ACCEPT_LANGUAGE_BAD_SYNTAX(Note):
+    category = categories.GENERAL
+    level = levels.BAD
+    _summary = "The Accept-Language header isn't valid."
+    _text = """\
+The value for this field doesn't conform to its specified syntax; see [its
+definition](%(ref_uri)s) for more information."""
 
 
 class AcceptLanguageTest(FieldTest):
@@ -85,7 +94,7 @@ class AcceptLanguageParamTest(FieldTest):
     name = "Accept-Language"
     inputs = [b"en; foo=bar"]
     expected_out = [AcceptLanguageValue("en", None)]
-    expected_notes = [BAD_SYNTAX]
+    expected_notes = [ACCEPT_LANGUAGE_BAD_SYNTAX, BAD_SYNTAX]
 
 
 class AcceptLanguageBadQTest(FieldTest):

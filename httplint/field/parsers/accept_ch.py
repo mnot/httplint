@@ -5,7 +5,6 @@ from http_sf import Token
 from httplint.field.structured_field import StructuredField
 from httplint.field.tests import FieldTest, FakeResponseLinter, FakeRequestLinter
 from httplint.note import Note, categories, levels
-from httplint.field.notes import BAD_SYNTAX
 from httplint.types import AddNoteMethodType
 from httplint.message import HttpResponseLinter, HttpRequestLinter
 
@@ -39,7 +38,7 @@ willing to process the specified Client Hints."""
         for item in self.value:
             if not isinstance(item[0], Token):
                 add_note(
-                    BAD_SYNTAX,
+                    ACCEPT_CH_BAD_SYNTAX,
                     ref_uri=self.reference,
                 )
                 return
@@ -92,6 +91,15 @@ Because these fields can affect the response content, they should be included in
 that caches store separate responses for different client hints."""
 
 
+class ACCEPT_CH_BAD_SYNTAX(Note):
+    category = categories.GENERAL
+    level = levels.BAD
+    _summary = "The Accept-CH header isn't a List of Tokens."
+    _text = """\
+The value for this field doesn't conform to its specified syntax; see [its
+definition](%(ref_uri)s) for more information."""
+
+
 class AcceptCHTest(FieldTest):
     name = "Accept-CH"
     inputs = [b"Sec-CH-Example, Sec-CH-Example-2"]
@@ -104,7 +112,7 @@ class AcceptCHBadSyntaxTest(FieldTest):
     inputs = [b'"foo"']
     expected_out = [("foo", {})]
     expected_notes = [
-        BAD_SYNTAX,
+        ACCEPT_CH_BAD_SYNTAX,
     ]
 
 
