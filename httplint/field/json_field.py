@@ -29,7 +29,7 @@ class JsonField(HttpField):
         try:
             self.value = json.loads(combined_value)
         except json.JSONDecodeError as why:
-            add_note(BAD_JSON, error=str(why))
+            add_note(BAD_JSON, error=str(why), category=self.category)
             self.value = None
 
         super().finish(message, add_note)

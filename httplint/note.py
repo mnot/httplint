@@ -1,6 +1,6 @@
 from collections import UserList
 from enum import Enum
-from typing import Any, MutableMapping, Dict, Type, List
+from typing import Any, MutableMapping, Dict, Type, List, Optional
 
 from markupsafe import Markup, escape
 from markdown import Markdown
@@ -40,10 +40,18 @@ class Notes(UserList):
         UserList.__init__(self)
         self._default_vars = default_vars
 
-    def add(self, subject: str, note: Type["Note"], **vrs: VariableType) -> "Note":
+    def add(
+        self,
+        subject: str,
+        note: Type["Note"],
+        category: Optional[categories] = None,
+        **vrs: VariableType,
+    ) -> "Note":
         tmp_vars: MutableMapping[str, VariableType] = self._default_vars.copy()
         tmp_vars.update(vrs)
         new_note = note(subject, **tmp_vars)
+        if category and new_note.category == categories.GENERAL:
+            new_note.category = category
         self.data.append(new_note)
         return new_note
 

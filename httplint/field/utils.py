@@ -15,13 +15,15 @@ from httplint.note import Note, categories, levels
 RE_FLAGS = re.VERBOSE | re.IGNORECASE
 
 
-def parse_http_date(value: str, add_note: AddNoteMethodType) -> int:
+def parse_http_date(
+    value: str, add_note: AddNoteMethodType, category: Optional[categories] = None
+) -> int:
     """Parse a HTTP date. Raises ValueError if it's bad."""
     if not re.match(rf"^{rfc9110.HTTP_date}$", value, RE_FLAGS):
-        add_note(BAD_DATE_SYNTAX)
+        add_note(BAD_DATE_SYNTAX, category=category)
         raise ValueError
     if re.match(rf"^{rfc9110.obs_date}$", value, RE_FLAGS):
-        add_note(DATE_OBSOLETE)
+        add_note(DATE_OBSOLETE, category=category)
     date_tuple = lib_parsedate(value)
     if date_tuple is None:
         raise ValueError

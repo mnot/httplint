@@ -50,6 +50,7 @@ class HttpField:
     valid_in_responses: bool
     deprecated: bool = False
     no_coverage: bool = False  # Turns off coverage checks.
+    category: categories = categories.GENERAL
 
     def __init__(self, wire_name: str, message: "HttpMessageLinter") -> None:
         self.wire_name = wire_name.strip()
@@ -113,9 +114,10 @@ class HttpField:
                             ref_uri=self.reference,
                             value=value,
                             problem=problem,
+                            category=self.category,
                         )
                     else:
-                        offset_add_note(BAD_SYNTAX, ref_uri=self.reference)
+                        offset_add_note(BAD_SYNTAX, ref_uri=self.reference, category=self.category)
             try:
                 parsed_value = self.parse(value.strip(), offset_add_note)
             except ValueError:
@@ -130,12 +132,12 @@ class HttpField:
         # check whether we're in the right message type
         if self.message.message_type == "request":
             if not self.valid_in_requests:
-                add_note(RESPONSE_HDR_IN_REQUEST)
+                add_note(RESPONSE_HDR_IN_REQUEST, category=self.category)
                 self.value = None
                 return False
         else:
             if not self.valid_in_responses:
-                add_note(REQUEST_HDR_IN_RESPONSE)
+                add_note(REQUEST_HDR_IN_RESPONSE, category=self.category)
                 self.value = None
                 return False
 
@@ -146,7 +148,7 @@ class HttpField:
 
         if self.deprecated:
             deprecation_ref = getattr(self, "deprecation_ref", self.reference)
-            add_note(FIELD_DEPRECATED, deprecation_ref=deprecation_ref)
+            add_note(FIELD_DEPRECATED, deprecation_ref=deprecation_ref, category=self.category)
 
         return True
 

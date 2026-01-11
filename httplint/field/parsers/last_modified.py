@@ -20,7 +20,7 @@ representation was last modified."""
     valid_in_responses = True
 
     def parse(self, field_value: str, add_note: AddNoteMethodType) -> int:
-        return parse_http_date(field_value, add_note)
+        return parse_http_date(field_value, add_note, category=self.category)
 
     def evaluate(self, add_note: AddNoteMethodType) -> None:
         date_value = self.message.headers.parsed.get("date", None)

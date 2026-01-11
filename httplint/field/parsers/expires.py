@@ -18,7 +18,7 @@ caches."""
     valid_in_responses = True
 
     def parse(self, field_value: str, add_note: AddNoteMethodType) -> int:
-        return parse_http_date(field_value, add_note)
+        return parse_http_date(field_value, add_note, category=self.category)
 
 
 class BasicExpiresTest(FieldTest):

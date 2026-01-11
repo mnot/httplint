@@ -60,13 +60,28 @@ class StructuredField(HttpField):
                 context_str = combined_value[context_start:context_end]
                 pointer = " " * (bad_char_index - context_start) + "^"
                 context = Markup(f"\n\n    {context_str}\n    {pointer}")
-            add_note(STRUCTURED_FIELD_PARSE_ERROR, problem=problem, context=context)
+            add_note(
+                STRUCTURED_FIELD_PARSE_ERROR,
+                problem=problem,
+                context=context,
+                category=self.category,
+            )
             self.value = None
         except ValueError as why:
-            add_note(STRUCTURED_FIELD_PARSE_ERROR, problem=f"{why}", context=Markup(""))
+            add_note(
+                STRUCTURED_FIELD_PARSE_ERROR,
+                problem=f"{why}",
+                context=Markup(""),
+                category=self.category,
+            )
             self.value = None
         except Exception as why:  # pylint: disable=broad-except
-            add_note(STRUCTURED_FIELD_PARSE_ERROR, problem=f"{why}", context=Markup(""))
+            add_note(
+                STRUCTURED_FIELD_PARSE_ERROR,
+                problem=f"{why}",
+                context=Markup(""),
+                category=self.category,
+            )
             self.value = None
 
         self._sf_parsed = True
