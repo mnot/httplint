@@ -133,6 +133,44 @@ sources of content that browsers are allowed to load on a page."""
                 report_only_text=self.report_only_text,
             )
 
+    def post_check(
+        self, message: "HttpMessageLinter", add_note: AddNoteMethodType
+    ) -> None:
+        if not self.value:
+            return
+
+        reporting_endpoints_field = message.headers.parsed.get("reporting-endpoints")
+        reporting_endpoints = (
+            list(reporting_endpoints_field.keys()) if reporting_endpoints_field else []
+        )
+
+        known_endpoints = set(reporting_endpoints)
+
+        for parsed_directives in self.value:
+            for name, value in parsed_directives.items():
+                if name == "report-to":
+                    if value not in known_endpoints:
+                        # Find the parent note
+                        parent_note = None
+                        for note in message.notes:
+                            if isinstance(note, CONTENT_SECURITY_POLICY):
+                                parent_note = note
+                                break
+                        
+                        if parent_note:
+                            parent_note.add_child(
+                                CSP_REPORT_TO_MISSING,
+                                endpoint=value,
+                                report_only_text=self.report_only_text,
+                            )
+                        else:
+                            # Fallback if parent not found (should be rare)
+                            add_note(
+                                CSP_REPORT_TO_MISSING,
+                                endpoint=value,
+                                report_only_text=self.report_only_text,
+                            )
+
     def _make_list(self, items: list[str]) -> str:
         return "\n".join([f"* `{item}`" for item in items])
 
@@ -225,6 +263,16 @@ It was found in the following directives:
 %(directives_list)s"""
 
 
+class CSP_REPORT_TO_MISSING(Note):
+    category = categories.SECURITY
+    level = levels.WARN
+    _summary = "The report-to endpoint '%(endpoint)s' is not defined."
+    _text = """\
+The `report-to` directive [Content Security Policy](https://www.w3.org/TR/CSP3/)
+specifies a reporting endpoint, but no matching endpoint refers to it in the
+`Reporting-Endpoints` header.%(report_only_text)s"""
+
+
 class CSPTest(FieldTest):
     name = "Content-Security-Policy"
     inputs = [b"default-src 'self'; script-src 'unsafe-inline'"]
@@ -260,8 +308,40 @@ class CSPWideOpenTest(FieldTest):
     expected_notes = [CONTENT_SECURITY_POLICY, CSP_WIDE_OPEN]
 
 
+
 class CSPTrailingSemiTest(FieldTest):
     name = "Content-Security-Policy"
     inputs = [b"default-src 'self'; script-src 'self';"]
     expected_out = [{"default-src": "'self'", "script-src": "'self'"}]
     expected_notes = [CONTENT_SECURITY_POLICY]
+
+
+class CSPReportToTest(FieldTest):
+    name = "Content-Security-Policy"
+    inputs = [b"sort-src 'self'; report-to endpoint"]
+    expected_out = [{"sort-src": "'self'", "report-to": "endpoint"}]
+    expected_notes = [CONTENT_SECURITY_POLICY]
+
+    def set_context(self, message: "HttpMessageLinter") -> None:
+        message.headers.process(
+            [(b"Reporting-Endpoints", b'endpoint="https://example.com/reports"')]
+        )
+
+
+class CSPReportToMissingTest(FieldTest):
+    name = "Content-Security-Policy"
+    inputs = [b"script-src 'self'; report-to endpoint"]
+    expected_out = [{"script-src": "'self'", "report-to": "endpoint"}]
+    expected_notes = [CONTENT_SECURITY_POLICY, CSP_REPORT_TO_MISSING]
+
+
+class CSPReportToMismatchTest(FieldTest):
+    name = "Content-Security-Policy"
+    inputs = [b"script-src 'self'; report-to endpoint"]
+    expected_out = [{"script-src": "'self'", "report-to": "endpoint"}]
+    expected_notes = [CONTENT_SECURITY_POLICY, CSP_REPORT_TO_MISSING]
+
+    def set_context(self, message: "HttpMessageLinter") -> None:
+        message.headers.process(
+            [(b"Reporting-Endpoints", b'endpoint-2="https://example.com"')]
+        )
