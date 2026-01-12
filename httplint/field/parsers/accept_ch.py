@@ -15,8 +15,8 @@ if TYPE_CHECKING:
 class accept_ch(StructuredField):
     canonical_name = "Accept-CH"
     description = """\
-The `Accept-CH` response header field allows servers to indicate that they are
-willing to process the specified Client Hints."""
+The `Accept-CH` response header field allows servers to indicate the Client Hints that they are
+willing to process."""
     reference = "https://www.rfc-editor.org/rfc/rfc8942.html#section-3.1"
     syntax = False  # SF
     category = categories.CONNEG
@@ -26,15 +26,6 @@ willing to process the specified Client Hints."""
     sf_type = "list"
 
     def evaluate(self, add_note: AddNoteMethodType) -> None:
-        if not self.message or not isinstance(self.message, HttpResponseLinter):
-            return
-
-        # Warn if the request URI scheme is http
-        request = self.message.related
-        if request and isinstance(request, HttpRequestLinter) and request.uri:
-            if request.uri.lower().startswith("http:"):
-                add_note(ACCEPT_CH_IN_PLAIN_HTTP)
-
         # Check for valid syntax (must be Tokens)
         for item in self.value:
             if not isinstance(item[0], Token):
@@ -45,11 +36,15 @@ willing to process the specified Client Hints."""
                 return
 
     def post_check(self, message: "HttpMessageLinter", add_note: AddNoteMethodType) -> None:
-        if not isinstance(message, HttpResponseLinter):
-            return
+        # Warn if the request URI scheme is http
+        request = self.message.related
+        if request and isinstance(request, HttpRequestLinter) and request.uri:
+            if request.uri.lower().startswith("http:"):
+                add_note(ACCEPT_CH_IN_PLAIN_HTTP)
 
         # Check if every field name in Accept-CH is also present in the Vary header
         # if the response is cacheable.
+        message = cast(HttpResponseLinter, message)
         if hasattr(message, "caching") and (
             message.caching.store_shared or message.caching.store_private
         ):
@@ -69,7 +64,7 @@ willing to process the specified Client Hints."""
 
 
 class ACCEPT_CH_IN_PLAIN_HTTP(Note):
-    category = categories.SECURITY
+    category = categories.CONNEG
     level = levels.WARN
     _summary = "Accept-CH is ignored over plain HTTP."
     _text = """\
@@ -84,7 +79,7 @@ class ACCEPT_CH_MISSING_VARY(Note):
     _summary = "Accept-CH lists fields that are missing from Vary."
     _text = """\
 The following fields appear in `Accept-CH` but are not listed in the `Vary` header:
-%(missing_fields)s.
+%(missing_fields)s, even though the response is cacheable.
 
 Because these fields can affect the response content, they should be included in `Vary` to ensure
 that caches store separate responses for different client hints."""
@@ -95,8 +90,10 @@ class ACCEPT_CH_BAD_SYNTAX(Note):
     level = levels.BAD
     _summary = "The Accept-CH header isn't a List of Tokens."
     _text = """\
-The value for this field doesn't conform to its specified syntax; see [its
-definition](%(ref_uri)s) for more information."""
+The value for this field doesn't conform to its specified syntax; it will likely be ignored
+by browsers.
+
+See [its definition](%(ref_uri)s) for more information."""
 
 
 class AcceptCHTest(FieldTest):
