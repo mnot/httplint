@@ -1,6 +1,6 @@
 from httplint.field import HttpField
 from httplint.types import AddNoteMethodType
-from httplint.categories import categories
+from httplint.note import categories
 
 
 class tcn(HttpField):
