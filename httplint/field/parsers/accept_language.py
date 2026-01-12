@@ -63,7 +63,7 @@ preferred in the response."""
 
 
 class BAD_Q_VALUE(Note):
-    category = categories.GENERAL
+    category = categories.CONNEG
     level = levels.WARN
     _summary = "The q value on '{language}' is invalid."
     _text = """\
@@ -71,7 +71,7 @@ The `q` parameter must be a decimal number between 0 and 1, with at most 3 digit
 
 
 class ACCEPT_LANGUAGE_BAD_SYNTAX(Note):
-    category = categories.GENERAL
+    category = categories.CONNEG
     level = levels.BAD
     _summary = "The Accept-Language header isn't valid."
     _text = """\
