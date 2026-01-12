@@ -1,5 +1,6 @@
 from httplint.field import HttpField
 from httplint.types import AddNoteMethodType
+from httplint.categories import categories
 
 
 class tcn(HttpField):
@@ -10,6 +11,7 @@ is not widely supported in clients.
 """
     reference = "https://www.rfc-editor.org/rfc/rfc2295"
     syntax = False
+    category = categories.CONNEG
     deprecated = False
     valid_in_requests = False
     valid_in_responses = True
