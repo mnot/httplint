@@ -15,7 +15,7 @@ request (as scoped by the `Access-Control-Allow-Methods` and
     reference = "https://fetch.spec.whatwg.org/#http-access-control-max-age"
     syntax = rfc9110.delay_seconds
     report_syntax = False
-    category = categories.SECURITY
+    category = categories.CORS
     deprecated = False
     valid_in_requests = False
     valid_in_responses = True
@@ -34,7 +34,7 @@ request (as scoped by the `Access-Control-Allow-Methods` and
 
 
 class CORS_MAX_AGE_INVALID(Note):
-    category = categories.SECURITY
+    category = categories.CORS
     level = levels.BAD
     _summary = "Access-Control-Max-Age must be an integer."
     _text = """\
@@ -43,7 +43,7 @@ for. It must be a non-negative integer."""
 
 
 class CORS_MAX_AGE_NEGATIVE(Note):
-    category = categories.SECURITY
+    category = categories.CORS
     level = levels.BAD
     _summary = "Access-Control-Max-Age must be non-negative."
     _text = """\

@@ -20,6 +20,7 @@ class categories(Enum):
     VALIDATION = L_("Validation")
     CONNECTION = L_("Connection")
     RANGE = L_("Partial Content")
+    CORS = L_("Cross-Origin Resource Sharing")
 
 
 class levels(Enum):

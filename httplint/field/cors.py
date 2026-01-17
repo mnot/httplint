@@ -90,7 +90,7 @@ def check_preflight_response(message: "HttpResponseLinter") -> None:
 
 
 class CORS_PREFLIGHT_REQUEST(Note):
-    category = categories.SECURITY
+    category = categories.CORS
     level = levels.INFO
     _summary = "This is a CORS preflight request."
     _text = """\
@@ -101,7 +101,7 @@ header."""
 
 
 class CORS_PREFLIGHT_REQ_METHOD_WRONG(Note):
-    category = categories.SECURITY
+    category = categories.CORS
     level = levels.BAD
     _summary = "The %(field_name)s header requires the OPTIONS method."
     _text = """\
@@ -112,7 +112,7 @@ A preflight request uses the `OPTIONS` method; this request uses `%(method)s`.""
 
 
 class CORS_PREFLIGHT_REQ_NO_ORIGIN(Note):
-    category = categories.SECURITY
+    category = categories.CORS
     level = levels.BAD
     _summary = "The %(field_name)s header requires the Origin header."
     _text = """\
@@ -123,7 +123,7 @@ A preflight request requires the `Origin` header to be present."""
 
 
 class CORS_PREFLIGHT_REQ_NO_METHOD(Note):
-    category = categories.SECURITY
+    category = categories.CORS
     level = levels.BAD
     _summary = "The %(field_name)s header requires the Access-Control-Request-Method header."
     _text = """\
@@ -134,7 +134,7 @@ A preflight request requires the `Access-Control-Request-Method` header to be pr
 
 
 class CORS_PREFLIGHT_RESPONSE(Note):
-    category = categories.SECURITY
+    category = categories.CORS
     level = levels.INFO
     _summary = "This is a CORS preflight response."
     _text = """\
@@ -145,7 +145,7 @@ header."""
 
 
 class CORS_PREFLIGHT_ONLY(Note):
-    category = categories.SECURITY
+    category = categories.CORS
     level = levels.BAD
     _summary = "CORS headers are only allowed in preflight responses."
     _text = """\
@@ -161,7 +161,7 @@ This response was not to a CORS preflight request, so these headers should not b
 
 
 class ACAO_MULTIPLE_VALUES(Note):
-    category = categories.SECURITY
+    category = categories.CORS
     level = levels.BAD
     _summary = "Access-Control-Allow-Origin should not have multiple values."
     _text = """\
@@ -170,7 +170,7 @@ cannot contain a list of origins."""
 
 
 class ACAC_NOT_TRUE(Note):
-    category = categories.SECURITY
+    category = categories.CORS
     level = levels.BAD
     _summary = "Access-Control-Allow-Credentials must be 'true'."
     _text = """\

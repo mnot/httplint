@@ -17,7 +17,7 @@ preflight request, to let the server know which HTTP headers the client might se
 request is made."""
     reference = "https://fetch.spec.whatwg.org/#http-access-control-request-headers"
     syntax = rfc9110.token
-    category = categories.SECURITY
+    category = categories.CORS
     deprecated = False
     valid_in_requests = True
     valid_in_responses = False

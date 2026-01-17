@@ -22,6 +22,7 @@ class origin(SingletonField):
 The `Origin` header field indicates where a fetch originates from. It is used to prevent Cross-Site
 Request Forgery (CSRF) and in Cross-Origin Resource Sharing (CORS)."""
     reference = "https://www.rfc-editor.org/rfc/rfc6454.html#section-7"
+    category = categories.CORS
     syntax = False
     deprecated = False
     valid_in_requests = True
@@ -55,7 +56,7 @@ Request Forgery (CSRF) and in Cross-Origin Resource Sharing (CORS)."""
 
 
 class BAD_ORIGIN_SYNTAX(Note):
-    category = categories.SECURITY
+    category = categories.CORS
     level = levels.BAD
     _summary = "%(value)s is not a valid origin."
     _text = """\

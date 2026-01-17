@@ -16,7 +16,7 @@ preflight request, to let the server know which HTTP method will be used when th
 is made."""
     reference = "https://fetch.spec.whatwg.org/#http-access-control-request-method"
     syntax = rfc9110.token
-    category = categories.SECURITY
+    category = categories.CORS
     deprecated = False
     valid_in_requests = True
     valid_in_responses = False
