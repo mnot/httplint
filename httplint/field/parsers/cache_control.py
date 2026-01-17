@@ -1,6 +1,6 @@
 from typing import Tuple, Union, Dict, List, Callable
 
-from httplint.field import HttpField
+from httplint.field.list_field import HttpListField
 from httplint.field.tests import FieldTest
 from httplint.note import Note, categories, levels
 
@@ -80,7 +80,7 @@ CONFLICTING_CC: List[Tuple[str, List[str]]] = [
 ]
 
 
-class cache_control(HttpField):
+class cache_control(HttpListField):
     canonical_name = "Cache-Control"
     description = """\
 The `Cache-Control` header is used to specify required directives to all caches that

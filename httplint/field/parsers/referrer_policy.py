@@ -1,11 +1,11 @@
-from httplint.field import HttpField
+from httplint.field.list_field import HttpListField
 from httplint.field.tests import FieldTest
 from httplint.note import Note, categories, levels
 from httplint.syntax import rfc9110
 from httplint.types import AddNoteMethodType
 
 
-class referrer_policy(HttpField):
+class referrer_policy(HttpListField):
     canonical_name = "Referrer-Policy"
     description = """\
 The `Referrer-Policy` response header controls how much referrer information (sent via the `Referer`

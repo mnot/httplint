@@ -1,8 +1,8 @@
-from httplint.field import HttpField
+from httplint.field.list_field import HttpListField
 from httplint.note import categories
 
 
-class x_cache(HttpField):
+class x_cache(HttpListField):
     canonical_name = "X-Cache"
     description = """\
 The `X-Cache` response header is used by some caches to indicate whether or not the response was

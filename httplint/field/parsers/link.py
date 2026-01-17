@@ -1,6 +1,6 @@
 import re
 from typing import Tuple
-from httplint.field import HttpField
+from httplint.field.list_field import HttpListField
 from httplint.field.tests import FieldTest
 from httplint.note import Note, categories, levels
 from httplint.syntax import rfc3986, rfc8288, rfc9110
@@ -10,7 +10,7 @@ from httplint.field.utils import PARAM_REPEATS
 from httplint.field import BAD_SYNTAX
 
 
-class link(HttpField):
+class link(HttpListField):
     canonical_name = "Link"
     description = """\
 The `Link` header allows links related to the content to be conveyed. A link can be viewed as a

@@ -1,11 +1,11 @@
-from httplint.field import HttpField
+from httplint.field.list_field import HttpListField
 from httplint.field import BAD_SYNTAX
 from httplint.field.tests import FieldTest
 from httplint.note import Note, categories, levels
 from httplint.types import AddNoteMethodType
 
 
-class x_content_type_options(HttpField):
+class x_content_type_options(HttpListField):
     reference = "https://fetch.spec.whatwg.org/#x-content-type-options-header"
     description = """\
 Indicates that the client should not 'sniff' the `Content-Type` of the message from its content."""

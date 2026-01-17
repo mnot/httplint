@@ -1,4 +1,4 @@
-from functools import partial
+from abc import ABC, abstractmethod
 import re
 from typing import (
     Any,
@@ -7,7 +7,6 @@ from typing import (
     Union,
     TYPE_CHECKING,
 )
-import unittest
 
 
 from httplint.syntax import rfc9110
@@ -18,14 +17,12 @@ from httplint.types import (
     AddNoteMethodType,
 )
 
-from httplint.field.utils import RE_FLAGS, split_list_field
+from httplint.field.utils import RE_FLAGS
 from httplint.note import Note, categories, levels
 
 
 if TYPE_CHECKING:
-    from httplint.message import (
-        HttpMessageLinter,
-    )
+    from httplint.message import HttpMessageLinter
 
 # base URLs for references
 RFC2616 = "https://www.rfc-editor.org/rfc/rfc2616.html#%s"
@@ -37,21 +34,21 @@ MAX_HDR_SIZE = 4 * 1024
 MAX_TTL_HDR = 8 * 1000
 
 
-class HttpField:
+class HttpField(ABC):
     """A HTTP Field."""
 
     canonical_name: str
     description: str
     reference: str
+    category: categories = categories.GENERAL
     syntax: Union[
         str, rfc9110.list_rule, bool
     ]  # Verbose regular expression to match, or False to indicate no syntax.
+    report_syntax: bool = True  # If False, syntax mismatch suppresses BAD_SYNTAX.
     valid_in_requests: bool
     valid_in_responses: bool
     deprecated: bool = False
     no_coverage: bool = False  # Turns off coverage checks.
-    category: categories = categories.GENERAL
-    report_syntax: bool = True  # If False, syntax mismatch suppresses BAD_SYNTAX.
 
     def __init__(self, wire_name: str, message: "HttpMessageLinter") -> None:
         self.wire_name = wire_name.strip()
@@ -60,11 +57,6 @@ class HttpField:
         if not hasattr(self, "canonical_name"):
             self.canonical_name = self.wire_name
         self.value: Any = []
-
-    def parse(self, field_value: str, add_note: AddNoteMethodType) -> Any:
-        """
-        Given a string value and an add_note function, parse and return the result."""
-        return field_value
 
     def evaluate(self, add_note: AddNoteMethodType) -> None:
         """
@@ -77,56 +69,11 @@ class HttpField:
         Called after the message is complete and other processing has occurred.
         """
 
+    @abstractmethod
     def handle_input(self, field_value: str, add_note: AddNoteMethodType, offset: int) -> None:
         """
         Basic input processing on a new field value.
         """
-
-        values = split_list_field(field_value)
-        i = 0
-        for value in values:
-            offset_add_note = partial(
-                self.message.notes.add,
-                f"offset-{offset}",
-                field_name=self.canonical_name,
-            )
-            i += 1
-            if self.syntax:
-                element_syntax = (
-                    self.syntax.element
-                    if isinstance(self.syntax, rfc9110.list_rule)
-                    else self.syntax
-                )
-                if not re.match(rf"^\s*(?:{element_syntax})\s*$", value, RE_FLAGS):
-                    match = re.match(rf"^\s*(?:{element_syntax})", value, RE_FLAGS)
-                    if match:
-                        bad_char_index = match.end()
-                        context_start = max(0, bad_char_index - 20)
-                        context_end = min(len(value), bad_char_index + 20)
-                        context = value[context_start:context_end]
-                        pointer = " " * (bad_char_index - context_start) + "^"
-                        problem = (
-                            f"The invalid character '{value[bad_char_index]}' "
-                            f"was found at position {bad_char_index + 1}:"
-                            f"\n\n    {context}\n    {pointer}"
-                        )
-                        offset_add_note(
-                            BAD_SYNTAX_DETAILED,
-                            ref_uri=self.reference,
-                            value=value,
-                            problem=problem,
-                            category=self.category,
-                        )
-                    else:
-                        if self.report_syntax:
-                            offset_add_note(
-                                BAD_SYNTAX, ref_uri=self.reference, category=self.category
-                            )
-            try:
-                parsed_value = self.parse(value.strip(), offset_add_note)
-            except ValueError:
-                continue
-            self.value.append(parsed_value)
 
     def pre_check(self, message: "HttpMessageLinter", add_note: AddNoteMethodType) -> bool:
         """

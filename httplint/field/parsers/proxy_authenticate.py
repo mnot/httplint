@@ -1,8 +1,8 @@
-from httplint.field import HttpField
+from httplint.field.list_field import HttpListField
 from httplint.syntax import rfc9110
 
 
-class proxy_authenticate(HttpField):
+class proxy_authenticate(HttpListField):
     canonical_name = "Proxy-Authenticate"
     description = """\
 The `Proxy-Authenticate` response header consists of a challenge that indicates the authentication

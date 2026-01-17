@@ -1,9 +1,9 @@
-from httplint.field import HttpField
+from httplint.field.list_field import HttpListField
 from httplint.field.tests import FieldTest
 from httplint.syntax import rfc9110
 
 
-class www_authenticate(HttpField):
+class www_authenticate(HttpListField):
     canonical_name = "WWW-Authenticate"
     description = """\
 The `WWW-Authenticate` response header consists of at least one challenge that

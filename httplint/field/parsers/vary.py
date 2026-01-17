@@ -1,4 +1,4 @@
-from httplint.field import HttpField
+from httplint.field.list_field import HttpListField
 from httplint.field.tests import FieldTest
 from httplint.note import Note, categories, levels
 from httplint.syntax import rfc9110
@@ -6,7 +6,7 @@ from httplint.types import AddNoteMethodType
 from httplint.util import f_num
 
 
-class vary(HttpField):
+class vary(HttpListField):
     canonical_name = "Vary"
     description = """\
 The `Vary` response header indicates the set of request headers that determines whether a cache is

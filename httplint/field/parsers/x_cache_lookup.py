@@ -1,8 +1,8 @@
-from httplint.field import HttpField
+from httplint.field.list_field import HttpListField
 from httplint.note import categories
 
 
-class x_cache_lookup(HttpField):
+class x_cache_lookup(HttpListField):
     canonical_name = "X-Cache-Lookup"
     description = """\
 The `X-Cache-Lookup` response header is used by some caches to show whether there was a response in

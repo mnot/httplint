@@ -1,9 +1,9 @@
-from httplint.field import HttpField
+from httplint.field.list_field import HttpListField
 from httplint.field.tests import FieldTest
 from httplint.syntax import rfc9110
 
 
-class connection(HttpField):
+class connection(HttpListField):
     canonical_name = "Connection"
     description = """\
 The `Connection` header allows senders to specify which headers are hop-by-hop; that is, those that

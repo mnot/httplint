@@ -1,11 +1,11 @@
-from httplint.field import HttpField
+from httplint.field.list_field import HttpListField
 from httplint.field.tests import FieldTest
 from httplint.note import Note, categories, levels
 from httplint.syntax import rfc9110
 from httplint.types import AddNoteMethodType
 
 
-class accept_ranges(HttpField):
+class accept_ranges(HttpListField):
     canonical_name = "Accept-Ranges"
     description = """\
 The `Accept-Ranges` response header allows the server to indicate that it accepts range requests

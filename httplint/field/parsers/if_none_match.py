@@ -1,11 +1,11 @@
-from httplint.field import HttpField
+from httplint.field.list_field import HttpListField
 from httplint.field.tests import FieldTest
 from httplint.syntax import rfc9110
 from httplint.types import AddNoteMethodType
 from httplint.note import categories
 
 
-class if_none_match(HttpField):
+class if_none_match(HttpListField):
     canonical_name = "If-None-Match"
     description = """\
 The `If-None-Match` header field makes the request method conditional on the

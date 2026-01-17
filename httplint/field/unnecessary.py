@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING
 
-from httplint.field import HttpField
+from httplint.field.list_field import HttpListField
 from httplint.note import Note, categories, levels
 from httplint.types import AddNoteMethodType
 
@@ -28,7 +28,7 @@ UNNECESSARY_FIELDS = {
 }
 
 
-class UnnecessaryField(HttpField):
+class UnnecessaryField(HttpListField):
     syntax = False
     list_header = False
     deprecated = False
@@ -37,7 +37,7 @@ class UnnecessaryField(HttpField):
     valid_in_responses = True
 
     def __init__(self, wire_name: str, message: "HttpMessageLinter") -> None:
-        HttpField.__init__(self, wire_name, message)
+        HttpListField.__init__(self, wire_name, message)
         self.reference = "about:blank"
         self.description = UNNECESSARY_FIELDS.get(self.norm_name, "")
 

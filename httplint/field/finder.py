@@ -8,6 +8,7 @@ from typing import (
 )
 
 from httplint.field import HttpField
+from httplint.field.list_field import HttpListField
 from httplint.field import deprecated, unnecessary
 from httplint.types import AddNoteMethodType
 
@@ -99,7 +100,7 @@ class HttpFieldFinder:
         return field_name.replace("-", "_").lower()
 
 
-class UnknownHttpField(HttpField):
+class UnknownHttpField(HttpListField):
     """A HTTP field that we don't recognise."""
 
     description = "Unknown"

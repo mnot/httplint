@@ -1,6 +1,6 @@
 from typing import Tuple
 
-from httplint.field import HttpField
+from httplint.field.list_field import HttpListField
 from httplint.field.tests import FieldTest
 from httplint.syntax import rfc9110
 from httplint.note import Note, categories, levels
@@ -8,7 +8,7 @@ from httplint.types import AddNoteMethodType, ParamDictType
 from httplint.field.utils import parse_params
 
 
-class server_timing(HttpField):
+class server_timing(HttpListField):
     canonical_name = "Server-Timing"
     description = """\
 The `Server-Timing` header field communicates one or more metrics and descriptions for the given

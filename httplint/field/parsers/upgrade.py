@@ -1,9 +1,9 @@
-from httplint.field import HttpField
+from httplint.field.list_field import HttpListField
 from httplint.field.tests import FieldTest
 from httplint.syntax import rfc9110
 
 
-class upgrade(HttpField):
+class upgrade(HttpListField):
     canonical_name = "Upgrade"
     description = """\
 The `Upgrade` header allows the client to specify what additional communication

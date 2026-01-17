@@ -1,6 +1,6 @@
 from typing import Tuple
 
-from httplint.field import HttpField
+from httplint.field.list_field import HttpListField
 from httplint.field.tests import FieldTest
 from httplint.syntax import rfc9110
 from httplint.types import AddNoteMethodType, ParamDictType
@@ -8,7 +8,7 @@ from httplint.field.utils import parse_params
 from httplint.note import categories
 
 
-class accept_encoding(HttpField):
+class accept_encoding(HttpListField):
     canonical_name = "Accept-Encoding"
     description = """\
 The `Accept-Encoding` header field can be used by user agents to indicate what response content-codings are

@@ -1,9 +1,9 @@
-from httplint.field import HttpField
+from httplint.field.list_field import HttpListField
 
 from httplint.syntax import rfc9110
 
 
-class trailer(HttpField):
+class trailer(HttpListField):
     canonical_name = "Trailer"
     description = """\
 The `Trailer` header indicates that the given set of headers will be

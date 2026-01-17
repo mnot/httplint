@@ -1,11 +1,11 @@
-from httplint.field import HttpField
+from httplint.field.list_field import HttpListField
 from httplint.field.tests import FieldTest
 from httplint.note import Note, categories, levels
 from httplint.syntax import rfc9110
 from httplint.types import AddNoteMethodType
 
 
-class via(HttpField):
+class via(HttpListField):
     canonical_name = "Via"
     description = """\
 The `Via` header is added to requests and responses by proxies and other HTTP intermediaries. It

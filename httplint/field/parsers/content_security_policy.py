@@ -1,6 +1,6 @@
 from typing import Any, Dict, List, Tuple
 
-from httplint.field import HttpField
+from httplint.field.list_field import HttpListField
 from httplint.field.tests import FieldTest
 from httplint.message import HttpMessageLinter
 from httplint.note import Note, categories, levels
@@ -17,7 +17,7 @@ DIRECTIVE_VALUE = r"[ \t\x21-\x2B\x2D-\x3A\x3C-\x7E]*"
 csp_directive = rf"(?: {DIRECTIVE_NAME} (?: {rfc9110.RWS} {DIRECTIVE_VALUE} )? )"
 
 
-class content_security_policy(HttpField):
+class content_security_policy(HttpListField):
     canonical_name = "Content-Security-Policy"
     description = """\
 The `Content-Security-Policy` response header allows web site administrators to declare approved

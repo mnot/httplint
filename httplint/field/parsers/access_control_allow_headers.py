@@ -1,4 +1,4 @@
-from httplint.field import HttpField
+from httplint.field.list_field import HttpListField
 from httplint.field.cors import CORS_PREFLIGHT_ONLY
 from httplint.field.tests import FieldTest
 from httplint.syntax import rfc9110
@@ -6,7 +6,7 @@ from httplint.note import categories
 from httplint.types import AddNoteMethodType
 
 
-class access_control_allow_headers(HttpField):
+class access_control_allow_headers(HttpListField):
     canonical_name = "Access-Control-Allow-Headers"
     description = """\
 The `Access-Control-Allow-Headers` response header is used in response to a CORS preflight

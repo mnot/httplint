@@ -1,10 +1,10 @@
-from httplint.field import HttpField
+from httplint.field.list_field import HttpListField
 from httplint.field.tests import FieldTest
 from httplint.syntax import rfc9110
 from httplint.types import AddNoteMethodType
 
 
-class proxy_authentication_info(HttpField):
+class proxy_authentication_info(HttpListField):
     canonical_name = "Proxy-Authentication-Info"
     description = """\
 The `Proxy-Authentication-Info` header field is used to communicate information after

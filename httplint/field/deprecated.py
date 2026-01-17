@@ -1,7 +1,7 @@
 from typing import TYPE_CHECKING, Tuple, Dict
 
 
-from httplint.field import HttpField
+from httplint.field.list_field import HttpListField
 from httplint.field import FIELD_DEPRECATED
 from httplint.note import categories
 from httplint.types import AddNoteMethodType
@@ -175,7 +175,7 @@ fields.update(OBSOLETED_FIELDS)
 field_lookup = {k.lower(): k for k in fields}
 
 
-class DeprecatedField(HttpField):
+class DeprecatedField(HttpListField):
     syntax = False
     list_header = False
     deprecated = True
@@ -184,7 +184,7 @@ class DeprecatedField(HttpField):
     valid_in_responses = True  # dont' want to complain about these
 
     def __init__(self, wire_name: str, message: "HttpMessageLinter") -> None:
-        HttpField.__init__(self, wire_name, message)
+        HttpListField.__init__(self, wire_name, message)
         assert self.norm_name in field_lookup
         self.canonical_name = field_lookup[self.norm_name]
         self.category, self.reference = fields[field_lookup[self.norm_name]]

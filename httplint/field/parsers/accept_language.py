@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from typing import Optional
 
-from httplint.field import HttpField
+from httplint.field.list_field import HttpListField
 from httplint.field.tests import FieldTest
 from httplint.field import BAD_SYNTAX
 from httplint.field.utils import parse_params
@@ -16,7 +16,7 @@ class AcceptLanguageValue:
     q: Optional[float]
 
 
-class accept_language(HttpField):
+class accept_language(HttpListField):
     canonical_name = "Accept-Language"
     description = """\
 The `Accept-Language` header field can be used by user agents to indicate the set of natural languages that are

@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from typing import Optional
 
-from httplint.field import HttpField
+from httplint.field.list_field import HttpListField
 from httplint.field.tests import FieldTest
 from httplint.field import BAD_SYNTAX
 from httplint.field.utils import parse_params
@@ -17,7 +17,7 @@ class AcceptValue:
     q: Optional[float]
 
 
-class accept(HttpField):
+class accept(HttpListField):
     canonical_name = "Accept"
     description = """\
 The `Accept` header field can be used by user agents to specify response media types that are

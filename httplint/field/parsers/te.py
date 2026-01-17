@@ -1,13 +1,13 @@
 from typing import Tuple
 
-from httplint.field import HttpField
+from httplint.field.list_field import HttpListField
 from httplint.field.tests import FieldTest
 from httplint.syntax import rfc9110
 from httplint.types import AddNoteMethodType, ParamDictType
 from httplint.field.utils import parse_params
 
 
-class te(HttpField):
+class te(HttpListField):
     canonical_name = "TE"
     description = """\
 The `TE` request header indicates what HTTP/1.1 transfer-codings the client is willing to accept in

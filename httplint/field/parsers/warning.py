@@ -1,11 +1,11 @@
-from httplint.field import HttpField
+from httplint.field.list_field import HttpListField
 from httplint.field import FIELD_DEPRECATED
 from httplint.field.tests import FieldTest
 from httplint.note import categories
 from httplint.syntax import rfc9111
 
 
-class warning(HttpField):
+class warning(HttpListField):
     canonical_name = "Warning"
     description = """\
 The `Warning` response header was used to carry additional information about the status or

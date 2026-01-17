@@ -1,4 +1,4 @@
-from httplint.field import HttpField
+from httplint.field.list_field import HttpListField
 from httplint.field.tests import FieldTest
 from httplint.note import Note, categories, levels
 from httplint.syntax import rfc9111
@@ -6,7 +6,7 @@ from httplint.types import AddNoteMethodType
 from httplint.field import FIELD_DEPRECATED
 
 
-class pragma(HttpField):
+class pragma(HttpListField):
     canonical_name = "Pragma"
     description = """\
 The `Pragma` header is used to include implementation-specific directives that might apply to any

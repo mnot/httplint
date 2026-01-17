@@ -1,6 +1,6 @@
 from typing import Tuple, Optional
 
-from httplint.field import HttpField
+from httplint.field.list_field import HttpListField
 from httplint.field.tests import FieldTest
 from httplint.syntax import rfc9110
 from httplint.types import AddNoteMethodType
@@ -8,7 +8,7 @@ from httplint.field.utils import unquote_string
 from httplint.field import FIELD_DEPRECATED
 
 
-class keep_alive(HttpField):
+class keep_alive(HttpListField):
     canonical_name = "Keep-Alive"
     description = """\
 The `Keep-Alive` header is completely optional; it is defined primarily because the `keep-alive`

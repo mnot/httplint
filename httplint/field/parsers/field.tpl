@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 
-from httplint.field import HttpField
+from httplint.field.list_field import HttpListField
 from httplint.field.tests import FieldTest
 from httplint.note import Note, categories, levels
 from httplint.types import AddNoteMethodType
 
-class SHORT_NAME(HttpField):
+class SHORT_NAME(HttpListField):
     canonical_name = "SHORT_NAME"
     description = """\
 FIXME

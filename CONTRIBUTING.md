@@ -76,7 +76,7 @@ If your field name doesn't work with this convention, please raise an issue.
 
 The easiest way to get started is to copy `httplint/field/parsers/field.tpl` to your new file.
 
-class vary(HttpField):
+class vary(HttpListField):
     canonical_name = "Vary"
     description = """..."""
     reference = f"{rfc9110.SPEC_URL}#field.vary"
@@ -86,7 +86,11 @@ class vary(HttpField):
     valid_in_responses = True
 ~~~
 
-When using `HttpField`:
+#### The _HttpListField_ Class
+
+Most HTTP headers are comma-separated lists of values. To implement one, inherit from `httplint.field.HttpListField`.
+
+When using `HttpListField`:
 - `parse` is called for each individual value in the list (separated by commas).
 - `value` (the property accessed in `evaluate`) is a list of the results of calling `parse`.
 - `syntax` (if provided) is checked against each individual value in the list, automatically adding notes if the syntax is invalid.
@@ -162,9 +166,9 @@ for `Bar` and once for `Baz` (with the `field_value`s _1, 2, 3_ and _"def, ghi"_
 _parse_ should return the parsed value corresponding to the `field_value`. If there is an error and
 the value shouldn't be remembered, raise `ValueError`.
 
-When using `HttpField`, _parse_ will be called for each _item_ in the list, after separating on commas (excepting those inside quoted strings). In the example above, if `Bar` were a `HttpField`, _parse_ would be called three times for `Bar` (with the `field_value`s _1_, _2_, and _3_), but still only once for `Baz`.
+When using `HttpListField`, _parse_ will be called for each _item_ in the list, after separating on commas (excepting those inside quoted strings). In the example above, if `Bar` were a `HttpListField`, _parse_ would be called three times for `Bar` (with the `field_value`s _1_, _2_, and _3_), but still only once for `Baz`.
 
-Note that `syntax` is checked against each item before _parse_ is called in a `HttpField`.
+Note that `syntax` is checked against each item before _parse_ is called in a `HttpListField`.
 
 communicate something about the field_value. It returns the created _Note_ instance.
 
@@ -185,7 +189,7 @@ _evaluate_ is called once all of the field lines are processed, to enable the en
 field's values to be considered. To access the parsed value(s), use the _value_ instance
 variable.
 
-When using `HttpField`, _value_ is a list of the results of calling _parse_. When using `SingletonField`, it is a single value, representing the first call to _parse_.
+When using `HttpListField`, _value_ is a list of the results of calling _parse_. When using `SingletonField`, it is a single value, representing the first call to _parse_.
 
 
 #### The _post_check_ method

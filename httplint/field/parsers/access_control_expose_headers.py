@@ -1,10 +1,10 @@
-from httplint.field import HttpField
+from httplint.field.list_field import HttpListField
 from httplint.field.tests import FieldTest
 from httplint.syntax import rfc9110
 from httplint.note import categories
 
 
-class access_control_expose_headers(HttpField):
+class access_control_expose_headers(HttpListField):
     canonical_name = "Access-Control-Expose-Headers"
     description = """\
 The `Access-Control-Expose-Headers` response header allows a server to indicate which response

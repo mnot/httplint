@@ -1,11 +1,11 @@
-from httplint.field import HttpField
+from httplint.field.list_field import HttpListField
 from httplint.field.tests import FieldTest
 from httplint.syntax import rfc9110
 from httplint.note import Note, categories, levels
 from httplint.types import AddNoteMethodType
 
 
-class content_language(HttpField):
+class content_language(HttpListField):
     canonical_name = "Content-Language"
     description = """\
 The `Content-Language` header describes the natural language(s) of the intended audience for the

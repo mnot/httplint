@@ -1,9 +1,9 @@
-from httplint.field import HttpField
+from httplint.field.list_field import HttpListField
 from httplint.field.tests import FieldTest
 from httplint.syntax import rfc9110
 
 
-class allow(HttpField):
+class allow(HttpListField):
     canonical_name = "Allow"
     description = """\
 The `Allow` response header advertises the set of methods that are supported by the resource."""

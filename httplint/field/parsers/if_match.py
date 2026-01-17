@@ -1,10 +1,10 @@
-from httplint.field import HttpField
+from httplint.field.list_field import HttpListField
 from httplint.field.tests import FieldTest
 from httplint.syntax import rfc9110
 from httplint.types import AddNoteMethodType
 
 
-class if_match(HttpField):
+class if_match(HttpListField):
     canonical_name = "If-Match"
     description = """\
 The `If-Match` header field makes the request method conditional on the recipient origin server

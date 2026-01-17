@@ -1,7 +1,7 @@
 from typing import Any, cast
 from types import SimpleNamespace
 
-from httplint.field import HttpField
+from httplint.field.list_field import HttpListField
 from httplint.field.tests import FieldTest, FakeRequestLinter, FakeResponseLinter
 from httplint.message import HttpRequestLinter, HttpResponseLinter, HttpMessageLinter
 from httplint.note import Note, categories, levels
@@ -9,7 +9,7 @@ from httplint.syntax import rfc9110
 from httplint.types import AddNoteMethodType
 
 
-class content_encoding(HttpField):
+class content_encoding(HttpListField):
     canonical_name = "Content-Encoding"
     description = """\
 The `Content-Encoding` header's value indicates what content codings have

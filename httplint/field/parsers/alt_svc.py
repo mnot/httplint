@@ -1,6 +1,6 @@
 from typing import Tuple, Union
 
-from httplint.field import HttpField
+from httplint.field.list_field import HttpListField
 from httplint.field.tests import FieldTest
 from httplint.field import BAD_SYNTAX
 from httplint.note import Note, categories, levels
@@ -8,7 +8,7 @@ from httplint.syntax import rfc9110
 from httplint.types import AddNoteMethodType, ParamDictType
 
 
-class alt_svc(HttpField):
+class alt_svc(HttpListField):
     canonical_name = "Alt-Svc"
     description = """\
 The `Alt-Svc` HTTP header field identifies an alternative service that can be arranged to access the

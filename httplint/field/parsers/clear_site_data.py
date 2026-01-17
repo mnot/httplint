@@ -1,4 +1,4 @@
-from httplint.field import HttpField
+from httplint.field.list_field import HttpListField
 from httplint.field.tests import FieldTest
 from httplint.note import Note, categories, levels
 from httplint.syntax.rfc9110 import list_rule, quoted_string
@@ -7,7 +7,7 @@ from httplint.field import BAD_SYNTAX
 from httplint.message import HttpMessageLinter
 
 
-class clear_site_data(HttpField):
+class clear_site_data(HttpListField):
     canonical_name = "Clear-Site-Data"
     description = """\
 The `Clear-Site-Data` header clears the data associated with the requesting website in the user's

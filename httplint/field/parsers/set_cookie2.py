@@ -1,9 +1,9 @@
-from httplint.field import HttpField
+from httplint.field.list_field import HttpListField
 from httplint.field import RFC6265
 from httplint.note import categories
 
 
-class set_cookie2(HttpField):
+class set_cookie2(HttpListField):
     canonical_name = "Set-Cookie2"
     description = """\
 The `Set-Cookie2` header has been deprecated; use `Set-Cookie` instead."""

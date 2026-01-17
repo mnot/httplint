@@ -1,4 +1,4 @@
-from httplint.field import HttpField
+from httplint.field.list_field import HttpListField
 from httplint.field.tests import FieldTest
 from httplint.note import Note, categories, levels
 from httplint.syntax import rfc9110
@@ -8,7 +8,7 @@ from httplint.types import AddNoteMethodType
 MAX_SERVER_LENGTH = 64
 
 
-class server(HttpField):
+class server(HttpListField):
     canonical_name = "Server"
     description = """\
 The `Server` response header contains information about the software used by the origin server to

@@ -1,6 +1,6 @@
 from typing import Tuple
 
-from httplint.field import HttpField
+from httplint.field.list_field import HttpListField
 from httplint.field.tests import FieldTest, FakeRequestLinter
 from httplint.note import Note, categories, levels
 from httplint.syntax import rfc9112
@@ -10,7 +10,7 @@ from httplint.field import BAD_SYNTAX
 from httplint.message import HttpResponseLinter, HttpRequestLinter, HttpMessageLinter
 
 
-class transfer_encoding(HttpField):
+class transfer_encoding(HttpListField):
     canonical_name = "Transfer-Encoding"
     description = """\
 The `Transfer-Encoding` header indicates what (if any) type of transformation has been applied to
