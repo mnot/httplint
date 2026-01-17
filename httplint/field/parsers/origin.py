@@ -49,6 +49,8 @@ Request Forgery (CSRF) and in Cross-Origin Resource Sharing (CORS)."""
             else:
                 add_note(BAD_ORIGIN_SYNTAX, value=item)
 
+        if not origins:
+            raise ValueError("Invalid value for Origin")
         return origins
 
 
@@ -61,29 +63,29 @@ The Origin header must contain a list of serialized origins (scheme, host, and o
 the string "null"."""
 
 
-class OriginTest(FieldTest):
+class OriginBasicTest(FieldTest):
     name = "Origin"
     inputs = [b"https://example.com"]
     expected_out: Union[str, List[OriginValue]] = [OriginValue("https", "example.com", None)]
 
-    def test_null(self) -> None:
-        self.inputs = [b"null"]
-        self.expected_out = "null"
-        self.setUp()
-        self.test_header()
 
-    def test_multiple(self) -> None:
-        self.inputs = [b"https://example.com http://example.org:8080"]
-        self.expected_out = [
-            OriginValue("https", "example.com", None),
-            OriginValue("http", "example.org", 8080),
-        ]
-        self.setUp()
-        self.test_header()
+class OriginNullTest(FieldTest):
+    name = "Origin"
+    inputs = [b"null"]
+    expected_out = "null"
 
-    def test_bad_syntax(self) -> None:
-        self.inputs = [b"https://example.com/foo"]
-        self.expected_notes = [BAD_ORIGIN_SYNTAX]
-        self.expected_out = []
-        self.setUp()
-        self.test_header()
+
+class OriginMultipleTest(FieldTest):
+    name = "Origin"
+    inputs = [b"https://example.com http://example.org:8080"]
+    expected_out = [
+        OriginValue("https", "example.com", None),
+        OriginValue("http", "example.org", 8080),
+    ]
+
+
+class OriginBadSyntaxTest(FieldTest):
+    name = "Origin"
+    inputs = [b"https://example.com/foo"]
+    expected_notes = [BAD_ORIGIN_SYNTAX]
+    expected_out = None

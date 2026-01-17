@@ -51,6 +51,7 @@ class HttpField:
     deprecated: bool = False
     no_coverage: bool = False  # Turns off coverage checks.
     category: categories = categories.GENERAL
+    report_syntax: bool = True  # If False, syntax mismatch suppresses BAD_SYNTAX.
 
     def __init__(self, wire_name: str, message: "HttpMessageLinter") -> None:
         self.wire_name = wire_name.strip()
@@ -117,7 +118,10 @@ class HttpField:
                             category=self.category,
                         )
                     else:
-                        offset_add_note(BAD_SYNTAX, ref_uri=self.reference, category=self.category)
+                        if self.report_syntax:
+                            offset_add_note(
+                                BAD_SYNTAX, ref_uri=self.reference, category=self.category
+                            )
             try:
                 parsed_value = self.parse(value.strip(), offset_add_note)
             except ValueError:

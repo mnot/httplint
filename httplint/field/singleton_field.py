@@ -32,7 +32,8 @@ class SingletonField(HttpField):
             first_raw = self.raw_values[0]
             if self.syntax:
                 if not re.match(rf"^\s*(?:{self.syntax})\s*$", first_raw, RE_FLAGS):
-                    add_note(BAD_SYNTAX, ref_uri=self.reference)
+                    if self.report_syntax:
+                        add_note(BAD_SYNTAX, ref_uri=self.reference)
             try:
                 self.value = self.parse(first_raw.strip(), add_note)
             except ValueError:

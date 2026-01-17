@@ -15,6 +15,7 @@ from httplint.util import iri_to_uri, f_num
 from httplint.status import StatusChecker
 from httplint.content_type import verify_content_type
 from httplint.i18n import L_, translate
+from httplint.field.cors import check_preflight_request, check_preflight_response
 
 
 class HttpMessageParams(TypedDict):
@@ -196,6 +197,7 @@ class HttpRequestLinter(HttpMessageLinter):
         return True
 
     def post_checks(self) -> None:
+        check_preflight_request(self)
         if "user-agent" not in self.headers.parsed:
             self.notes.add("field-user-agent", MISSING_USER_AGENT)
 
@@ -253,6 +255,7 @@ class HttpResponseLinter(HttpMessageLinter):
         return True
 
     def post_checks(self) -> None:
+        check_preflight_response(self)
         self.caching = ResponseCacheChecker(self)
         StatusChecker(self, cast(Optional[HttpRequestLinter], self.related))
         if not self.no_content:

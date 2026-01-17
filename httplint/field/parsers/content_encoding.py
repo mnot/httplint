@@ -85,11 +85,17 @@ class ContentEncodingTest(FieldTest):
     inputs = [b"gzip"]
     expected_out = ["gzip"]
 
+    def set_context(self, message: HttpMessageLinter) -> None:
+        message.related.headers.process([(b"accept-encoding", b"gzip")])  # type: ignore
+
 
 class ContentEncodingCaseTest(FieldTest):
     name = "Content-Encoding"
     inputs = [b"GZip"]
     expected_out = ["gzip"]
+
+    def set_context(self, message: HttpMessageLinter) -> None:
+        message.related.headers.process([(b"accept-encoding", b"gzip")])  # type: ignore
 
 
 class UnwantedContentEncodingTest(FieldTest):
@@ -112,6 +118,8 @@ class ContentEncodingMissingVaryTest(FieldTest):
 
     def set_context(self, message: "HttpMessageLinter") -> None:
         message = cast(FakeResponseLinter, message)
+        assert message.related is not None
+        message.related.headers.process([(b"accept-encoding", b"dcb")])
         message.caching = cast(Any, SimpleNamespace(store_shared=True, store_private=True))
         # Vary missing 'Available-Dictionary'
         message.headers.parsed["vary"] = set()

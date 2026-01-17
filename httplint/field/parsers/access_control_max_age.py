@@ -1,12 +1,9 @@
-from typing import cast
-
+from httplint.field.cors import CORS_PREFLIGHT_ONLY
 from httplint.field.singleton_field import SingletonField
-from httplint.field.cors import check_preflight_response, CORS_PREFLIGHT_ONLY
-from httplint.field.tests import FieldTest, FakeRequest
-from httplint.message import HttpMessageLinter
+from httplint.field.tests import FieldTest
+from httplint.note import Note, categories, levels
 from httplint.syntax import rfc9110
 from httplint.types import AddNoteMethodType
-from httplint.note import categories
 
 
 class access_control_max_age(SingletonField):
@@ -17,41 +14,59 @@ request (as scoped by the `Access-Control-Allow-Methods` and
 `Access-Control-Allow-Headers` request headers) can be cached."""
     reference = "https://fetch.spec.whatwg.org/#http-access-control-max-age"
     syntax = rfc9110.delay_seconds
+    report_syntax = False
     category = categories.SECURITY
     deprecated = False
     valid_in_requests = False
     valid_in_responses = True
 
-    def evaluate(self, add_note: AddNoteMethodType) -> None:
-        check_preflight_response(self.message, self.canonical_name, add_note)
+    def parse(self, field_value: str, add_note: "AddNoteMethodType") -> int:
+        try:
+            val = int(field_value)
+        except ValueError:
+            add_note(CORS_MAX_AGE_INVALID, ref_uri=self.reference)
+            raise
+
+        if val < 0:
+            add_note(CORS_MAX_AGE_NEGATIVE, ref_uri=self.reference)
+            raise ValueError
+        return val
+
+
+class CORS_MAX_AGE_INVALID(Note):
+    category = categories.SECURITY
+    level = levels.BAD
+    _summary = "Access-Control-Max-Age must be an integer."
+    _text = """\
+The `Access-Control-Max-Age` header indicates how many seconds a preflight response can be cached
+for. It must be a non-negative integer."""
+
+
+class CORS_MAX_AGE_NEGATIVE(Note):
+    category = categories.SECURITY
+    level = levels.BAD
+    _summary = "Access-Control-Max-Age must be non-negative."
+    _text = """\
+The `Access-Control-Max-Age` header indicates how many seconds a preflight response can be cached
+for. It cannot be less than zero."""
 
 
 class AccessControlMaxAgeTest(FieldTest):
     name = "Access-Control-Max-Age"
-    inputs = [b"600"]
-    expected_out = "600"
-
-
-class AccessControlMaxAgePreflightTest(FieldTest):
-    name = "Access-Control-Max-Age"
-    inputs = [b"600"]
-    expected_out = "600"
+    inputs = [b"123"]
+    expected_out = 123
     expected_notes = [CORS_PREFLIGHT_ONLY]
 
-    def set_context(self, message: HttpMessageLinter) -> None:
-        message.related = cast(HttpMessageLinter, FakeRequest())
 
-
-class AccessControlMaxAgeValidPreflightTest(FieldTest):
+class AccessControlMaxAgeInvalidTest(FieldTest):
     name = "Access-Control-Max-Age"
-    inputs = [b"600"]
-    expected_out = "600"
+    inputs = [b"abc"]
+    expected_out = None
+    expected_notes = [CORS_MAX_AGE_INVALID, CORS_PREFLIGHT_ONLY]
 
-    def set_context(self, message: HttpMessageLinter) -> None:
-        request = FakeRequest()
-        request.method = "OPTIONS"
-        request.headers.text = [
-            ("origin", "example.com"),
-            ("access-control-request-method", "GET"),
-        ]
-        message.related = cast(HttpMessageLinter, request)
+
+class AccessControlMaxAgeNegativeTest(FieldTest):
+    name = "Access-Control-Max-Age"
+    inputs = [b"-1"]
+    expected_out = None
+    expected_notes = [CORS_MAX_AGE_NEGATIVE, CORS_PREFLIGHT_ONLY]

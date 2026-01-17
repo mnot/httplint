@@ -4,6 +4,7 @@ import unittest
 
 from httplint.i18n import L_
 from httplint.note import Note
+from httplint.field.cors import check_preflight_request, check_preflight_response
 from httplint.message import HttpResponseLinter, HttpMessageLinter, HttpRequestLinter
 
 
@@ -16,6 +17,12 @@ class FakeResponseLinter(HttpResponseLinter):
         HttpResponseLinter.__init__(self)
         self.base_uri = "http://example.com/foo/bar"
         self.status_phrase = ""
+        self.related = FakeRequestLinter()
+
+    def post_checks(self) -> None:
+        if self.related and not hasattr(self.related, "headers"):
+            return
+        check_preflight_response(self)
 
 
 class FakeRequestLinter(HttpRequestLinter):
@@ -27,6 +34,9 @@ class FakeRequestLinter(HttpRequestLinter):
         HttpRequestLinter.__init__(self)
         self.base_uri = "http://example.com/foo/bar"
         self.method = "GET"
+
+    def post_checks(self) -> None:
+        check_preflight_request(self)
 
 
 class FakeHeaders:
@@ -69,6 +79,7 @@ class FieldTest(unittest.TestCase):
             return self.skipTest("no name")
         name = self.name.encode("utf-8")
         self.message.headers.process([(name, val) for val in self.inputs])
+        self.message.post_checks()
         if self.name.lower() in self.message.headers.handlers:
             handler = self.message.headers.handlers[self.name.lower()]
             field_add_note = partial(
@@ -121,4 +132,4 @@ class FieldTest(unittest.TestCase):
         self.expected_notes = [note]
         self.expected_out = expected_out
         self.setUp()
-        self.test_header()
+        FieldTest.test_header(self)

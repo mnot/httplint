@@ -1,12 +1,9 @@
-from typing import cast
-
 from httplint.field import HttpField
-from httplint.field.cors import check_preflight_response, CORS_PREFLIGHT_ONLY
-from httplint.field.tests import FieldTest, FakeRequest
-from httplint.message import HttpMessageLinter
+from httplint.field.cors import CORS_PREFLIGHT_ONLY
+from httplint.field.tests import FieldTest
 from httplint.syntax import rfc9110
-from httplint.types import AddNoteMethodType
 from httplint.note import categories
+from httplint.types import AddNoteMethodType
 
 
 class access_control_allow_headers(HttpField):
@@ -21,36 +18,12 @@ request to indicate which HTTP headers can be used during the actual request."""
     valid_in_requests = False
     valid_in_responses = True
 
-    def evaluate(self, add_note: AddNoteMethodType) -> None:
-        check_preflight_response(self.message, self.canonical_name, add_note)
+    def parse(self, field_value: str, add_note: "AddNoteMethodType") -> str:
+        return field_value.lower()
 
 
 class AccessControlAllowHeadersTest(FieldTest):
     name = "Access-Control-Allow-Headers"
-    inputs = [b"Custom-Header, Upgrade-Insecure-Requests"]
-    expected_out = ["Custom-Header", "Upgrade-Insecure-Requests"]
-
-
-class AccessControlAllowHeadersPreflightTest(FieldTest):
-    name = "Access-Control-Allow-Headers"
-    inputs = [b"Custom-Header"]
-    expected_out = ["Custom-Header"]
+    inputs = [b"a, b"]
+    expected_out = ["a", "b"]
     expected_notes = [CORS_PREFLIGHT_ONLY]
-
-    def set_context(self, message: HttpMessageLinter) -> None:
-        message.related = cast(HttpMessageLinter, FakeRequest())
-
-
-class AccessControlAllowHeadersValidPreflightTest(FieldTest):
-    name = "Access-Control-Allow-Headers"
-    inputs = [b"Custom-Header"]
-    expected_out = ["Custom-Header"]
-
-    def set_context(self, message: HttpMessageLinter) -> None:
-        request = FakeRequest()
-        request.method = "OPTIONS"
-        request.headers.text = [
-            ("origin", "example.com"),
-            ("access-control-request-method", "GET"),
-        ]
-        message.related = cast(HttpMessageLinter, request)
