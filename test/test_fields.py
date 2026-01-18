@@ -60,7 +60,7 @@ def checkFieldClass(field_cls):
     Given a field class, make sure it's complete. Complain on STDERR if not.
     """
 
-    if not hasattr(field_cls, "canonical_name"):
+    if HttpField in field_cls.__bases__:
         return 0
 
     errors = 0

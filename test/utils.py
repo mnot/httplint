@@ -12,9 +12,13 @@ def checkSubClasses(cls, module_paths, check):
         loadModules(module_path, f"{module_path.replace('/', '.')}.")
     count = 0
     errors = 0
-    for subcls in cls.__subclasses__():
-        errors += check(subcls)
-        count += 1
+    worklist = [cls]
+    while worklist:
+        current_cls = worklist.pop()
+        for subcls in current_cls.__subclasses__():
+            worklist.append(subcls)
+            errors += check(subcls)
+            count += 1
     return count, errors
 
 
