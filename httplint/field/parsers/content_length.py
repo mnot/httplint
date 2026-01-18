@@ -5,7 +5,6 @@ from httplint.field.tests import FieldTest
 from httplint.syntax import rfc9110
 from httplint.types import AddNoteMethodType
 from httplint.field.singleton_field import SINGLE_HEADER_REPEAT
-from httplint.field import BAD_SYNTAX
 from httplint.note import Note, categories, levels
 
 if TYPE_CHECKING:
@@ -23,12 +22,17 @@ If Content-Length is incorrect, HTTP/1.1 persistent connections will not work, a
 store the response (since they can't be sure if they have the whole response)."""
     reference = f"{rfc9110.SPEC_URL}#field.content-length"
     syntax = rfc9110.Content_Length
+    report_syntax = False
     deprecated = False
     valid_in_requests = True
     valid_in_responses = True
 
     def parse(self, field_value: str, add_note: AddNoteMethodType) -> int:
-        value = int(field_value)
+        try:
+            value = int(field_value)
+        except ValueError:
+            add_note(CL_BAD_SYNTAX)
+            raise
         if value > 9223372036854775807:  # 2^63-1
             add_note(CL_TOO_LARGE)
         return value
@@ -36,6 +40,14 @@ store the response (since they can't be sure if they have the whole response).""
     def evaluate(self, add_note: AddNoteMethodType) -> None:
         if "transfer-encoding" in self.message.headers.parsed:
             add_note(CL_AND_TE_PRESENT)
+
+
+class CL_BAD_SYNTAX(Note):
+    category = categories.GENERAL
+    level = levels.BAD
+    _summary = "Content-Length should be an integer."
+    _text = """\
+The `Content-Length` header should be an integer, but it was not."""
 
 
 class CL_AND_TE_PRESENT(Note):
@@ -68,14 +80,14 @@ class ContentLengthTextTest(FieldTest):
     name = "Content-Length"
     inputs = [b"a"]
     expected_out = None
-    expected_notes = [BAD_SYNTAX]
+    expected_notes = [CL_BAD_SYNTAX]
 
 
 class ContentLengthSemiTest(FieldTest):
     name = "Content-Length"
     inputs = [b"1;"]
     expected_out = None
-    expected_notes = [BAD_SYNTAX]
+    expected_notes = [CL_BAD_SYNTAX]
 
 
 class ContentLengthSpaceTest(FieldTest):
@@ -102,7 +114,7 @@ class ContentLengthCommaTest(FieldTest):
     name = "Content-Length"
     inputs = [b"1, 1"]
     expected_out = None
-    expected_notes = [BAD_SYNTAX]
+    expected_notes = [CL_BAD_SYNTAX]
 
 
 class ContentLengthDiffTest(FieldTest):
@@ -116,7 +128,7 @@ class ContentLengthDiffCommaTest(FieldTest):
     name = "Content-Length"
     inputs = [b"1, 2"]
     expected_out = None
-    expected_notes = [BAD_SYNTAX]
+    expected_notes = [CL_BAD_SYNTAX]
 
 
 class ContentLengthTEPresentTest(FieldTest):

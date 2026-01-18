@@ -19,6 +19,7 @@ class HttpListField(HttpField):
     def parse(self, field_value: str, add_note: AddNoteMethodType) -> Any:
         """
         Given a string representing one value (after comma splitting), parse and return the result.
+        Raise ValueError if parsing fails.
         """
         return field_value
 

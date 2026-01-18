@@ -3,7 +3,6 @@ from typing import Optional, Tuple
 
 from httplint.field.singleton_field import SingletonField
 from httplint.field.tests import FieldTest
-from httplint.field import BAD_SYNTAX
 from httplint.message import HttpMessageLinter, HttpResponseLinter
 from httplint.note import Note, categories, levels
 from httplint.syntax import rfc9110
@@ -26,6 +25,7 @@ where in the full response content the partial content is located. It is also us
 in `416` (Requested Range Not Satisfiable) responses."""
     reference = f"{rfc9110.SPEC_URL}#field.content-range"
     syntax = rfc9110.Content_Range
+    report_syntax = False
     deprecated = False
     valid_in_requests = False
     valid_in_responses = True
@@ -39,36 +39,33 @@ in `416` (Requested Range Not Satisfiable) responses."""
             # if we see a slash, it's likely the unit is missing
             if "/" in field_value:
                 add_note(CONTENT_RANGE_MISSING_UNIT)
-            return None
+            raise
 
         try:
             rng, len_str = rest.split("/", 1)
         except ValueError:
             add_note(CONTENT_RANGE_MISSING_SLASH)
-            return None
+            raise
 
         if rng == "*" and len_str == "*":
             add_note(CONTENT_RANGE_INVALID_ASTERISK)
-            return None
+            raise ValueError
 
         complete_length = self._parse_length(len_str, add_note)
         if complete_length is None and len_str != "*":
             # length parsing failed; already noted
-            return None
+            raise ValueError
 
         first_byte_pos, last_byte_pos = self._parse_range_spec(rng, add_note)
         # Check for * failure (None, None returned for generic failure or *)
         # We need to distinguish between "*" (valid for unsatisfiable) and error.
 
         if rng == "*":
-            if complete_length is None:
-                # */* is invalid; already noted
-                return None
             if isinstance(self.message, HttpResponseLinter) and self.message.status_code == 206:
                 add_note(CONTENT_RANGE_UNSATISFIED_BAD_SC)
         elif first_byte_pos is None:
             # Error in range parsing; already noted
-            return None
+            raise ValueError
         else:
             # We have a valid range tuple
             if first_byte_pos is not None and last_byte_pos is not None:
@@ -264,7 +261,7 @@ class ContentRangeSyntaxErrorTest(FieldTest):
     name = "Content-Range"
     inputs = [b"bytes */*"]
     expected_out = None
-    expected_notes = [BAD_SYNTAX, CONTENT_RANGE_INVALID_ASTERISK]
+    expected_notes = [CONTENT_RANGE_INVALID_ASTERISK]
 
     def set_context(self, message: HttpMessageLinter) -> None:
         message.status_code = 416  # type: ignore
@@ -274,7 +271,7 @@ class ContentRangeMissingUnit(FieldTest):
     name = "Content-Range"
     inputs = [b"1-100/200"]
     expected_out = None
-    expected_notes = [BAD_SYNTAX, CONTENT_RANGE_MISSING_UNIT]
+    expected_notes = [CONTENT_RANGE_MISSING_UNIT]
 
     def set_context(self, message: HttpMessageLinter) -> None:
         message.status_code = 206  # type: ignore
@@ -284,7 +281,7 @@ class ContentRangeMissingHyphenTest(FieldTest):
     name = "Content-Range"
     inputs = [b"bytes 100/200"]
     expected_out = None
-    expected_notes = [BAD_SYNTAX, RANGE_MISSING_HYPHEN]
+    expected_notes = [RANGE_MISSING_HYPHEN]
 
     def set_context(self, message: HttpMessageLinter) -> None:
         message.status_code = 206  # type: ignore
@@ -294,7 +291,7 @@ class ContentRangeInvalidIntegerTest(FieldTest):
     name = "Content-Range"
     inputs = [b"bytes 100-foo/200"]
     expected_out = None
-    expected_notes = [BAD_SYNTAX, RANGE_INVALID_INTEGER]
+    expected_notes = [RANGE_INVALID_INTEGER]
 
     def set_context(self, message: HttpMessageLinter) -> None:
         message.status_code = 206  # type: ignore
@@ -314,7 +311,7 @@ class ContentRangeMissingSlashTest(FieldTest):
     name = "Content-Range"
     inputs = [b"bytes 1-100 200"]
     expected_out = None
-    expected_notes = [BAD_SYNTAX, CONTENT_RANGE_MISSING_SLASH]
+    expected_notes = [CONTENT_RANGE_MISSING_SLASH]
 
     def set_context(self, message: HttpMessageLinter) -> None:
         message.status_code = 206  # type: ignore

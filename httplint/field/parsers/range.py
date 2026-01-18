@@ -22,6 +22,7 @@ The `Range` header field on a GET request modifies the method semantics to reque
 parts of the representation that are specified."""
     reference = f"{rfc9110.SPEC_URL}#field.range"
     syntax = rfc9110.Range
+    report_syntax = False
     category = categories.RANGE
     deprecated = False
     valid_in_requests = True
@@ -31,7 +32,7 @@ parts of the representation that are specified."""
         try:
             unit, rest = field_value.split("=", 1)
         except ValueError:
-            return None
+            raise
 
         ranges: List[Tuple[Optional[int], Optional[int]]] = []
         for rng in rest.split(","):
@@ -42,7 +43,7 @@ parts of the representation that are specified."""
                     ref_uri=self.reference,
                     problem="the range specifier must contain a hyphen",
                 )
-                return None
+                raise ValueError
 
             first_str, last_str = rng.split("-", 1)
             first_byte_pos: Optional[int] = None
@@ -55,7 +56,7 @@ parts of the representation that are specified."""
                         ref_uri=self.reference,
                         problem="the first position in the range must be an integer",
                     )
-                    return None
+                    raise ValueError
                 first_byte_pos = int(first_str)
 
             if last_str:
@@ -65,7 +66,7 @@ parts of the representation that are specified."""
                         ref_uri=self.reference,
                         problem="the last position in the range must be an integer",
                     )
-                    return None
+                    raise ValueError
                 last_byte_pos = int(last_str)
 
             if first_byte_pos is None and last_byte_pos is None:
@@ -74,7 +75,7 @@ parts of the representation that are specified."""
                     ref_uri=self.reference,
                     problem="at least one of the first or last positions must be specified",
                 )
-                return None
+                raise ValueError
 
             if (
                 first_byte_pos is not None

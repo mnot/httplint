@@ -22,7 +22,9 @@ class SingletonField(HttpField):
 
     def parse(self, field_value: str, add_note: AddNoteMethodType) -> Any:
         """
-        Given a string representing a field line, parse and return the result."""
+        Given a string representing a field line, parse and return the result.
+        Raise ValueError if parsing fails.
+        """
         return field_value
 
     def handle_input(self, field_value: str, add_note: "AddNoteMethodType", offset: int) -> None:
