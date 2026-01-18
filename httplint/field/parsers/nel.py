@@ -125,7 +125,7 @@ Details: %(details)s"""
 class NEL_REPORT_TO_MISSING(Note):
     category = categories.GENERAL
     level = levels.WARN
-    _summary = "The report_to endpoint '%(value)s' is not defined."
+    _summary = "The reporting endpoint '%(value)s' is not defined."
     _text = """\
 The `report_to` member in the [Network Error Logging](https://w3c.github.io/network-error-logging/)
 policy specifies a reporting endpoint, but no matching endpoint refers to it in the
