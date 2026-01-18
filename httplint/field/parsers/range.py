@@ -3,7 +3,6 @@ from typing import List, Tuple, Optional
 
 from httplint.field.singleton_field import SingletonField
 from httplint.field.tests import FieldTest
-from httplint.field import BAD_SYNTAX
 from httplint.note import Note, categories, levels
 from httplint.syntax import rfc9110
 from httplint.types import AddNoteMethodType
@@ -32,6 +31,11 @@ parts of the representation that are specified."""
         try:
             unit, rest = field_value.split("=", 1)
         except ValueError:
+            add_note(
+                RANGE_BAD_SYNTAX,
+                ref_uri=self.reference,
+                problem="the range specifier must contain an equals sign",
+            )
             raise
 
         ranges: List[Tuple[Optional[int], Optional[int]]] = []
@@ -150,4 +154,4 @@ class RangeNoSplitTest(FieldTest):
     name = "Range"
     inputs = [b"bytes"]
     expected_out = None
-    expected_notes = [BAD_SYNTAX]
+    expected_notes = [RANGE_BAD_SYNTAX]
