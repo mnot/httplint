@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-01-11 19:44+1100\n"
+"POT-Creation-Date: 2026-01-18 17:17+1100\n"
 "PO-Revision-Date: 2025-12-02 12:04+1100\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: ja\n"
@@ -617,11 +617,11 @@ msgstr ""
 "`Content-Type` ヘッダーはコンテンツを `%(declared_type)s` として宣言していますが、\n"
 "`%(sniffed_type)s` のようです。"
 
-#: httplint/message.py:265
+#: httplint/message.py:268
 msgid "The Content-Length header is correct."
 msgstr "Content-Length ヘッダーは正しいです。"
 
-#: httplint/message.py:266
+#: httplint/message.py:269
 msgid ""
 "`Content-Length` is used by HTTP to delimit messages; that is, to mark "
 "the end of one message and\n"
@@ -630,11 +630,11 @@ msgstr ""
 "`Content-Length` は、HTTP "
 "がメッセージを区切るために使用されます。つまり、あるメッセージの終わりと次のメッセージの始まりを示します。"
 
-#: httplint/message.py:274
+#: httplint/message.py:277
 msgid "The Content-Length header is incorrect."
 msgstr "Content-Length ヘッダーが正しくありません。"
 
-#: httplint/message.py:275
+#: httplint/message.py:278
 #, python-format
 msgid ""
 "`Content-Length` is used by HTTP to delimit messages; that is, to mark "
@@ -651,17 +651,17 @@ msgstr ""
 "\n"
 "実際のコンテンツサイズは %(content_length)s バイトでした。"
 
-#: httplint/message.py:286
+#: httplint/message.py:289
 #, python-format
 msgid "%(message)s can not have content."
 msgstr "%(message)s にはコンテンツを含めることができません。"
 
-#: httplint/message.py:296
+#: httplint/message.py:299
 #, python-format
 msgid "The %(method)s doesn't define any meaning for content."
 msgstr "The %(method)s にはコンテンツの意味を定義する内容が含まれていません。"
 
-#: httplint/message.py:297
+#: httplint/message.py:300
 #, python-format
 msgid ""
 "There are no defined semantics for content in %(method)s requests. While "
@@ -675,49 +675,49 @@ msgstr ""
 "のフレーム層はコンテンツを許可しますが、すべてのリクエスト "
 "メソッドで有効であるとは限りません。リクエストにコンテンツを含めると、互換性とセキュリティの問題が発生する可能性があります。"
 
-#: httplint/message.py:307
+#: httplint/message.py:310
 #, python-format
 msgid "The URI is very long (%(uri_len)s characters)."
 msgstr "URIが長すぎます（%(uri_len)s文字）。"
 
-#: httplint/message.py:308
+#: httplint/message.py:311
 msgid ""
 "Long URIs aren't supported by some implementations, including proxies. A "
 "reasonable upper size\n"
 "limit is 8192 characters."
 msgstr "一部の実装（プロキシなど）では、長いURIはサポートされていません。合理的な上限サイズは8192文字です。"
 
-#: httplint/message.py:316
+#: httplint/message.py:319
 msgid "The URI's syntax isn't valid."
 msgstr "URI の構文が無効です。"
 
-#: httplint/message.py:317
+#: httplint/message.py:320
 msgid ""
 "This isn't a valid URI. See\n"
 "[RFC3986](http://www.ietf.org/rfc/rfc3986.txt) for more information."
 msgstr "これは有効なURIではありません。[RFC3986](http://www.ietf.org/rfc/rfc3986.txt) を参照してください。"
 
-#: httplint/message.py:325
+#: httplint/message.py:328
 msgid "The status code is not an integer."
 msgstr "ステータスコードは整数ではありません。"
 
-#: httplint/message.py:326
+#: httplint/message.py:329
 msgid "This isn't a valid status code; it needs to be an ASCII integer."
 msgstr "これは有効なステータスコードではありません。ASCII整数である必要があります。"
 
-#: httplint/message.py:333
+#: httplint/message.py:336
 msgid "The status phrase contains non-ASCII characters."
 msgstr "ステータスフレーズにASCII以外の文字が含まれています。"
 
-#: httplint/message.py:334
+#: httplint/message.py:337
 msgid "The status phrase can only contain ASCII characters."
 msgstr "ステータスフレーズにはASCII文字のみを含めることができます。"
 
-#: httplint/message.py:341
+#: httplint/message.py:344
 msgid "The User-Agent header is missing."
 msgstr "User-Agent ヘッダーが見つかりません。"
 
-#: httplint/message.py:342
+#: httplint/message.py:345
 msgid ""
 "Clients SHOULD send a `User-Agent` header field.\n"
 "\n"
@@ -730,25 +730,25 @@ msgstr ""
 "詳細は [RFC 9110 Section 10.1.5](https://www.rfc-"
 "editor.org/rfc/rfc9110.html#section-10.1.5) を参照してください。"
 
-#: httplint/message.py:31
+#: httplint/message.py:32
 msgid "message"
 msgstr "メッセージ"
 
 #: httplint/field/section.py:82 httplint/field/section.py:92
-#: httplint/message.py:125
+#: httplint/message.py:126
 msgid "trailer"
 msgstr "トレーラー"
 
 #: httplint/field/section.py:82 httplint/field/section.py:92
-#: httplint/field/tests.py:78 httplint/message.py:125
+#: httplint/field/tests.py:89 httplint/message.py:126
 msgid "header"
 msgstr "ヘッダー"
 
-#: httplint/message.py:163
+#: httplint/message.py:164
 msgid "request"
 msgstr "リクエスト"
 
-#: httplint/message.py:222
+#: httplint/message.py:224
 msgid "response"
 msgstr "レスポンス"
 
@@ -757,30 +757,34 @@ msgid "General"
 msgstr "一般"
 
 #: httplint/note.py:16
-msgid "Browser Security"
-msgstr "ブラウザセキュリティ"
-
-#: httplint/note.py:17
-msgid "Cookies"
-msgstr "Cookie"
-
-#: httplint/note.py:18
-msgid "Content Negotiation"
-msgstr "コンテンツネゴシエーション"
-
-#: httplint/note.py:19
-msgid "Caching"
-msgstr "キャッシング"
-
-#: httplint/note.py:20
-msgid "Validation"
-msgstr "検証"
-
-#: httplint/note.py:21
 msgid "Connection"
 msgstr "接続"
 
+#: httplint/note.py:17
+msgid "Browser Security"
+msgstr "ブラウザセキュリティ"
+
+#: httplint/note.py:18
+msgid "Cross-Origin Resource Sharing"
+msgstr "CORS"
+
+#: httplint/note.py:19
+msgid "Cookies"
+msgstr "Cookie"
+
+#: httplint/note.py:20
+msgid "Content Negotiation"
+msgstr "コンテンツネゴシエーション"
+
+#: httplint/note.py:21
+msgid "Caching"
+msgstr "キャッシング"
+
 #: httplint/note.py:22
+msgid "Validation"
+msgstr "検証"
+
+#: httplint/note.py:23
 msgid "Partial Content"
 msgstr "部分コンテンツ"
 
@@ -1442,12 +1446,12 @@ msgstr "先頭"
 msgid "behind"
 msgstr "後ろ"
 
-#: httplint/field/__init__.py:165
+#: httplint/field/__init__.py:118
 #, python-format
 msgid "\"%(field_name)s\" is not a valid field name."
 msgstr "「%(field_name)s」は、有効なフィールド名ではありません。"
 
-#: httplint/field/__init__.py:166
+#: httplint/field/__init__.py:119
 #, python-brace-format
 msgid ""
 "Field names are limited to the `token` production in HTTP; i.e., they "
@@ -1459,12 +1463,12 @@ msgid ""
 "spaces or tabs."
 msgstr "フィールド名はHTTPの`token`プロダクションに限定されます。つまり、括弧、山括弧（<>）、アンパサンド（@）、カンマ、セミコロン、コロン、バックスラッシュ（\\）、フォワードスラッシュ（/）、引用符、角括弧（[]）、疑問符、等号（=）、波括弧（{}）、スペース、タブは含めることができません。"
 
-#: httplint/field/__init__.py:177
+#: httplint/field/__init__.py:130
 #, python-format
 msgid "The %(field_name)s field value doesn't conform to its specified syntax."
 msgstr "%(field_name)s フィールドの値は指定された構文と一致しません。"
 
-#: httplint/field/__init__.py:178
+#: httplint/field/__init__.py:131
 #, python-format
 msgid ""
 "The value for this field has syntax specified using \n"
@@ -1479,12 +1483,12 @@ msgstr ""
 "このフィールドの値は、[Augmented BNF](https://www.rfc-editor.org/rfc/rfc5234.html) "
 "で構文が指定されていますが、それに準拠していません。詳細については、[フィールドの ABNF](%(ref_uri)s) を参照してください。"
 
-#: httplint/field/__init__.py:207
+#: httplint/field/__init__.py:160
 #, python-format
 msgid "\"%(field_name)s\" isn't valid in a response."
 msgstr "%(field_name)s はレスポンスでは有効な値ではありません"
 
-#: httplint/field/__init__.py:208
+#: httplint/field/__init__.py:161
 #, python-format
 msgid ""
 "The %(field_name)s field only has meaning in requests. Sending it a "
@@ -1492,12 +1496,12 @@ msgid ""
 "doesn't do anything. REDbot (and most recipients) will ignore it."
 msgstr "フィールド「%(field_name)s」はリクエストでのみ意味を持ちます。応答として送信しても無駄です。REDbot（およびほとんどの受信者）は無視します。"
 
-#: httplint/field/__init__.py:216
+#: httplint/field/__init__.py:169
 #, python-format
 msgid "\"%(field_name)s\" isn't valid in a request."
 msgstr "\"%(field_name)s\" はリクエストでは有効ではありません。"
 
-#: httplint/field/__init__.py:217
+#: httplint/field/__init__.py:170
 #, python-format
 msgid ""
 "The %(field_name)s field only has meaning in responses. Sending it in a "
@@ -1507,12 +1511,12 @@ msgstr ""
 "%(field_name)s "
 "フィールドは応答でのみ意味を持ちます。リクエストに送信しても何も起こりません。REDbot（およびほとんどの受信者）はそれを無視します。"
 
-#: httplint/field/__init__.py:225
+#: httplint/field/__init__.py:178
 #, python-format
 msgid "The %(field_name)s header is deprecated."
 msgstr "「%(field_name)s」ヘッダーは非推奨です。"
 
-#: httplint/field/__init__.py:226
+#: httplint/field/__init__.py:179
 #, python-format
 msgid ""
 "This field is no longer recommended for use, because of interoperability "
@@ -1525,39 +1529,29 @@ msgstr ""
 "\n"
 "詳細情報については、[廃止通知](%(deprecation_ref)s) を参照してください。"
 
-#: httplint/field/cors.py:56
-#, python-format
-msgid "The %(field_name)s header is only allowed in CORS preflight responses."
-msgstr "ヘッダー '%(field_name)s' はCORSプリフライト応答でのみ許可されています。"
+#: httplint/field/cors.py:146
+msgid "This is a CORS preflight request."
+msgstr "このリクエストは CORS の事前フライトリクエストです。"
 
-#: httplint/field/cors.py:57
-#, python-format
+#: httplint/field/cors.py:147
 msgid ""
-"The `%(field_name)s` header is only used in the response to a Cross-"
-"Origin Resource Sharing (CORS)\n"
-"preflight request.\n"
+"This is a Cross-Origin Resource Sharing (CORS) preflight request.\n"
 "\n"
-"A preflight request is an `OPTIONS` request that includes an `Origin` "
-"header and an\n"
-"`Access-Control-Request-Method` header.\n"
-"\n"
-"This response was not to a CORS preflight request, so this header should "
-"not be present."
+"A preflight request uses the `OPTIONS` method and includes an `Origin` "
+"and `Access-Control-Request-Method`\n"
+"header."
 msgstr ""
-"`%(field_name)s` ヘッダーは、Cross-Origin Resource Sharing (CORS) "
-"プリフライトリクエストへの応答でのみ使用されます。\n"
+"これは、クロスオリジンリソース共有（CORS）プリフライトレクエストです。\n"
 "\n"
-"プリフライトリクエストは、`Origin` ヘッダーと `Access-Control-Request-Method` ヘッダーを含む "
-"`OPTIONS` リクエストです。\n"
-"\n"
-"この応答は CORS プリフライトリクエストへのものではなかったため、このヘッダーは存在しないはずです。"
+"プリフライトレクエストは、`OPTIONS` メソッドを使用し、`Origin` と `Access-Control-Request-"
+"Method` ヘッダーを含みます。"
 
-#: httplint/field/cors.py:70
+#: httplint/field/cors.py:157
 #, python-format
-msgid "The %(field_name)s header is only allowed in CORS preflight requests."
-msgstr "%(field_name)s ヘッダーは、CORSプリフライトリクエストでのみ許可されます。"
+msgid "The %(field_name)s header requires the OPTIONS method."
+msgstr "The %(field_name)s ヘッダーには OPTIONS メソッドが必要です。"
 
-#: httplint/field/cors.py:71
+#: httplint/field/cors.py:158
 #, python-format
 msgid ""
 "The `%(field_name)s` header is only used in a Cross-Origin Resource "
@@ -1572,12 +1566,12 @@ msgstr ""
 "\n"
 "プリフライトリクエストは `OPTIONS` メソッドを使用しますが、このリクエストは `%(method)s` を使用しています。"
 
-#: httplint/field/cors.py:81
+#: httplint/field/cors.py:168
 #, python-format
 msgid "The %(field_name)s header requires the Origin header."
 msgstr "%(field_name)s ヘッダーには Origin ヘッダーが必要です。"
 
-#: httplint/field/cors.py:82
+#: httplint/field/cors.py:169
 #, python-format
 msgid ""
 "The `%(field_name)s` header is only used in a Cross-Origin Resource "
@@ -1591,14 +1585,14 @@ msgstr ""
 "\n"
 "プリフライトリクエストには `Origin` ヘッダーが必要です。"
 
-#: httplint/field/cors.py:92
+#: httplint/field/cors.py:179
 #, python-format
 msgid ""
 "The %(field_name)s header requires the Access-Control-Request-Method "
 "header."
 msgstr "ヘッダー '%(field_name)s' には Access-Control-Request-Method ヘッダーが必要です。"
 
-#: httplint/field/cors.py:93
+#: httplint/field/cors.py:180
 #, python-format
 msgid ""
 "The `%(field_name)s` header is only used in a Cross-Origin Resource "
@@ -1613,9 +1607,140 @@ msgstr ""
 "\n"
 "プリフライトリクエストには、`Access-Control-Request-Method` ヘッダーが必要です。"
 
-#: httplint/field/finder.py:105
-msgid "Unknown"
-msgstr "不明"
+#: httplint/field/cors.py:190
+msgid "This is a CORS preflight response."
+msgstr "これはクロスオリジンリクエストのプリフライト応答です。"
+
+#: httplint/field/cors.py:191
+msgid ""
+"This is a Cross-Origin Resource Sharing (CORS) preflight response.\n"
+"\n"
+"It is a response to an `OPTIONS` request that includes an `Origin` and "
+"`Access-Control-Request-Method`\n"
+"header."
+msgstr ""
+"この Cross-Origin Resource Sharing (CORS) 事前処理応答です。\n"
+"\n"
+"これは、`Origin` と `Access-Control-Request-Method` ヘッダーを含む `OPTIONS` "
+"要求に対する応答です。"
+
+#: httplint/field/cors.py:201
+msgid "CORS headers are only allowed in preflight responses."
+msgstr "CORS ヘッダーはプリフライト応答でのみ許可されます。"
+
+#: httplint/field/cors.py:202
+#, python-format
+msgid ""
+"The following header(s) are only used in the response to a Cross-Origin "
+"Resource Sharing (CORS)\n"
+"preflight request:\n"
+"\n"
+"%(headers)s\n"
+"\n"
+"A preflight request is an `OPTIONS` request that includes an `Origin` "
+"header and an\n"
+"`Access-Control-Request-Method` header.\n"
+"\n"
+"This response was not to a CORS preflight request, so these headers "
+"should not be present."
+msgstr ""
+"The following header(s)は、クロスオリジンリソース共有（CORS）プリフライトレクエストへの応答にのみ使用されます：\n"
+"\n"
+"%(headers)s\n"
+"\n"
+"プリフライトレクエストは、`OPTIONS` リクエストで、`Origin` ヘッダーと `Access-Control-Request-"
+"Method` ヘッダーが含まれます。\n"
+"\n"
+"この応答は CORS プリフライトレクエストへの応答ではないため、これらのヘッダーは存在すべきではありません。"
+
+#: httplint/field/cors.py:217
+msgid "Access-Control-Allow-Origin should not have multiple values."
+msgstr "Access-Control-Allow-Origin には複数の値を持たせるべきではありません。"
+
+#: httplint/field/cors.py:218
+msgid ""
+"The `Access-Control-Allow-Origin` header can only contain a single "
+"origin, `*`, or `null`. It\n"
+"cannot contain a list of origins."
+msgstr ""
+"`Access-Control-Allow-Origin` ヘッダーには、単一のオリジン、`*`、または `null` "
+"のいずれかのみを含めることができます。オリジンのリストは含めることができません。"
+
+#: httplint/field/cors.py:226
+msgid "Access-Control-Allow-Credentials must be 'true'."
+msgstr "Access-Control-Allow-Credentials は 'true' である必要があります。"
+
+#: httplint/field/cors.py:227
+msgid ""
+"The `Access-Control-Allow-Credentials` header must be set to `true` if "
+"present. If you don't want\n"
+"to allow credentials, omit the header."
+msgstr ""
+"`Access-Control-Allow-Credentials` ヘッダーは、存在する場合 `true` に設定する必要があります。\n"
+"認証情報を許可しない場合は、ヘッダーを省略してください。"
+
+#: httplint/field/cors.py:235
+msgid "The Access-Control-Allow-Origin header allows the requesting origin."
+msgstr "Access-Control-Allow-Origin ヘッダーは要求元のドメインを許可します。"
+
+#: httplint/field/cors.py:236
+#, python-format
+msgid ""
+"The `Access-Control-Allow-Origin` header matches the `Origin` header in "
+"the request (%(origin)s).\n"
+"\n"
+"This means that the browser will let the requesting site access the "
+"response."
+msgstr ""
+"Access-Control-Allow-Origin ヘッダーは、リクエストで Origin ヘッダーと一致します "
+"(%(origin)s)。これは、ブラウザがリクエストしたサイトにレスポンスへのアクセスを許可することを意味します。"
+
+#: httplint/field/cors.py:245
+msgid ""
+"The Access-Control-Allow-Origin header does not allow the requesting "
+"origin."
+msgstr "Access-Control-Allow-Origin ヘッダーは要求元を許可していません"
+
+#: httplint/field/cors.py:246
+#, python-format
+msgid ""
+"The `Access-Control-Allow-Origin` header (%(acao_value)s) does not match "
+"the `Origin` header\n"
+"in the request (%(origin)s).\n"
+"\n"
+"This means that the browser will **not** let the requesting site access "
+"the response."
+msgstr ""
+"The `Access-Control-Allow-Origin` ヘッダー（%(acao_value)s）は、リクエストの `Origin` "
+"ヘッダー（%(origin)s）と一致しません。\n"
+"\n"
+"これは、ブラウザが要求元のサイトにレスポンスへのアクセスを **許可しません** ことを意味します。"
+
+#: httplint/field/cors.py:256
+msgid "The Access-Control-Allow-Origin header does not allow any origin."
+msgstr "Access-Control-Allow-Origin ヘッダーはどんなオリジンにもアクセスを許可しません。"
+
+#: httplint/field/cors.py:257
+msgid ""
+"The `Access-Control-Allow-Origin` header is set to `null`; this means "
+"that no origin can access\n"
+"the response."
+msgstr "Access-Control-Allow-Origin ヘッダーが null に設定されているため、応答にアクセスできるオリジンがありません。"
+
+#: httplint/field/cors.py:265
+msgid "The Access-Control-Allow-Origin header allows any origin."
+msgstr "Access-Control-Allow-Origin ヘッダーは任意のオリジンを許可します。"
+
+#: httplint/field/cors.py:266
+msgid ""
+"The `Access-Control-Allow-Origin` header is set to `*`; this means that "
+"any origin can access\n"
+"the response, unless the request includes credentials or requires a "
+"preflight check."
+msgstr ""
+"Access-Control-Allow-Origin ヘッダーが \"*\" "
+"に設定されているため、リクエストに資格情報が含まれている場合や、事前フライト "
+"チェックが必要な場合を除き、応答にアクセスできるソースはどんなソースでもあります。"
 
 #: httplint/field/json_field.py:41
 #, python-format
@@ -1687,12 +1812,12 @@ msgstr ""
 "このフィールドには、ISO-8859-1 でエンコードされた非 ASCII "
 "文字が含まれています。別のエンコーディング（例：UTF-8）が使用されている場合、予期しない結果になる可能性があります。"
 
-#: httplint/field/singleton_field.py:48
+#: httplint/field/singleton_field.py:56
 #, python-format
 msgid "Only one %(field_name)s field is allowed in a message."
 msgstr "メッセージには1つの %(field_name)s フィールドのみを指定できます。"
 
-#: httplint/field/singleton_field.py:49
+#: httplint/field/singleton_field.py:57
 msgid ""
 "This field is designed to only occur once in a message. When it occurs "
 "more than once, a receiver\n"
@@ -1701,24 +1826,24 @@ msgid ""
 "implementations may make different choices."
 msgstr "このフィールドは、メッセージ内で1度だけ出現するように設計されています。複数回出現した場合、受信側はどちらを使用するかを選択する必要があり、実装によって選択が異なる可能性があるため、相互運用性の問題につながる可能性があります。"
 
-#: httplint/field/structured_field.py:79
+#: httplint/field/structured_field.py:94
 #, python-format
 msgid "In %(field_name)s, the %(context)s key '%(key)s' is duplicated."
 msgstr "%(field_name)s では、%(context)s キー '%(key)s' が重複しています。"
 
-#: httplint/field/structured_field.py:80
+#: httplint/field/structured_field.py:95
 #, python-format
 msgid ""
 "The %(context)s key '%(key)s' is duplicated. All instances after the "
 "first will be ignored."
 msgstr "%(context)s のキー '%(key)s' が重複しています。最初のインスタンス以降は無視されます。"
 
-#: httplint/field/structured_field.py:87
+#: httplint/field/structured_field.py:102
 #, python-format
 msgid "The %(field_name)s field value isn't a valid Structured Field."
 msgstr "%(field_name)sフィールドの値は、有効な構造化フィールドではありません。"
 
-#: httplint/field/structured_field.py:88
+#: httplint/field/structured_field.py:103
 #, python-format
 msgid ""
 "The %(field_name)s field is defined as a\n"
@@ -1757,12 +1882,12 @@ msgstr ""
 "\n"
 "削除を検討してください。"
 
-#: httplint/field/utils.py:218
+#: httplint/field/utils.py:220
 #, python-format
 msgid "The '%(param)s' parameter repeats in the %(field_name)s header."
 msgstr "「%(param)s」パラメータが %(field_name)s ヘッダーで繰り返されています。"
 
-#: httplint/field/utils.py:219
+#: httplint/field/utils.py:221
 #, python-format
 msgid ""
 "Parameters on the %(field_name)s field should not repeat; implementations"
@@ -1770,12 +1895,12 @@ msgid ""
 "differently."
 msgstr "`%(field_name)s` フィールドのパラメータは繰り返されるべきではありません。実装によって異なる場合があります。"
 
-#: httplint/field/utils.py:227
+#: httplint/field/utils.py:229
 #, python-format
 msgid "The '%(param)s' parameter on the %(field_name)s header is single-quoted."
 msgstr "`%(param)s` パラメータは、`%(field_name)s` ヘッダーで単一引用符で囲まれています。"
 
-#: httplint/field/utils.py:228
+#: httplint/field/utils.py:230
 #, python-format
 msgid ""
 "The `%(param)s`'s value on the %(field_name)s field starts and ends with "
@@ -1794,12 +1919,12 @@ msgstr ""
 "これは、値が `%(param_val_unquoted)s` **ではなく** `%(param_val)s` "
 "として解釈されることを意味します。後者の意図がある場合は、シングルクォートを削除してください。"
 
-#: httplint/field/utils.py:239
+#: httplint/field/utils.py:241
 #, python-format
 msgid "The %(param)s* parameter isn't allowed on the %(field_name)s field."
 msgstr "%(param)s* パラメータは %(field_name)s フィールドでは許可されていません。"
 
-#: httplint/field/utils.py:240
+#: httplint/field/utils.py:242
 #, python-format
 msgid ""
 "Parameter values that end in '*' are reserved for non-ascii text, as "
@@ -1817,12 +1942,12 @@ msgstr ""
 "`%(field_name)s` フィールドの `%(param)s` "
 "パラメータはこれを許可していません。末尾の'*'を付けずに（および関連するエンコーディングなしで）%(param)sを使用してください。"
 
-#: httplint/field/utils.py:251
+#: httplint/field/utils.py:253
 #, python-format
 msgid "The '%(param)s' parameter's value cannot be quoted."
 msgstr "「%(param)s」パラメータの値は引用できません。"
 
-#: httplint/field/utils.py:252
+#: httplint/field/utils.py:254
 #, python-format
 msgid ""
 "Parameter values that end in '*' have a specific format, defined in\n"
@@ -1838,12 +1963,12 @@ msgstr ""
 "\n"
 "`%(field_name)s`フィールドの`%(param)s`パラメータが二重引用符で囲まれていますが、これは無効です。"
 
-#: httplint/field/utils.py:263
+#: httplint/field/utils.py:265
 #, python-format
 msgid "The %(param)s parameter's value is invalid."
 msgstr "%(param)s パラメータの値が無効です。"
 
-#: httplint/field/utils.py:264
+#: httplint/field/utils.py:266
 #, python-format
 msgid ""
 "Parameter values that end in '*' have a specific format, defined in\n"
@@ -1860,12 +1985,12 @@ msgstr ""
 "`%(field_name)s` フィールドの `%(param)s` パラメータは無効です。単一引用符 (') で区切られた 3 "
 "つの部分が必要です。"
 
-#: httplint/field/utils.py:275
+#: httplint/field/utils.py:277
 #, python-format
 msgid "The %(param)s parameter's value doesn't define an encoding."
 msgstr "%(param)s パラメータの値はエンコーディングを定義していません。"
 
-#: httplint/field/utils.py:276
+#: httplint/field/utils.py:278
 #, python-format
 msgid ""
 "Parameter values that end in '*' have a specific format, defined in\n"
@@ -1882,12 +2007,12 @@ msgstr ""
 "`%(field_name)s` ヘッダーの `%(param)s` "
 "パラメータは文字エンコーディングを宣言していないため、受信側で理解できません。`UTF-8` であるべきです。"
 
-#: httplint/field/utils.py:287
+#: httplint/field/utils.py:289
 #, python-format
 msgid "The %(param)s parameter's value uses an encoding other than UTF-8."
 msgstr "%(param)s パラメータの値は UTF-8 以外のエンコーディングを使用しています。"
 
-#: httplint/field/utils.py:288
+#: httplint/field/utils.py:290
 #, python-format
 msgid ""
 "Parameter values that end in '*' have a specific format, defined in\n"
@@ -1903,12 +2028,12 @@ msgstr ""
 "\n"
 "`%(field_name)s`ヘッダーの`%(param)s`パラメータは、一部のブラウザで相互運用性の問題がある`'%(enc)s`エンコーディングを使用しています。`UTF-8`であるべきです。"
 
-#: httplint/field/utils.py:299
+#: httplint/field/utils.py:301
 #, python-format
 msgid "The %(field_name)s header's value isn't a valid date."
 msgstr "「%(field_name)s」ヘッダーの値は有効な日付ではありません。"
 
-#: httplint/field/utils.py:300
+#: httplint/field/utils.py:302
 msgid ""
 "HTTP dates have specific syntax, and sending an invalid date can cause a "
 "number of problems,\n"
@@ -1928,12 +2053,12 @@ msgstr ""
 "詳細については、[HTTP 仕様](https://www.rfc-editor.org/rfc/rfc9110.html#name-date-"
 "time-formats)を参照してください。"
 
-#: httplint/field/utils.py:312
+#: httplint/field/utils.py:314
 #, python-format
 msgid "The %(field_name)s header's value uses an obsolete format."
 msgstr "「%(field_name)s」ヘッダーの値は廃止された形式を使用しています。"
 
-#: httplint/field/utils.py:313
+#: httplint/field/utils.py:315
 msgid ""
 "HTTP has a number of defined date formats for historical reasons. This "
 "header is using an old\n"
@@ -1944,31 +2069,24 @@ msgstr ""
 "HTTPには、歴史的な理由からいくつかの定義済みの日付フォーマットがあります。このヘッダーは、現在廃止されている古いフォーマットを使用しています。詳細については、[仕様](https://www"
 ".rfc-editor.org/rfc/rfc9110.html#name-obsolete-date-formats)を参照してください。"
 
-#: httplint/field/parsers/accept.py:22
-msgid ""
-"The `Accept` header field can be used by user agents to specify response "
-"media types that are\n"
-"acceptable in responses."
-msgstr "`Accept` ヘッダーフィールドは、ユーザーエージェントが応答で許容されるメディアタイプを指定するために使用できます。"
-
-#: httplint/field/parsers/accept.py:70
+#: httplint/field/parsers/accept.py:71
 #, python-brace-format
 msgid "The q value on '{media_type}' is invalid."
 msgstr "\"The q値が'{media_type}'で無効です。\""
 
-#: httplint/field/parsers/accept.py:71
-#: httplint/field/parsers/accept_language.py:68
+#: httplint/field/parsers/accept.py:72
+#: httplint/field/parsers/accept_language.py:69
 msgid ""
 "The `q` parameter must be a decimal number between 0 and 1, with at most "
 "3 digits of precision."
 msgstr "The `q` パラメーターは、0 から 1 までの小数で、最大 3 桁の精度で表す必要があります。"
 
-#: httplint/field/parsers/accept.py:78
+#: httplint/field/parsers/accept.py:79
 msgid "The Accept header isn't valid."
 msgstr "Accept ヘッダーが無効です。"
 
-#: httplint/field/parsers/accept.py:79 httplint/field/parsers/accept_ch.py:96
-#: httplint/field/parsers/accept_language.py:76
+#: httplint/field/parsers/accept.py:80
+#: httplint/field/parsers/accept_language.py:77
 #, python-format
 msgid ""
 "The value for this field doesn't conform to its specified syntax; see "
@@ -1976,11 +2094,11 @@ msgid ""
 "definition](%(ref_uri)s) for more information."
 msgstr "このフィールドの値は指定された構文に準拠していません。[定義](%(ref_uri)s)を参照してください。"
 
-#: httplint/field/parsers/accept_ch.py:73
+#: httplint/field/parsers/accept_ch.py:69
 msgid "Accept-CH is ignored over plain HTTP."
 msgstr "Accept-CH は平文の HTTP で無視されます。"
 
-#: httplint/field/parsers/accept_ch.py:74
+#: httplint/field/parsers/accept_ch.py:70
 msgid ""
 "The `Accept-CH` header field should only be used on secure (HTTPS) "
 "responses. Using it over plain\n"
@@ -1991,68 +2109,58 @@ msgstr ""
 "The `Accept-CH` ヘッダーは、安全な HTTPS レスポンスでのみ使用する必要があります。HTTP "
 "経由で平文の応答で利用すると、ユーザーの情報がネットワーク上の傍受者に公開されます。そのため、ブラウザはこのヘッダーを無視します。"
 
-#: httplint/field/parsers/accept_ch.py:83
+#: httplint/field/parsers/accept_ch.py:79
 msgid "Accept-CH lists fields that are missing from Vary."
 msgstr "Accept-CH で指定されたフィールドが Vary ヘッダーで指定されていません。"
 
-#: httplint/field/parsers/accept_ch.py:84
+#: httplint/field/parsers/accept_ch.py:80
 #, python-format
 msgid ""
 "The following fields appear in `Accept-CH` but are not listed in the "
 "`Vary` header:\n"
-"%(missing_fields)s.\n"
+"%(missing_fields)s, even though the response is cacheable.\n"
 "\n"
 "Because these fields can affect the response content, they should be "
 "included in `Vary` to ensure\n"
 "that caches store separate responses for different client hints."
 msgstr ""
-"The following fields appear in 「Accept-CH」ですが、「Vary」ヘッダーに記載されていません:\n"
-"%(missing_fields)s.\n"
+"次のフィールドは `Accept-CH` に出現しますが、`Vary` ヘッダーにはリストされていません:\n"
+"%(missing_fields)s, にもかかわらず応答はキャッシュ可能です.\n"
 "\n"
-"これらのフィールドは応答コンテンツに影響を与える可能性があるため、「Vary」ヘッダーに含めることで、キャッシュがクライアント "
-"ヒントごとに異なる応答を保存するようにしなければなりません。"
+"これらのフィールドは応答のコンテンツに影響を与える可能性があるため、`Vary` "
+"を含めることで、キャッシュがクライアントのヒントごとに別々の応答を保存することを保証する必要があります."
 
-#: httplint/field/parsers/accept_ch.py:95
+#: httplint/field/parsers/accept_ch.py:91
 msgid "The Accept-CH header isn't a List of Tokens."
 msgstr "Accept-CH ヘッダーはトークンのリストではありません。"
 
-#: httplint/field/parsers/accept_encoding.py:12
+#: httplint/field/parsers/accept_ch.py:92
+#, python-format
 msgid ""
-"The `Accept-Encoding` header field can be used by user agents to indicate"
-" what response content-codings are\n"
-"acceptable in the response."
+"The value for this field doesn't conform to its specified syntax; it will"
+" likely be ignored\n"
+"by browsers.\n"
+"\n"
+"See [its definition](%(ref_uri)s) for more information."
 msgstr ""
-"`Accept-Encoding` "
-"ヘッダーフィールドは、ユーザーエージェントがレスポンスで許可されるレスポンスコンテンツコーディングを示すために使用できます。"
+"このフィールドの値は指定された構文に準拠していません。ブラウザーによって無視される可能性があります。\n"
+"\n"
+"詳細情報については [その定義](%(ref_uri)s) を参照してください。"
 
-#: httplint/field/parsers/accept_language.py:21
-msgid ""
-"The `Accept-Language` header field can be used by user agents to indicate"
-" the set of natural languages that are\n"
-"preferred in the response."
-msgstr "`Accept-Language` ヘッダーフィールドは、ユーザーエージェントが応答で優先される自然言語のセットを示すために使用できます。"
-
-#: httplint/field/parsers/accept_language.py:67
+#: httplint/field/parsers/accept_language.py:68
 #, python-brace-format
 msgid "The q value on '{language}' is invalid."
 msgstr "The q値が '{language}' で無効です。"
 
-#: httplint/field/parsers/accept_language.py:75
+#: httplint/field/parsers/accept_language.py:76
 msgid "The Accept-Language header isn't valid."
 msgstr "The Accept-Language ヘッダーは有効ではありません。"
 
-#: httplint/field/parsers/accept_ranges.py:10
-msgid ""
-"The `Accept-Ranges` response header allows the server to indicate that it"
-" accepts range requests\n"
-"for a resource."
-msgstr "`Accept-Ranges` レスポンスヘッダーにより、サーバーはリソースに対する範囲リクエストを受け入れることができることを示すことができます。"
-
-#: httplint/field/parsers/accept_ranges.py:29
+#: httplint/field/parsers/accept_ranges.py:30
 msgid "This response advertises support for non-standard range-units."
 msgstr "このレスポンスは、非標準の range-units のサポートを広告しています。"
 
-#: httplint/field/parsers/accept_ranges.py:30
+#: httplint/field/parsers/accept_ranges.py:31
 msgid ""
 "The `Accept-Ranges` response header tells clients what `range-unit`s a "
 "resource is willing to\n"
@@ -2066,78 +2174,37 @@ msgstr ""
 "\n"
 "標準外の `range-unit` を知らないクライアントは、それを使用できません。"
 
-#: httplint/field/parsers/access_control_allow_credentials.py:28
-msgid "Access-Control-Allow-Credentials must be 'true'."
-msgstr "Access-Control-Allow-Credentials は 'true' である必要があります。"
+#: httplint/field/parsers/access_control_max_age.py:39
+msgid "Access-Control-Max-Age must be an integer."
+msgstr "Access-Control-Max-Age は整数でなければなりません。"
 
-#: httplint/field/parsers/access_control_allow_credentials.py:29
+#: httplint/field/parsers/access_control_max_age.py:40
 msgid ""
-"The `Access-Control-Allow-Credentials` header must be set to `true` if "
-"present. If you don't want\n"
-"to allow credentials, omit the header."
+"The `Access-Control-Max-Age` header indicates how many seconds a "
+"preflight response can be cached\n"
+"for. It must be a non-negative integer."
 msgstr ""
-"`Access-Control-Allow-Credentials` ヘッダーは、存在する場合 `true` に設定する必要があります。\n"
-"認証情報を許可しない場合は、ヘッダーを省略してください。"
+"Access-Control-Max-Age "
+"ヘッダーは、プリフライト応答がキャッシュされる最大秒数を指定します。これは非負の整数でなければなりません。"
 
-#: httplint/field/parsers/access_control_allow_headers.py:13
+#: httplint/field/parsers/access_control_max_age.py:48
+msgid "Access-Control-Max-Age must be non-negative."
+msgstr "Access-Control-Max-Age は非負でなければなりません。"
+
+#: httplint/field/parsers/access_control_max_age.py:49
 msgid ""
-"The `Access-Control-Allow-Headers` response header is used in response to"
-" a CORS preflight\n"
-"request to indicate which HTTP headers can be used during the actual "
-"request."
+"The `Access-Control-Max-Age` header indicates how many seconds a "
+"preflight response can be cached\n"
+"for. It cannot be less than zero."
 msgstr ""
-"`Access-Control-Allow-Headers` "
-"レスポンスヘッダーは、CORSプリフライトリクエストへの応答として使用され、実際のリクエスト中に使用できるHTTPヘッダーを示します。"
+"Access-Control-Max-Age ヘッダーは、プリフライトルイーティング応答がキャッシュできる秒数を指定します。 0 "
+"以下に設定することはできません。"
 
-#: httplint/field/parsers/access_control_allow_methods.py:13
-msgid ""
-"The `Access-Control-Allow-Methods` response header specifies the method "
-"or methods allowed when\n"
-"accessing the resource in response to a CORS preflight request."
-msgstr ""
-"`Access-Control-Allow-Methods` "
-"レスポンスヘッダーは、CORSプリフライトリクエストへの応答としてリソースにアクセスする際に許可されるメソッドを指定します。"
-
-#: httplint/field/parsers/access_control_allow_origin.py:29
-msgid "Access-Control-Allow-Origin should not have multiple values."
-msgstr "Access-Control-Allow-Origin には複数の値を持たせるべきではありません。"
-
-#: httplint/field/parsers/access_control_allow_origin.py:30
-msgid ""
-"The `Access-Control-Allow-Origin` header can only contain a single "
-"origin, `*`, or `null`. It\n"
-"cannot contain a list of origins."
-msgstr ""
-"`Access-Control-Allow-Origin` ヘッダーには、単一のオリジン、`*`、または `null` "
-"のいずれかのみを含めることができます。オリジンのリストは含めることができません。"
-
-#: httplint/field/parsers/access_control_expose_headers.py:8
-msgid ""
-"The `Access-Control-Expose-Headers` response header allows a server to "
-"indicate which response\n"
-"headers should be made available to scripts running in the browser, in "
-"response to a cross-origin\n"
-"request."
-msgstr ""
-"`Access-Control-Expose-Headers` "
-"レスポンスヘッダーを使用すると、サーバーは、オリジン間リクエストへの応答として、ブラウザーで実行されるスクリプトが利用できるようにすべきレスポンスヘッダーを示します。"
-
-#: httplint/field/parsers/access_control_request_headers.py:18
-msgid ""
-"The `Access-Control-Request-Headers` request header is used by browsers "
-"when issuing a CORS\n"
-"preflight request, to let the server know which HTTP headers the client "
-"might send when the actual\n"
-"request is made."
-msgstr ""
-"`Access-Control-Request-Headers` "
-"リクエストヘッダーは、CORSプリフライトリクエストを発行する際にブラウザによって使用され、実際の送信時にクライアントが送信する可能性のあるHTTPヘッダーをサーバーに通知します。"
-
-#: httplint/field/parsers/age.py:37
+#: httplint/field/parsers/age.py:39
 msgid "The Age header's value should be an integer."
 msgstr "Ageヘッダーの値は整数である必要があります。"
 
-#: httplint/field/parsers/age.py:38
+#: httplint/field/parsers/age.py:40
 msgid ""
 "The `Age` header indicates the age of the response; i.e., how long it has"
 " been cached\n"
@@ -2147,11 +2214,11 @@ msgstr ""
 "`Age` "
 "ヘッダーは、レスポンスの経過時間、つまりキャッシュされてから生成されるまでの時間を表します。指定された値は整数ではなかったため、有効な経過時間ではありません。"
 
-#: httplint/field/parsers/age.py:46
+#: httplint/field/parsers/age.py:48
 msgid "The Age headers' value must be a positive integer."
 msgstr "Age ヘッダーの値は正の整数である必要があります。"
 
-#: httplint/field/parsers/age.py:47
+#: httplint/field/parsers/age.py:49
 msgid ""
 "The `Age` header indicates the age of the response; i.e., how long it has"
 " been cached\n"
@@ -2161,29 +2228,16 @@ msgstr ""
 "`Age` "
 "ヘッダーは、レスポンスの経過時間、つまりキャッシュされてから生成されるまでの時間を示します。指定された値は負だったため、有効な経過時間ではありません。"
 
-#: httplint/field/parsers/age.py:55
+#: httplint/field/parsers/age.py:57
 msgid "The Age header's value is very large."
 msgstr "Age ヘッダーの値が大きすぎます。"
 
-#: httplint/field/parsers/age.py:56
+#: httplint/field/parsers/age.py:58
 msgid ""
 "The `Age` header's value is greater than 2,147,483,648. Some "
 "implementations may represent it\n"
 "using that value (which is over 68 years).\n"
 msgstr "`Age` ヘッダーの値は 2,147,483,648 を超えています。一部の実装では、この値（68年以上）で表現される場合があります。"
-
-#: httplint/field/parsers/allow.py:8
-msgid ""
-"The `Allow` response header advertises the set of methods that are "
-"supported by the resource."
-msgstr "`Allow` レスポンスヘッダーは、リソースでサポートされているメソッドのセットを広告します。"
-
-#: httplint/field/parsers/alt_svc.py:13
-msgid ""
-"The `Alt-Svc` HTTP header field identifies an alternative service that "
-"can be arranged to access the\n"
-"resources identifying the origin serving the field."
-msgstr "Alt-Svc HTTP ヘッダー フィールドは、フィールドのオリジン サーバーによって提供される代替サービスを特定します。"
 
 #: httplint/field/parsers/alt_svc.py:48
 msgid "The Alt-Svc 'clear' token cannot be used with other values."
@@ -2198,20 +2252,13 @@ msgstr ""
 "The `Alt-Svc` ヘッダー値 \"clear\" "
 "は、以前の代替サービスを無効にするために使用されます。他の代替サービスの広告と組み合わせることはできません。"
 
-#: httplint/field/parsers/authentication_info.py:9
-msgid ""
-"The `Authentication-Info` header field is used to communicate information"
-" after \n"
-"the client's authentication credentials have been accepted."
-msgstr "`Authentication-Info` ヘッダーフィールドは、クライアントの認証情報が受け入れられた後に情報を伝達するために使用されます。"
-
-#: httplint/field/parsers/available_dictionary.py:47
+#: httplint/field/parsers/available_dictionary.py:48
 msgid ""
 "This request advertises a dictionary for compression, but the client "
 "doesn't support it."
 msgstr "このリクエストは圧縮のための辞書を広告していますが、クライアントはそれをサポートしていません。"
 
-#: httplint/field/parsers/available_dictionary.py:50
+#: httplint/field/parsers/available_dictionary.py:51
 msgid ""
 "The `Available-Dictionary` header is present, but `Accept-Encoding` does "
 "not contain 'dcb' or 'dcz'.\n"
@@ -2230,44 +2277,33 @@ msgstr ""
 "Dictionary` を送信する場合、辞書ベースのコンテンツ エンコード (dcb または dcz) をサポートしていることを示すために "
 "`Accept-Encoding` で 'dcb' または 'dcz' を含める必要があると指定しています。"
 
-#: httplint/field/parsers/available_dictionary.py:61
+#: httplint/field/parsers/available_dictionary.py:62
 msgid "The Available-Dictionary header has an invalid type."
 msgstr "The Available-Dictionary ヘッダーには無効な型が含まれています。"
 
-#: httplint/field/parsers/available_dictionary.py:62
+#: httplint/field/parsers/available_dictionary.py:63
 #, python-format
 msgid ""
 "The `Available-Dictionary` header value must be a Byte Sequence. Found "
 "`%(got)s`."
 msgstr "The `Available-Dictionary` ヘッダー値はバイトシーケンスでなければなりません。見つかりました `%(got)s`"
 
-#: httplint/field/parsers/cache_control.py:85
-msgid ""
-"The `Cache-Control` header is used to specify required directives to all "
-"caches that\n"
-"handle the response. It can also occur in requests, but caches have the "
-"option of\n"
-"ignoring it there."
-msgstr ""
-"`Cache-Control` "
-"ヘッダーは、レスポンスを処理するすべてのキャッシュに必須のディレクティブを指定するために使用されます。リクエストにも含めることができますが、キャッシュはそれを無視するオプションがあります。"
-
-#: httplint/field/parsers/cache_control.py:203
+#: httplint/field/parsers/cache_control.py:204
 #, python-format
 msgid "The %(directive)s cache directive does not accept a value."
 msgstr "キャッシュディレクティブ「%(directive)s」は値を受け入れません。"
 
-#: httplint/field/parsers/cache_control.py:204
+#: httplint/field/parsers/cache_control.py:205
 #, python-format
 msgid "The `%(directive)s` cache directive is a flag; it shouldn't have a value."
 msgstr "`%(directive)s` キャッシュ指令はフラグであり、値は必要ありません。"
 
-#: httplint/field/parsers/cache_control.py:210
+#: httplint/field/parsers/cache_control.py:211
 #, python-format
 msgid "The %(directive)s cache directive's value is incorrect."
 msgstr "The %(directive)s のキャッシュディレクティブの値は正しくありません。"
 
-#: httplint/field/parsers/cache_control.py:211
+#: httplint/field/parsers/cache_control.py:212
 #, python-format
 msgid ""
 "The `%(directive)s` cache directive type is %(expected_type)s, but "
@@ -2276,12 +2312,12 @@ msgstr ""
 "The `%(directive)s` キャッシュ ディレクティブの型は %(expected_type)s ですが、`%(value)s` "
 "が見つかりました。"
 
-#: httplint/field/parsers/cache_control.py:220
+#: httplint/field/parsers/cache_control.py:221
 #, python-format
 msgid "The %(directive)s cache directive is very large."
 msgstr "%(directive)s キャッシュディレクティブは非常に大きいです。"
 
-#: httplint/field/parsers/cache_control.py:221
+#: httplint/field/parsers/cache_control.py:222
 #, python-format
 msgid ""
 "The `%(directive)s` cache directive's value is greater than 2^31-1. Some "
@@ -2291,12 +2327,12 @@ msgstr ""
 "`%(directive)s` キャッシュディレクティブの値が 2^31-1 "
 "を超えています。一部の実装では、この値が大きすぎると処理できない場合があります。"
 
-#: httplint/field/parsers/cache_control.py:229
+#: httplint/field/parsers/cache_control.py:230
 #, python-format
 msgid "The %(directive)s cache directive has non-lowercase characters."
 msgstr "キャッシュディレクティブ「%(directive)s」に小文字以外の文字が含まれています。"
 
-#: httplint/field/parsers/cache_control.py:230
+#: httplint/field/parsers/cache_control.py:231
 #, python-format
 msgid ""
 "cache directive names are case-insensitive, but some implementations "
@@ -2311,12 +2347,12 @@ msgstr ""
 "\n"
 "そのため、`%(directive)s` の代わりに `%(directive_lower)s` を使用するのが安全です。"
 
-#: httplint/field/parsers/cache_control.py:240
+#: httplint/field/parsers/cache_control.py:241
 #, python-format
 msgid "The %(directive)s cache directive appears more than once."
 msgstr "%(directive)s キャッシュディレクティブが複数回出現しています。"
 
-#: httplint/field/parsers/cache_control.py:241
+#: httplint/field/parsers/cache_control.py:242
 #, python-format
 msgid ""
 "The `%(directive)s` cache directive is only defined to appear once; it is"
@@ -2328,12 +2364,12 @@ msgstr ""
 "`%(directive)s` キャッシュディレクティブは一度だけ定義されており、ここで複数回使用されているため、実装によって異なるインスタンス "
 "(例: 最初または最後) が使用される可能性があり、その動作は予測不能になります。"
 
-#: httplint/field/parsers/cache_control.py:250
+#: httplint/field/parsers/cache_control.py:251
 #, python-format
 msgid "The %(directive)s cache directive overrides other directives."
 msgstr "%(directive)s キャッシュディレクティブは他のディレクティブを上書きします。"
 
-#: httplint/field/parsers/cache_control.py:251
+#: httplint/field/parsers/cache_control.py:252
 #, python-format
 msgid ""
 "The `%(directive)s` cache directive overrides or conflicts with these "
@@ -2351,12 +2387,12 @@ msgstr ""
 "\n"
 "競合するディレクティブはキャッシュによって無視され、安全に省略できます。"
 
-#: httplint/field/parsers/cache_control.py:263
+#: httplint/field/parsers/cache_control.py:264
 #, python-format
 msgid "The %(directive)s cache directive has no meaning in a %(message_type)s."
 msgstr "%(directive)s キャッシュディレクティブは %(message_type)s では意味がありません。"
 
-#: httplint/field/parsers/cache_control.py:264
+#: httplint/field/parsers/cache_control.py:265
 #, python-format
 msgid ""
 "The `%(directive)s` cache directive is only defined to appear in "
@@ -2366,11 +2402,11 @@ msgstr ""
 "`%(directive)s` キャッシュディレクティブは、%(other_message)s "
 "メッセージでのみ定義されており、%(message_type)s では定義された意味がありません。"
 
-#: httplint/field/parsers/cache_control.py:272
+#: httplint/field/parsers/cache_control.py:273
 msgid "Only one of the pre-check and post-check cache directives is present."
 msgstr "プリチェックとポストチェックのキャッシュディレクティブのいずれか1つのみが存在します。"
 
-#: httplint/field/parsers/cache_control.py:275
+#: httplint/field/parsers/cache_control.py:276
 msgid ""
 "Microsoft Internet Explorer implements two `Cache-Control` extensions, "
 "`pre-check` and\n"
@@ -2386,11 +2422,11 @@ msgstr ""
 "この応答では、これらのディレクティブのうち 1 つのみが使用されています。その結果、Internet Explorer "
 "はディレクティブを無視します。なぜなら、両方が存在する必要があるためです。"
 
-#: httplint/field/parsers/cache_control.py:287
+#: httplint/field/parsers/cache_control.py:288
 msgid "The pre-check and post-check cache directives are both '0'."
 msgstr "プリチェックおよびポストチェックのキャッシュディレクティブは両方とも '0' です。"
 
-#: httplint/field/parsers/cache_control.py:290
+#: httplint/field/parsers/cache_control.py:291
 msgid ""
 "Microsoft Internet Explorer implements two `Cache-Control` extensions, "
 "`pre-check` and\n"
@@ -2412,11 +2448,11 @@ msgstr ""
 "\n"
 "つまり、これらをゼロに設定しても**効果はありません**（帯域幅の無駄遣い以外）、一部の IE ベータ版ではバグを引き起こす可能性があります。"
 
-#: httplint/field/parsers/cache_control.py:304
+#: httplint/field/parsers/cache_control.py:305
 msgid "The post-check cache directive's value is larger than pre-check's."
 msgstr "チェック後のキャッシュディレクティブの値がチェック前の値よりも大きいです。"
 
-#: httplint/field/parsers/cache_control.py:307
+#: httplint/field/parsers/cache_control.py:308
 msgid ""
 "Microsoft Internet Explorer implements two `Cache-Control` extensions, "
 "`pre-check` and\n"
@@ -2433,11 +2469,11 @@ msgstr ""
 "この応答では、`post-check` の値が `pre-check` よりも高く割り当てられています。これは、Internet Explorer"
 " が `post-check` を、その値が `pre-check` の値と同じであるかのように扱うことを意味します。"
 
-#: httplint/field/parsers/cache_control.py:318
+#: httplint/field/parsers/cache_control.py:319
 msgid "The post-check cache directive's value is '0'."
 msgstr "post-check キャッシュディレクティブの値は「0」です。"
 
-#: httplint/field/parsers/cache_control.py:321
+#: httplint/field/parsers/cache_control.py:322
 msgid ""
 "Microsoft Internet Explorer implements two `Cache-Control` extensions, "
 "`pre-check` and\n"
@@ -2455,11 +2491,11 @@ msgstr ""
 "この応答では `post-check` に \"0\" という値を割り当てています。これは、Internet Explorer "
 "がコンテンツをブラウザキャッシュに入力するとすぐに再読み込みすることを意味し、事実上 **サーバーへの負荷を倍増させます**。"
 
-#: httplint/field/parsers/cache_control.py:333
+#: httplint/field/parsers/cache_control.py:334
 msgid "This response may be refreshed in the background by Internet Explorer."
 msgstr "このレスポンスは、Internet Explorer によってバックグラウンドでリフレッシュされる可能性があります。"
 
-#: httplint/field/parsers/cache_control.py:336
+#: httplint/field/parsers/cache_control.py:337
 #, python-format
 msgid ""
 "Microsoft Internet Explorer implements two `Cache-Control` extensions, "
@@ -2486,23 +2522,23 @@ msgstr ""
 "\n"
 "これらのディレクティブは、他のクライアントやキャッシュには影響しないことに注意してください。"
 
-#: httplint/field/parsers/cache_group_invalidation.py:44
-#: httplint/field/parsers/cache_groups.py:37
+#: httplint/field/parsers/cache_group_invalidation.py:45
+#: httplint/field/parsers/cache_groups.py:38
 msgid "Cache groups need to be strings."
 msgstr "キャッシュグループは文字列でなければなりません。"
 
-#: httplint/field/parsers/cache_group_invalidation.py:45
-#: httplint/field/parsers/cache_groups.py:38
+#: httplint/field/parsers/cache_group_invalidation.py:46
+#: httplint/field/parsers/cache_groups.py:39
 #, python-format
 msgid "The `%(field_name)s` header values must be Strings. Found `%(got)s`."
 msgstr "ヘッダ値は `%(field_name)s` 型でなければならず、`%(got)s` が見つかりました。"
 
-#: httplint/field/parsers/cache_group_invalidation.py:52
+#: httplint/field/parsers/cache_group_invalidation.py:53
 #, python-format
 msgid "The Cache-Group-Invalidation header is ignored for %(method)s requests."
 msgstr "The Cache-Group-Invalidation ヘッダーは無視されます %(method)s リクエスト。"
 
-#: httplint/field/parsers/cache_group_invalidation.py:53
+#: httplint/field/parsers/cache_group_invalidation.py:54
 #, python-format
 msgid ""
 "The `Cache-Group-Invalidation` header is only processed for unsafe "
@@ -2513,11 +2549,11 @@ msgstr ""
 "ヘッダーは、安全でないメソッド（POST、PUT、DELETEなど）でのみ処理されます。\n"
 "`%(method)s` リクエストでは無視されます。"
 
-#: httplint/field/parsers/cache_status.py:98
+#: httplint/field/parsers/cache_status.py:99
 msgid "Detailed information about caching is available."
 msgstr "キャッシングに関する詳細情報が利用可能です。"
 
-#: httplint/field/parsers/cache_status.py:99
+#: httplint/field/parsers/cache_status.py:100
 #, python-format
 msgid ""
 "The `Cache-Status` header field indicates how caches have handled the "
@@ -2529,11 +2565,11 @@ msgstr ""
 "\n"
 "%(status)s"
 
-#: httplint/field/parsers/cache_status.py:109
+#: httplint/field/parsers/cache_status.py:110
 msgid "The Cache-Status header has an invalid structure."
 msgstr "Cache-Status ヘッダーの構造が無効です。"
 
-#: httplint/field/parsers/cache_status.py:110
+#: httplint/field/parsers/cache_status.py:111
 msgid ""
 "The `Cache-Status` header must be a list of members, where each member is"
 " a \n"
@@ -2542,44 +2578,44 @@ msgstr ""
 "`Cache-Status` "
 "ヘッダーは、メンバーのリストである必要があります。各メンバーは、オプションのパラメータを持つトークンまたは文字列（キャッシュを識別する）です。"
 
-#: httplint/field/parsers/cache_status.py:119
+#: httplint/field/parsers/cache_status.py:120
 #, python-format
 msgid "The Cache-Status header has an unknown parameter '%(param)s'."
 msgstr "Cache-Status ヘッダーに不明なパラメータ '%(param)s' があります。"
 
-#: httplint/field/parsers/cache_status.py:120
+#: httplint/field/parsers/cache_status.py:121
 #, python-format
 msgid ""
 "The `%(param)s` parameter is not defined in the Cache-Status "
 "specification.\n"
 msgstr "`%(param)s` パラメータは Cache-Status 仕様で定義されていません。"
 
-#: httplint/field/parsers/cache_status.py:128
+#: httplint/field/parsers/cache_status.py:129
 #, python-format
 msgid "The Cache-Status header has an unknown value for '%(param)s'."
 msgstr "Cache-Status ヘッダーに '%(param)s' の未知の値があります。"
 
-#: httplint/field/parsers/cache_status.py:129
+#: httplint/field/parsers/cache_status.py:130
 #: httplint/field/parsers/proxy_status.py:148
 #, python-format
 msgid "The value `%(value)s` is not defined for the `%(param)s` parameter.\n"
 msgstr "`%(value)s` の値は `%(param)s` パラメータで定義されていません。"
 
-#: httplint/field/parsers/cdn_cache_control.py:71
+#: httplint/field/parsers/cdn_cache_control.py:72
 #, python-format
 msgid "The %(bad_directive)s CDN cache directive's syntax is incorrect."
 msgstr "The %(bad_directive)s CDNキャッシュディレクティブの構文は正しくありません。"
 
-#: httplint/field/parsers/cdn_cache_control.py:72
+#: httplint/field/parsers/cdn_cache_control.py:73
 #, python-format
 msgid "This value must be %(expected_type)s."
 msgstr "この値は%(expected_type)sでなければなりません。"
 
-#: httplint/field/parsers/cdn_cache_control.py:78
+#: httplint/field/parsers/cdn_cache_control.py:79
 msgid "This response targets cache directives to Content Delivery Networks."
 msgstr "この応答は、コンテンツ配信ネットワークを対象としたキャッシュ指令を対象としています。"
 
-#: httplint/field/parsers/cdn_cache_control.py:79
+#: httplint/field/parsers/cdn_cache_control.py:80
 msgid ""
 "The `CDN-Cache-Control` header field allows you to specify cache "
 "directives that are targeted at\n"
@@ -2590,17 +2626,6 @@ msgstr ""
 "The `CDN-Cache-Control` ヘッダー "
 "フィールドを使用すると、コンテンツ配信ネットワーク（CDN）キャッシュに固有のキャッシュ指示を指定できます。このヘッダーは、`Cache-"
 "Control` ヘッダーとは別に、すべてのキャッシュに適用されるものとは異なります。"
-
-#: httplint/field/parsers/clear_site_data.py:12
-msgid ""
-"The `Clear-Site-Data` header clears the data associated with the "
-"requesting website in the user's\n"
-"browser. It allows web developers to have more control over the data "
-"stored by a client for their\n"
-"origin."
-msgstr ""
-"`Clear-Site-Data` "
-"ヘッダーは、ユーザーのブラウザで要求元のウェブサイトに関連付けられたデータをクリアします。これにより、ウェブ開発者は、クライアントが自分のオリジンに対して保存するデータをより細かく制御できるようになります。"
 
 #: httplint/field/parsers/clear_site_data.py:57
 #, python-format
@@ -2642,24 +2667,6 @@ msgstr ""
 "値は `Clear-Site-Data` ヘッダーで引用符で囲まなければならず、引用符で囲まれていない値は無視されます。\n"
 "\n"
 "次の値が引用符で囲まれていないことが見つかりました: %(values)s."
-
-#: httplint/field/parsers/connection.py:8
-msgid ""
-"The `Connection` header allows senders to specify which headers are hop-"
-"by-hop; that is, those that\n"
-"are not forwarded by intermediaries.\n"
-"\n"
-"It also indicates options that are desired for this particular "
-"connection; e.g., `close` means that\n"
-"it should not be reused.\n"
-"\n"
-"Connection is only valid in HTTP/1.x; HTTP/2 and HTTP/3 forbit it."
-msgstr ""
-"`Connection` ヘッダーにより、送信者はホップバイホップのヘッダー（つまり、中間プロキシによって転送されないヘッダー）を指定できます。\n"
-"\n"
-"また、この特定の接続で希望されるオプションを示すこともできます。例えば、`close` は再利用されるべきではないことを意味します。\n"
-"\n"
-"Connection は HTTP/1.x でのみ有効です。HTTP/2 および HTTP/3 では禁止されています。"
 
 #: httplint/field/parsers/content_disposition.py:49
 #, python-format
@@ -2767,32 +2774,13 @@ msgstr ""
 "\n"
 "これらの文字を削除してください。"
 
-#: httplint/field/parsers/content_encoding.py:14
-msgid ""
-"The `Content-Encoding` header's value indicates what content codings have"
-"\n"
-"been applied, and thus what decoding mechanisms must be used to obtain "
-"the\n"
-"media-type referenced by the Content-Type header.\n"
-"\n"
-"Content-Encoding is primarily used to allow a document to be compressed "
-"without losing the identity\n"
-"of its underlying media type; e.g., `gzip` and `deflate`."
-msgstr ""
-"`Content-Encoding` ヘッダーの値は、適用されたコンテンツコーディングと、それによって `Content-Type` "
-"ヘッダーで参照されているメディアタイプを取得するために使用されるべきデコーディングメカニズムを示します。\n"
-"\n"
-"Content-Encoding "
-"は主に、基盤となるメディアタイプのアイデンティティを失うことなくドキュメントを圧縮できるようにするために使用されます。例: `gzip` および "
-"`deflate`。"
-
-#: httplint/field/parsers/content_encoding.py:57
+#: httplint/field/parsers/content_encoding.py:58
 msgid ""
 "This response is compressed with a dictionary,but is missing Vary: "
 "Available-Dictionary."
 msgstr "この応答は辞書で圧縮されていますが、Vary: Available-Dictionary がありません。"
 
-#: httplint/field/parsers/content_encoding.py:61
+#: httplint/field/parsers/content_encoding.py:62
 msgid ""
 "The response is compressed with a dictionary (dcb or dcz) and is "
 "cacheable, but does not list\n"
@@ -2806,14 +2794,14 @@ msgid ""
 "dictionary."
 msgstr "応答は辞書（dcb または dcz）で圧縮され、キャッシュ可能ですが、Vary ヘッダーに「Available-Dictionary」を含みません。"
 
-#: httplint/field/parsers/content_encoding.py:73
+#: httplint/field/parsers/content_encoding.py:74
 #, python-format
 msgid ""
 "This response uses the '%(coding)s' content-coding, but it wasn't "
 "requested."
 msgstr "この応答では、'%(coding)s' コンテンツコードを使用していますが、リクエストはされていません。"
 
-#: httplint/field/parsers/content_encoding.py:74
+#: httplint/field/parsers/content_encoding.py:75
 #, python-format
 msgid ""
 "This response's `Content-Encoding` header indicates it has the "
@@ -2831,21 +2819,12 @@ msgstr ""
 "通常、クライアントは `Accept-Encoding` "
 "要求ヘッダーで希望するエンコーディングを問い合わせます。クライアントが明示的に要求していないエンコーディングを使用すると、相互運用性の問題が発生する可能性があります。"
 
-#: httplint/field/parsers/content_language.py:10
-msgid ""
-"The `Content-Language` header describes the natural language(s) of the "
-"intended audience for the\n"
-"messsage. Note that this might not convey all of the languages used."
-msgstr ""
-"`Content-Language` "
-"ヘッダーは、メッセージの対象となるユーザーの自然言語を記述します。ただし、これは使用されているすべての言語を伝えるとは限らないことに注意してください。"
-
-#: httplint/field/parsers/content_language.py:36
+#: httplint/field/parsers/content_language.py:39
 #, python-format
 msgid "The %(lang)s language tag appears more than once."
 msgstr "%(lang)s言語タグが複数回出現しています。"
 
-#: httplint/field/parsers/content_language.py:37
+#: httplint/field/parsers/content_language.py:40
 #, python-format
 msgid ""
 "The `%(lang)s` language tag is used more than once in the `Content-"
@@ -2857,11 +2836,19 @@ msgstr ""
 "\n"
 "重複は受信者によって無視される可能性が高いです。"
 
-#: httplint/field/parsers/content_length.py:44
+#: httplint/field/parsers/content_length.py:48
+msgid "Content-Length should be an integer."
+msgstr "Content-Length は整数である必要があります。"
+
+#: httplint/field/parsers/content_length.py:49
+msgid "The `Content-Length` header should be an integer, but it was not."
+msgstr "Content-Length ヘッダーは整数であるべきですが、そうではありませんでした。"
+
+#: httplint/field/parsers/content_length.py:56
 msgid "Content-Length and Transfer-Encoding should not be present together."
 msgstr "Content-Length と Transfer-Encoding は同時に存在することはできません。"
 
-#: httplint/field/parsers/content_length.py:45
+#: httplint/field/parsers/content_length.py:57
 msgid ""
 "RFC 9110 Section 8.6:\n"
 "> A sender MUST NOT send a Content-Length header field in any message "
@@ -2875,22 +2862,22 @@ msgstr ""
 "\n"
 "これは `Transfer-Encoding` が `Content-Length` をオーバーライドするためです。"
 
-#: httplint/field/parsers/content_length.py:55
+#: httplint/field/parsers/content_length.py:67
 msgid "The Content-Length header is very large."
 msgstr "Content-Length ヘッダーが非常に大きいです。"
 
-#: httplint/field/parsers/content_length.py:56
+#: httplint/field/parsers/content_length.py:68
 msgid ""
 "The `Content-Length` header's value is greater than 2^63-1. Some "
 "implementations may not be able to\n"
 "handle values this large."
 msgstr "`Content-Length` ヘッダーの値が 2^63-1 より大きいです。一部の実装では、これほど大きな値を扱えない場合があります。"
 
-#: httplint/field/parsers/content_range.py:122
+#: httplint/field/parsers/content_range.py:119
 msgid "This response shouldn't have a Content-Range header."
 msgstr "このレスポンスには Content-Range ヘッダーを含めるべきではありません。"
 
-#: httplint/field/parsers/content_range.py:123
+#: httplint/field/parsers/content_range.py:120
 msgid ""
 "HTTP only defines meaning for the `Content-Range` header in responses "
 "with a `206` (Partial\n"
@@ -2905,11 +2892,11 @@ msgstr ""
 "\n"
 "ステータスコードがそれらのいずれでもないため、この `Content-Range` ヘッダーはキャッシュやクライアントを混乱させる可能性があります。"
 
-#: httplint/field/parsers/content_range.py:134
+#: httplint/field/parsers/content_range.py:131
 msgid "The Content-Range header is missing a unit (e.g., 'bytes')."
 msgstr "Content-Range ヘッダーに単位 (e.g., 'バイト') が含まれていません"
 
-#: httplint/field/parsers/content_range.py:135
+#: httplint/field/parsers/content_range.py:132
 msgid ""
 "The `Content-Range` header is missing a range unit at the start; it "
 "should \n"
@@ -2925,21 +2912,21 @@ msgstr ""
 "\n"
 "    Content-Range: bytes 1-100/200"
 
-#: httplint/field/parsers/content_range.py:148
+#: httplint/field/parsers/content_range.py:145
 msgid "The Content-Range header invalidly uses wildcards."
 msgstr "Content-Range ヘッダーはワイルドカードを不適切に使用しています。"
 
-#: httplint/field/parsers/content_range.py:149
+#: httplint/field/parsers/content_range.py:146
 msgid ""
 "The `Content-Range` header cannot use a wildcard (`*`) for both the range"
 " and the complete length.\n"
 msgstr "Content-Range ヘッダーは、範囲と完全な長さの両方にワイルドカード (`*`) を使用できません。"
 
-#: httplint/field/parsers/content_range.py:157
+#: httplint/field/parsers/content_range.py:154
 msgid "The Content-Range header is missing a slash separator."
 msgstr "Content-Range ヘッダーにスラッシュ区切りが欠けています。"
 
-#: httplint/field/parsers/content_range.py:158
+#: httplint/field/parsers/content_range.py:155
 msgid ""
 "The `Content-Range` header is missing a slash (`/`) separating the range "
 "from the complete length.\n"
@@ -2954,31 +2941,31 @@ msgstr ""
 "\n"
 "    Content-Range: bytes 1-100/200"
 
-#: httplint/field/parsers/content_range.py:170
+#: httplint/field/parsers/content_range.py:167
 msgid "The Content-Range header is missing a hyphen."
 msgstr "Content-Range ヘッダーにハイフンが不足しています"
 
-#: httplint/field/parsers/content_range.py:171
+#: httplint/field/parsers/content_range.py:168
 #, python-format
 msgid ""
 "The range specifier `%(value)s` is missing a hyphen separating the start "
 "and end positions."
 msgstr "%(value)s の範囲指定子がハイフンで区切られていません"
 
-#: httplint/field/parsers/content_range.py:178
+#: httplint/field/parsers/content_range.py:175
 msgid "The Content-Range header contains a non-integer value."
 msgstr "Content-Range ヘッダーに整数でない値が含まれています。"
 
-#: httplint/field/parsers/content_range.py:179
+#: httplint/field/parsers/content_range.py:176
 #, python-format
 msgid "The value `%(value)s` is not a valid integer."
 msgstr "値 `%(value)s` は有効な整数ではありません。"
 
-#: httplint/field/parsers/content_range.py:186
+#: httplint/field/parsers/content_range.py:183
 msgid "The Content-Range header is invalid."
 msgstr "コンテンツレンジヘッダーが無効です"
 
-#: httplint/field/parsers/content_range.py:187
+#: httplint/field/parsers/content_range.py:184
 msgid ""
 "The values indicated by the `Content-Range` header are not valid. The "
 "first position must be less\n"
@@ -2988,13 +2975,13 @@ msgstr ""
 "`Content-Range` "
 "ヘッダで示された値は有効ではありません。最初の位置は最後的位置より小さか、またはそれに等しい必要があり、最後的位置は完全な長さの値より小さい必要があります。"
 
-#: httplint/field/parsers/content_range.py:195
+#: httplint/field/parsers/content_range.py:192
 msgid ""
 "The Content-Range header indicates an unsatisfied range, but the status "
 "code is 206."
 msgstr "Content-Range ヘッダーは未満の範囲を示していますが、ステータスコードは 206 です。"
 
-#: httplint/field/parsers/content_range.py:198
+#: httplint/field/parsers/content_range.py:195
 msgid ""
 "The `Content-Range` header uses the `*/<length>` syntax, which is "
 "reserved for `416` (Requested\n"
@@ -3010,32 +2997,23 @@ msgstr ""
 "\n"
 "`206` 応答ステータスコードは範囲応答の成功を示しているため、このヘッダーは正しくありません。"
 
-#: httplint/field/parsers/content_range.py:209
+#: httplint/field/parsers/content_range.py:206
 msgid "The Content-Range header indicates an unknown total length."
 msgstr "Content-Range ヘッダーは未知の総長を示します。"
 
-#: httplint/field/parsers/content_range.py:210
+#: httplint/field/parsers/content_range.py:207
 msgid ""
 "The `Content-Range` header uses `*` for the instance length, indicating "
 "that the total length of\n"
 "the resource is unknown."
 msgstr "Content-Range ヘッダーでは、インスタンス長に「*」を使用して、リソースの合計長さが不明であることを示します。"
 
-#: httplint/field/parsers/content_security_policy.py:22
-msgid ""
-"The `Content-Security-Policy` response header allows web site "
-"administrators to declare approved\n"
-"sources of content that browsers are allowed to load on a page."
-msgstr ""
-"`Content-Security-Policy` "
-"レスポンスヘッダーは、ウェブサイト管理者がブラウザがページで読み込むことを許可するコンテンツの承認済みソースを宣言できるようにします。"
-
-#: httplint/field/parsers/content_security_policy.py:182
+#: httplint/field/parsers/content_security_policy.py:183
 #, python-format
 msgid "This response sets a Content Security Policy%(report_only)s."
 msgstr "このレスポンスはContent Security Policy%(report_only)s を設定しています。"
 
-#: httplint/field/parsers/content_security_policy.py:183
+#: httplint/field/parsers/content_security_policy.py:184
 #, python-format
 msgid ""
 "[Content Security Policy](https://www.w3.org/TR/CSP3/) allows the server "
@@ -3046,11 +3024,11 @@ msgstr ""
 "[Content Security Policy](https://www.w3.org/TR/CSP3/) "
 "は、ブラウザがページで使用することを許可されるコンテンツのソースをサーバーが宣言できるようにします。%(report_only_text)s"
 
-#: httplint/field/parsers/content_security_policy.py:191
+#: httplint/field/parsers/content_security_policy.py:192
 msgid "Inline scripts are allowed."
 msgstr "インラインスクリプトは許可されています。"
 
-#: httplint/field/parsers/content_security_policy.py:192
+#: httplint/field/parsers/content_security_policy.py:193
 #, python-format
 msgid ""
 "The `'unsafe-inline'` [Content Security "
@@ -3072,11 +3050,11 @@ msgstr ""
 "\n"
 "%(directives_list)s"
 
-#: httplint/field/parsers/content_security_policy.py:206
+#: httplint/field/parsers/content_security_policy.py:207
 msgid "Unsafe script evaluation is allowed."
 msgstr "安全でないスクリプト評価が許可されています。"
 
-#: httplint/field/parsers/content_security_policy.py:207
+#: httplint/field/parsers/content_security_policy.py:208
 #, python-format
 msgid ""
 "The `'unsafe-eval'` [Content Security "
@@ -3097,11 +3075,11 @@ msgstr ""
 "\n"
 "%(directives_list)s"
 
-#: httplint/field/parsers/content_security_policy.py:220
+#: httplint/field/parsers/content_security_policy.py:221
 msgid "Loading from insecure HTTP sources is allowed."
 msgstr "安全でないHTTPソースからの読み込みが許可されています。"
 
-#: httplint/field/parsers/content_security_policy.py:221
+#: httplint/field/parsers/content_security_policy.py:222
 #, python-format
 msgid ""
 "Allowing `http:` sources in `%(field_name)s` can allow attackers to "
@@ -3119,11 +3097,11 @@ msgstr ""
 "\n"
 "%(directives_list)s"
 
-#: httplint/field/parsers/content_security_policy.py:233
+#: httplint/field/parsers/content_security_policy.py:234
 msgid "Duplicate directives are present."
 msgstr "重複したディレクティブが存在します。"
 
-#: httplint/field/parsers/content_security_policy.py:234
+#: httplint/field/parsers/content_security_policy.py:235
 #, python-format
 msgid ""
 "Directives must only appear once in the `%(field_name)s` header; "
@@ -3139,11 +3117,11 @@ msgstr ""
 "\n"
 "%(directives_list)s"
 
-#: httplint/field/parsers/content_security_policy.py:245
+#: httplint/field/parsers/content_security_policy.py:246
 msgid "The deprecated report-uri directive is used."
 msgstr "非推奨の report-uri ディレクティブが使用されています。"
 
-#: httplint/field/parsers/content_security_policy.py:246
+#: httplint/field/parsers/content_security_policy.py:247
 msgid ""
 "The `report-uri` [Content Security Policy](https://www.w3.org/TR/CSP3/)\n"
 "directive is deprecated in favor of `report-to`. It is recommended to use"
@@ -3156,11 +3134,11 @@ msgstr ""
 "ディレクティブは `report-to` に置き換えられ、非推奨になりました。違反の報告には `report-to` "
 "の使用が推奨されますが、後方互換性のために `report-uri` が引き続きサポートされる場合もあります。"
 
-#: httplint/field/parsers/content_security_policy.py:256
+#: httplint/field/parsers/content_security_policy.py:257
 msgid "All sources are allowed in one or more directives."
 msgstr "すべてのソースは、1つ以上のディレクティブで許可されます。"
 
-#: httplint/field/parsers/content_security_policy.py:257
+#: httplint/field/parsers/content_security_policy.py:258
 #, python-format
 msgid ""
 "The `*` [Content Security Policy](https://www.w3.org/TR/CSP3/)\n"
@@ -3180,12 +3158,12 @@ msgstr ""
 "\n"
 "%(directives_list)s"
 
-#: httplint/field/parsers/content_security_policy.py:270
+#: httplint/field/parsers/content_security_policy.py:271
 #, python-format
 msgid "The report-to endpoint '%(endpoint)s' is not defined."
 msgstr "レポートエンドポイント '%(endpoint)s' は定義されていません。"
 
-#: httplint/field/parsers/content_security_policy.py:271
+#: httplint/field/parsers/content_security_policy.py:272
 #, python-format
 msgid ""
 "The `report-to` directive [Content Security "
@@ -3196,14 +3174,15 @@ msgid ""
 msgstr ""
 "The `report-to` ディレクティブ [Content Security "
 "Policy](https://www.w3.org/TR/CSP3/)\n"
-"指定レポートエンドポイントですが、`Reporting-Endpoints` ヘッダーにはそれに一致するエンドポイントが含まれていません。%(report_only_text)s"
+"指定レポートエンドポイントですが、`Reporting-Endpoints` "
+"ヘッダーにはそれに一致するエンドポイントが含まれていません。%(report_only_text)s"
 
-#: httplint/field/parsers/cross_origin_embedder_policy.py:95
+#: httplint/field/parsers/cross_origin_embedder_policy.py:96
 #, python-format
 msgid "This response requires resources to have a CORP header%(report_only)s."
 msgstr "このレスポンスには、CORP ヘッダーを持つリソースが必要です%(report_only)s。"
 
-#: httplint/field/parsers/cross_origin_embedder_policy.py:96
+#: httplint/field/parsers/cross_origin_embedder_policy.py:97
 #, python-format
 msgid ""
 "The `require-corp`\n"
@@ -3221,14 +3200,14 @@ msgstr ""
 "`Cross-Origin-Resource-Policy` "
 "ヘッダーを介して明示的に読み込み権限を付与する必要があります。%(report_only_text)s"
 
-#: httplint/field/parsers/cross_origin_embedder_policy.py:106
+#: httplint/field/parsers/cross_origin_embedder_policy.py:107
 #, python-format
 msgid ""
 "This response loads cross-origin resources without "
 "credentials%(report_only)s."
 msgstr "このレスポンスは、認証情報なしでクロスオリジンリソースを読み込みます%(report_only)s。"
 
-#: httplint/field/parsers/cross_origin_embedder_policy.py:107
+#: httplint/field/parsers/cross_origin_embedder_policy.py:108
 #, python-format
 msgid ""
 "The `credentialless`\n"
@@ -3245,14 +3224,14 @@ msgstr ""
 "origin-embedder-policy-header)\n"
 "は、対応ブラウザで明示的な許可なしにクロスオリジンリソースを読み込むことを許可しますが、それらのリソースに対するリクエストには認証情報（Cookie、クライアント証明書など）は含まれません。%(report_only_text)s"
 
-#: httplint/field/parsers/cross_origin_embedder_policy.py:118
+#: httplint/field/parsers/cross_origin_embedder_policy.py:119
 #, python-format
 msgid ""
 "This response allows loading cross-origin resources without "
 "restriction%(report_only)s."
 msgstr "このレスポンスは、クロスオリジンリソースの読み込みを無制限に許可します%(report_only)s。"
 
-#: httplint/field/parsers/cross_origin_embedder_policy.py:121
+#: httplint/field/parsers/cross_origin_embedder_policy.py:122
 #, python-format
 msgid ""
 "The `unsafe-none`\n"
@@ -3270,13 +3249,13 @@ msgstr ""
 "\n"
 "これにより、オリジン外からの分離は提供されません。%(report_only_text)s"
 
-#: httplint/field/parsers/cross_origin_embedder_policy.py:133
-#: httplint/field/parsers/cross_origin_opener_policy.py:131
+#: httplint/field/parsers/cross_origin_embedder_policy.py:134
+#: httplint/field/parsers/cross_origin_opener_policy.py:132
 #, python-format
 msgid "This response's %(field_name)s has an invalid value."
 msgstr "このレスポンスの%(field_name)sには無効な値が含まれています。"
 
-#: httplint/field/parsers/cross_origin_embedder_policy.py:134
+#: httplint/field/parsers/cross_origin_embedder_policy.py:135
 #, python-format
 msgid ""
 "The `%(field_name)s` header must be one of `require-corp`, "
@@ -3286,13 +3265,13 @@ msgstr ""
 "`%(field_name)s` ヘッダーは、`require-corp`、`credentialless`、または `unsafe-none` "
 "のいずれかでなければなりません。"
 
-#: httplint/field/parsers/cross_origin_embedder_policy.py:143
-#: httplint/field/parsers/cross_origin_opener_policy.py:141
+#: httplint/field/parsers/cross_origin_embedder_policy.py:144
+#: httplint/field/parsers/cross_origin_opener_policy.py:142
 #, python-format
 msgid "The report-to endpoint '%(endpoint)s' is not defined%(report_only)s."
 msgstr "レポートエンドポイント「%(endpoint)s」は定義されていません%(report_only)s。"
 
-#: httplint/field/parsers/cross_origin_embedder_policy.py:144
+#: httplint/field/parsers/cross_origin_embedder_policy.py:145
 msgid ""
 "The `report-to` parameter in the\n"
 "[Cross-Origin Embedder Policy](https://fetch.spec.whatwg.org/#cross-"
@@ -3319,14 +3298,14 @@ msgstr ""
 "`Cross-Origin-Embedder-Policy` ヘッダーと `Cross-Origin-Embedder-Policy-"
 "Report-Only` ヘッダーの両方をレスポンスに含めるべきではありません。レポート専用ヘッダーは無視されます。"
 
-#: httplint/field/parsers/cross_origin_opener_policy.py:95
+#: httplint/field/parsers/cross_origin_opener_policy.py:96
 #, python-format
 msgid ""
 "This response isolates the browsing context to the same "
 "origin%(report_only)s."
 msgstr "このレスポンスは、ブラウジングコンテキストを同一オリジンに限定します%(report_only)s。"
 
-#: httplint/field/parsers/cross_origin_opener_policy.py:96
+#: httplint/field/parsers/cross_origin_opener_policy.py:97
 #, python-format
 msgid ""
 "The `same-origin`\n"
@@ -3341,14 +3320,14 @@ msgstr ""
 "Policy](https://html.spec.whatwg.org/multipage/origin.html#coop)\n"
 "はブラウジングコンテキストを分離し、対応ブラウザではクロスオリジンのドキュメントとウィンドウオブジェクトを共有できないようにします。%(report_only_text)s"
 
-#: httplint/field/parsers/cross_origin_opener_policy.py:106
+#: httplint/field/parsers/cross_origin_opener_policy.py:107
 #, python-format
 msgid ""
 "This response isolates the browsing context but allows "
 "popups%(report_only)s."
 msgstr "このレスポンスは、ブラウジングコンテキストを分離しますが、ポップアップを許可します%(report_only)s。"
 
-#: httplint/field/parsers/cross_origin_opener_policy.py:107
+#: httplint/field/parsers/cross_origin_opener_policy.py:108
 #, python-format
 msgid ""
 "The `same-origin-allow-popups`\n"
@@ -3363,14 +3342,14 @@ msgstr ""
 "Policy](https://html.spec.whatwg.org/multipage/origin.html#coop)\n"
 "は、ブラウジングコンテキストを分離しますが、サポートしているブラウザで開くポップアップ、または自分を開いたポップアップとの関係を維持します。%(report_only_text)s"
 
-#: httplint/field/parsers/cross_origin_opener_policy.py:117
+#: httplint/field/parsers/cross_origin_opener_policy.py:118
 #, python-format
 msgid ""
 "This response allows sharing the browsing context with cross-origin "
 "documents%(report_only)s."
 msgstr "このレスポンスは、クロスオリジン文書とブラウジングコンテキストを共有できます%(report_only)s。"
 
-#: httplint/field/parsers/cross_origin_opener_policy.py:121
+#: httplint/field/parsers/cross_origin_opener_policy.py:122
 #, python-format
 msgid ""
 "The `unsafe-none`\n"
@@ -3386,7 +3365,7 @@ msgstr ""
 "Policy](https://html.spec.whatwg.org/multipage/origin.html#coop)\n"
 "は、対応ブラウザにおけるデフォルトの動作です。これにより、ドキュメントは、他のドキュメントが分離を強制しない限り、ブラウジングコンテキストグループを共有できます。%(report_only_text)s"
 
-#: httplint/field/parsers/cross_origin_opener_policy.py:132
+#: httplint/field/parsers/cross_origin_opener_policy.py:133
 #, python-format
 msgid ""
 "The `%(field_name)s` header must be one of `same-origin`, `same-origin-"
@@ -3396,7 +3375,7 @@ msgstr ""
 "`%(field_name)s` ヘッダーは、`same-origin`、`same-origin-allow-popups`、または "
 "`unsafe-none` のいずれかである必要があります。"
 
-#: httplint/field/parsers/cross_origin_opener_policy.py:142
+#: httplint/field/parsers/cross_origin_opener_policy.py:143
 msgid ""
 "The `report-to` parameter in the\n"
 "[Cross-Origin Opener "
@@ -3423,13 +3402,13 @@ msgstr ""
 "`Cross-Origin-Opener-Policy` ヘッダーと `Cross-Origin-Opener-Policy-Report-"
 "Only` ヘッダーの両方をレスポンスに含めることはできません。レポート専用ヘッダーは無視されます。"
 
-#: httplint/field/parsers/cross_origin_resource_policy.py:40
+#: httplint/field/parsers/cross_origin_resource_policy.py:41
 msgid ""
 "This response is only available for reading to requests from the same "
 "origin."
 msgstr "このレスポンスは、同一オリジンからのリクエストに対してのみ読み取り専用で利用可能です。"
 
-#: httplint/field/parsers/cross_origin_resource_policy.py:41
+#: httplint/field/parsers/cross_origin_resource_policy.py:42
 #, python-format
 msgid ""
 "The `same-origin`\n"
@@ -3443,11 +3422,11 @@ msgstr ""
 "origin-resource-policy-header)\n"
 "は、サポートしているブラウザにおいて、クロスオリジン文書からのリソースの読み取りを防止します。%(report_only_text)s"
 
-#: httplint/field/parsers/cross_origin_resource_policy.py:51
+#: httplint/field/parsers/cross_origin_resource_policy.py:52
 msgid "This response is available for reading to requests from the same site."
 msgstr "このレスポンスは、同一サイトからのリクエストでのみ読み取り可能です。"
 
-#: httplint/field/parsers/cross_origin_resource_policy.py:52
+#: httplint/field/parsers/cross_origin_resource_policy.py:53
 #, python-format
 msgid ""
 "The `same-site`\n"
@@ -3462,11 +3441,11 @@ msgstr ""
 "origin-resource-policy-header)\n"
 "により、リソースは同一サイトのドキュメントから読み取ることができますが、対応ブラウザではクロスサイトのドキュメントからの読み取りを防ぎます。%(report_only_text)s"
 
-#: httplint/field/parsers/cross_origin_resource_policy.py:62
+#: httplint/field/parsers/cross_origin_resource_policy.py:63
 msgid "This response is available for reading to requests from all origins."
 msgstr "このレスポンスは、すべてのオリジンからのリクエストで読み取り可能です。"
 
-#: httplint/field/parsers/cross_origin_resource_policy.py:63
+#: httplint/field/parsers/cross_origin_resource_policy.py:64
 #, python-format
 msgid ""
 "The `cross-origin`\n"
@@ -3481,11 +3460,11 @@ msgstr ""
 "origin-resource-policy-header)\n"
 "により、リソースは、そのオリジンに関係なく、サポートしているブラウザの任意のドキュメントから読み取ることができます。%(report_only_text)s"
 
-#: httplint/field/parsers/cross_origin_resource_policy.py:73
+#: httplint/field/parsers/cross_origin_resource_policy.py:74
 msgid "Cross-Origin-Resource-Policy has an invalid value."
 msgstr "Cross-Origin-Resource-Policy に無効な値が指定されています。"
 
-#: httplint/field/parsers/cross_origin_resource_policy.py:74
+#: httplint/field/parsers/cross_origin_resource_policy.py:75
 #, python-format
 msgid ""
 "`%(value)s` is not a valid in the `Cross-Origin-Resource-Policy` header;\n"
@@ -3619,13 +3598,6 @@ msgstr ""
 "The `Deprecation` header値はDateまたはBoolean "
 "Trueでなければなりません。見つかりました：%(item_type)s"
 
-#: httplint/field/parsers/expect.py:10
-msgid ""
-"The `Expect` header field in a request indicates behaviors (expectations)"
-" that need to be\n"
-"fulfilled by the server in order to properly handle the request."
-msgstr "リクエストの `Expect` ヘッダーフィールドは、リクエストを適切に処理するためにサーバーが満たす必要がある動作（期待）を示します。"
-
 #: httplint/field/parsers/expect.py:36
 #, python-format
 msgid "The '%(expectation)s' expectation is not supported."
@@ -3645,56 +3617,11 @@ msgstr "HTTP/1.0 では Expect ヘッダーはサポートされていません�
 msgid "The `Expect` header was added in HTTP/1.1; it has no meaning in HTTP/1.0."
 msgstr "`Expect` ヘッダーは HTTP/1.1 で追加されました。HTTP/1.0 では意味がありません。"
 
-#: httplint/field/parsers/if_match.py:9
-msgid ""
-"The `If-Match` header field makes the request method conditional on the "
-"recipient origin server\n"
-"having a current representation of the target resource."
-msgstr ""
-"`If-Match` "
-"ヘッダーフィールドは、リクエストメソッドを、受信側のオリジンサーバーがターゲットリソースの現在の表現を持っているかどうかに条件付けします。"
-
-#: httplint/field/parsers/if_none_match.py:9
-msgid ""
-"The `If-None-Match` header field makes the request method conditional on "
-"the\n"
-"absence of a matching entity tag, or if the field-value is \"*\", the "
-"absence of\n"
-"any current representation of the target resource."
-msgstr ""
-"`If-None-Match` ヘッダーフィールドは、一致するエンティティタグがない場合、またはフィールド値が \"*\" "
-"の場合に、ターゲットリソースの現在の表現がない場合にリクエストメソッドを条件付けます。"
-
-#: httplint/field/parsers/keep_alive.py:13
-msgid ""
-"The `Keep-Alive` header is completely optional; it is defined primarily "
-"because the `keep-alive`\n"
-"connection token implies that such a header exists, not because anyone "
-"actually uses it.\n"
-"\n"
-"Some implementations (e.g., [Apache](http://httpd.apache.org/)) do "
-"generate a `Keep-Alive` header\n"
-"to convey how many requests they're willing to serve on a single "
-"connection, what the connection\n"
-"timeout is and other information. However, this isn't usually used by "
-"clients.\n"
-"\n"
-"It's safe to remove this header if you wish to save a few bytes."
-msgstr ""
-"`Keep-Alive` ヘッダーは完全にオプションです。このヘッダーが主に定義されているのは、`keep-alive` "
-"接続トークンがそのようなヘッダーが存在することを示唆しているからであり、実際に使用されているわけではありません。\n"
-"\n"
-"一部の実装（例：[Apache](http://httpd.apache.org/)）は、`Keep-Alive` "
-"ヘッダーを生成して、単一接続で何件のリクエストを受け付けるか、接続タイムアウト時間、その他の情報などを伝達します。ただし、これは通常クライアントによって使用されません。"
-"\n"
-"\n"
-"数バイトを節約したい場合は、このヘッダーを削除しても安全です。"
-
-#: httplint/field/parsers/last_modified.py:44
+#: httplint/field/parsers/last_modified.py:45
 msgid "The Last-Modified time is in the future."
 msgstr "最終更新時刻が未来の日付になっています。"
 
-#: httplint/field/parsers/last_modified.py:45
+#: httplint/field/parsers/last_modified.py:46
 msgid ""
 "The `Last-Modified` header indicates the last point in time that the "
 "resource has changed.\n"
@@ -3705,12 +3632,12 @@ msgstr ""
 "`Last-Modified` ヘッダーは、リソースが最後に変更された時点を示します。\n"
 "このレスポンスの `Last-Modified` 時刻は未来であり、HTTP では定義された意味を持ちません。"
 
-#: httplint/field/parsers/last_modified.py:54
+#: httplint/field/parsers/last_modified.py:55
 #, python-format
 msgid "The resource last changed %(last_modified_string)s."
 msgstr "リソースは%(last_modified_string)sに最後に変更されました。"
 
-#: httplint/field/parsers/last_modified.py:55
+#: httplint/field/parsers/last_modified.py:56
 #, python-format
 msgid ""
 "The `Last-Modified` header indicates the last point in time that the "
@@ -3724,17 +3651,6 @@ msgstr ""
 "では、キャッシュされた応答の検証や、キャッシュでのヒューリスティックな鮮度計算に使用されます。\n"
 "\n"
 "このリソースは %(last_modified_string)s に最後に変更されました。"
-
-#: httplint/field/parsers/link.py:15
-msgid ""
-"The `Link` header allows links related to the content to be conveyed. A "
-"link can be viewed as a\n"
-"statement of the form \"[context IRI] has a [relation type] resource at "
-"[target IRI], which has\n"
-"[target attributes]."
-msgstr ""
-"`Link` ヘッダーを使用すると、コンテンツに関連するリンクを伝えることができます。リンクは、「[コンテキストIRI] が [ターゲットIRI]"
-" に [関係タイプ] リソースを持ち、そのリソースは [ターゲット属性] を持つ」という形式のステートメントとして表示できます。"
 
 #: httplint/field/parsers/link.py:50
 msgid "The 'rev' parameter on the Link header is deprecated."
@@ -3879,7 +3795,7 @@ msgstr "%(key)s キーは NEL ポリシーで必要です"
 msgid "The NEL policy has an invalid type for '%(key)s'."
 msgstr "The NEL ポリシーには、'%(key)s' の無効なタイプがあります。"
 
-#: httplint/field/parsers/nel.py:112 httplint/field/parsers/report_to.py:72
+#: httplint/field/parsers/nel.py:112 httplint/field/parsers/report_to.py:73
 #, python-format
 msgid "The `%(key)s` key must be of type %(expected)s."
 msgstr "`%(key)s` キーは %(expected)s 型でなければなりません。"
@@ -3898,8 +3814,8 @@ msgstr "%(key)s のキーに無効な値が指定されています。%(details)
 
 #: httplint/field/parsers/nel.py:128
 #, python-format
-msgid "The report_to endpoint '%(value)s' is not defined."
-msgstr "The report_to エンドポイント '%(value)s' は定義されていません。"
+msgid "The reporting endpoint '%(value)s' is not defined."
+msgstr "レポートエンドポイント '%(value)s' は定義されていません。"
 
 #: httplint/field/parsers/nel.py:129
 msgid ""
@@ -3913,12 +3829,12 @@ msgstr ""
 "/network-error-logging/) ポリシーで指定されたレポートエンドポイントを参照しますが、`Reporting-"
 "Endpoints` ヘッダーに一致するエンドポイントはありません。"
 
-#: httplint/field/parsers/origin.py:58
+#: httplint/field/parsers/origin.py:61
 #, python-format
 msgid "%(value)s is not a valid origin."
 msgstr "%(value)s は有効な起源ではありません。"
 
-#: httplint/field/parsers/origin.py:59
+#: httplint/field/parsers/origin.py:62
 msgid ""
 "The Origin header must contain a list of serialized origins (scheme, "
 "host, and optional port), or\n"
@@ -3926,6 +3842,17 @@ msgid ""
 msgstr ""
 "The Origin headerは、シリアル化されたオリジン（スキーム、ホスト、オプションのポート）のリスト、または\n"
 "\"null\"を含める必要があります。"
+
+#: httplint/field/parsers/origin.py:70
+msgid "The Origin header contains multiple values."
+msgstr "The Origin ヘッダーには複数の値が含まれています。"
+
+#: httplint/field/parsers/origin.py:71
+msgid ""
+"The `Origin` header should only contain a single value. Any values after "
+"the first\n"
+"will be ignored."
+msgstr "The `Origin` header には 1 つの値のみが含まれるべきです。最初の値以降の値は無視されます。"
 
 #: httplint/field/parsers/permissions_policy.py:71
 msgid "This response sets a Permissions Policy."
@@ -4010,45 +3937,15 @@ msgstr ""
 "`%(item)s` は、許可リストの有効なタイプではありません。\n"
 "許可リストには、オリジン（文字列）またはキーワード（トークン）を含める必要があります。"
 
-#: httplint/field/parsers/pragma.py:11
-msgid ""
-"The `Pragma` header is used to include implementation-specific directives"
-" that might apply to any\n"
-"recipient along the request chain.\n"
-"\n"
-"This header is deprecated, in favour of `Cache-Control`."
-msgstr ""
-"`Pragma` ヘッダーは、リクエストチェーン上のどの受信者にも適用される可能性のある、実装固有のディレクティブを含めるために使用されます。\n"
-"\n"
-"このヘッダーは、`Cache-Control` に取って代わられて非推奨になりました。"
-
-#: httplint/field/parsers/pragma.py:34
+#: httplint/field/parsers/pragma.py:35
 msgid "The Pragma header is being used in an undefined way."
 msgstr "Pragma ヘッダーが未定義の方法で使用されています。"
 
-#: httplint/field/parsers/pragma.py:35
+#: httplint/field/parsers/pragma.py:36
 msgid ""
 "HTTP only defines `Pragma: no-cache`; other uses of this header are "
 "deprecated."
 msgstr "HTTP は `Pragma: no-cache` のみを定義しており、このヘッダーのその他の使用方法は非推奨です。"
-
-#: httplint/field/parsers/proxy_authenticate.py:7
-msgid ""
-"The `Proxy-Authenticate` response header consists of a challenge that "
-"indicates the authentication\n"
-"scheme and parameters applicable to the proxy for this request-target."
-msgstr ""
-"`Proxy-Authenticate` "
-"レスポンスヘッダーは、このリクエストターゲットに対するプロキシに適用される認証スキームとパラメータを示すチャレンジで構成されます。"
-
-#: httplint/field/parsers/proxy_authentication_info.py:9
-msgid ""
-"The `Proxy-Authentication-Info` header field is used to communicate "
-"information after\n"
-"the client's authentication credentials have been accepted by a proxy."
-msgstr ""
-"`Proxy-Authentication-Info` "
-"ヘッダーフィールドは、プロキシがクライアントの認証情報を受け入れた後に、その情報を提供するために使用されます。"
 
 #: httplint/field/parsers/proxy_status.py:117
 msgid "Information about intermediaries is available."
@@ -4096,22 +3993,22 @@ msgstr "`%(param)s` パラメータは Proxy-Status 仕様で定義されてい�
 msgid "The Proxy-Status header has an unknown value for '%(param)s'."
 msgstr "Proxy-Status ヘッダーの '%(param)s' に未知の値があります。"
 
-#: httplint/field/parsers/range.py:93
+#: httplint/field/parsers/range.py:99
 msgid "The Range header is invalid."
 msgstr "Range ヘッダーは無効です。"
 
-#: httplint/field/parsers/range.py:94
+#: httplint/field/parsers/range.py:100
 msgid ""
 "The values indicated by the `Range` header are not valid. The first "
 "position must be less\n"
 "than or equal to the last position."
 msgstr "`Range` ヘッダで指定された値は有効ではありません。最初の位置は最後の位置以下である必要があります。"
 
-#: httplint/field/parsers/range.py:102
+#: httplint/field/parsers/range.py:108
 msgid "The Range header value isn't valid."
 msgstr "\"The Range header value isn't valid.\""
 
-#: httplint/field/parsers/range.py:103
+#: httplint/field/parsers/range.py:109
 #, python-format
 msgid ""
 "The value for this field doesn't conform to its specified syntax; "
@@ -4123,11 +4020,11 @@ msgstr ""
 "\n"
 "詳細については、[定義] (%(ref_uri)s) を参照してください。"
 
-#: httplint/field/parsers/referer.py:17
+#: httplint/field/parsers/referer.py:55
 msgid "The Referer header is sent from a secure origin to an insecure target."
 msgstr "Referer ヘッダーがセキュアなオリジンからセキュアでないターゲットに送信されました。"
 
-#: httplint/field/parsers/referer.py:18
+#: httplint/field/parsers/referer.py:56
 msgid ""
 "HTTP prohibits a user agent from sending a Referer header field in an "
 "unsecured HTTP request\n"
@@ -4143,11 +4040,11 @@ msgstr ""
 "詳細は [RFC 9110 Section 10.1.3](https://www.rfc-"
 "editor.org/rfc/rfc9110.html#section-10.1.3) を参照してください。"
 
-#: httplint/field/parsers/referer.py:29
+#: httplint/field/parsers/referer.py:67
 msgid "The Referer header is sent from a secure origin to a different origin."
 msgstr "Referer ヘッダーは、セキュアなオリジンから別のオリジンに送信されます。"
 
-#: httplint/field/parsers/referer.py:30
+#: httplint/field/parsers/referer.py:68
 msgid ""
 "HTTP prohibits a user agent from sending a Referer header field if the "
 "referring resource was\n"
@@ -4167,20 +4064,11 @@ msgstr ""
 "詳細は [RFC 9110 Section 10.1.3](https://www.rfc-"
 "editor.org/rfc/rfc9110.html#section-10.1.3) を参照してください。"
 
-#: httplint/field/parsers/referrer_policy.py:10
-msgid ""
-"The `Referrer-Policy` response header controls how much referrer "
-"information (sent via the `Referer`\n"
-"header) should be included with requests."
-msgstr ""
-"`Referrer-Policy` レスポンスヘッダーは、リクエストに含まれるリファラー情報（`Referer` "
-"ヘッダー経由で送信される）の量を制御します。"
-
-#: httplint/field/parsers/referrer_policy.py:45
+#: httplint/field/parsers/referrer_policy.py:46
 msgid "This response's Referrer-Policy allows unsafe URLs."
 msgstr "このレスポンスのReferrer-Policyは、安全でないURLを許可します。"
 
-#: httplint/field/parsers/referrer_policy.py:46
+#: httplint/field/parsers/referrer_policy.py:47
 msgid ""
 "Using `unsafe-url` in `Referrer-Policy` means that the full URL "
 "(including query parameters) will\n"
@@ -4191,12 +4079,12 @@ msgstr ""
 "`Referrer-Policy` で `unsafe-url` を使用すると、クエリパラメータを含む完全なURLが、安全でない (HTTP) "
 "オリジンを含むすべてのオリジンへのリファラーとして送信されます。これは機密情報を漏洩する可能性があります。"
 
-#: httplint/field/parsers/referrer_policy.py:55
+#: httplint/field/parsers/referrer_policy.py:56
 #, python-format
 msgid "The Referrer-Policy value '%(policy)s' is unknown."
 msgstr "Referrer-Policy の値 '%(policy)s' は不明です。"
 
-#: httplint/field/parsers/referrer_policy.py:56
+#: httplint/field/parsers/referrer_policy.py:57
 #, python-format
 msgid ""
 "The `Referrer-Policy` header contains the value `%(policy)s`, which is "
@@ -4206,11 +4094,11 @@ msgstr ""
 "`Referrer-Policy` ヘッダーの値 `%(policy)s` は、既知のリファラーポリシーではありません。\n"
 "ブラウザでは無視されます。"
 
-#: httplint/field/parsers/referrer_policy.py:64
+#: httplint/field/parsers/referrer_policy.py:65
 msgid "No valid Referrer-Policy found."
 msgstr "有効な Referrer-Policy が見つかりませんでした。"
 
-#: httplint/field/parsers/referrer_policy.py:65
+#: httplint/field/parsers/referrer_policy.py:66
 msgid ""
 "The `Referrer-Policy` header does not contain any valid policies. "
 "Browsers will use their default\n"
@@ -4219,12 +4107,12 @@ msgstr ""
 "`Referrer-Policy` ヘッダーに有効なポリシーが含まれていません。ブラウザはデフォルトのポリシー（通常は `strict-"
 "origin-when-cross-origin`）を使用します。"
 
-#: httplint/field/parsers/referrer_policy.py:73
+#: httplint/field/parsers/referrer_policy.py:74
 #, python-format
 msgid "Multiple Referrer-Policy values found; only '%(effective)s' is used."
 msgstr "複数の Referrer-Policy 値が見つかりました。 '%(effective)s' のみが使用されます。"
 
-#: httplint/field/parsers/referrer_policy.py:74
+#: httplint/field/parsers/referrer_policy.py:75
 #, python-format
 msgid ""
 "The `Referrer-Policy` header contains multiple valid policies. Browsers "
@@ -4235,25 +4123,25 @@ msgstr ""
 "ヘッダーには複数の有効なポリシーが含まれています。ブラウザは、最初に見つかった有効なポリシーのうち最後のもの、つまり "
 "`%(effective)s` のみを使用します。それより前の値は無視されます。"
 
-#: httplint/field/parsers/report_to.py:54
+#: httplint/field/parsers/report_to.py:55
 msgid "The Report-To header value has an invalid structure."
 msgstr "The Report-To ヘッダー値の構造が無効です"
 
-#: httplint/field/parsers/report_to.py:55
+#: httplint/field/parsers/report_to.py:56
 msgid "The `Report-To` header should be a list of objects.\n"
 msgstr "The `Report-To` ヘッダーはオブジェクトのリストであるべきです。"
 
-#: httplint/field/parsers/report_to.py:63
+#: httplint/field/parsers/report_to.py:64
 #, python-format
 msgid "The Report-To header value is missing the '%(key)s' key."
 msgstr "The Report-To ヘッダー値に %(key)s キーが欠けています。"
 
-#: httplint/field/parsers/report_to.py:64
+#: httplint/field/parsers/report_to.py:65
 #, python-format
 msgid "The `%(key)s` key is required in `Report-To` objects."
 msgstr "The `%(key)s` key は `Report-To` オブジェクトに必要です。"
 
-#: httplint/field/parsers/report_to.py:71
+#: httplint/field/parsers/report_to.py:72
 #, python-format
 msgid "The Report-To header has an invalid type for '%(key)s'."
 msgstr "The Report-To ヘッダーのタイプ '%(key)s' は無効です。"
@@ -4284,13 +4172,6 @@ msgstr ""
 "報告エンドポイント「%(name)s」は、文字列URLでなければなりません。見つかりました: %(value)s "
 "(型「%(found_type)s」)"
 
-#: httplint/field/parsers/server.py:13
-msgid ""
-"The `Server` response header contains information about the software used"
-" by the origin server to\n"
-"handle the request."
-msgstr "`Server` レスポンスヘッダーには、リクエストを処理するためにオリジンサーバーが使用したソフトウェアに関する情報が含まれています。"
-
 #: httplint/field/parsers/server.py:42
 msgid "The Server header is long."
 msgstr "Server ヘッダーが長すぎます。"
@@ -4308,21 +4189,6 @@ msgstr ""
 "バイトです。これは帯域幅の無駄遣いであり、バックエンドシステムの詳細が攻撃者に露呈する可能性があります。\n"
 "\n"
 "短縮することを検討してください。"
-
-#: httplint/field/parsers/server_timing.py:13
-msgid ""
-"The `Server-Timing` header field communicates one or more metrics and "
-"descriptions for the given\n"
-"request-response cycle. It is used to surface any backend server timing "
-"metrics (e.g. database\n"
-"read/write, CPU time, file system access, etc.) in the developer tools in"
-" the browser or any other\n"
-"consumer of Server-Timing."
-msgstr ""
-"Server-Timing ヘッダー フィールドは、リクエスト/レスポンス サイクルに対する 1 "
-"つ以上のメトリックと説明を提供するために使用されます。開発者ツールでブラウザや Server-Timing "
-"を使用する他のコンシューマで、バックエンド サーバータイミング メトリック (データベース リード/ライト、CPU 時間、ファイル システム "
-"アクセスなど) を公開するために使用されます。"
 
 #: httplint/field/parsers/server_timing.py:61
 #, python-format
@@ -4376,11 +4242,11 @@ msgstr ""
 "\n"
 "Descriptions can help contextualize a metric when displayed."
 
-#: httplint/field/parsers/set_cookie.py:383
+#: httplint/field/parsers/set_cookie.py:384
 msgid "This response has a Set-Cookie header without a cookie-name."
 msgstr "このレスポンスには、Cookie名のないSet-Cookieヘッダーが含まれています。"
 
-#: httplint/field/parsers/set_cookie.py:384
+#: httplint/field/parsers/set_cookie.py:385
 msgid ""
 "This `Set-Cookie` header has an empty name; there needs to be a name "
 "before the `=`.\n"
@@ -4391,12 +4257,12 @@ msgstr ""
 "\n"
 "ブラウザはこのクッキーを無視します。"
 
-#: httplint/field/parsers/set_cookie.py:393
+#: httplint/field/parsers/set_cookie.py:394
 #, python-format
 msgid "The %(cookie_name)s cookie has an invalid Expires date."
 msgstr "%(cookie_name)s クッキーのExpiresの日付が無効です。"
 
-#: httplint/field/parsers/set_cookie.py:394
+#: httplint/field/parsers/set_cookie.py:395
 msgid ""
 "The `expires` date on this `Set-Cookie` header isn't valid; see\n"
 "[RFC6265](https://www.rfc-editor.org/rfc/rfc6265) for details of the "
@@ -4405,12 +4271,12 @@ msgstr ""
 "この`Set-Cookie`ヘッダーの`expires`日付は無効です。正しい形式については[RFC6265](https://www.rfc-"
 "editor.org/rfc/rfc6265)を参照してください。"
 
-#: httplint/field/parsers/set_cookie.py:402
+#: httplint/field/parsers/set_cookie.py:403
 #, python-format
 msgid "The %(cookie_name)s cookie has an empty Max-Age."
 msgstr "%(cookie_name)s クッキーの Max-Age が空です。"
 
-#: httplint/field/parsers/set_cookie.py:403
+#: httplint/field/parsers/set_cookie.py:404
 msgid ""
 "The `max-age` parameter on this `Set-Cookie` header doesn't have a value."
 "\n"
@@ -4421,12 +4287,12 @@ msgstr ""
 "\n"
 "この結果、ブラウザーはこの `max-age` 値を無視します。"
 
-#: httplint/field/parsers/set_cookie.py:412
+#: httplint/field/parsers/set_cookie.py:413
 #, python-format
 msgid "The %(cookie_name)s cookie has a Max-Age with a leading zero."
 msgstr "%(cookie_name)s クッキーの Max-Age に先頭のゼロがあります。"
 
-#: httplint/field/parsers/set_cookie.py:413
+#: httplint/field/parsers/set_cookie.py:414
 msgid ""
 "The `max-age` parameter on this `Set-Cookie` header has a leading zero.\n"
 "\n"
@@ -4436,12 +4302,12 @@ msgstr ""
 "\n"
 "その結果、ブラウザはこの`max-age`値を無視します。"
 
-#: httplint/field/parsers/set_cookie.py:422
+#: httplint/field/parsers/set_cookie.py:423
 #, python-format
 msgid "The %(cookie_name)s cookie has a non-numeric Max-Age."
 msgstr "%(cookie_name)s クッキーの Max-Age が数値ではありません。"
 
-#: httplint/field/parsers/set_cookie.py:423
+#: httplint/field/parsers/set_cookie.py:424
 msgid ""
 "The `max-age` parameter on this `Set-Cookie` header isn't numeric.\n"
 "\n"
@@ -4451,12 +4317,12 @@ msgstr ""
 "\n"
 "この結果、ブラウザーは `max-age` の値を無視します。"
 
-#: httplint/field/parsers/set_cookie.py:432
+#: httplint/field/parsers/set_cookie.py:433
 #, python-format
 msgid "The %(cookie_name)s cookie has an empty domain."
 msgstr "%(cookie_name)s クッキーのドメインが空です。"
 
-#: httplint/field/parsers/set_cookie.py:433
+#: httplint/field/parsers/set_cookie.py:434
 msgid ""
 "The `domain` parameter on this `Set-Cookie` header is empty.\n"
 "\n"
@@ -4472,12 +4338,12 @@ msgstr ""
 "\n"
 "ブラウザはおそらくそれを無視するでしょう。"
 
-#: httplint/field/parsers/set_cookie.py:445
+#: httplint/field/parsers/set_cookie.py:446
 #, python-format
 msgid "The %(cookie_name)s cookie is missing the Secure attribute."
 msgstr "`%(cookie_name)s` クッキーに Secure 属性がありません。"
 
-#: httplint/field/parsers/set_cookie.py:446
+#: httplint/field/parsers/set_cookie.py:447
 msgid ""
 "The `Secure` attribute on this `Set-Cookie` header is missing.\n"
 "\n"
@@ -4492,12 +4358,12 @@ msgstr ""
 "\n"
 "ブラウザはこのクッキーを無視します。"
 
-#: httplint/field/parsers/set_cookie.py:457
+#: httplint/field/parsers/set_cookie.py:458
 #, python-format
 msgid "The %(cookie_name)s cookie has an unknown attribute, '%(attribute)s'."
 msgstr "「%(cookie_name)s」Cookie には、未知の属性「%(attribute)s」があります。"
 
-#: httplint/field/parsers/set_cookie.py:458
+#: httplint/field/parsers/set_cookie.py:459
 #, python-format
 msgid ""
 "This cookie has an extra parameter, \"%(attribute)s\".\n"
@@ -4508,19 +4374,19 @@ msgstr ""
 "\n"
 "ブラウザはこれを無視します。"
 
-#: httplint/field/parsers/set_cookie.py:467
+#: httplint/field/parsers/set_cookie.py:468
 msgid "The 'Priority' Set-Cookie attribute is deprecated."
 msgstr "「Priority」の Set-Cookie 属性は非推奨です。"
 
-#: httplint/field/parsers/set_cookie.py:468
+#: httplint/field/parsers/set_cookie.py:469
 msgid "The `Priority` attribute was an experiment, and is no longer supported.\n"
 msgstr "優先度属性は実験的なもので、現在はサポートされていません。"
 
-#: httplint/field/parsers/set_cookie.py:476
+#: httplint/field/parsers/set_cookie.py:477
 msgid "The 'Version Set-Cookie attribute is deprecated."
 msgstr "バージョン Set-Cookie 属性は非推奨です。"
 
-#: httplint/field/parsers/set_cookie.py:477
+#: httplint/field/parsers/set_cookie.py:478
 msgid ""
 "The `Version` attribute is no longer part of the `Set-Cookie` "
 "specification,\n"
@@ -4537,14 +4403,14 @@ msgstr ""
 "一部のソフトウェアは、この属性がある場合にクッキーを依然として異なる方法で解釈するため、[セキュリティ上の問題が発生する可能性があります](https://portswigger.net/research"
 "/bypassing-wafs-with-the-phantom-version-cookie)。"
 
-#: httplint/field/parsers/set_cookie.py:490
+#: httplint/field/parsers/set_cookie.py:491
 #, python-format
 msgid ""
 "The %(cookie_name)s cookie has an unknown '%(attribute_name)s' attribute "
 "value."
 msgstr "%(cookie_name)s クッキーに、不明な '%(attribute_name)s' 属性値があります。"
 
-#: httplint/field/parsers/set_cookie.py:491
+#: httplint/field/parsers/set_cookie.py:492
 #, python-format
 msgid ""
 "This `Set-Cookie` header has an unknown \"%(attribute_name)s\" attribute "
@@ -4557,14 +4423,14 @@ msgstr ""
 "\n"
 "このため、ブラウザはこれを無視する可能性が高いです。"
 
-#: httplint/field/parsers/set_cookie.py:500
+#: httplint/field/parsers/set_cookie.py:501
 #, python-format
 msgid ""
 "The %(cookie_name)s cookie has the Partitioned attribute but is missing "
 "the Secure attribute."
 msgstr "%(cookie_name)s クッキーには Partitioned 属性がありますが、Secure 属性がありません。"
 
-#: httplint/field/parsers/set_cookie.py:504
+#: httplint/field/parsers/set_cookie.py:505
 msgid ""
 "The `Partitioned` attribute on this `Set-Cookie` header is present, but "
 "the `Secure` attribute is\n"
@@ -4576,12 +4442,12 @@ msgstr ""
 "\n"
 "その結果、ブラウザはこの `Partitioned` 属性を無視します。"
 
-#: httplint/field/parsers/set_cookie.py:514
+#: httplint/field/parsers/set_cookie.py:515
 #, python-format
 msgid "The %(cookie_name)s Set-Cookie header is too large."
 msgstr "%(cookie_name)s Set-Cookie ヘッダーが大きすぎます。"
 
-#: httplint/field/parsers/set_cookie.py:515
+#: httplint/field/parsers/set_cookie.py:516
 msgid ""
 "The `Set-Cookie` header is larger than 4096 bytes.\n"
 "\n"
@@ -4591,22 +4457,22 @@ msgstr ""
 "\n"
 "ブラウザーはこの Cookie を無視します。"
 
-#: httplint/field/parsers/set_cookie.py:524
+#: httplint/field/parsers/set_cookie.py:525
 #, python-format
 msgid "The %(cookie_name)s Set-Cookie value is large."
 msgstr "%(cookie_name)s の Set-Cookie 値は大きすぎます。"
 
-#: httplint/field/parsers/set_cookie.py:525
+#: httplint/field/parsers/set_cookie.py:526
 #, python-format
 msgid "This `Set-Cookie` value is %(set_cookie_value_length)s long.\n"
 msgstr "この `Set-Cookie` 値は %(set_cookie_value_length)s 長いです。"
 
-#: httplint/field/parsers/set_cookie.py:540
+#: httplint/field/parsers/set_cookie.py:541
 #, python-format
 msgid "The %(cookie_name)s Set-Cookie header has a lifetime that is too long."
 msgstr "%(cookie_name)s Set-Cookie ヘッダーの有効期間が長すぎます。"
 
-#: httplint/field/parsers/set_cookie.py:541
+#: httplint/field/parsers/set_cookie.py:542
 #, python-format
 msgid ""
 "The `Set-Cookie` header has a lifetime (Max-Age or Expires) of "
@@ -4620,12 +4486,12 @@ msgstr ""
 "\n"
 "ブラウザは寿命を 400 日までに制限します。"
 
-#: httplint/field/parsers/set_cookie.py:551
+#: httplint/field/parsers/set_cookie.py:552
 #, python-format
 msgid "The %(cookie_name)s Set-Cookie header requires the Secure attribute."
 msgstr "%(cookie_name)s Set-Cookie ヘッダーには Secure 属性が必要です。"
 
-#: httplint/field/parsers/set_cookie.py:552
+#: httplint/field/parsers/set_cookie.py:553
 msgid ""
 "The `Set-Cookie` header has a prefix (e.g., `__Secure-` or `__Host-`) "
 "that requires the `Secure`\n"
@@ -4638,7 +4504,7 @@ msgstr ""
 "\n"
 "ブラウザはこのクッキーを拒否します。"
 
-#: httplint/field/parsers/set_cookie.py:562
+#: httplint/field/parsers/set_cookie.py:563
 #, python-format
 msgid ""
 "The %(cookie_name)s Set-Cookie header has a __Host- prefix but sets a "
@@ -4647,7 +4513,7 @@ msgstr ""
 "`%(cookie_name)s` Set-Cookie ヘッダーに `__Host-` プレフィックスがありますが、Domain "
 "が設定されています。"
 
-#: httplint/field/parsers/set_cookie.py:563
+#: httplint/field/parsers/set_cookie.py:564
 msgid ""
 "The `Set-Cookie` header has a `__Host-` prefix, but it sets a `Domain` "
 "attribute.\n"
@@ -4658,7 +4524,7 @@ msgstr ""
 "\n"
 "ブラウザはこの Cookie を拒否します。"
 
-#: httplint/field/parsers/set_cookie.py:572
+#: httplint/field/parsers/set_cookie.py:573
 #, python-format
 msgid ""
 "The %(cookie_name)s Set-Cookie header has a __Host- prefix but does not "
@@ -4667,7 +4533,7 @@ msgstr ""
 "`%(cookie_name)s` Set-"
 "Cookieヘッダーには`__Host-`プレフィックスが付いていますが、Path=/が設定されていません。"
 
-#: httplint/field/parsers/set_cookie.py:573
+#: httplint/field/parsers/set_cookie.py:574
 msgid ""
 "The `Set-Cookie` header has a `__Host-` prefix, but it does not set "
 "`Path=/`.\n"
@@ -4678,14 +4544,14 @@ msgstr ""
 "\n"
 "ブラウザはこのクッキーを拒否します。"
 
-#: httplint/field/parsers/set_cookie.py:582
+#: httplint/field/parsers/set_cookie.py:583
 #, python-format
 msgid ""
 "The %(cookie_name)s Set-Cookie header has duplicate '%(attribute)s' "
 "attributes."
 msgstr "%(cookie_name)s Set-Cookie ヘッダーに重複した '%(attribute)s' 属性があります。"
 
-#: httplint/field/parsers/set_cookie.py:583
+#: httplint/field/parsers/set_cookie.py:584
 #, python-format
 msgid ""
 "The `%(attribute)s` attribute appears more than once in this `Set-Cookie`"
@@ -4697,11 +4563,11 @@ msgstr ""
 "\n"
 "ブラウザは最後の出現のみを使用します。"
 
-#: httplint/field/parsers/set_cookie.py:592
+#: httplint/field/parsers/set_cookie.py:593
 msgid "This response sets duplicate cookies."
 msgstr "このレスポンスは重複したCookieを設定しています。"
 
-#: httplint/field/parsers/set_cookie.py:593
+#: httplint/field/parsers/set_cookie.py:594
 #, python-format
 msgid ""
 "The following cookies are set more than once in this response: "
@@ -4713,10 +4579,6 @@ msgstr ""
 "このレスポンスでは、以下のクッキーが複数回設定されています: %(cookie_names)s。\n"
 "\n"
 "ブラウザはすべてを受け入れる可能性が高いですが、適用順序が異なる場合や混乱を招く可能性があります。"
-
-#: httplint/field/parsers/set_cookie2.py:7
-msgid "The `Set-Cookie2` header has been deprecated; use `Set-Cookie` instead."
-msgstr "`Set-Cookie2` ヘッダーは非推奨になりました。代わりに `Set-Cookie` を使用してください。"
 
 #: httplint/field/parsers/speculation_rules.py:43
 msgid "The speculation rule URL is not secure."
@@ -4742,11 +4604,11 @@ msgstr ""
 "The specification rule must be a string URL. Found: %(value)s (type "
 "`%(found_type)s`)."
 
-#: httplint/field/parsers/strict_transport_security.py:150
+#: httplint/field/parsers/strict_transport_security.py:151
 msgid "Strict Transport Security (HSTS) is enabled."
 msgstr "Strict Transport Security (HSTS) が有効です。"
 
-#: httplint/field/parsers/strict_transport_security.py:151
+#: httplint/field/parsers/strict_transport_security.py:152
 msgid ""
 "This site has enabled HTTP Strict Transport Security (HSTS), which tells "
 "the browser to only\n"
@@ -4755,11 +4617,11 @@ msgstr ""
 "このサイトではHTTP Strict Transport Security (HSTS) "
 "が有効になっており、ブラウザは安全な接続でのみ通信するように指示されます。"
 
-#: httplint/field/parsers/strict_transport_security.py:159
+#: httplint/field/parsers/strict_transport_security.py:160
 msgid "This response's Strict Transport Security (HSTS) header is invalid."
 msgstr "このレスポンスの Strict Transport Security (HSTS) ヘッダーは無効です。"
 
-#: httplint/field/parsers/strict_transport_security.py:160
+#: httplint/field/parsers/strict_transport_security.py:161
 msgid ""
 "This site has attempted to enable HTTP Strict Transport Security (HSTS), "
 "which tells the browser to only\n"
@@ -4773,21 +4635,21 @@ msgstr ""
 "\n"
 "しかし、1つ以上の問題により、有効になりませんでした。詳細は子ノートを参照してください。"
 
-#: httplint/field/parsers/strict_transport_security.py:170
+#: httplint/field/parsers/strict_transport_security.py:171
 msgid "There is no max-age directive."
 msgstr "max-age ディレクティブがありません。"
 
-#: httplint/field/parsers/strict_transport_security.py:171
+#: httplint/field/parsers/strict_transport_security.py:172
 msgid ""
 "The `Strict-Transport-Security` header requires a `max-age` directive to "
 "be valid."
 msgstr "`Strict-Transport-Security` ヘッダーには、有効であるために `max-age` ディレクティブが必要です。"
 
-#: httplint/field/parsers/strict_transport_security.py:178
+#: httplint/field/parsers/strict_transport_security.py:179
 msgid "The max-age is 0."
 msgstr "max-age は 0 です。"
 
-#: httplint/field/parsers/strict_transport_security.py:179
+#: httplint/field/parsers/strict_transport_security.py:180
 msgid ""
 "A `max-age` of 0 tells the browser to expire the `Strict-Transport-"
 "Security` policy immediately,\n"
@@ -4796,21 +4658,21 @@ msgstr ""
 "`max-age` を 0 にすると、ブラウザは `Strict-Transport-Security` "
 "ポリシーを直ちに無効にし、事実上無効化します。"
 
-#: httplint/field/parsers/strict_transport_security.py:187
+#: httplint/field/parsers/strict_transport_security.py:188
 msgid "The max-age is less than one year."
 msgstr "max-age は1年未満です。"
 
-#: httplint/field/parsers/strict_transport_security.py:188
+#: httplint/field/parsers/strict_transport_security.py:189
 msgid ""
 "Most sites should set a `max-age` of at least one year on `Strict-"
 "Transport-Security`."
 msgstr "ほとんどのサイトでは、`Strict-Transport-Security` に少なくとも1年間の `max-age` を設定すべきです。"
 
-#: httplint/field/parsers/strict_transport_security.py:195
+#: httplint/field/parsers/strict_transport_security.py:196
 msgid "HSTS applies to subdomains."
 msgstr "HSTSはサブドメインにも適用されます。"
 
-#: httplint/field/parsers/strict_transport_security.py:196
+#: httplint/field/parsers/strict_transport_security.py:197
 msgid ""
 "The `includeSubDomains` directive indicates that this HSTS policy applies"
 " to this domain as well as\n"
@@ -4819,11 +4681,11 @@ msgstr ""
 "`includeSubDomains` ディレクティブは、この HSTS "
 "ポリシーがこのドメインおよびそのすべてのサブドメインに適用されることを示します。"
 
-#: httplint/field/parsers/strict_transport_security.py:204
+#: httplint/field/parsers/strict_transport_security.py:205
 msgid "HSTS doesn't apply to subdomains."
 msgstr "HSTS はサブドメインには適用されません。"
 
-#: httplint/field/parsers/strict_transport_security.py:205
+#: httplint/field/parsers/strict_transport_security.py:206
 msgid ""
 "The `includeSubDomains` directive indicates that this HSTS policy applies"
 " to this domain as well as\n"
@@ -4839,11 +4701,11 @@ msgstr ""
 "\n"
 "CookieはHTTPサイトとHTTPSサイトの両方、およびサブドメイン全体で設定できるため、攻撃者がHSTSが有効になっていないサブドメインを利用する可能性があることを意味します。"
 
-#: httplint/field/parsers/strict_transport_security.py:217
+#: httplint/field/parsers/strict_transport_security.py:218
 msgid "Browser preloading is allowed."
 msgstr "ブラウザプリロードが許可されています。"
 
-#: httplint/field/parsers/strict_transport_security.py:218
+#: httplint/field/parsers/strict_transport_security.py:219
 msgid ""
 "The `preload` directive on `Strict-Transport-Security` allows browsers to"
 " preload the site in\n"
@@ -4860,11 +4722,11 @@ msgstr ""
 "\n"
 "詳細については、[HSTS Preload List](https://hstspreload.org/) を参照してください。"
 
-#: httplint/field/parsers/strict_transport_security.py:230
+#: httplint/field/parsers/strict_transport_security.py:231
 msgid "Browser preloading is allowed, but this policy isn't suitable for it."
 msgstr "ブラウザプリロードは許可されていますが、このポリシーはそれに適していません。"
 
-#: httplint/field/parsers/strict_transport_security.py:231
+#: httplint/field/parsers/strict_transport_security.py:232
 msgid ""
 "Preloading a site in a browser's HSTS list requires a `max-age` of at "
 "least one year and the\n"
@@ -4878,11 +4740,11 @@ msgstr ""
 "\n"
 "詳細については、[HSTSプリロードリスト](https://hstspreload.org/)を参照してください。"
 
-#: httplint/field/parsers/strict_transport_security.py:242
+#: httplint/field/parsers/strict_transport_security.py:243
 msgid "Browser preloading isn't allowed."
 msgstr "ブラウザプリロードは許可されていません。"
 
-#: httplint/field/parsers/strict_transport_security.py:243
+#: httplint/field/parsers/strict_transport_security.py:244
 msgid ""
 "Without a `preload` directive, browsers may make an unencrypted request "
 "when first accessing the\n"
@@ -4897,11 +4759,11 @@ msgstr ""
 "\n"
 "詳細については、[HSTS Preload List](https://hstspreload.org/) を参照してください。"
 
-#: httplint/field/parsers/strict_transport_security.py:254
+#: httplint/field/parsers/strict_transport_security.py:255
 msgid "The HSTS header contains a duplicate directive."
 msgstr "HSTS ヘッダーに重複したディレクティブが含まれています。"
 
-#: httplint/field/parsers/strict_transport_security.py:255
+#: httplint/field/parsers/strict_transport_security.py:256
 #, python-format
 msgid ""
 "The `%(directive)s` directive appears more than once in the `Strict-"
@@ -4911,11 +4773,11 @@ msgstr ""
 "`Strict-Transport-Security` ヘッダーに `%(directive)s` ディレクティブが複数回出現しています。\n"
 "ディレクティブは一度だけ出現する必要があります。"
 
-#: httplint/field/parsers/strict_transport_security.py:263
+#: httplint/field/parsers/strict_transport_security.py:264
 msgid "The Strict-Transport-Security header has a trailing semicolon."
 msgstr "The Strict-Transport-Security 頭部にセミコロンがついています。"
 
-#: httplint/field/parsers/strict_transport_security.py:264
+#: httplint/field/parsers/strict_transport_security.py:265
 msgid ""
 "The `Strict-Transport-Security` header contains a trailing semicolon. "
 "Technically, this violates\n"
@@ -4926,11 +4788,11 @@ msgstr ""
 "The `Strict-Transport-Security` "
 "ヘッダーには末尾のセミコロンが含まれています。技術的には、これは文法に違反しているため、厳密な実装では混乱を招く可能性があります。しかし、ほとんどの実装では無視すべきです。"
 
-#: httplint/field/parsers/strict_transport_security.py:273
+#: httplint/field/parsers/strict_transport_security.py:274
 msgid "The HSTS header is sent over HTTP."
 msgstr "HSTS ヘッダーは HTTP で送信されます。"
 
-#: httplint/field/parsers/strict_transport_security.py:274
+#: httplint/field/parsers/strict_transport_security.py:275
 msgid ""
 "The `Strict-Transport-Security` header is ignored when sent over HTTP, "
 "unless it's a 301 Redirect.\n"
@@ -4939,11 +4801,11 @@ msgstr ""
 "HTTPでは、`Strict-Transport-"
 "Security`ヘッダーは、301リダイレクトでない限り無視されます。HTTPSでのみ送信してください。"
 
-#: httplint/field/parsers/strict_transport_security.py:282
+#: httplint/field/parsers/strict_transport_security.py:283
 msgid "The max-age directive in the HSTS header is invalid."
 msgstr "HSTS ヘッダーの max-age ディレクティブが無効です。"
 
-#: httplint/field/parsers/strict_transport_security.py:283
+#: httplint/field/parsers/strict_transport_security.py:284
 #, python-format
 msgid ""
 "The `max-age` directive in the `Strict-Transport-Security` header must be"
@@ -4953,12 +4815,12 @@ msgstr ""
 "`Strict-Transport-Security` ヘッダーの `max-age` ディレクティブは、非負の整数でなければなりません。値 "
 "\"%(max_age)s\" は無効です。"
 
-#: httplint/field/parsers/strict_transport_security.py:291
+#: httplint/field/parsers/strict_transport_security.py:292
 #, python-format
 msgid "The %(directive)s directive in the HSTS header must not have a value."
 msgstr "HSTS ヘッダーの %(directive)s ディレクティブには値があってはなりません。"
 
-#: httplint/field/parsers/strict_transport_security.py:292
+#: httplint/field/parsers/strict_transport_security.py:293
 #, python-format
 msgid ""
 "The `%(directive)s` directive in the `Strict-Transport-Security` header "
@@ -4978,71 +4840,6 @@ msgid ""
 "sunset date and may become\n"
 "unresponsive."
 msgstr "Sunsetヘッダーは、このリソースがサンセット日を過ぎ、応答しなくなる可能性があることを示します。"
-
-#: httplint/field/parsers/tcn.py:7
-msgid ""
-"The `TCN` response header is part of an experimental transparent content "
-"negotiation scheme. It\n"
-"is not widely supported in clients.\n"
-msgstr ""
-"`TCN` レスポンスヘッダーは、実験的な透過コンテンツネゴシエーションスキームの一部です。\n"
-"クライアントでの広範なサポートはありません。"
-
-#: httplint/field/parsers/te.py:12
-msgid ""
-"The `TE` request header indicates what HTTP/1.1 transfer-codings the "
-"client is willing to accept in\n"
-"the response. Additionally, if it contains the special value `trailers` "
-"it indicates that the sender is willing to accept trailer fields after "
-"the content.\n"
-"\n"
-"The most common transfer-coding, `chunked`, doesn't need to be listed in "
-"`TE`.\n"
-"\n"
-"`TE` can only be used with the value `trailers` in HTTP/2 and HTTP/3.\n"
-msgstr ""
-"`TE` リクエストヘッダーは、クライアントがレスポンスで受け入れ可能な HTTP/1.1 トランスファーコーディングを示します。さらに、特別な値"
-" `trailers` が含まれている場合、送信者がコンテンツの後にトレーラーフィールドを受け入れ可能であることを示します。\n"
-"\n"
-"最も一般的なトランスファーコーディングである `chunked` は、`TE` にリストする必要はありません。\n"
-"\n"
-"`TE` は、HTTP/2 および HTTP/3 では `trailers` の値でのみ使用できます。"
-
-#: httplint/field/parsers/trailer.py:8
-msgid ""
-"The `Trailer` header indicates that the given set of headers will be\n"
-"present in the trailer of the message, after the content."
-msgstr "`Trailer` ヘッダーは、指定されたヘッダーセットがメッセージのコンテンツの後、トレーラーに存在することを示します。"
-
-#: httplint/field/parsers/transfer_encoding.py:15
-msgid ""
-"The `Transfer-Encoding` header indicates what (if any) type of "
-"transformation has been applied to\n"
-"the message content.\n"
-"\n"
-"This differs from `Content-Encoding` in that transfer codings are a "
-"property of the message, not of\n"
-"the representation; i.e., it will be removed by the next \"hop\", whereas"
-" content codings are\n"
-"end-to-end.\n"
-"\n"
-"The most commonly used transfer coding is `chunked`, which allows "
-"HTTP/1.1 persistent connections\n"
-"to be used without knowing the content's length.\n"
-"\n"
-"Transfer codings can only be used in HTTP/1; HTTP/2 and HTTP/3 do not "
-"support them.\n"
-msgstr ""
-"`Transfer-Encoding` ヘッダーは、メッセージコンテンツにどのような変換が適用されたか（または適用されていないか）を示します。\n"
-"\n"
-"これは `Content-Encoding` "
-"とは異なり、転送コーディングはメッセージのプロパティであり、表現のプロパティではないためです。つまり、次の「ホップ」によって削除されますが、コンテンツコーディングはエンドツーエンドです。"
-"\n"
-"\n"
-"最も一般的に使用される転送コーディングは `chunked` であり、これによりHTTP/1.1永続接続をコンテンツの長さを知らずに使用できます。"
-"\n"
-"\n"
-"転送コーディングはHTTP/1でのみ使用できます。HTTP/2およびHTTP/3はサポートしていません。"
 
 #: httplint/field/parsers/transfer_encoding.py:65
 msgid "The identity transfer-coding isn't necessary."
@@ -5108,29 +4905,12 @@ msgstr ""
 "\n"
 "このメッセージには、そのようなパラメータを持つエンコーディングが含まれています。技術的には許可されていますが、相互運用の問題を引き起こす可能性があります。削除する必要があります。"
 
-#: httplint/field/parsers/upgrade.py:8
-msgid ""
-"The `Upgrade` header allows the client to specify what additional "
-"communication\n"
-"protocols it supports and would like to use if the server finds it "
-"appropriate\n"
-"to switch protocols. Servers use it to confirm upgrade to a specific\n"
-"protocol.\n"
-"\n"
-"`Upgrade` cannot be used in HTTP/2 or HTTP/3.\n"
-msgstr ""
-"`Upgrade` "
-"ヘッダーを使用すると、クライアントはサポートしており、サーバーがプロトコルの切り替えを適切と判断した場合に使用したい追加の通信プロトコルを指定できます。サーバーは、特定のプロトコルへのアップグレードを確認するためにこれを使用します。"
-"\n"
-"\n"
-"`Upgrade` は HTTP/2 または HTTP/3 では使用できません。"
-
-#: httplint/field/parsers/use_as_dictionary.py:76
+#: httplint/field/parsers/use_as_dictionary.py:77
 #, python-format
 msgid "The %(field_name)s parameter '%(param)s' has an invalid type."
 msgstr "%(field_name)s パラメータ '%(param)s' の型が無効です。"
 
-#: httplint/field/parsers/use_as_dictionary.py:77
+#: httplint/field/parsers/use_as_dictionary.py:78
 #, python-format
 msgid ""
 "The `%(field_name)s` parameter `%(param)s` must be a `%(expected)s`. "
@@ -5139,36 +4919,19 @@ msgstr ""
 "`%(field_name)s` パラメーター `%(param)s` は `%(expected)s` である必要があります。実際の値は "
 "`%(got)s` です。"
 
-#: httplint/field/parsers/use_as_dictionary.py:84
+#: httplint/field/parsers/use_as_dictionary.py:85
 msgid "The match-dest parameter has an invalid type."
 msgstr "\"The match-dest パラメータの型が無効です。\""
 
-#: httplint/field/parsers/use_as_dictionary.py:85
+#: httplint/field/parsers/use_as_dictionary.py:86
 msgid "The `match-dest` parameter must be a String or a list of Strings."
 msgstr "The `match-dest` パラメータは、String または String のリストである必要があります。"
 
-#: httplint/field/parsers/vary.py:11
-msgid ""
-"The `Vary` response header indicates the set of request headers that "
-"determines whether a cache is\n"
-"permitted to use the response to reply to a subsequent request without "
-"validation.\n"
-"\n"
-"In uncacheable or stale responses, the Vary field value advises the user "
-"agent about the criteria\n"
-"that were used to select the representation."
-msgstr ""
-"`Vary` "
-"レスポンスヘッダーは、キャッシュが後続のリクエストに対して検証なしでレスポンスを使用することを許可されるかどうかを決定するリクエストヘッダーのセットを示します。"
-"\n"
-"\n"
-"キャッシュ不可または期限切れのレスポンスでは、Vary フィールド値は、表現の選択に使用された基準についてユーザーエージェントにアドバイスします。"
-
-#: httplint/field/parsers/vary.py:45
+#: httplint/field/parsers/vary.py:46
 msgid "Vary: * effectively makes this response uncacheable."
 msgstr "Vary: * は、このレスポンスを実質的にキャッシュ不可能にします。"
 
-#: httplint/field/parsers/vary.py:46
+#: httplint/field/parsers/vary.py:47
 msgid ""
 "`Vary *` indicates that responses for this resource vary by some aspect "
 "that can't (or won't) be\n"
@@ -5177,11 +4940,11 @@ msgstr ""
 "`Vary *` "
 "は、サーバーで説明できない（または説明しない）何らかの側面によって、このリソースの応答が異なることを示します。これにより、この応答は実質的にキャッシュ不可能になります。"
 
-#: httplint/field/parsers/vary.py:54
+#: httplint/field/parsers/vary.py:55
 msgid "Vary: User-Agent can cause cache inefficiency."
 msgstr "Vary: User-Agent はキャッシュの効率を低下させる可能性があります。"
 
-#: httplint/field/parsers/vary.py:55
+#: httplint/field/parsers/vary.py:56
 msgid ""
 "Sending `Vary: User-Agent` requires caches to store a separate copy of "
 "the response for every\n"
@@ -5204,11 +4967,11 @@ msgstr ""
 "代わりに、コンテンツのさまざまなバージョンに対して異なる URI "
 "を持つことを検討してください。これにより、効率を犠牲にすることなく、キャッシングをより細かく制御できます。"
 
-#: httplint/field/parsers/vary.py:69
+#: httplint/field/parsers/vary.py:70
 msgid "Vary: Host is not necessary."
 msgstr "Vary: Host は不要です。"
 
-#: httplint/field/parsers/vary.py:70
+#: httplint/field/parsers/vary.py:71
 msgid ""
 "Some servers (e.g., [Apache](http://httpd.apache.org/) with\n"
 "[mod_rewrite](http://httpd.apache.org/docs/2.4/mod/mod_rewrite.html)) "
@@ -5235,11 +4998,11 @@ msgstr ""
 "の存在は、キャッシュ可能なレスポンスであっても、一部のキャッシュが保存しない原因となる可能性があります（一部のキャッシュ実装では、`Vary` "
 "ヘッダーを持つものは何も保存しないため）。"
 
-#: httplint/field/parsers/vary.py:85
+#: httplint/field/parsers/vary.py:86
 msgid "Transparent Content Negotiation is not widely supported."
 msgstr "透過型コンテンツネゴシエーションは広くサポートされていません。"
 
-#: httplint/field/parsers/vary.py:86
+#: httplint/field/parsers/vary.py:87
 msgid ""
 "The `Vary: Negotiate` header value is not necessary, as \n"
 "[Transparent Content Negotiation](https://www.rfc-"
@@ -5253,11 +5016,11 @@ msgstr ""
 "\n"
 "削除を検討してください。"
 
-#: httplint/field/parsers/vary.py:97
+#: httplint/field/parsers/vary.py:98
 msgid "The Vary header contains duplicate values."
 msgstr "The Vary ヘッダーには重複値が含まれています。"
 
-#: httplint/field/parsers/vary.py:98
+#: httplint/field/parsers/vary.py:99
 msgid ""
 "The `Vary` header allows you to list the parts of the request that "
 "effectively change the response\n"
@@ -5269,12 +5032,12 @@ msgstr ""
 "\n"
 "同じヘッダーを複数回リストすることは冗長であり、混乱を招く可能性があります。"
 
-#: httplint/field/parsers/vary.py:108
+#: httplint/field/parsers/vary.py:109
 #, python-format
 msgid "This resource varies in %(vary_count)s ways."
 msgstr "このリソースは%(vary_count)s の点で異なります。"
 
-#: httplint/field/parsers/vary.py:109
+#: httplint/field/parsers/vary.py:110
 msgid ""
 "The `Vary` mechanism allows a resource to describe the dimensions that "
 "its responses vary, or\n"
@@ -5287,17 +5050,6 @@ msgstr ""
 "\n"
 "\n"
 "ディメンションが多すぎると、この情報の利用が非現実的になります。"
-
-#: httplint/field/parsers/via.py:10
-msgid ""
-"The `Via` header is added to requests and responses by proxies and other "
-"HTTP intermediaries. It\n"
-"can be used to help avoid request loops and identify the protocol "
-"capabilities of all senders along\n"
-"the request/response chain."
-msgstr ""
-"`Via` ヘッダーは、プロキシやその他の HTTP 中継サーバーによってリクエストおよびレスポンスに追加されます。\n"
-"これにより、リクエストループの回避や、リクエスト/レスポンスチェーン上のすべての送信者のプロトコル機能を特定するのに役立ちます。"
 
 #: httplint/field/parsers/via.py:28
 msgid "One or more intermediaries are present."
@@ -5327,54 +5079,11 @@ msgstr ""
 "\n"
 "このフィールドには、スペースで区切られた3つのコンポーネントがあります。まず、仲介が受信したメッセージのHTTPバージョン、次に仲介の識別子（通常はホスト名ですが、常にそうとは限りません）、そしてオプションで製品識別子またはコメント（通常は使用されているソフトウェアを識別するために使用されます）。"
 
-#: httplint/field/parsers/warning.py:10
-msgid ""
-"The `Warning` response header was used to carry additional information "
-"about the status or\n"
-"transformation of a message that might not be reflected in it. It has "
-"been deprecated."
-msgstr ""
-"`Warning` "
-"レスポンスヘッダーは、メッセージに反映されない可能性のあるステータスまたは変換に関する追加情報を伝達するために使用されていました。このヘッダーは非推奨となりました。"
-
-#: httplint/field/parsers/www_authenticate.py:8
-msgid ""
-"The `WWW-Authenticate` response header consists of at least one challenge"
-" that\n"
-"indicates the authentication scheme(s) and parameters applicable."
-msgstr "`WWW-Authenticate` レスポンスヘッダーは、適用可能な認証スキームとパラメータを示す少なくとも1つのチャレンジで構成されます。"
-
-#: httplint/field/parsers/x_cache.py:6
-msgid ""
-"The `X-Cache` response header is used by some caches to indicate whether "
-"or not the response was\n"
-"served from cache; if it contains `HIT`, it was."
-msgstr ""
-"`X-Cache` レスポンスヘッダーは、一部のキャッシュでレスポンスがキャッシュから提供されたかどうかを示すために使用されます。`HIT` "
-"が含まれている場合、キャッシュから提供されました。"
-
-#: httplint/field/parsers/x_cache_lookup.py:6
-msgid ""
-"The `X-Cache-Lookup` response header is used by some caches to show "
-"whether there was a response in\n"
-"cache for this URL; if it contains `HIT`, it was in cache (but not "
-"necessarily used)."
-msgstr ""
-"`X-Cache-Lookup` "
-"レスポンスヘッダーは、一部のキャッシュがこのURLに対するレスポンスがキャッシュにあったかどうかを示すために使用されます。`HIT` "
-"が含まれている場合、キャッシュにありましたが（必ずしも使用されたとは限りません）。"
-
-#: httplint/field/parsers/x_content_type_options.py:10
-msgid ""
-"Indicates that the client should not 'sniff' the `Content-Type` of the "
-"message from its content."
-msgstr "クライアントがメッセージの `Content-Type` をコンテンツから「推測」しないことを示します。"
-
-#: httplint/field/parsers/x_content_type_options.py:28
+#: httplint/field/parsers/x_content_type_options.py:29
 msgid "This response instructs browsers not to 'sniff' its media type."
 msgstr "このレスポンスは、ブラウザにメディアタイプを「スニッフィング」しないように指示します。"
 
-#: httplint/field/parsers/x_content_type_options.py:31
+#: httplint/field/parsers/x_content_type_options.py:32
 msgid ""
 "Many Web browsers \"sniff\" the media type of responses to figure out "
 "whether they're HTML, RSS or\n"
@@ -5397,11 +5106,11 @@ msgstr ""
 "このヘッダーに関する詳細については、[MDN](https://developer.mozilla.org/en-"
 "US/docs/Web/HTTP/Headers/X-Content-Type-Options) を参照してください。"
 
-#: httplint/field/parsers/x_content_type_options.py:45
+#: httplint/field/parsers/x_content_type_options.py:46
 msgid "X-Content-Type-Options contains an unknown value."
 msgstr "X-Content-Type-Options に未知の値が含まれています。"
 
-#: httplint/field/parsers/x_content_type_options.py:48
+#: httplint/field/parsers/x_content_type_options.py:49
 msgid ""
 "Only one value is currently defined for this header, `nosniff`. Using "
 "other values here won't\n"
@@ -5418,11 +5127,11 @@ msgstr ""
 "このヘッダーの詳細については、[MDN](https://developer.mozilla.org/en-"
 "US/docs/Web/HTTP/Headers/X-Content-Type-Options) を参照してください。"
 
-#: httplint/field/parsers/x_frame_options.py:52
+#: httplint/field/parsers/x_frame_options.py:53
 msgid "This response prevents some browsers from rendering it within a frame."
 msgstr "このレスポンスにより、一部のブラウザでのフレーム内レンダリングが防止されます。"
 
-#: httplint/field/parsers/x_frame_options.py:55
+#: httplint/field/parsers/x_frame_options.py:56
 msgid ""
 "The `X-Frame-Options` response header controls how IE8 handles HTML "
 "frames; the `DENY` value\n"
@@ -5439,13 +5148,13 @@ msgstr ""
 "詳細については、[MDN](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X"
 "-Frame-Options) を参照してください。"
 
-#: httplint/field/parsers/x_frame_options.py:67
+#: httplint/field/parsers/x_frame_options.py:68
 msgid ""
 "This response prevents some browsers from rendering it within a frame on "
 "another site."
 msgstr "このレスポンスは、一部のブラウザが別のサイトでフレーム内にレンダリングすることを防ぎます。"
 
-#: httplint/field/parsers/x_frame_options.py:72
+#: httplint/field/parsers/x_frame_options.py:73
 msgid ""
 "The `X-Frame-Options` response header controls how IE8 handles HTML "
 "frames; the `DENY` value\n"
@@ -5466,11 +5175,11 @@ msgstr ""
 "詳細については、[MDN](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X"
 "-Frame-Options) を参照してください。"
 
-#: httplint/field/parsers/x_frame_options.py:86
+#: httplint/field/parsers/x_frame_options.py:87
 msgid "The X-Frame-Options header contains an unknown value."
 msgstr "X-Frame-Options ヘッダーに不明な値が含まれています。"
 
-#: httplint/field/parsers/x_frame_options.py:89
+#: httplint/field/parsers/x_frame_options.py:90
 msgid ""
 "Only two values are currently defined for this header, `DENY` and "
 "`SAMEORIGIN`. Using other values\n"
@@ -6079,4 +5788,497 @@ msgstr ""
 #~ "\n"
 #~ "影響を受けるブラウザー (具体的には Netscape 2.x, 3.x および 4.0 beta 2 まで) はもはや\n"
 #~ "広く使用されていないため、このヘッダーを省略しても安全です。"
+
+#~ msgid "Unknown"
+#~ msgstr "不明"
+
+#~ msgid ""
+#~ "The `Accept` header field can be "
+#~ "used by user agents to specify "
+#~ "response media types that are\n"
+#~ "acceptable in responses."
+#~ msgstr "`Accept` ヘッダーフィールドは、ユーザーエージェントが応答で許容されるメディアタイプを指定するために使用できます。"
+
+#~ msgid ""
+#~ "The `Accept-Encoding` header field can"
+#~ " be used by user agents to "
+#~ "indicate what response content-codings "
+#~ "are\n"
+#~ "acceptable in the response."
+#~ msgstr ""
+#~ "`Accept-Encoding` "
+#~ "ヘッダーフィールドは、ユーザーエージェントがレスポンスで許可されるレスポンスコンテンツコーディングを示すために使用できます。"
+
+#~ msgid ""
+#~ "The `Accept-Language` header field can"
+#~ " be used by user agents to "
+#~ "indicate the set of natural languages"
+#~ " that are\n"
+#~ "preferred in the response."
+#~ msgstr "`Accept-Language` ヘッダーフィールドは、ユーザーエージェントが応答で優先される自然言語のセットを示すために使用できます。"
+
+#~ msgid ""
+#~ "The `Accept-Ranges` response header "
+#~ "allows the server to indicate that "
+#~ "it accepts range requests\n"
+#~ "for a resource."
+#~ msgstr ""
+#~ "`Accept-Ranges` "
+#~ "レスポンスヘッダーにより、サーバーはリソースに対する範囲リクエストを受け入れることができることを示すことができます。"
+
+#~ msgid ""
+#~ "The `Access-Control-Allow-Headers` "
+#~ "response header is used in response "
+#~ "to a CORS preflight\n"
+#~ "request to indicate which HTTP headers"
+#~ " can be used during the actual "
+#~ "request."
+#~ msgstr ""
+#~ "`Access-Control-Allow-Headers` "
+#~ "レスポンスヘッダーは、CORSプリフライトリクエストへの応答として使用され、実際のリクエスト中に使用できるHTTPヘッダーを示します。"
+
+#~ msgid ""
+#~ "The `Access-Control-Allow-Methods` "
+#~ "response header specifies the method or"
+#~ " methods allowed when\n"
+#~ "accessing the resource in response to a CORS preflight request."
+#~ msgstr ""
+#~ "`Access-Control-Allow-Methods` "
+#~ "レスポンスヘッダーは、CORSプリフライトリクエストへの応答としてリソースにアクセスする際に許可されるメソッドを指定します。"
+
+#~ msgid ""
+#~ "The `Access-Control-Expose-Headers` "
+#~ "response header allows a server to "
+#~ "indicate which response\n"
+#~ "headers should be made available to "
+#~ "scripts running in the browser, in "
+#~ "response to a cross-origin\n"
+#~ "request."
+#~ msgstr ""
+#~ "`Access-Control-Expose-Headers` "
+#~ "レスポンスヘッダーを使用すると、サーバーは、オリジン間リクエストへの応答として、ブラウザーで実行されるスクリプトが利用できるようにすべきレスポンスヘッダーを示します。"
+
+#~ msgid ""
+#~ "The `Access-Control-Request-Headers` "
+#~ "request header is used by browsers "
+#~ "when issuing a CORS\n"
+#~ "preflight request, to let the server "
+#~ "know which HTTP headers the client "
+#~ "might send when the actual\n"
+#~ "request is made."
+#~ msgstr ""
+#~ "`Access-Control-Request-Headers` "
+#~ "リクエストヘッダーは、CORSプリフライトリクエストを発行する際にブラウザによって使用され、実際の送信時にクライアントが送信する可能性のあるHTTPヘッダーをサーバーに通知します。"
+
+#~ msgid ""
+#~ "The `Allow` response header advertises "
+#~ "the set of methods that are "
+#~ "supported by the resource."
+#~ msgstr "`Allow` レスポンスヘッダーは、リソースでサポートされているメソッドのセットを広告します。"
+
+#~ msgid ""
+#~ "The `Alt-Svc` HTTP header field "
+#~ "identifies an alternative service that "
+#~ "can be arranged to access the\n"
+#~ "resources identifying the origin serving the field."
+#~ msgstr "Alt-Svc HTTP ヘッダー フィールドは、フィールドのオリジン サーバーによって提供される代替サービスを特定します。"
+
+#~ msgid ""
+#~ "The `Authentication-Info` header field "
+#~ "is used to communicate information after"
+#~ " \n"
+#~ "the client's authentication credentials have been accepted."
+#~ msgstr "`Authentication-Info` ヘッダーフィールドは、クライアントの認証情報が受け入れられた後に情報を伝達するために使用されます。"
+
+#~ msgid ""
+#~ "The `Cache-Control` header is used "
+#~ "to specify required directives to all"
+#~ " caches that\n"
+#~ "handle the response. It can also "
+#~ "occur in requests, but caches have "
+#~ "the option of\n"
+#~ "ignoring it there."
+#~ msgstr ""
+#~ "`Cache-Control` "
+#~ "ヘッダーは、レスポンスを処理するすべてのキャッシュに必須のディレクティブを指定するために使用されます。リクエストにも含めることができますが、キャッシュはそれを無視するオプションがあります。"
+
+#~ msgid ""
+#~ "The `Clear-Site-Data` header clears "
+#~ "the data associated with the requesting"
+#~ " website in the user's\n"
+#~ "browser. It allows web developers to "
+#~ "have more control over the data "
+#~ "stored by a client for their\n"
+#~ "origin."
+#~ msgstr ""
+#~ "`Clear-Site-Data` "
+#~ "ヘッダーは、ユーザーのブラウザで要求元のウェブサイトに関連付けられたデータをクリアします。これにより、ウェブ開発者は、クライアントが自分のオリジンに対して保存するデータをより細かく制御できるようになります。"
+
+#~ msgid ""
+#~ "The `Connection` header allows senders "
+#~ "to specify which headers are hop-"
+#~ "by-hop; that is, those that\n"
+#~ "are not forwarded by intermediaries.\n"
+#~ "\n"
+#~ "It also indicates options that are "
+#~ "desired for this particular connection; "
+#~ "e.g., `close` means that\n"
+#~ "it should not be reused.\n"
+#~ "\n"
+#~ "Connection is only valid in HTTP/1.x; HTTP/2 and HTTP/3 forbit it."
+#~ msgstr ""
+#~ "`Connection` "
+#~ "ヘッダーにより、送信者はホップバイホップのヘッダー（つまり、中間プロキシによって転送されないヘッダー）を指定できます。\n"
+#~ "\n"
+#~ "また、この特定の接続で希望されるオプションを示すこともできます。例えば、`close` は再利用されるべきではないことを意味します。\n"
+#~ "\n"
+#~ "Connection は HTTP/1.x でのみ有効です。HTTP/2 および HTTP/3 では禁止されています。"
+
+#~ msgid ""
+#~ "The `Content-Encoding` header's value "
+#~ "indicates what content codings have\n"
+#~ "been applied, and thus what decoding "
+#~ "mechanisms must be used to obtain "
+#~ "the\n"
+#~ "media-type referenced by the Content-Type header.\n"
+#~ "\n"
+#~ "Content-Encoding is primarily used to"
+#~ " allow a document to be compressed"
+#~ " without losing the identity\n"
+#~ "of its underlying media type; e.g., `gzip` and `deflate`."
+#~ msgstr ""
+#~ "`Content-Encoding` ヘッダーの値は、適用されたコンテンツコーディングと、それによって "
+#~ "`Content-Type` "
+#~ "ヘッダーで参照されているメディアタイプを取得するために使用されるべきデコーディングメカニズムを示します。\n"
+#~ "\n"
+#~ "Content-Encoding "
+#~ "は主に、基盤となるメディアタイプのアイデンティティを失うことなくドキュメントを圧縮できるようにするために使用されます。例: "
+#~ "`gzip` および `deflate`。"
+
+#~ msgid ""
+#~ "The `Content-Language` header describes "
+#~ "the natural language(s) of the intended"
+#~ " audience for the\n"
+#~ "messsage. Note that this might not convey all of the languages used."
+#~ msgstr ""
+#~ "`Content-Language` "
+#~ "ヘッダーは、メッセージの対象となるユーザーの自然言語を記述します。ただし、これは使用されているすべての言語を伝えるとは限らないことに注意してください。"
+
+#~ msgid ""
+#~ "The `Content-Security-Policy` response "
+#~ "header allows web site administrators to"
+#~ " declare approved\n"
+#~ "sources of content that browsers are allowed to load on a page."
+#~ msgstr ""
+#~ "`Content-Security-Policy` "
+#~ "レスポンスヘッダーは、ウェブサイト管理者がブラウザがページで読み込むことを許可するコンテンツの承認済みソースを宣言できるようにします。"
+
+#~ msgid ""
+#~ "The `Expect` header field in a "
+#~ "request indicates behaviors (expectations) "
+#~ "that need to be\n"
+#~ "fulfilled by the server in order to properly handle the request."
+#~ msgstr "リクエストの `Expect` ヘッダーフィールドは、リクエストを適切に処理するためにサーバーが満たす必要がある動作（期待）を示します。"
+
+#~ msgid ""
+#~ "The `If-Match` header field makes "
+#~ "the request method conditional on the"
+#~ " recipient origin server\n"
+#~ "having a current representation of the target resource."
+#~ msgstr ""
+#~ "`If-Match` "
+#~ "ヘッダーフィールドは、リクエストメソッドを、受信側のオリジンサーバーがターゲットリソースの現在の表現を持っているかどうかに条件付けします。"
+
+#~ msgid ""
+#~ "The `If-None-Match` header field "
+#~ "makes the request method conditional on"
+#~ " the\n"
+#~ "absence of a matching entity tag, "
+#~ "or if the field-value is \"*\","
+#~ " the absence of\n"
+#~ "any current representation of the target resource."
+#~ msgstr ""
+#~ "`If-None-Match` "
+#~ "ヘッダーフィールドは、一致するエンティティタグがない場合、またはフィールド値が \"*\" "
+#~ "の場合に、ターゲットリソースの現在の表現がない場合にリクエストメソッドを条件付けます。"
+
+#~ msgid ""
+#~ "The `Keep-Alive` header is completely"
+#~ " optional; it is defined primarily "
+#~ "because the `keep-alive`\n"
+#~ "connection token implies that such a "
+#~ "header exists, not because anyone "
+#~ "actually uses it.\n"
+#~ "\n"
+#~ "Some implementations (e.g., "
+#~ "[Apache](http://httpd.apache.org/)) do generate a"
+#~ " `Keep-Alive` header\n"
+#~ "to convey how many requests they're "
+#~ "willing to serve on a single "
+#~ "connection, what the connection\n"
+#~ "timeout is and other information. "
+#~ "However, this isn't usually used by "
+#~ "clients.\n"
+#~ "\n"
+#~ "It's safe to remove this header if you wish to save a few bytes."
+#~ msgstr ""
+#~ "`Keep-Alive` ヘッダーは完全にオプションです。このヘッダーが主に定義されているのは、`keep-"
+#~ "alive` 接続トークンがそのようなヘッダーが存在することを示唆しているからであり、実際に使用されているわけではありません。"
+#~ "\n"
+#~ "\n"
+#~ "一部の実装（例：[Apache](http://httpd.apache.org/)）は、`Keep-Alive` "
+#~ "ヘッダーを生成して、単一接続で何件のリクエストを受け付けるか、接続タイムアウト時間、その他の情報などを伝達します。ただし、これは通常クライアントによって使用されません。"
+#~ "\n"
+#~ "\n"
+#~ "数バイトを節約したい場合は、このヘッダーを削除しても安全です。"
+
+#~ msgid ""
+#~ "The `Link` header allows links related"
+#~ " to the content to be conveyed. "
+#~ "A link can be viewed as a\n"
+#~ "statement of the form \"[context IRI]"
+#~ " has a [relation type] resource at"
+#~ " [target IRI], which has\n"
+#~ "[target attributes]."
+#~ msgstr ""
+#~ "`Link` ヘッダーを使用すると、コンテンツに関連するリンクを伝えることができます。リンクは、「[コンテキストIRI] "
+#~ "が [ターゲットIRI] に [関係タイプ] リソースを持ち、そのリソースは "
+#~ "[ターゲット属性] を持つ」という形式のステートメントとして表示できます。"
+
+#~ msgid ""
+#~ "The `Pragma` header is used to "
+#~ "include implementation-specific directives "
+#~ "that might apply to any\n"
+#~ "recipient along the request chain.\n"
+#~ "\n"
+#~ "This header is deprecated, in favour of `Cache-Control`."
+#~ msgstr ""
+#~ "`Pragma` "
+#~ "ヘッダーは、リクエストチェーン上のどの受信者にも適用される可能性のある、実装固有のディレクティブを含めるために使用されます。\n"
+#~ "\n"
+#~ "このヘッダーは、`Cache-Control` に取って代わられて非推奨になりました。"
+
+#~ msgid ""
+#~ "The `Proxy-Authenticate` response header "
+#~ "consists of a challenge that indicates"
+#~ " the authentication\n"
+#~ "scheme and parameters applicable to the proxy for this request-target."
+#~ msgstr ""
+#~ "`Proxy-Authenticate` "
+#~ "レスポンスヘッダーは、このリクエストターゲットに対するプロキシに適用される認証スキームとパラメータを示すチャレンジで構成されます。"
+
+#~ msgid ""
+#~ "The `Proxy-Authentication-Info` header "
+#~ "field is used to communicate information"
+#~ " after\n"
+#~ "the client's authentication credentials have been accepted by a proxy."
+#~ msgstr ""
+#~ "`Proxy-Authentication-Info` "
+#~ "ヘッダーフィールドは、プロキシがクライアントの認証情報を受け入れた後に、その情報を提供するために使用されます。"
+
+#~ msgid ""
+#~ "The `Referrer-Policy` response header "
+#~ "controls how much referrer information "
+#~ "(sent via the `Referer`\n"
+#~ "header) should be included with requests."
+#~ msgstr ""
+#~ "`Referrer-Policy` レスポンスヘッダーは、リクエストに含まれるリファラー情報（`Referer`"
+#~ " ヘッダー経由で送信される）の量を制御します。"
+
+#~ msgid ""
+#~ "The `Server` response header contains "
+#~ "information about the software used by"
+#~ " the origin server to\n"
+#~ "handle the request."
+#~ msgstr "`Server` レスポンスヘッダーには、リクエストを処理するためにオリジンサーバーが使用したソフトウェアに関する情報が含まれています。"
+
+#~ msgid ""
+#~ "The `Server-Timing` header field "
+#~ "communicates one or more metrics and "
+#~ "descriptions for the given\n"
+#~ "request-response cycle. It is used "
+#~ "to surface any backend server timing "
+#~ "metrics (e.g. database\n"
+#~ "read/write, CPU time, file system "
+#~ "access, etc.) in the developer tools "
+#~ "in the browser or any other\n"
+#~ "consumer of Server-Timing."
+#~ msgstr ""
+#~ "Server-Timing ヘッダー フィールドは、リクエスト/レスポンス サイクルに対する"
+#~ " 1 つ以上のメトリックと説明を提供するために使用されます。開発者ツールでブラウザや Server-"
+#~ "Timing を使用する他のコンシューマで、バックエンド サーバータイミング メトリック "
+#~ "(データベース リード/ライト、CPU 時間、ファイル システム アクセスなど) "
+#~ "を公開するために使用されます。"
+
+#~ msgid "The `Set-Cookie2` header has been deprecated; use `Set-Cookie` instead."
+#~ msgstr "`Set-Cookie2` ヘッダーは非推奨になりました。代わりに `Set-Cookie` を使用してください。"
+
+#~ msgid ""
+#~ "The `TCN` response header is part "
+#~ "of an experimental transparent content "
+#~ "negotiation scheme. It\n"
+#~ "is not widely supported in clients.\n"
+#~ msgstr ""
+#~ "`TCN` レスポンスヘッダーは、実験的な透過コンテンツネゴシエーションスキームの一部です。\n"
+#~ "クライアントでの広範なサポートはありません。"
+
+#~ msgid ""
+#~ "The `TE` request header indicates what"
+#~ " HTTP/1.1 transfer-codings the client "
+#~ "is willing to accept in\n"
+#~ "the response. Additionally, if it "
+#~ "contains the special value `trailers` it"
+#~ " indicates that the sender is willing"
+#~ " to accept trailer fields after the"
+#~ " content.\n"
+#~ "\n"
+#~ "The most common transfer-coding, "
+#~ "`chunked`, doesn't need to be listed "
+#~ "in `TE`.\n"
+#~ "\n"
+#~ "`TE` can only be used with the value `trailers` in HTTP/2 and HTTP/3.\n"
+#~ msgstr ""
+#~ "`TE` リクエストヘッダーは、クライアントがレスポンスで受け入れ可能な HTTP/1.1 "
+#~ "トランスファーコーディングを示します。さらに、特別な値 `trailers` "
+#~ "が含まれている場合、送信者がコンテンツの後にトレーラーフィールドを受け入れ可能であることを示します。\n"
+#~ "\n"
+#~ "最も一般的なトランスファーコーディングである `chunked` は、`TE` にリストする必要はありません。\n"
+#~ "\n"
+#~ "`TE` は、HTTP/2 および HTTP/3 では `trailers` の値でのみ使用できます。"
+
+#~ msgid ""
+#~ "The `Trailer` header indicates that the given set of headers will be\n"
+#~ "present in the trailer of the message, after the content."
+#~ msgstr "`Trailer` ヘッダーは、指定されたヘッダーセットがメッセージのコンテンツの後、トレーラーに存在することを示します。"
+
+#~ msgid ""
+#~ "The `Transfer-Encoding` header indicates "
+#~ "what (if any) type of transformation "
+#~ "has been applied to\n"
+#~ "the message content.\n"
+#~ "\n"
+#~ "This differs from `Content-Encoding` in"
+#~ " that transfer codings are a property"
+#~ " of the message, not of\n"
+#~ "the representation; i.e., it will be "
+#~ "removed by the next \"hop\", whereas "
+#~ "content codings are\n"
+#~ "end-to-end.\n"
+#~ "\n"
+#~ "The most commonly used transfer coding"
+#~ " is `chunked`, which allows HTTP/1.1 "
+#~ "persistent connections\n"
+#~ "to be used without knowing the content's length.\n"
+#~ "\n"
+#~ "Transfer codings can only be used "
+#~ "in HTTP/1; HTTP/2 and HTTP/3 do "
+#~ "not support them.\n"
+#~ msgstr ""
+#~ "`Transfer-Encoding` "
+#~ "ヘッダーは、メッセージコンテンツにどのような変換が適用されたか（または適用されていないか）を示します。\n"
+#~ "\n"
+#~ "これは `Content-Encoding` "
+#~ "とは異なり、転送コーディングはメッセージのプロパティであり、表現のプロパティではないためです。つまり、次の「ホップ」によって削除されますが、コンテンツコーディングはエンドツーエンドです。"
+#~ "\n"
+#~ "\n"
+#~ "最も一般的に使用される転送コーディングは `chunked` "
+#~ "であり、これによりHTTP/1.1永続接続をコンテンツの長さを知らずに使用できます。\n"
+#~ "\n"
+#~ "転送コーディングはHTTP/1でのみ使用できます。HTTP/2およびHTTP/3はサポートしていません。"
+
+#~ msgid ""
+#~ "The `Upgrade` header allows the client"
+#~ " to specify what additional communication"
+#~ "\n"
+#~ "protocols it supports and would like "
+#~ "to use if the server finds it "
+#~ "appropriate\n"
+#~ "to switch protocols. Servers use it to confirm upgrade to a specific\n"
+#~ "protocol.\n"
+#~ "\n"
+#~ "`Upgrade` cannot be used in HTTP/2 or HTTP/3.\n"
+#~ msgstr ""
+#~ "`Upgrade` "
+#~ "ヘッダーを使用すると、クライアントはサポートしており、サーバーがプロトコルの切り替えを適切と判断した場合に使用したい追加の通信プロトコルを指定できます。サーバーは、特定のプロトコルへのアップグレードを確認するためにこれを使用します。"
+#~ "\n"
+#~ "\n"
+#~ "`Upgrade` は HTTP/2 または HTTP/3 では使用できません。"
+
+#~ msgid ""
+#~ "The `Vary` response header indicates the"
+#~ " set of request headers that "
+#~ "determines whether a cache is\n"
+#~ "permitted to use the response to "
+#~ "reply to a subsequent request without"
+#~ " validation.\n"
+#~ "\n"
+#~ "In uncacheable or stale responses, the"
+#~ " Vary field value advises the user"
+#~ " agent about the criteria\n"
+#~ "that were used to select the representation."
+#~ msgstr ""
+#~ "`Vary` "
+#~ "レスポンスヘッダーは、キャッシュが後続のリクエストに対して検証なしでレスポンスを使用することを許可されるかどうかを決定するリクエストヘッダーのセットを示します。"
+#~ "\n"
+#~ "\n"
+#~ "キャッシュ不可または期限切れのレスポンスでは、Vary "
+#~ "フィールド値は、表現の選択に使用された基準についてユーザーエージェントにアドバイスします。"
+
+#~ msgid ""
+#~ "The `Via` header is added to "
+#~ "requests and responses by proxies and"
+#~ " other HTTP intermediaries. It\n"
+#~ "can be used to help avoid request"
+#~ " loops and identify the protocol "
+#~ "capabilities of all senders along\n"
+#~ "the request/response chain."
+#~ msgstr ""
+#~ "`Via` ヘッダーは、プロキシやその他の HTTP 中継サーバーによってリクエストおよびレスポンスに追加されます。\n"
+#~ "これにより、リクエストループの回避や、リクエスト/レスポンスチェーン上のすべての送信者のプロトコル機能を特定するのに役立ちます。"
+
+#~ msgid ""
+#~ "The `Warning` response header was used"
+#~ " to carry additional information about "
+#~ "the status or\n"
+#~ "transformation of a message that might"
+#~ " not be reflected in it. It has"
+#~ " been deprecated."
+#~ msgstr ""
+#~ "`Warning` "
+#~ "レスポンスヘッダーは、メッセージに反映されない可能性のあるステータスまたは変換に関する追加情報を伝達するために使用されていました。このヘッダーは非推奨となりました。"
+
+#~ msgid ""
+#~ "The `WWW-Authenticate` response header "
+#~ "consists of at least one challenge "
+#~ "that\n"
+#~ "indicates the authentication scheme(s) and parameters applicable."
+#~ msgstr "`WWW-Authenticate` レスポンスヘッダーは、適用可能な認証スキームとパラメータを示す少なくとも1つのチャレンジで構成されます。"
+
+#~ msgid ""
+#~ "The `X-Cache` response header is used"
+#~ " by some caches to indicate whether"
+#~ " or not the response was\n"
+#~ "served from cache; if it contains `HIT`, it was."
+#~ msgstr ""
+#~ "`X-Cache` "
+#~ "レスポンスヘッダーは、一部のキャッシュでレスポンスがキャッシュから提供されたかどうかを示すために使用されます。`HIT` "
+#~ "が含まれている場合、キャッシュから提供されました。"
+
+#~ msgid ""
+#~ "The `X-Cache-Lookup` response header is"
+#~ " used by some caches to show "
+#~ "whether there was a response in\n"
+#~ "cache for this URL; if it contains"
+#~ " `HIT`, it was in cache (but "
+#~ "not necessarily used)."
+#~ msgstr ""
+#~ "`X-Cache-Lookup` "
+#~ "レスポンスヘッダーは、一部のキャッシュがこのURLに対するレスポンスがキャッシュにあったかどうかを示すために使用されます。`HIT` "
+#~ "が含まれている場合、キャッシュにありましたが（必ずしも使用されたとは限りません）。"
+
+#~ msgid ""
+#~ "Indicates that the client should not "
+#~ "'sniff' the `Content-Type` of the "
+#~ "message from its content."
+#~ msgstr "クライアントがメッセージの `Content-Type` をコンテンツから「推測」しないことを示します。"
 
