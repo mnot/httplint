@@ -26,8 +26,6 @@ the number of times that the request is forwarded by intermediaries."""
     valid_in_responses = False
 
     def evaluate(self, add_note: AddNoteMethodType) -> None:
-        if getattr(self.message, "message_type", None) != "request":
-            return
         if getattr(self.message, "method", None) not in ["TRACE", "OPTIONS"]:
             add_note(MAX_FORWARDS_IGNORED)
 
