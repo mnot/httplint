@@ -54,6 +54,10 @@ OBSOLETED_FIELDS: Dict[str, Tuple[categories, str]] = {
         categories.GENERAL,
         "https://www.rfc-editor.org/rfc/rfc2616.html#section-19.6.3",
     ),
+    "Content-DPR": (
+        categories.CONNEG,
+        "https://datatracker.ietf.org/doc/html/draft-ietf-httpbis-client-hints-07#appendix-B.8",
+    ),
     "Content-ID": (categories.GENERAL, "https://www.w3.org/TR/NOTE-drp"),
     "Content-MD5": (categories.GENERAL, "https://www.rfc-editor.org/rfc/rfc7231.html#appendix-B"),
     "Content-Script-Type": (
@@ -77,11 +81,16 @@ OBSOLETED_FIELDS: Dict[str, Tuple[categories, str]] = {
         categories.GENERAL,
         "https://www.rfc-editor.org/rfc/rfc2616.html#section-19.6.3",
     ),
+    "DNT": (
+        categories.GENERAL,
+        "https://w3c.github.io/dnt/drafts/tracking-dnt.html#dnt-header-field",
+    ),
     "Differential-ID": (categories.GENERAL, "https://www.w3.org/TR/NOTE-drp"),
     "Digest": (
         categories.GENERAL,
         "https://datatracker.ietf.org/doc/draft-ietf-httpbis-digest-headers/",
     ),
+    "DPR": (categories.CONNEG, "https://wicg.github.io/responsive-image-client-hints/#sec-ch-dpr"),
     "Expect-CT": (
         categories.SECURITY,
         "https://mailarchive.ietf.org/arch/msg/httpbisa/XpAWZsIre5WAte3lXGTh6A77sok/",
@@ -142,11 +151,19 @@ OBSOLETED_FIELDS: Dict[str, Tuple[categories, str]] = {
     "Set-Cookie2": (categories.COOKIES, "https://www.rfc-editor.org/rfc/rfc6265.html#section-1"),
     "SetProfile": (categories.GENERAL, "https://www.w3.org/TR/NOTE-OPS-OverHTTP"),
     "URI": (categories.GENERAL, "https://www.rfc-editor.org/rfc/rfc2068.html#section-19.6.2.5"),
+    "Viewport-Width": (
+        categories.CONNEG,
+        "https://wicg.github.io/responsive-image-client-hints/#sec-ch-viewport-width",
+    ),
     "Want-Digest": (
         categories.GENERAL,
         "https://datatracker.ietf.org/doc/draft-ietf-httpbis-digest-headers/",
     ),
     "Warning": (categories.CACHING, "https://www.rfc-editor.org/rfc/rfc9111.html#name-warning"),
+    "Width": (
+        categories.CONNEG,
+        "https://wicg.github.io/responsive-image-client-hints/#sec-ch-width",
+    ),
 }
 
 UNREGISGTERED_DEPRECATED_FIELDS: Dict[str, Tuple[categories, str]] = {
