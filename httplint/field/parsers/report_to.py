@@ -105,4 +105,4 @@ class ReportToBadJsonTest(FieldTest):
     name = "Report-To"
     inputs = [b'{unquoted: "keys"}']
     expected_out = None
-    expected_notes = [FIELD_DEPRECATED,BAD_JSON]
+    expected_notes = [FIELD_DEPRECATED, BAD_JSON]
