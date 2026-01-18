@@ -12,7 +12,8 @@ class age(SingletonField):
 The `Age` response header conveys the sender's estimate of the amount of time since the response
 (or its validation) was generated at the origin server."""
     reference = f"{rfc9111.SPEC_URL}#field.age"
-    syntax = False  # rfc9111.Age
+    syntax = rfc9111.Age
+    report_syntax = False
     category = categories.CACHING
     deprecated = False
     valid_in_requests = False
