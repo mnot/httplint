@@ -1,4 +1,5 @@
 from httplint.field.json_field import JsonField, BAD_JSON
+from httplint.field import FIELD_DEPRECATED
 from httplint.field.tests import FieldTest
 from httplint.note import Note, categories, levels
 from httplint.types import AddNoteMethodType
@@ -77,7 +78,7 @@ class ReportToTest(FieldTest):
     name = "Report-To"
     inputs = [b'{"max_age": 10886400, "endpoints": [{"url": "https://example.com/reports"}]}']
     expected_out = [{"max_age": 10886400, "endpoints": [{"url": "https://example.com/reports"}]}]
-    expected_notes = []
+    expected_notes = [FIELD_DEPRECATED]
 
 
 class ReportToMultiLineTest(FieldTest):
@@ -90,18 +91,18 @@ class ReportToMultiLineTest(FieldTest):
         {"group": "a", "max_age": 1, "endpoints": [{"url": "https://a.com"}]},
         {"group": "b", "max_age": 2, "endpoints": [{"url": "https://b.com"}]},
     ]
-    expected_notes = []
+    expected_notes = [FIELD_DEPRECATED]
 
 
 class ReportToMissingMaxAgeTest(FieldTest):
     name = "Report-To"
     inputs = [b'{"endpoints": [{"url": "https://a.com"}]}']
     expected_out = [{"endpoints": [{"url": "https://a.com"}]}]
-    expected_notes = [REPORT_TO_MISSING_KEY]
+    expected_notes = [FIELD_DEPRECATED, REPORT_TO_MISSING_KEY]
 
 
 class ReportToBadJsonTest(FieldTest):
     name = "Report-To"
     inputs = [b'{unquoted: "keys"}']
     expected_out = None
-    expected_notes = [BAD_JSON]
+    expected_notes = [FIELD_DEPRECATED,BAD_JSON]
