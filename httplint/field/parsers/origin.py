@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import List, Union
+from typing import Union
 import re
 
 from httplint.field.singleton_field import SingletonField
@@ -34,25 +34,25 @@ Request Forgery (CSRF) and in Cross-Origin Resource Sharing (CORS)."""
         re.VERBOSE,
     )
 
-    def parse(self, field_value: str, add_note: AddNoteMethodType) -> Union[str, List[OriginValue]]:
+    def parse(self, field_value: str, add_note: AddNoteMethodType) -> Union[None, OriginValue]:
         if field_value == "null":
-            return "null"
+            return None
 
-        origins = []
-        for item in field_value.split(" "):
-            match = self.serialized_origin_re.match(item)
-            if match:
-                scheme = match.group("scheme").lower()
-                host = match.group("host").lower()  # host is case insensitive
-                port_str = match.group("port")
-                port = int(port_str) if port_str else None
-                origins.append(OriginValue(scheme, host, port))
-            else:
-                add_note(BAD_ORIGIN_SYNTAX, value=item)
+        origins = field_value.split(" ")
+        if len(origins) > 1:
+            add_note(ORIGIN_MULTIPLE_VALUES)
 
-        if not origins:
-            raise ValueError("Invalid value for Origin")
-        return origins
+        # only parse the first one
+        match = self.serialized_origin_re.match(origins[0])
+        if match:
+            scheme = match.group("scheme").lower()
+            host = match.group("host").lower()  # host is case insensitive
+            port_str = match.group("port")
+            port = int(port_str) if port_str else None
+            return OriginValue(scheme, host, port)
+
+        add_note(BAD_ORIGIN_SYNTAX, value=origins[0])
+        raise ValueError("Invalid value for Origin")
 
 
 class BAD_ORIGIN_SYNTAX(Note):
@@ -64,25 +64,32 @@ The Origin header must contain a list of serialized origins (scheme, host, and o
 the string "null"."""
 
 
+class ORIGIN_MULTIPLE_VALUES(Note):
+    category = categories.CORS
+    level = levels.WARN
+    _summary = "The Origin header contains multiple values."
+    _text = """\
+The `Origin` header should only contain a single value. Any values after the first
+will be ignored."""
+
+
 class OriginBasicTest(FieldTest):
     name = "Origin"
     inputs = [b"https://example.com"]
-    expected_out: Union[str, List[OriginValue]] = [OriginValue("https", "example.com", None)]
+    expected_out: Union[None, OriginValue] = OriginValue("https", "example.com", None)
 
 
 class OriginNullTest(FieldTest):
     name = "Origin"
     inputs = [b"null"]
-    expected_out = "null"
+    expected_out = None
 
 
 class OriginMultipleTest(FieldTest):
     name = "Origin"
     inputs = [b"https://example.com http://example.org:8080"]
-    expected_out = [
-        OriginValue("https", "example.com", None),
-        OriginValue("http", "example.org", 8080),
-    ]
+    expected_out = OriginValue("https", "example.com", None)
+    expected_notes = [ORIGIN_MULTIPLE_VALUES]
 
 
 class OriginBadSyntaxTest(FieldTest):

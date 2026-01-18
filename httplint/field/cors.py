@@ -89,6 +89,57 @@ def check_preflight_response(message: "HttpResponseLinter") -> None:
                 message.notes.add("header-access-control-allow-origin", ACAO_MULTIPLE_VALUES)
 
 
+def check_access_control_allow_origin(acao_value: str, message: "HttpResponseLinter") -> None:
+    """
+    Check the Access-Control-Allow-Origin header against the request origin.
+    """
+    if not message.related:
+        return
+
+    request = cast("HttpRequestLinter", message.related)
+    if "origin" not in request.headers.parsed:
+        return
+
+    request_origin = request.headers.parsed["origin"]
+    if request_origin is None:
+        # it's a "null" origin
+        request_origin_str = "null"
+    elif hasattr(request_origin, "scheme"):
+        # it's an OriginValue
+        ov = request_origin
+        request_origin_str = f"{ov.scheme}://{ov.host}"
+        if ov.port is not None:
+            request_origin_str += f":{ov.port}"
+    else:
+        # fallback, shouldn't happen with new parsers
+        request_origin_str = str(request_origin)
+
+    if acao_value == "null":
+        message.notes.add("header-access-control-allow-origin", CORS_ORIGIN_NULL)
+        return
+
+    if acao_value == "*":
+        message.notes.add(
+            "header-access-control-allow-origin",
+            CORS_ORIGIN_STAR,
+        )
+        return
+
+    if acao_value == request_origin_str:
+        message.notes.add(
+            "header-access-control-allow-origin",
+            CORS_ORIGIN_MATCH,
+            origin=request_origin_str,
+        )
+    else:
+        message.notes.add(
+            "header-access-control-allow-origin",
+            CORS_ORIGIN_MISMATCH,
+            origin=request_origin_str,
+            acao_value=acao_value,
+        )
+
+
 class CORS_PREFLIGHT_REQUEST(Note):
     category = categories.CORS
     level = levels.INFO
@@ -176,3 +227,42 @@ class ACAC_NOT_TRUE(Note):
     _text = """\
 The `Access-Control-Allow-Credentials` header must be set to `true` if present. If you don't want
 to allow credentials, omit the header."""
+
+
+class CORS_ORIGIN_MATCH(Note):
+    category = categories.CORS
+    level = levels.INFO
+    _summary = "The Access-Control-Allow-Origin header allows the requesting origin."
+    _text = """\
+The `Access-Control-Allow-Origin` header matches the `Origin` header in the request (%(origin)s).
+
+This means that the browser will let the requesting site access the response."""
+
+
+class CORS_ORIGIN_MISMATCH(Note):
+    category = categories.CORS
+    level = levels.INFO
+    _summary = "The Access-Control-Allow-Origin header does not allow the requesting origin."
+    _text = """\
+The `Access-Control-Allow-Origin` header (%(acao_value)s) does not match the `Origin` header
+in the request (%(origin)s).
+
+This means that the browser will **not** let the requesting site access the response."""
+
+
+class CORS_ORIGIN_NULL(Note):
+    category = categories.CORS
+    level = levels.INFO
+    _summary = "The Access-Control-Allow-Origin header does not allow any origin."
+    _text = """\
+The `Access-Control-Allow-Origin` header is set to `null`; this means that no origin can access
+the response."""
+
+
+class CORS_ORIGIN_STAR(Note):
+    category = categories.CORS
+    level = levels.INFO
+    _summary = "The Access-Control-Allow-Origin header allows any origin."
+    _text = """\
+The `Access-Control-Allow-Origin` header is set to `*`; this means that any origin can access
+the response, unless the request includes credentials or requires a preflight check."""
