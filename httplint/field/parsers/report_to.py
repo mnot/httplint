@@ -7,10 +7,10 @@ from httplint.types import AddNoteMethodType
 class report_to(JsonField):
     canonical_name = "Report-To"
     description = """\
-The `Report-To` header field configures the browser to send reports to specified endpoints.
-It is part of the legacy Reporting API."""
+The `Report-To` header field configured the browser to send reports to specified endpoints.
+It has been replaced by the Reporting-Endpoints header field."""
     reference = "https://w3c.github.io/reporting/#header"
-    deprecated = False
+    deprecated = True
     valid_in_requests = False
     valid_in_responses = True
 
