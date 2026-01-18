@@ -17,13 +17,15 @@ messsage. Note that this might not convey all of the languages used."""
     valid_in_requests = True
     valid_in_responses = True
 
+    def parse(self, field_value: str, add_note: AddNoteMethodType) -> str:
+        return field_value.lower()
+
     def evaluate(self, add_note: AddNoteMethodType) -> None:
         if self.value:
-            langs = [l.lower() for l in self.value]
-            if len(langs) != len(set(langs)):
+            if len(self.value) != len(set(self.value)):
                 seen = set()
                 duplicates = set()
-                for lang in langs:
+                for lang in self.value:
                     if lang in seen:
                         duplicates.add(lang)
                     seen.add(lang)
@@ -44,17 +46,17 @@ Recipients will likely ignore duplicates."""
 class ContentLanguageTest(FieldTest):
     name = "Content-Language"
     inputs = [b"en-US"]
-    expected_out = ["en-US"]
+    expected_out = ["en-us"]
 
 
 class ContentLanguageListTest(FieldTest):
     name = "Content-Language"
     inputs = [b"en-US, fr"]
-    expected_out = ["en-US", "fr"]
+    expected_out = ["en-us", "fr"]
 
 
 class ContentLanguageDupTest(FieldTest):
     name = "Content-Language"
     inputs = [b"en-US, en-US"]
-    expected_out = ["en-US", "en-US"]
+    expected_out = ["en-us", "en-us"]
     expected_notes = [CONTENT_LANGUAGE_DUP]
