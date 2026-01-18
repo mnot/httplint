@@ -13,14 +13,14 @@ class categories(Enum):
     "Note classifications."
 
     GENERAL = L_("General")
+    CONNECTION = L_("Connection")
     SECURITY = L_("Browser Security")
+    CORS = L_("Cross-Origin Resource Sharing")
     COOKIES = L_("Cookies")
     CONNEG = L_("Content Negotiation")
     CACHING = L_("Caching")
     VALIDATION = L_("Validation")
-    CONNECTION = L_("Connection")
     RANGE = L_("Partial Content")
-    CORS = L_("Cross-Origin Resource Sharing")
 
 
 class levels(Enum):
