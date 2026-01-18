@@ -11,31 +11,6 @@ if TYPE_CHECKING:
     from httplint.message import HttpRequestLinter
 
 
-class REFERER_SECURE_TO_INSECURE(Note):
-    category = categories.SECURITY
-    level = levels.BAD
-    _summary = "The Referer header is sent from a secure origin to an insecure target."
-    _text = """\
-HTTP prohibits a user agent from sending a Referer header field in an unsecured HTTP request
-if the referring resource was accessed with a secure protocol.
-
-See [RFC 9110 Section 10.1.3](https://www.rfc-editor.org/rfc/rfc9110.html#section-10.1.3)
-for details."""
-
-
-class REFERER_SECURE_TO_DIFFERENT_ORIGIN(Note):
-    category = categories.SECURITY
-    level = levels.WARN
-    _summary = "The Referer header is sent from a secure origin to a different origin."
-    _text = """\
-HTTP prohibits a user agent from sending a Referer header field if the referring resource was
-accessed with a secure protocol and the request target has an origin differing from that of the
-referring resource, unless the referring resource explicitly allows Referer to be sent.
-
-See [RFC 9110 Section 10.1.3](https://www.rfc-editor.org/rfc/rfc9110.html#section-10.1.3)
-for details."""
-
-
 class referer(SingletonField):
     canonical_name = "Referer"
     description = """\
@@ -72,6 +47,31 @@ resource from which the target URI was obtained (i.e., the "referrer")."""
 
             if referer_origin != request_origin:
                 add_note(REFERER_SECURE_TO_DIFFERENT_ORIGIN)
+
+
+class REFERER_SECURE_TO_INSECURE(Note):
+    category = categories.SECURITY
+    level = levels.BAD
+    _summary = "The Referer header is sent from a secure origin to an insecure target."
+    _text = """\
+HTTP prohibits a user agent from sending a Referer header field in an unsecured HTTP request
+if the referring resource was accessed with a secure protocol.
+
+See [RFC 9110 Section 10.1.3](https://www.rfc-editor.org/rfc/rfc9110.html#section-10.1.3)
+for details."""
+
+
+class REFERER_SECURE_TO_DIFFERENT_ORIGIN(Note):
+    category = categories.SECURITY
+    level = levels.WARN
+    _summary = "The Referer header is sent from a secure origin to a different origin."
+    _text = """\
+HTTP prohibits a user agent from sending a Referer header field if the referring resource was
+accessed with a secure protocol and the request target has an origin differing from that of the
+referring resource, unless the referring resource explicitly allows Referer to be sent.
+
+See [RFC 9110 Section 10.1.3](https://www.rfc-editor.org/rfc/rfc9110.html#section-10.1.3)
+for details."""
 
 
 class RefererTest(FieldTest):
