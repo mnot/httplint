@@ -1,6 +1,7 @@
 import binascii
 import hashlib
 from typing import List, Dict, Any, Callable, Optional, TYPE_CHECKING
+import weakref
 import zlib
 
 import brotli
@@ -15,7 +16,7 @@ if TYPE_CHECKING:
 
 class ContentEncodingProcessor:
     def __init__(self, message: "HttpMessageLinter") -> None:
-        self.message = message
+        self.message = weakref.proxy(message)
         self.processors: List[Callable[[bytes], None]] = []
 
         self.length: int = 0
@@ -63,7 +64,9 @@ class ContentEncodingProcessor:
                             gzip_error=str(gzip_error),
                         )
                         self.decode_ok = False
+                        self._gzip_header_buffer = b""
                         return b""
+                    self._gzip_header_buffer = b""
                 try:
                     chunk = self._gzip_processor.decompress(chunk)
                 except zlib.error as zlib_error:
@@ -113,32 +116,49 @@ class ContentEncodingProcessor:
                 f"Not a gzip header (magic is hex {binascii.b2a_hex(magic).decode('ascii')}, "
                 "should be 1f8b)"
             )
-        method = ord(content[2:3])
+        method = content[2]
         if method != 8:
             raise IOError("Unknown compression method")
-        flag = ord(content[3:4])
-        content_l = list(content[10:])
+        flag = content[3]
+
+        offset = 10
+
         if flag & gz_flags["FEXTRA"]:
+            if len(content) < offset + 2:
+                raise IndexError("Header not complete yet")
             # Read & discard the extra field, if present
-            xlen = content_l.pop(0)
-            xlen = xlen + 256 * content_l.pop(0)
-            content_l = content_l[xlen:]
+            xlen = content[offset] + 256 * content[offset + 1]
+            offset += 2
+            if len(content) < offset + xlen:
+                raise IndexError("Header not complete yet")
+            offset += xlen
+
         if flag & gz_flags["FNAME"]:
             # Read and discard a null-terminated string
-            # containing the filename
             while True:
-                st1 = content_l.pop(0)
-                if not content_l or st1 == 0:
+                if len(content) <= offset:
+                    raise IndexError("Header not complete yet")
+                st1 = content[offset]
+                offset += 1
+                if st1 == 0:
                     break
+
         if flag & gz_flags["FCOMMENT"]:
-            # Read and discard a null-terminated string containing a comment
+            # Read and discard a null-terminated string
             while True:
-                st2 = content_l.pop(0)
-                if not content_l or st2 == 0:
+                if len(content) <= offset:
+                    raise IndexError("Header not complete yet")
+                st2 = content[offset]
+                offset += 1
+                if st2 == 0:
                     break
+
         if flag & gz_flags["FHCRC"]:
-            content_l = content_l[2:]  # Read & discard the 16-bit header CRC
-        return bytes(content_l)
+            if len(content) < offset + 2:
+                raise IndexError("Header not complete yet")
+            offset += 2
+
+        return content[offset:]
 
     def __getstate__(self) -> Dict[str, Any]:
         state: Dict[str, Any] = self.__dict__.copy()

@@ -2,6 +2,7 @@ from functools import partial
 import codecs
 import hashlib
 import re
+import weakref
 from typing import Optional, Any, Dict, TypedDict, cast
 from typing_extensions import Unpack, NotRequired
 
@@ -51,13 +52,21 @@ class HttpMessageLinter:
         self.content_length: int = 0
         self.content_hash: Optional[bytes] = None
         self._hash_processor = hashlib.new("md5")
-        self.decoded = ContentEncodingProcessor(self)
-        self.decoded.processors.append(self._content_sample_processor)
         self.character_encoding: Optional[str] = None
         self.content_sample: bytes = b""
 
         self.transfer_length: int = 0
         self.complete: bool = False
+
+        self.decoded = ContentEncodingProcessor(self)
+        self_ref = weakref.ref(self)
+
+        def weak_content_sample_processor(chunk: bytes) -> None:
+            obj = self_ref()
+            if obj is not None:
+                obj._content_sample_processor(chunk)  # pylint: disable=protected-access
+
+        self.decoded.processors.append(weak_content_sample_processor)
 
     def process_request_topline(self, method: bytes, iri: bytes, version: bytes) -> None: ...
 
