@@ -167,11 +167,12 @@ class StatusChecker:
         self.add_note("", STATUS_NOT_FOUND)
 
     def status405(self) -> None:  # Method Not Allowed
-        if self.request and self.request.method and "allow" in self.response.headers.parsed:
-            if self.request.method in self.response.headers.parsed["allow"]:
-                self.add_note("field-allow", STATUS_405_METHOD_IN_ALLOW)
+        method = self.request.method if self.request else "request"
+        if method and "allow" in self.response.headers.parsed:
+            if method in self.response.headers.parsed["allow"]:
+                self.add_note("field-allow", STATUS_405_METHOD_IN_ALLOW, method=method)
                 return
-        self.add_note("", STATUS_METHOD_NOT_ALLOWED)
+        self.add_note("", STATUS_METHOD_NOT_ALLOWED, method=method)
 
     def status406(self) -> None:  # Not Acceptable
         if self.request:
