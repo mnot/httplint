@@ -25,6 +25,10 @@ test_%: venv
 test_smoke: venv
 	PYTHONPATH=. $(VENV)/python test/smoke.py
 
+.PHONY: coverage
+coverage: venv
+	PYTHONPATH=. $(VENV)/python test/coverage.py
+
 test/http-fields.xml:
 	curl -o $@ https://www.iana.org/assignments/http-fields/http-fields.xml
 
