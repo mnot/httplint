@@ -70,28 +70,100 @@ def check_static_usage():
             except Exception as e:
                 print(f"Failed to parse {path}: {e}")
                 continue
+            
+            # Generalized walker that tracks "partial" bindings
+            class ContextWalker(ast.NodeVisitor):
+                def __init__(self):
+                    self.current_class = None
+                    # class_name -> {attr_name -> (pos_args_count, keyword_args_set)}
+                    self.class_bindings = defaultdict(dict)
+                    # var_name -> (pos_args_count, keyword_args_set)
+                    self.local_bindings = {}
 
-            for node in ast.walk(tree):
-                if isinstance(node, ast.Call):
-                    # Check for self.add_note(...) or something.add_note(...)
-                    is_add_note = False
-                    if isinstance(node.func, ast.Attribute) and node.func.attr == "add_note":
-                        is_add_note = True
-                    # Check for Notes.add(...) which might be called differently
-                    # But mostly we look for the pattern add_note(..., NoteClass, ...)
-                    
-                    if not is_add_note:
-                        continue
+                def visit_ClassDef(self, node):
+                    old_class = self.current_class
+                    self.current_class = node.name
+                    self.generic_visit(node)
+                    self.current_class = old_class
 
-                    # In most calls we see: add_note(subject, NoteClass, **kwargs)
-                    # or partial usage in status.py: add_note(subject, NoteClass) where partial bound the others.
-                    # We need to find which arg is the Note class.
-                    # Based on codebase, it's usually the 2nd arg (index 1).
+                def visit_FunctionDef(self, node):
+                    # We simply reset local bindings for each function for simplicity.
+                    # This assumes no nested function shadowing complications.
+                    old_locals = self.local_bindings.copy()
+                    self.local_bindings = {}
+                    self.generic_visit(node)
+                    self.local_bindings = old_locals
+
+                def visit_Assign(self, node):
+                    # Check for lhs = partial(...)
+                    if not isinstance(node.value, ast.Call):
+                        self.generic_visit(node)
+                        return
                     
-                    if len(node.args) < 2:
-                        continue
+                    # Check if call is to 'partial'
+                    is_partial = False
+                    if isinstance(node.value.func, ast.Name) and node.value.func.id == "partial":
+                        is_partial = True
+                    # We could also check for functools.partial but 'partial' is the common usage
                     
-                    note_arg = node.args[1]
+                    if is_partial:
+                        # Count bound positionals and keywords
+                        bound_pos = len(node.value.args) - 1 # first arg to partial is the func itself
+                        if bound_pos < 0: bound_pos = 0
+                        
+                        bound_kws = set()
+                        for kw in node.value.keywords:
+                            if kw.arg:
+                                bound_kws.add(kw.arg)
+                        
+                        binding = (bound_pos, bound_kws)
+                        
+                        # Apply to targets
+                        for target in node.targets:
+                            if isinstance(target, ast.Name):
+                                self.local_bindings[target.id] = binding
+                            elif isinstance(target, ast.Attribute) and \
+                                 isinstance(target.value, ast.Name) and target.value.id == "self" and \
+                                 self.current_class:
+                                self.class_bindings[self.current_class][target.attr] = binding
+
+                    self.generic_visit(node)
+
+                def visit_Call(self, node):
+                    # Determine if this call is relevant
+                    binding = None # (bound_pos, bound_kws)
+                    
+                    # Case 1: Call to a local variable
+                    if isinstance(node.func, ast.Name) and node.func.id in self.local_bindings:
+                        binding = self.local_bindings[node.func.id]
+                    
+                    # Case 2: Call to self.attribute
+                    elif isinstance(node.func, ast.Attribute) and \
+                         isinstance(node.func.value, ast.Name) and node.func.value.id == "self" and \
+                         self.current_class and node.func.attr in self.class_bindings[self.current_class]:
+                        binding = self.class_bindings[self.current_class][node.func.attr]
+
+                    # Case 3: Standard add_note call (unbound)
+                    is_add_note_attr = isinstance(node.func, ast.Attribute) and node.func.attr == "add_note"
+                    if not binding and not is_add_note_attr:
+                        self.generic_visit(node)
+                        return
+
+                    # Default binding if not found
+                    if not binding:
+                        binding = (0, set()) # 0 bound pos args, 0 bound kws
+
+                    bound_pos_count, bound_kws = binding
+                    
+                    # Original signature of add(self, subject, note, ...) -> note is index 1
+                    # With bound_pos_count args removed from front:
+                    note_arg_index = 1 - bound_pos_count
+                    
+                    if len(node.args) <= note_arg_index or note_arg_index < 0:
+                        self.generic_visit(node)
+                        return
+                        
+                    note_arg = node.args[note_arg_index]
                     note_name = None
                     
                     if isinstance(note_arg, ast.Name):
@@ -100,7 +172,8 @@ def check_static_usage():
                          note_name = note_arg.attr
                     
                     if not note_name or note_name not in note_name_to_class:
-                        continue
+                        self.generic_visit(node)
+                        return
                         
                     note_cls = note_name_to_class[note_name]
                     
@@ -109,10 +182,16 @@ def check_static_usage():
                     needed = set(re.findall(r"%\(([a-z0-9_]+)\)s", content))
                     
                     if not needed:
-                        continue
+                        self.generic_visit(node)
+                        return
 
-                    # Calculate provided variables from keywords
+                    # Calculate provided variables
                     provided = set()
+                    
+                    # Add bound keywords
+                    provided.update(bound_kws)
+                    
+                    # Add call keywords
                     for keyword in node.keywords:
                         if keyword.arg:
                             provided.add(keyword.arg)
@@ -120,6 +199,10 @@ def check_static_usage():
                     missing = needed - provided
                     if missing:
                          static_missing_vars[note_name].update(missing)
+                    
+                    self.generic_visit(node)
+
+            ContextWalker().visit(tree)
 
 
 if __name__ == "__main__":
