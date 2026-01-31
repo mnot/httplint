@@ -162,7 +162,7 @@ class ContentEncodingProcessor:
 
     def __getstate__(self) -> Dict[str, Any]:
         state: Dict[str, Any] = self.__dict__.copy()
-        for key in ["_hash_processor", "_gzip_processor", "_brotli_processor"]:
+        for key in ["_hash_processor", "_gzip_processor", "_brotli_processor", "processors"]:
             if key in state:
                 del state[key]
         return state
