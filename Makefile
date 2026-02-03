@@ -7,7 +7,7 @@ TEST_SCRIPTS = $(wildcard test/test_*.py)
 TEST_TARGETS = $(patsubst test/%.py,%,$(TEST_SCRIPTS))
 
 .PHONY: test
-test: $(TEST_TARGETS) test_smoke coverage
+test: $(TEST_TARGETS) test_smoke coverage i18n-check
 
 .PHONY: test_fields
 test_fields: test/http-fields.xml venv

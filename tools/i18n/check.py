@@ -13,7 +13,7 @@ def find_variables(text):
     if not text:
         return set()
     # Find %(name)s style
-    percent_vars = set(re.findall(r'%\(([^)]+)\)[diouxXeEfFgGcrs]', text))
+    percent_vars = set(re.findall(r'%\(([^)]+)\)[diouxXeEfFgGcrsa]', text))
     # Find {name} style
     brace_vars = set(re.findall(r'\{([^}]+)\}', text))
     return percent_vars | brace_vars
