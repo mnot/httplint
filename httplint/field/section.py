@@ -1,3 +1,4 @@
+import weakref
 from functools import partial
 from typing import Dict, TYPE_CHECKING
 
@@ -21,7 +22,7 @@ class FieldSection:
     max_total_size = 32 * 1024
 
     def __init__(self, message: "HttpMessageLinter", is_trailer: bool = False) -> None:
-        self.message = message
+        self.message = weakref.proxy(message)
         self.is_trailer = is_trailer
         self.text: StrFieldListType = []  # unicode version of the field tuples as received
         self.parsed: FieldDictType = {}  # dictionary of parsed field values

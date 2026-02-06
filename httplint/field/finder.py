@@ -1,4 +1,6 @@
+import weakref
 import sys
+
 
 from typing import (
     Any,
@@ -40,7 +42,7 @@ class HttpFieldFinder:
         message: "HttpMessageLinter",
         field_section: Optional["FieldSection"] = None,
     ) -> None:
-        self.message = message
+        self.message = weakref.proxy(message)
         self.field_section = field_section
 
     def find_handler(self, field_name: str) -> HttpField:
