@@ -32,8 +32,7 @@ class GzipProcessor:
         if not self._in_gzip:
             self._gzip_header_buffer += chunk
             try:
-                # Borrow the static method from ContentEncodingProcessor
-                chunk = ContentEncodingProcessor._read_gzip_header(self._gzip_header_buffer)
+                chunk = self._read_gzip_header(self._gzip_header_buffer)
                 self._in_gzip = True
                 self._gzip_header_buffer = b""
             except IndexError:
@@ -75,6 +74,66 @@ class GzipProcessor:
                 chunk_sample=display_bytes(chunk),
             )
             self.ok = False
+
+    @staticmethod
+    def _read_gzip_header(content: bytes) -> bytes:
+        """
+        Parse a string for a GZIP header; if present, return remainder of
+        gzipped content.
+        """
+        # adapted from gzip.py
+        gz_flags = {"FTEXT": 1, "FHCRC": 2, "FEXTRA": 4, "FNAME": 8, "FCOMMENT": 16}
+        if len(content) < 10:
+            raise IndexError("Header not complete yet")
+        magic = content[:2]
+        if magic != b"\037\213":
+            raise IOError(
+                f"Not a gzip header (magic is hex {binascii.b2a_hex(magic).decode('ascii')}, "
+                "should be 1f8b)"
+            )
+        method = content[2]
+        if method != 8:
+            raise IOError("Unknown compression method")
+        flag = content[3]
+
+        offset = 10
+
+        if flag & gz_flags["FEXTRA"]:
+            if len(content) < offset + 2:
+                raise IndexError("Header not complete yet")
+            # Read & discard the extra field, if present
+            xlen = content[offset] + 256 * content[offset + 1]
+            offset += 2
+            if len(content) < offset + xlen:
+                raise IndexError("Header not complete yet")
+            offset += xlen
+
+        if flag & gz_flags["FNAME"]:
+            # Read and discard a null-terminated string
+            while True:
+                if len(content) <= offset:
+                    raise IndexError("Header not complete yet")
+                st1 = content[offset]
+                offset += 1
+                if st1 == 0:
+                    break
+
+        if flag & gz_flags["FCOMMENT"]:
+            # Read and discard a null-terminated string
+            while True:
+                if len(content) <= offset:
+                    raise IndexError("Header not complete yet")
+                st2 = content[offset]
+                offset += 1
+                if st2 == 0:
+                    break
+
+        if flag & gz_flags["FHCRC"]:
+            if len(content) < offset + 2:
+                raise IndexError("Header not complete yet")
+            offset += 2
+
+        return content[offset:]
 
 
 class BrotliProcessor:
@@ -161,65 +220,6 @@ class ContentEncodingProcessor:
         for processor in self.processors:
             processor(chunk)
 
-    @staticmethod
-    def _read_gzip_header(content: bytes) -> bytes:
-        """
-        Parse a string for a GZIP header; if present, return remainder of
-        gzipped content.
-        """
-        # adapted from gzip.py
-        gz_flags = {"FTEXT": 1, "FHCRC": 2, "FEXTRA": 4, "FNAME": 8, "FCOMMENT": 16}
-        if len(content) < 10:
-            raise IndexError("Header not complete yet")
-        magic = content[:2]
-        if magic != b"\037\213":
-            raise IOError(
-                f"Not a gzip header (magic is hex {binascii.b2a_hex(magic).decode('ascii')}, "
-                "should be 1f8b)"
-            )
-        method = content[2]
-        if method != 8:
-            raise IOError("Unknown compression method")
-        flag = content[3]
-
-        offset = 10
-
-        if flag & gz_flags["FEXTRA"]:
-            if len(content) < offset + 2:
-                raise IndexError("Header not complete yet")
-            # Read & discard the extra field, if present
-            xlen = content[offset] + 256 * content[offset + 1]
-            offset += 2
-            if len(content) < offset + xlen:
-                raise IndexError("Header not complete yet")
-            offset += xlen
-
-        if flag & gz_flags["FNAME"]:
-            # Read and discard a null-terminated string
-            while True:
-                if len(content) <= offset:
-                    raise IndexError("Header not complete yet")
-                st1 = content[offset]
-                offset += 1
-                if st1 == 0:
-                    break
-
-        if flag & gz_flags["FCOMMENT"]:
-            # Read and discard a null-terminated string
-            while True:
-                if len(content) <= offset:
-                    raise IndexError("Header not complete yet")
-                st2 = content[offset]
-                offset += 1
-                if st2 == 0:
-                    break
-
-        if flag & gz_flags["FHCRC"]:
-            if len(content) < offset + 2:
-                raise IndexError("Header not complete yet")
-            offset += 2
-
-        return content[offset:]
 
     def __getstate__(self) -> Dict[str, Any]:
         state: Dict[str, Any] = self.__dict__.copy()
