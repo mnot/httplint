@@ -14,6 +14,97 @@ if TYPE_CHECKING:
     from httplint.message import HttpMessageLinter
 
 
+class GzipProcessor:
+    def __init__(
+        self, message: "HttpMessageLinter", next_processor: Callable[[bytes], None]
+    ) -> None:
+        self.message = message
+        self.next_processor = next_processor
+        self._gzip_processor = zlib.decompressobj(-zlib.MAX_WBITS)
+        self._in_gzip = False
+        self._gzip_header_buffer = b""
+        self.ok = True
+
+    def __call__(self, chunk: bytes) -> None:
+        if not self.ok:
+            return
+
+        if not self._in_gzip:
+            self._gzip_header_buffer += chunk
+            try:
+                # Borrow the static method from ContentEncodingProcessor
+                chunk = ContentEncodingProcessor._read_gzip_header(self._gzip_header_buffer)
+                self._in_gzip = True
+                self._gzip_header_buffer = b""
+            except IndexError:
+                return  # not a full header yet
+            except IOError as gzip_error:
+                self.message.notes.add(
+                    "field-content-encoding",
+                    BAD_GZIP,
+                    gzip_error=str(gzip_error),
+                )
+                self.ok = False
+                self._gzip_header_buffer = b""
+                return
+
+            # Since _read_gzip_header strips the header, 'chunk' is now the payload start.
+            # We clear the buffer.
+            self._gzip_header_buffer = b""
+
+        max_chunk_size = 1024 * 1024
+        try:
+            decompressed = self._gzip_processor.decompress(chunk, max_chunk_size)
+            if decompressed:
+                self.next_processor(decompressed)
+
+            while self._gzip_processor.unconsumed_tail:
+                tail = self._gzip_processor.unconsumed_tail
+                decompressed = self._gzip_processor.decompress(tail, max_chunk_size)
+                if decompressed:
+                    self.next_processor(decompressed)
+                else:
+                    break
+
+        except zlib.error as zlib_error:
+            self.message.notes.add(
+                "field-content-encoding",
+                BAD_ZLIB,
+                zlib_error=str(zlib_error),
+                ok_zlib_len=f_num(self.message.content_length),
+                chunk_sample=display_bytes(chunk),
+            )
+            self.ok = False
+
+
+class BrotliProcessor:
+    def __init__(
+        self, message: "HttpMessageLinter", next_processor: Callable[[bytes], None]
+    ) -> None:
+        self.message = message
+        self.next_processor = next_processor
+        self._brotli_processor = brotli.Decompressor()
+        self.ok = True
+
+    def __call__(self, chunk: bytes) -> None:
+        if not self.ok:
+            return
+
+        try:
+            chunk = self._brotli_processor.process(chunk)
+            if chunk:
+                self.next_processor(chunk)
+        except brotli.error as brotli_error:
+            self.message.notes.add(
+                "field-content-encoding",
+                BAD_BROTLI,
+                brotli_error=str(brotli_error),
+                ok_brotli_len=f_num(self.message.content_length),
+                chunk_sample=display_bytes(chunk),
+            )
+            self.ok = False
+
+
 class ContentEncodingProcessor:
     def __init__(self, message: "HttpMessageLinter") -> None:
         self.message = weakref.proxy(message)
@@ -25,80 +116,50 @@ class ContentEncodingProcessor:
 
         self.decode_ok: bool = True  # turn False if we have a problem
 
-        self._gzip_processor = zlib.decompressobj(-zlib.MAX_WBITS)
-        self._in_gzip = False
-        self._gzip_header_buffer = b""
-
-        self._brotli_processor = brotli.Decompressor()
+        # Pipeline is built lazily to ensure headers are parsed
+        self.pipeline: Optional[Callable[[bytes], None]] = None
 
     def feed_content(self, chunk: bytes) -> None:
         if self.decode_ok:
-            decoded_chunk = self._process_content_codings(chunk)
-            for processor in self.processors:
-                processor(decoded_chunk)
+            if self.pipeline is None:
+                self._build_pipeline()
+            if self.pipeline:
+                self.pipeline(chunk)
 
     def finish_content(self) -> None:
         self.hash = self._hash_processor.digest()
 
-    def _process_content_codings(self, chunk: bytes) -> bytes:
-        """
-        Decode a chunk according to the message's content-encoding header.
+    def _build_pipeline(self) -> None:
+        # Build the pipeline
+        # The sink handles the final decoded content
+        # Use weakref to avoid cycle: self -> pipeline -> processor -> self._sink_process -> self
+        self_ref = weakref.ref(self)
 
-        Currently supports gzip and br.
-        """
+        def sink(chunk: bytes) -> None:
+            obj = self_ref()
+            if obj:
+                obj._sink_process(chunk)  # pylint: disable=protected-access
+
+        self.pipeline = sink
+
         content_codings = self.message.headers.parsed.get("content-encoding", [])
-        content_codings.reverse()
+
+        # We iterate forward regarding processing order.
+        # See init comments in previous version.
+
         for coding in content_codings:
             if coding in ["gzip", "x-gzip"]:
-                if not self._in_gzip:
-                    self._gzip_header_buffer += chunk
-                    try:
-                        chunk = self._read_gzip_header(self._gzip_header_buffer)
-                        self._in_gzip = True
-                    except IndexError:
-                        return b""  # not a full header yet
-                    except IOError as gzip_error:
-                        self.message.notes.add(
-                            "field-content-encoding",
-                            BAD_GZIP,
-                            gzip_error=str(gzip_error),
-                        )
-                        self.decode_ok = False
-                        self._gzip_header_buffer = b""
-                        return b""
-                    self._gzip_header_buffer = b""
-                try:
-                    chunk = self._gzip_processor.decompress(chunk)
-                except zlib.error as zlib_error:
-                    self.message.notes.add(
-                        "field-content-encoding",
-                        BAD_ZLIB,
-                        zlib_error=str(zlib_error),
-                        ok_zlib_len=f_num(self.message.content_length),
-                        chunk_sample=display_bytes(chunk),
-                    )
-                    self.decode_ok = False
-                    return b""
+                self.pipeline = GzipProcessor(self.message, self.pipeline)
             elif coding == "br":
-                try:
-                    chunk = self._brotli_processor.process(chunk)
-                except brotli.error as brotli_error:
-                    self.message.notes.add(
-                        "field-content-encoding",
-                        BAD_BROTLI,
-                        brotli_error=str(brotli_error),
-                        ok_brotli_len=f_num(self.message.content_length),
-                        chunk_sample=display_bytes(chunk),
-                    )
-                    self.decode_ok = False
-                    return b""
+                self.pipeline = BrotliProcessor(self.message, self.pipeline)
             else:
-                # we can't handle other codecs, so punt on content processing.
-                self.decode_ok = False
-                return b""
+                pass
+
+    def _sink_process(self, chunk: bytes) -> None:
         self._hash_processor.update(chunk)
         self.length += len(chunk)
-        return chunk
+        for processor in self.processors:
+            processor(chunk)
 
     @staticmethod
     def _read_gzip_header(content: bytes) -> bytes:
@@ -162,7 +223,7 @@ class ContentEncodingProcessor:
 
     def __getstate__(self) -> Dict[str, Any]:
         state: Dict[str, Any] = self.__dict__.copy()
-        for key in ["_hash_processor", "_gzip_processor", "_brotli_processor", "processors"]:
+        for key in ["_hash_processor", "pipeline", "processors"]:
             if key in state:
                 del state[key]
         return state
