@@ -14,6 +14,71 @@ if TYPE_CHECKING:
     from httplint.message import HttpMessageLinter
 
 
+class ContentEncodingProcessor:
+    def __init__(self, message: "HttpMessageLinter") -> None:
+        self.message = weakref.proxy(message)
+        self.processors: List[Callable[[bytes], None]] = []
+
+        self.length: int = 0
+        self.hash: Optional[bytes] = None
+        self._hash_processor = hashlib.new("md5")
+
+        self.decode_ok: bool = True  # turn False if we have a problem
+
+        # Pipeline is built lazily to ensure headers are parsed
+        self.pipeline: Optional[Callable[[bytes], None]] = None
+
+    def feed_content(self, chunk: bytes) -> None:
+        if self.decode_ok:
+            if self.pipeline is None:
+                self._build_pipeline()
+            if self.pipeline:
+                self.pipeline(chunk)
+
+    def finish_content(self) -> None:
+        self.hash = self._hash_processor.digest()
+
+    def _build_pipeline(self) -> None:
+        # Build the pipeline
+        # The sink handles the final decoded content
+        # Use weakref to avoid cycle: self -> pipeline -> processor -> self._sink_process -> self
+        self_ref = weakref.ref(self)
+
+        def sink(chunk: bytes) -> None:
+            obj = self_ref()
+            if obj:
+                obj._sink_process(chunk)  # pylint: disable=protected-access
+
+        self.pipeline = sink
+
+        content_codings = self.message.headers.parsed.get("content-encoding", [])
+
+        # We iterate forward regarding processing order.
+        # See init comments in previous version.
+
+        for coding in content_codings:
+            if coding in ["gzip", "x-gzip"]:
+                self.pipeline = GzipProcessor(self.message, self.pipeline)
+            elif coding == "br":
+                self.pipeline = BrotliProcessor(self.message, self.pipeline)
+            else:
+                pass
+
+    def _sink_process(self, chunk: bytes) -> None:
+        self._hash_processor.update(chunk)
+        self.length += len(chunk)
+        for processor in self.processors:
+            processor(chunk)
+
+
+    def __getstate__(self) -> Dict[str, Any]:
+        state: Dict[str, Any] = self.__dict__.copy()
+        for key in ["_hash_processor", "pipeline", "processors"]:
+            if key in state:
+                del state[key]
+        return state
+
+
 class GzipProcessor:
     def __init__(
         self, message: "HttpMessageLinter", next_processor: Callable[[bytes], None]
@@ -162,71 +227,6 @@ class BrotliProcessor:
                 chunk_sample=display_bytes(chunk),
             )
             self.ok = False
-
-
-class ContentEncodingProcessor:
-    def __init__(self, message: "HttpMessageLinter") -> None:
-        self.message = weakref.proxy(message)
-        self.processors: List[Callable[[bytes], None]] = []
-
-        self.length: int = 0
-        self.hash: Optional[bytes] = None
-        self._hash_processor = hashlib.new("md5")
-
-        self.decode_ok: bool = True  # turn False if we have a problem
-
-        # Pipeline is built lazily to ensure headers are parsed
-        self.pipeline: Optional[Callable[[bytes], None]] = None
-
-    def feed_content(self, chunk: bytes) -> None:
-        if self.decode_ok:
-            if self.pipeline is None:
-                self._build_pipeline()
-            if self.pipeline:
-                self.pipeline(chunk)
-
-    def finish_content(self) -> None:
-        self.hash = self._hash_processor.digest()
-
-    def _build_pipeline(self) -> None:
-        # Build the pipeline
-        # The sink handles the final decoded content
-        # Use weakref to avoid cycle: self -> pipeline -> processor -> self._sink_process -> self
-        self_ref = weakref.ref(self)
-
-        def sink(chunk: bytes) -> None:
-            obj = self_ref()
-            if obj:
-                obj._sink_process(chunk)  # pylint: disable=protected-access
-
-        self.pipeline = sink
-
-        content_codings = self.message.headers.parsed.get("content-encoding", [])
-
-        # We iterate forward regarding processing order.
-        # See init comments in previous version.
-
-        for coding in content_codings:
-            if coding in ["gzip", "x-gzip"]:
-                self.pipeline = GzipProcessor(self.message, self.pipeline)
-            elif coding == "br":
-                self.pipeline = BrotliProcessor(self.message, self.pipeline)
-            else:
-                pass
-
-    def _sink_process(self, chunk: bytes) -> None:
-        self._hash_processor.update(chunk)
-        self.length += len(chunk)
-        for processor in self.processors:
-            processor(chunk)
-
-
-    def __getstate__(self) -> Dict[str, Any]:
-        state: Dict[str, Any] = self.__dict__.copy()
-        for key in ["_hash_processor", "pipeline", "processors"]:
-            if key in state:
-                del state[key]
-        return state
 
 
 class BAD_GZIP(Note):
