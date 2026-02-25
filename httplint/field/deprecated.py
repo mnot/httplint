@@ -164,6 +164,14 @@ OBSOLETED_FIELDS: Dict[str, Tuple[categories, str]] = {
         categories.CONNEG,
         "https://wicg.github.io/responsive-image-client-hints/#sec-ch-width",
     ),
+    "X-Content-Security-Policy": (
+        categories.SECURITY,
+        "https://cheatsheetseries.owasp.org/cheatsheets/Content_Security_Policy_Cheat_Sheet.html#warning"
+    ),
+    "X-Webkit-CSP": (
+        categories.SECURITY,
+        "https://cheatsheetseries.owasp.org/cheatsheets/Content_Security_Policy_Cheat_Sheet.html#warning"
+    )
 }
 
 UNREGISGTERED_DEPRECATED_FIELDS: Dict[str, Tuple[categories, str]] = {
