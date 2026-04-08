@@ -4302,7 +4302,7 @@ msgstr "La cabecera `NEL` debe ser una lista de objetos."
 #: httplint/field/parsers/nel.py:103
 #, python-format
 msgid "The NEL policy is missing the '%(key)s' key."
-msgstr "La política NEL falta la clave '%%(key)s'."
+msgstr "La política NEL falta la clave '%(key)s'."
 
 #: httplint/field/parsers/nel.py:104
 #, python-format
