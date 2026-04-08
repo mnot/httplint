@@ -7,16 +7,13 @@ authors = [
 description = "Lint for HTTP messages."
 readme = "README.md"
 requires-python = ">=3.10"
-license = {file = "LICENSE.md"}
+license = "MIT"
+license-files = ["LICENSE.md"]
 classifiers = [
     "Operating System :: OS Independent",
-    "Development Status :: 4 - Beta",
-    "License :: OSI Approved :: MIT License",
-    "Intended Audience :: Developers",
-    "Intended Audience :: System Administrators",
-    "Topic :: Internet :: WWW/HTTP",
-    "Topic :: Software Development :: Testing"
+    "Development Status :: 4 - Beta"
 ]
+
 dependencies = [
     "Markdown",
     "MarkupSafe",
@@ -62,6 +59,8 @@ version = {attr = "httplint.__version__"}
 
 [tool.setuptools.packages.find]
 where = ["."]
+include = ["httplint", "httplint.*"]
+namespaces = false
 
 [tool.setuptools]
 include-package-data = true
