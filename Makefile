@@ -61,38 +61,5 @@ endif
 url: venv
 	curl -si $(URL_ARGS) | $(VENV)/httplint --now
 
-###############################################################################
-## i18n
-
-.PHONY: i18n-extract
-i18n-extract: venv
-	PYTHONPATH=. $(VENV)/pybabel extract --omit-header --ignore-dirs="build dist .venv" -F tools/i18n/babel.cfg -o httplint/translations/messages.pot .
-
-.PHONY: i18n-update
-i18n-update: i18n-extract
-	$(VENV)/pybabel update -i httplint/translations/messages.pot -d httplint/translations
-
-.PHONY: i18n-autotranslate
-i18n-autotranslate: venv
-	$(VENV)/python -m tools.i18n.autotranslate --locale_dir httplint/translations --model $(or $(MODEL), 'mlx-community/aya-23-8B-4bit') #--rpm $(or $(RPM),10)
-
-.PHONY: i18n-compile
-i18n-compile: venv
-	$(VENV)/pybabel compile -d httplint/translations
-
-.PHONY: i18n-check
-i18n-check: venv
-	PYTHONPATH=. $(VENV)/python -m tools.i18n.check
-
-.PHONY: translations
-translations: i18n-update i18n-compile
-
-.PHONY: i18n-init
-i18n-init: venv
-	@if [ -z "$(LOCALE)" ]; then echo "Usage: make init_locale LOCALE=xx"; exit 1; fi
-	$(VENV)/pybabel init -i httplint/translations/messages.pot -d httplint/translations -l $(LOCALE)
-
-###############################################################################
-
-
 include Makefile.pyproject
+include Makefile.i18n

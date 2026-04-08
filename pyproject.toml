@@ -36,9 +36,11 @@ dev = [
     "build",
     "twine",
     "types-Markdown",
+    "brotli-stubs",
+]
+i18n = [
     "llm",
     "llm-mlx",
-    "brotli-stubs",
 ]
 
 [project.urls]
