@@ -9,7 +9,7 @@ from httplint.types import StrFieldListType
 if TYPE_CHECKING:
     from httplint.message import HttpRequestLinter, HttpResponseLinter
 
-safe_methods = [b"GET", b"HEAD", b"OPTIONS", b"TRACE"]
+safe_methods = ["GET", "HEAD", "OPTIONS", "TRACE"]
 
 
 def get_header(hdr_tuples: StrFieldListType, name: str) -> List[str]:
