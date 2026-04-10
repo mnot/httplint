@@ -4,14 +4,15 @@ Regex for RFC9111
 
 # pylint: disable=invalid-name
 
+from .rfc3986 import host as uri_host
+from .rfc3986 import port
 from .rfc5234 import DIGIT, DQUOTE, SP
-from .rfc3986 import host as uri_host, port
 from .rfc9110 import (
+    HTTP_date,
     list_rule,
     pseudonym,
     quoted_string,
     token,
-    HTTP_date,
 )
 
 SPEC_URL = "http://httpwg.org/specs/rfc9111"

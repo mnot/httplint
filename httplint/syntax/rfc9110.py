@@ -6,6 +6,19 @@ Regex for RFC9110
 
 from typing import Optional
 
+from .rfc3986 import (
+    URI_reference,
+    absolute_URI,
+    authority,
+)
+from .rfc3986 import host as uri_host
+from .rfc3986 import (
+    path_abempty,
+    port,
+    query,
+    relative_part,
+    segment,
+)
 from .rfc5234 import (
     ALPHA,
     DIGIT,
@@ -14,19 +27,8 @@ from .rfc5234 import (
     SP,
     VCHAR,
 )
-from .rfc3986 import (
-    URI_reference,
-    absolute_URI,
-    authority,
-    path_abempty,
-    port,
-    query,
-    relative_part,
-    segment,
-    host as uri_host,
-)
-from .rfc5646 import Language_Tag
 from .rfc5322 import mailbox
+from .rfc5646 import Language_Tag
 
 SPEC_URL = "http://httpwg.org/specs/rfc9110"
 

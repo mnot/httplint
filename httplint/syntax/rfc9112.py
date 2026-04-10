@@ -4,29 +4,29 @@ Regex for RFC9112
 
 # pylint: disable=invalid-name, line-too-long
 
-from .rfc5234 import (
-    CRLF,
-    DIGIT,
-    HEXDIG,
-    OCTET,
-    SP,
-    VCHAR,
-    HTAB,
-)
 from .rfc3986 import (
     absolute_URI,
     authority,
     query,
     segment,
 )
+from .rfc5234 import (
+    CRLF,
+    DIGIT,
+    HEXDIG,
+    HTAB,
+    OCTET,
+    SP,
+    VCHAR,
+)
 from .rfc9110 import (
-    OWS,
     BWS,
-    token,
-    quoted_string,
-    list_rule,
+    OWS,
     field_name,
     field_value,
+    list_rule,
+    quoted_string,
+    token,
 )
 
 SPEC_URL = "http://httpwg.org/specs/rfc9112"
