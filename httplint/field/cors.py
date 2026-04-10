@@ -1,5 +1,3 @@
-from typing import cast
-
 from httplint.note import Note, categories, levels
 from httplint.types import RequestLinterProtocol, ResponseLinterProtocol
 
@@ -55,9 +53,8 @@ def check_preflight_response(message: ResponseLinterProtocol) -> None:
     Check if the message is a CORS preflight response.
     """
     is_preflight = False
-    if message.related:
-        request = cast(RequestLinterProtocol, message.related)
-        is_preflight = is_cors_preflight_request(request)
+    if message.request:
+        is_preflight = is_cors_preflight_request(message.request)
 
     if is_preflight:
         message.notes.add("", CORS_PREFLIGHT_RESPONSE)
@@ -91,14 +88,10 @@ def check_access_control_allow_origin(acao_value: str, message: ResponseLinterPr
     """
     Check the Access-Control-Allow-Origin header against the request origin.
     """
-    if not message.related:
+    if message.request is None or "origin" not in message.request.headers.parsed:
         return
 
-    request = cast(RequestLinterProtocol, message.related)
-    if "origin" not in request.headers.parsed:
-        return
-
-    request_origin = request.headers.parsed["origin"]
+    request_origin = message.request.headers.parsed["origin"]
     if request_origin is None:
         # it's a "null" origin
         request_origin_str = "null"

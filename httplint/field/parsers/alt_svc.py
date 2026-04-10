@@ -5,10 +5,15 @@ from httplint.field.list_field import HttpListField
 from httplint.field.tests import FieldTest
 from httplint.note import Note, categories, levels
 from httplint.syntax import rfc9110
-from httplint.types import AddNoteMethodType, NoteClassListType, ParamDictType
+from httplint.types import (
+    AddNoteMethodType,
+    NoteClassListType,
+    ParamDictType,
+    ResponseLinterProtocol,
+)
 
 
-class alt_svc(HttpListField):
+class alt_svc(HttpListField[ResponseLinterProtocol]):
     canonical_name = "Alt-Svc"
     description = """\
 The `Alt-Svc` HTTP header field identifies an alternative service that can be arranged to access the
@@ -51,32 +56,32 @@ The `Alt-Svc` header field value "clear" is used to invalidate previous alternat
 It cannot be combined with other alternative service advertisements."""
 
 
-class AltSvcTest(FieldTest):
+class AltSvcTest(FieldTest[ResponseLinterProtocol]):
     name = "Alt-Svc"
     inputs = [b'h2=":443"']
     expected_out = ['h2=":443"']
 
 
-class AltSvcParamTest(FieldTest):
+class AltSvcParamTest(FieldTest[ResponseLinterProtocol]):
     name = "Alt-Svc"
     inputs = [b'h2=":443"; ma=60']
     expected_out = ['h2=":443"; ma=60']
 
 
-class AltSvcClearTest(FieldTest):
+class AltSvcClearTest(FieldTest[ResponseLinterProtocol]):
     name = "Alt-Svc"
     inputs = [b"clear"]
     expected_out = ["clear"]
 
 
-class AltSvcMixedTest(FieldTest):
+class AltSvcMixedTest(FieldTest[ResponseLinterProtocol]):
     name = "Alt-Svc"
     inputs = [b'clear, h2=":443"']
     expected_out = ["clear", 'h2=":443"']
     expected_notes: NoteClassListType = [ALTSVC_CLEAR_LIST]
 
 
-class AltSvcBadTest(FieldTest):
+class AltSvcBadTest(FieldTest[ResponseLinterProtocol]):
     name = "Alt-Svc"
     inputs = [b"foo"]
     expected_notes: NoteClassListType = [BAD_SYNTAX]

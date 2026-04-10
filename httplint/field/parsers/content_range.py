@@ -1,11 +1,18 @@
 from dataclasses import dataclass
-from typing import Optional, Tuple, cast
+from typing import (
+    Optional,
+    Tuple,
+)
 
 from httplint.field.singleton_field import SingletonField
 from httplint.field.tests import FieldTest
 from httplint.note import Note, categories, levels
 from httplint.syntax import rfc9110
-from httplint.types import AddNoteMethodType, NoteClassListType, ResponseLinterProtocol
+from httplint.types import (
+    AddNoteMethodType,
+    NoteClassListType,
+    ResponseLinterProtocol,
+)
 
 
 @dataclass
@@ -16,7 +23,7 @@ class ContentRangeValue:
     complete_length: Optional[int]
 
 
-class content_range(SingletonField):
+class content_range(SingletonField[ResponseLinterProtocol]):
     canonical_name = "Content-Range"
     description = """\
 The `Content-Range` response header is sent in a `206` (Partial Content) response to indicate
@@ -61,7 +68,7 @@ in `416` (Requested Range Not Satisfiable) responses."""
 
         if rng == "*":
             if getattr(self.message, "message_type", None) == "response":
-                response = cast(ResponseLinterProtocol, self.message)
+                response = self.message
                 if response.status_code == 206:
                     add_note(CONTENT_RANGE_UNSATISFIED_BAD_SC)
         elif first_byte_pos is None:
@@ -79,7 +86,7 @@ in `416` (Requested Range Not Satisfiable) responses."""
 
     def _check_status(self, add_note: AddNoteMethodType) -> None:
         if getattr(self.message, "message_type", None) == "response":
-            response = cast(ResponseLinterProtocol, self.message)
+            response = self.message
             if response.status_code not in [206, 416]:
                 add_note(CONTENT_RANGE_MEANINGLESS)
 
@@ -209,7 +216,7 @@ The `Content-Range` header uses `*` for the instance length, indicating that the
 the resource is unknown."""
 
 
-class ContentRangeTest(FieldTest):
+class ContentRangeTest(FieldTest[ResponseLinterProtocol]):
     name = "Content-Range"
     inputs = [b"bytes 1-100/200"]
     expected_out = ContentRangeValue("bytes", 1, 100, 200)
@@ -218,7 +225,7 @@ class ContentRangeTest(FieldTest):
         message.status_code = 206
 
 
-class ContentRangeUnsatisfiedTest(FieldTest):
+class ContentRangeUnsatisfiedTest(FieldTest[ResponseLinterProtocol]):
     name = "Content-Range"
     inputs = [b"bytes */1234"]
     expected_out = ContentRangeValue("bytes", None, None, 1234)
@@ -227,7 +234,7 @@ class ContentRangeUnsatisfiedTest(FieldTest):
         message.status_code = 416
 
 
-class ContentRangeUnknownLengthTest(FieldTest):
+class ContentRangeUnknownLengthTest(FieldTest[ResponseLinterProtocol]):
     name = "Content-Range"
     inputs = [b"bytes 42-1233/*"]
     expected_out = ContentRangeValue("bytes", 42, 1233, None)
@@ -237,7 +244,7 @@ class ContentRangeUnknownLengthTest(FieldTest):
         message.status_code = 206
 
 
-class ContentRangeInvalidOrderTest(FieldTest):
+class ContentRangeInvalidOrderTest(FieldTest[ResponseLinterProtocol]):
     name = "Content-Range"
     inputs = [b"bytes 100-50/200"]
     expected_out = ContentRangeValue("bytes", 100, 50, 200)
@@ -247,7 +254,7 @@ class ContentRangeInvalidOrderTest(FieldTest):
         message.status_code = 206
 
 
-class ContentRangeInvalidLengthTest(FieldTest):
+class ContentRangeInvalidLengthTest(FieldTest[ResponseLinterProtocol]):
     name = "Content-Range"
     inputs = [b"bytes 100-200/50"]
     expected_out = ContentRangeValue("bytes", 100, 200, 50)
@@ -257,7 +264,7 @@ class ContentRangeInvalidLengthTest(FieldTest):
         message.status_code = 206
 
 
-class ContentRangeSyntaxErrorTest(FieldTest):
+class ContentRangeSyntaxErrorTest(FieldTest[ResponseLinterProtocol]):
     name = "Content-Range"
     inputs = [b"bytes */*"]
     expected_out = None
@@ -267,7 +274,7 @@ class ContentRangeSyntaxErrorTest(FieldTest):
         message.status_code = 416
 
 
-class ContentRangeMissingUnit(FieldTest):
+class ContentRangeMissingUnit(FieldTest[ResponseLinterProtocol]):
     name = "Content-Range"
     inputs = [b"1-100/200"]
     expected_out = None
@@ -277,7 +284,7 @@ class ContentRangeMissingUnit(FieldTest):
         message.status_code = 206
 
 
-class ContentRangeMissingHyphenTest(FieldTest):
+class ContentRangeMissingHyphenTest(FieldTest[ResponseLinterProtocol]):
     name = "Content-Range"
     inputs = [b"bytes 100/200"]
     expected_out = None
@@ -287,7 +294,7 @@ class ContentRangeMissingHyphenTest(FieldTest):
         message.status_code = 206
 
 
-class ContentRangeInvalidIntegerTest(FieldTest):
+class ContentRangeInvalidIntegerTest(FieldTest[ResponseLinterProtocol]):
     name = "Content-Range"
     inputs = [b"bytes 100-foo/200"]
     expected_out = None
@@ -297,7 +304,7 @@ class ContentRangeInvalidIntegerTest(FieldTest):
         message.status_code = 206
 
 
-class ContentRangeUnsatisfiedBadSCTest(FieldTest):
+class ContentRangeUnsatisfiedBadSCTest(FieldTest[ResponseLinterProtocol]):
     name = "Content-Range"
     inputs = [b"bytes */100"]
     expected_out = ContentRangeValue("bytes", None, None, 100)
@@ -307,7 +314,7 @@ class ContentRangeUnsatisfiedBadSCTest(FieldTest):
         message.status_code = 206
 
 
-class ContentRangeMissingSlashTest(FieldTest):
+class ContentRangeMissingSlashTest(FieldTest[ResponseLinterProtocol]):
     name = "Content-Range"
     inputs = [b"bytes 1-100 200"]
     expected_out = None

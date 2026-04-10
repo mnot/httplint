@@ -3,10 +3,15 @@ from typing import Any, cast
 from httplint.field.structured_field import StructuredField
 from httplint.field.tests import FieldTest
 from httplint.note import Note, categories, levels
-from httplint.types import AddNoteMethodType, NoteClassListType, SFListType
+from httplint.types import (
+    AddNoteMethodType,
+    NoteClassListType,
+    ResponseLinterProtocol,
+    SFListType,
+)
 
 
-class cache_group_invalidation(StructuredField):
+class cache_group_invalidation(StructuredField[ResponseLinterProtocol]):
     canonical_name = "Cache-Group-Invalidation"
     description = """\
 The `Cache-Group-Invalidation` header field allows a response to invalidate a group of cached
@@ -59,7 +64,7 @@ The `Cache-Group-Invalidation` header is only processed for unsafe methods (like
 It will be ignored for `%(method)s` requests."""
 
 
-class CacheGroupInvalidationTest(FieldTest):
+class CacheGroupInvalidationTest(FieldTest[ResponseLinterProtocol]):
     name = "Cache-Group-Invalidation"
     inputs = [b'"group1"']
     expected_out = [("group1", {})]
@@ -75,7 +80,7 @@ class CacheGroupInvalidationTest(FieldTest):
     expected_notes: NoteClassListType = []
 
 
-class CacheGroupInvalidationIgnoredTest(FieldTest):
+class CacheGroupInvalidationIgnoredTest(FieldTest[ResponseLinterProtocol]):
     name = "Cache-Group-Invalidation"
     inputs = [b'"group1"']
     expected_out = [("group1", {})]
@@ -91,7 +96,7 @@ class CacheGroupInvalidationIgnoredTest(FieldTest):
     expected_notes: NoteClassListType = [CACHE_GROUP_INVALIDATION_IGNORED]
 
 
-class CacheGroupInvalidationBadTypeTest(FieldTest):
+class CacheGroupInvalidationBadTypeTest(FieldTest[ResponseLinterProtocol]):
     name = "Cache-Group-Invalidation"
     inputs = [b"123"]
     expected_out = [(123, {})]
@@ -108,7 +113,7 @@ class CacheGroupInvalidationBadTypeTest(FieldTest):
     expected_notes: NoteClassListType = [CACHE_GROUP_INVALIDATION_BAD_TYPE]
 
 
-class CacheGroupInvalidationMultipleBadTypesTest(FieldTest):
+class CacheGroupInvalidationMultipleBadTypesTest(FieldTest[ResponseLinterProtocol]):
     name = "Cache-Group-Invalidation"
     inputs = [b'123, "group2", ?0']
     expected_out = [(123, {}), ("group2", {}), (False, {})]

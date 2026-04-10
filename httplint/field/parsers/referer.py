@@ -1,14 +1,16 @@
-from typing import cast
 from urllib.parse import urlparse
 
 from httplint.field.singleton_field import SingletonField
 from httplint.field.tests import FieldTest
 from httplint.note import Note, categories, levels
 from httplint.syntax import rfc9110
-from httplint.types import AddNoteMethodType, RequestLinterProtocol
+from httplint.types import (
+    AddNoteMethodType,
+    RequestLinterProtocol,
+)
 
 
-class referer(SingletonField):
+class referer(SingletonField[RequestLinterProtocol]):
     canonical_name = "Referer"
     description = """\
 The `Referer` [sic] header field allows the user agent to specify a URI Reference for the
@@ -24,7 +26,7 @@ resource from which the target URI was obtained (i.e., the "referrer")."""
             return
 
         referer_uri = self.value
-        request_uri = cast(RequestLinterProtocol, self.message).uri
+        request_uri = self.message.uri
 
         if not referer_uri or not request_uri:
             return
@@ -71,7 +73,7 @@ See [RFC 9110 Section 10.1.3](https://www.rfc-editor.org/rfc/rfc9110.html#sectio
 for details."""
 
 
-class RefererTest(FieldTest):
+class RefererTest(FieldTest[RequestLinterProtocol]):
     name = "Referer"
     inputs = [b"http://www.example.org/hypertext/Overview.html"]
     expected_out = "http://www.example.org/hypertext/Overview.html"

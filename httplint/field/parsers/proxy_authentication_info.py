@@ -1,10 +1,10 @@
 from httplint.field.list_field import HttpListField
 from httplint.field.tests import FieldTest
 from httplint.syntax import rfc9110
-from httplint.types import AddNoteMethodType
+from httplint.types import AddNoteMethodType, ResponseLinterProtocol
 
 
-class proxy_authentication_info(HttpListField):
+class proxy_authentication_info(HttpListField[ResponseLinterProtocol]):
     canonical_name = "Proxy-Authentication-Info"
     description = """\
 The `Proxy-Authentication-Info` header field is used to communicate information after
@@ -19,7 +19,7 @@ the client's authentication credentials have been accepted by a proxy."""
         pass
 
 
-class ProxyAuthenticationInfoTest(FieldTest):
+class ProxyAuthenticationInfoTest(FieldTest[ResponseLinterProtocol]):
     name = "Proxy-Authentication-Info"
     inputs = [
         b'nextnonce="5Yg8-VL198_7ulNinj-Vfs4567-32n3-84333", '

@@ -3,10 +3,14 @@ from httplint.field.list_field import HttpListField
 from httplint.field.tests import FieldTest
 from httplint.note import categories
 from httplint.syntax import rfc9110
-from httplint.types import AddNoteMethodType, NoteClassListType
+from httplint.types import (
+    AddNoteMethodType,
+    NoteClassListType,
+    ResponseLinterProtocol,
+)
 
 
-class access_control_allow_headers(HttpListField):
+class access_control_allow_headers(HttpListField[ResponseLinterProtocol]):
     canonical_name = "Access-Control-Allow-Headers"
     description = """\
 The `Access-Control-Allow-Headers` response header is used in response to a CORS preflight
@@ -22,7 +26,7 @@ request to indicate which HTTP headers can be used during the actual request."""
         return field_value.lower()
 
 
-class AccessControlAllowHeadersTest(FieldTest):
+class AccessControlAllowHeadersTest(FieldTest[ResponseLinterProtocol]):
     name = "Access-Control-Allow-Headers"
     inputs = [b"a, b"]
     expected_out = ["a", "b"]

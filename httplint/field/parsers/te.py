@@ -4,10 +4,10 @@ from httplint.field.list_field import HttpListField
 from httplint.field.tests import FieldTest
 from httplint.field.utils import parse_params
 from httplint.syntax import rfc9110
-from httplint.types import AddNoteMethodType, ParamDictType
+from httplint.types import AddNoteMethodType, AnyMessageLinterProtocol, ParamDictType
 
 
-class te(HttpListField):
+class te(HttpListField[AnyMessageLinterProtocol]):
     canonical_name = "TE"
     description = """\
 The `TE` request header indicates what HTTP/1.1 transfer-codings the client is willing to accept in
@@ -33,7 +33,7 @@ The most common transfer-coding, `chunked`, doesn't need to be listed in `TE`.
         return encoding, param_dict
 
 
-class TETest(FieldTest):
+class TETest(FieldTest[AnyMessageLinterProtocol]):
     name = "TE"
     inputs = [b"trailers, deflate; q=0.5"]
     expected_out = [("trailers", {}), ("deflate", {"q": "0.5"})]

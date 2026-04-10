@@ -1,17 +1,18 @@
 import re
+from typing import Generic
 
 import http_sf
 from markupsafe import Markup, escape
 
 from httplint.field import HttpField
 from httplint.note import Note, categories, levels
-from httplint.types import AddNoteMethodType, LinterProtocol
+from httplint.types import AddNoteMethodType, TMessage
 
 RE_FLAGS = re.VERBOSE | re.IGNORECASE
 CONTEXT_CHARS = 35
 
 
-class StructuredField(HttpField):
+class StructuredField(HttpField[TMessage], Generic[TMessage]):
     """
     A HTTP field that uses the Structured Fields encoding.
     See: RFC 8941
@@ -20,7 +21,7 @@ class StructuredField(HttpField):
     nonstandard_syntax = True
     sf_type: str = "item"  # item, list, dict
 
-    def __init__(self, wire_name: str, message: LinterProtocol) -> None:
+    def __init__(self, wire_name: str, message: TMessage) -> None:
         super().__init__(wire_name, message)
         self._sf_parsed = False
 
@@ -28,7 +29,7 @@ class StructuredField(HttpField):
         self.value.append(field_value)
         self._sf_parsed = False
 
-    def finish(self, message: LinterProtocol, add_note: AddNoteMethodType) -> None:
+    def finish(self, message: TMessage, add_note: AddNoteMethodType) -> None:
         if not self.value:
             return
 

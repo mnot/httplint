@@ -1,7 +1,8 @@
 from httplint.field.singleton_field import SingletonField
+from httplint.types import RequestLinterProtocol
 
 
-class soapaction(SingletonField):
+class soapaction(SingletonField[RequestLinterProtocol]):
     canonical_name = "SoapAction"
     description = """\
 The `SOAPAction` request header is used by SOAP, which isn't really HTTP. Stop it."""

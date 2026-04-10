@@ -14,7 +14,7 @@ from httplint.types import (
 )
 
 
-class cross_origin_opener_policy(StructuredField):
+class cross_origin_opener_policy(StructuredField[ResponseLinterProtocol]):
     canonical_name = "Cross-Origin-Opener-Policy"
     description = """\
 The `Cross-Origin-Opener-Policy` header field allows a document to disown its opener, ensuring that
@@ -143,35 +143,35 @@ header specifies a reporting endpoint, but no matching endpoint refers to it in 
 `Reporting-Endpoints` header."""
 
 
-class CrossOriginOpenerPolicySameOriginTest(FieldTest):
+class CrossOriginOpenerPolicySameOriginTest(FieldTest[ResponseLinterProtocol]):
     name = "Cross-Origin-Opener-Policy"
     inputs = [b"same-origin"]
     expected_out: Any = (Token("same-origin"), {})
     expected_notes: NoteClassListType = [COOP_SAME_ORIGIN]
 
 
-class CrossOriginOpenerPolicySameOriginAllowPopupsTest(FieldTest):
+class CrossOriginOpenerPolicySameOriginAllowPopupsTest(FieldTest[ResponseLinterProtocol]):
     name = "Cross-Origin-Opener-Policy"
     inputs = [b"same-origin-allow-popups"]
     expected_out: Any = (Token("same-origin-allow-popups"), {})
     expected_notes: NoteClassListType = [COOP_SAME_ORIGIN_ALLOW_POPUPS]
 
 
-class CrossOriginOpenerPolicyUnsafeNoneTest(FieldTest):
+class CrossOriginOpenerPolicyUnsafeNoneTest(FieldTest[ResponseLinterProtocol]):
     name = "Cross-Origin-Opener-Policy"
     inputs = [b"unsafe-none"]
     expected_out: Any = (Token("unsafe-none"), {})
     expected_notes: NoteClassListType = [COOP_UNSAFE_NONE]
 
 
-class CrossOriginOpenerPolicyBadValueTest(FieldTest):
+class CrossOriginOpenerPolicyBadValueTest(FieldTest[ResponseLinterProtocol]):
     name = "Cross-Origin-Opener-Policy"
     inputs = [b"foo"]
     expected_out: Any = (Token("foo"), {})
     expected_notes: NoteClassListType = [CROSS_ORIGIN_OPENER_POLICY_BAD_VALUE]
 
 
-class CrossOriginOpenerPolicyReportToTest(FieldTest):
+class CrossOriginOpenerPolicyReportToTest(FieldTest[ResponseLinterProtocol]):
     name = "Cross-Origin-Opener-Policy"
     inputs = [b"same-origin; report-to=endpoint"]
     expected_out: Any = (Token("same-origin"), {"report-to": "endpoint"})
@@ -183,7 +183,7 @@ class CrossOriginOpenerPolicyReportToTest(FieldTest):
         )
 
 
-class CrossOriginOpenerPolicyReportToMissingTest(FieldTest):
+class CrossOriginOpenerPolicyReportToMissingTest(FieldTest[ResponseLinterProtocol]):
     name = "Cross-Origin-Opener-Policy"
     inputs = [b"same-origin; report-to=endpoint"]
     expected_out: Any = (Token("same-origin"), {"report-to": "endpoint"})

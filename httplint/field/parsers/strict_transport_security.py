@@ -1,4 +1,4 @@
-from typing import Any, cast
+from typing import Any
 
 from httplint.field.singleton_field import SINGLE_HEADER_REPEAT, SingletonField
 from httplint.field.tests import FieldTest
@@ -6,7 +6,7 @@ from httplint.note import Note, categories, levels
 from httplint.syntax import rfc9110
 from httplint.types import (
     AddNoteMethodType,
-    LinterProtocol,
+    NoteArgsType,
     NoteClassListType,
     ResponseLinterProtocol,
 )
@@ -14,7 +14,7 @@ from httplint.types import (
 sts_dir = rf"(?: {rfc9110.token} (?: {rfc9110.BWS} = {rfc9110.BWS} {rfc9110.parameter_value} )? )"
 
 
-class strict_transport_security(SingletonField):
+class strict_transport_security(SingletonField[ResponseLinterProtocol]):
     canonical_name = "Strict-Transport-Security"
     description = """\
 The `Strict-Transport-Security` response header (often abbreviated as HSTS) lets a web site tell
@@ -28,9 +28,9 @@ browsers that it should only be communicated with using HTTPS, instead of using 
     valid_in_requests = False
     valid_in_responses = True
 
-    def __init__(self, wire_name: str, message: LinterProtocol) -> None:
+    def __init__(self, wire_name: str, message: ResponseLinterProtocol) -> None:
         super().__init__(wire_name, message)
-        self._deferred_notes: list[tuple[type[Note], dict[str, Any]]] = []
+        self._deferred_notes: list[NoteArgsType] = []
 
     def parse(self, field_value: str, add_note: AddNoteMethodType) -> dict[str, Any]:
         parsed: dict[str, Any] = {
@@ -120,7 +120,7 @@ browsers that it should only be communicated with using HTTPS, instead of using 
 
         if self.message.base_uri and self.message.base_uri.startswith("http:"):
             if getattr(self.message, "message_type", None) == "response":
-                response = cast(ResponseLinterProtocol, self.message)
+                response = self.message
                 if response.status_code != 301:
                     notes_to_add.append(HSTS_OVER_HTTP)
                     is_valid = False
@@ -303,7 +303,7 @@ The `%(directive)s` directive in the `Strict-Transport-Security` header is a val
 directive. It should not have an associated value."""
 
 
-class HSTSTest(FieldTest):
+class HSTSTest(FieldTest[ResponseLinterProtocol]):
     name = "Strict-Transport-Security"
     inputs = [b"max-age=31536000; includeSubDomains"]
     expected_out = {"max-age": 31536000, "includesubdomains": True, "preload": False}
@@ -313,7 +313,7 @@ class HSTSTest(FieldTest):
         message.base_uri = "https://www.example.com/"
 
 
-class HSTSValidTest(FieldTest):
+class HSTSValidTest(FieldTest[ResponseLinterProtocol]):
     name = "Strict-Transport-Security"
     inputs = [b"max-age=31536000; includeSubDomains; preload"]
     expected_out = {"max-age": 31536000, "includesubdomains": True, "preload": True}
@@ -323,7 +323,7 @@ class HSTSValidTest(FieldTest):
         message.base_uri = "https://www.example.com/"
 
 
-class HSTSHttpTest(FieldTest):
+class HSTSHttpTest(FieldTest[ResponseLinterProtocol]):
     name = "Strict-Transport-Security"
     inputs = [b"max-age=31536000"]
     expected_out = {"max-age": 31536000, "includesubdomains": False, "preload": False}
@@ -338,7 +338,7 @@ class HSTSHttpTest(FieldTest):
         message.base_uri = "http://www.example.com/"
 
 
-class HSTSDuplicateTest(FieldTest):
+class HSTSDuplicateTest(FieldTest[ResponseLinterProtocol]):
     name = "Strict-Transport-Security"
     inputs = [b"max-age=31536000; max-age=100"]
     expected_out = {"max-age": 31536000, "includesubdomains": False, "preload": False}
@@ -353,7 +353,7 @@ class HSTSDuplicateTest(FieldTest):
         message.base_uri = "https://www.example.com/"
 
 
-class HSTSTripleDuplicateTest(FieldTest):
+class HSTSTripleDuplicateTest(FieldTest[ResponseLinterProtocol]):
     name = "Strict-Transport-Security"
     inputs = [b"max-age=31536000; max-age=100; max-age=200"]
     expected_out = {"max-age": 31536000, "includesubdomains": False, "preload": False}
@@ -368,7 +368,7 @@ class HSTSTripleDuplicateTest(FieldTest):
         message.base_uri = "https://www.example.com/"
 
 
-class HSTSMultipleHeadersTest(FieldTest):
+class HSTSMultipleHeadersTest(FieldTest[ResponseLinterProtocol]):
     name = "Strict-Transport-Security"
     inputs = [b"max-age=31536000", b"max-age=0"]
     expected_out = {"max-age": 31536000, "includesubdomains": False, "preload": False}
@@ -383,7 +383,7 @@ class HSTSMultipleHeadersTest(FieldTest):
         message.base_uri = "https://www.example.com/"
 
 
-class HSTSPreloadNotSuitableTest(FieldTest):
+class HSTSPreloadNotSuitableTest(FieldTest[ResponseLinterProtocol]):
     name = "Strict-Transport-Security"
     inputs = [b"max-age=100; includeSubDomains; preload"]
     expected_out = {"max-age": 100, "includesubdomains": True, "preload": True}
@@ -398,7 +398,7 @@ class HSTSPreloadNotSuitableTest(FieldTest):
         message.base_uri = "https://www.example.com/"
 
 
-class HSTSShortMaxAgeTest(FieldTest):
+class HSTSShortMaxAgeTest(FieldTest[ResponseLinterProtocol]):
     name = "Strict-Transport-Security"
     inputs = [b"max-age=100"]
     expected_out = {"max-age": 100, "includesubdomains": False, "preload": False}
@@ -413,7 +413,7 @@ class HSTSShortMaxAgeTest(FieldTest):
         message.base_uri = "https://www.example.com/"
 
 
-class HSTSMaxAgeZeroTest(FieldTest):
+class HSTSMaxAgeZeroTest(FieldTest[ResponseLinterProtocol]):
     name = "Strict-Transport-Security"
     inputs = [b"max-age=0"]
     expected_out = {"max-age": 0, "includesubdomains": False, "preload": False}
@@ -428,7 +428,7 @@ class HSTSMaxAgeZeroTest(FieldTest):
         message.base_uri = "https://www.example.com/"
 
 
-class HSTSNoSubdomainsTest(FieldTest):
+class HSTSNoSubdomainsTest(FieldTest[ResponseLinterProtocol]):
     name = "Strict-Transport-Security"
     inputs = [b"max-age=31536000"]
     expected_out = {"max-age": 31536000, "includesubdomains": False, "preload": False}
@@ -438,7 +438,7 @@ class HSTSNoSubdomainsTest(FieldTest):
         message.base_uri = "https://www.example.com/"
 
 
-class HSTSPreloadMissingMaxAgeTest(FieldTest):
+class HSTSPreloadMissingMaxAgeTest(FieldTest[ResponseLinterProtocol]):
     name = "Strict-Transport-Security"
     inputs = [b"includeSubDomains; preload"]
     expected_out = {"max-age": None, "includesubdomains": True, "preload": True}
@@ -453,7 +453,7 @@ class HSTSPreloadMissingMaxAgeTest(FieldTest):
         message.base_uri = "https://www.example.com/"
 
 
-class HSTSBadMaxAgeValueTest(FieldTest):
+class HSTSBadMaxAgeValueTest(FieldTest[ResponseLinterProtocol]):
     name = "Strict-Transport-Security"
     inputs = [b"max-age=foo"]
     expected_out = {"max-age": None, "includesubdomains": False, "preload": False}
@@ -468,7 +468,7 @@ class HSTSBadMaxAgeValueTest(FieldTest):
         message.base_uri = "https://www.example.com/"
 
 
-class HSTSTrailingSemicolonTest(FieldTest):
+class HSTSTrailingSemicolonTest(FieldTest[ResponseLinterProtocol]):
     name = "Strict-Transport-Security"
     inputs = [b"max-age=31536000;includeSubdomains;"]
     expected_out = {"max-age": 31536000, "includesubdomains": True, "preload": False}

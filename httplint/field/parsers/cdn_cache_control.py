@@ -5,10 +5,15 @@ from httplint.field.parsers.cache_control import KNOWN_CC
 from httplint.field.structured_field import StructuredField
 from httplint.field.tests import FakeRequestLinter, FieldTest
 from httplint.note import Note, categories, levels
-from httplint.types import AddNoteMethodType, NoteClassListType, SFDictionaryType
+from httplint.types import (
+    AddNoteMethodType,
+    NoteClassListType,
+    ResponseLinterProtocol,
+    SFDictionaryType,
+)
 
 
-class cdn_cache_control(StructuredField):
+class cdn_cache_control(StructuredField[ResponseLinterProtocol]):
     canonical_name = "CDN-Cache-Control"
     description = """\
 The `CDN-Cache-Control` header field targets cache directives to Content Delivery Networks."""
@@ -84,21 +89,21 @@ Content Delivery Network (CDN) caches, separately from the `Cache-Control` heade
 applies to all caches)."""
 
 
-class CDNCacheControlTest(FieldTest):
+class CDNCacheControlTest(FieldTest[ResponseLinterProtocol]):
     name = "CDN-Cache-Control"
     inputs = [b"max-age=60, no-store"]
     expected_out = {"max-age": (60, {}), "no-store": (True, {})}
     expected_notes: NoteClassListType = [CDN_CACHE_CONTROL_PRESENT]
 
 
-class CDNCacheControlBadSyntaxTest(FieldTest):
+class CDNCacheControlBadSyntaxTest(FieldTest[ResponseLinterProtocol]):
     name = "CDN-Cache-Control"
     inputs = [b"max-age=foo"]
     expected_notes: NoteClassListType = [CDN_CACHE_CONTROL_PRESENT, BAD_CDN_CC_TYPE]
     expected_out = {"max-age": (Token("foo"), {})}
 
 
-class CDNCacheControlCaseTest(FieldTest):
+class CDNCacheControlCaseTest(FieldTest[ResponseLinterProtocol]):
     name = "CDN-Cache-Control"
     inputs = [b"no-store"]
     expected_out = {"no-store": (True, {})}
@@ -107,7 +112,7 @@ class CDNCacheControlCaseTest(FieldTest):
     expected_notes: NoteClassListType = [CDN_CACHE_CONTROL_PRESENT]
 
 
-class CDNCacheControlRequestTest(FieldTest):
+class CDNCacheControlRequestTest(FieldTest[ResponseLinterProtocol]):
     name = "CDN-Cache-Control"
     inputs = [b"max-age=60"]
     linter_class = FakeRequestLinter

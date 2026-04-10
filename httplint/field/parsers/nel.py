@@ -9,7 +9,7 @@ from httplint.types import (
 )
 
 
-class nel(JsonField):
+class nel(JsonField[ResponseLinterProtocol]):
     canonical_name = "NEL"
     description = """\
 The `NEL` header field configures Network Error Logging policies. 
@@ -132,7 +132,7 @@ policy specifies a reporting endpoint, but no matching endpoint refers to it in 
 `Reporting-Endpoints` header."""
 
 
-class NelTest(FieldTest):
+class NelTest(FieldTest[ResponseLinterProtocol]):
     name = "NEL"
     inputs = [
         b'{"report_to": "group1", "max_age": 2592000, "include_subdomains": true, '
@@ -152,7 +152,7 @@ class NelTest(FieldTest):
         message.headers.process([(b"Reporting-Endpoints", b'group1="https://example.com/reports"')])
 
 
-class NelMultiLineTest(FieldTest):
+class NelMultiLineTest(FieldTest[ResponseLinterProtocol]):
     name = "NEL"
     inputs = [
         b'{"report_to": "group1", "max_age": 2592000}',
@@ -175,14 +175,14 @@ class NelMultiLineTest(FieldTest):
         )
 
 
-class NelMissingReportToTest(FieldTest):
+class NelMissingReportToTest(FieldTest[ResponseLinterProtocol]):
     name = "NEL"
     inputs = [b'{"max_age": 100}']
     expected_out = [{"max_age": 100}]
     expected_notes: NoteClassListType = [NEL_MISSING_KEY]
 
 
-class NelBadFractionTest(FieldTest):
+class NelBadFractionTest(FieldTest[ResponseLinterProtocol]):
     name = "NEL"
     inputs = [b'{"report_to": "a", "max_age": 1, "success_fraction": 1.5}']
     expected_out = [{"report_to": "a", "max_age": 1, "success_fraction": 1.5}]
@@ -192,7 +192,7 @@ class NelBadFractionTest(FieldTest):
         message.headers.process([(b"Reporting-Endpoints", b'a="https://example.com/reports"')])
 
 
-class NelBadJsonTest(FieldTest):
+class NelBadJsonTest(FieldTest[ResponseLinterProtocol]):
     name = "NEL"
     inputs = [b"{unquoted: key}"]
     expected_out = None
@@ -200,7 +200,7 @@ class NelBadJsonTest(FieldTest):
     expected_notes: NoteClassListType = [BAD_JSON]
 
 
-class NelReportToTest(FieldTest):
+class NelReportToTest(FieldTest[ResponseLinterProtocol]):
     name = "NEL"
     inputs = [b'{"report_to": "group1", "max_age": 100}']
     expected_out = [{"report_to": "group1", "max_age": 100}]
@@ -210,7 +210,7 @@ class NelReportToTest(FieldTest):
         message.headers.process([(b"Reporting-Endpoints", b'group1="https://example.com/reports"')])
 
 
-class NelReportToMissingTest(FieldTest):
+class NelReportToMissingTest(FieldTest[ResponseLinterProtocol]):
     name = "NEL"
     inputs = [b'{"report_to": "group1", "max_age": 100}']
     expected_out = [{"report_to": "group1", "max_age": 100}]

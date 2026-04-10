@@ -16,7 +16,7 @@ from httplint.types import (
 )
 
 
-class accept_ch(StructuredField):
+class accept_ch(StructuredField[ResponseLinterProtocol]):
     canonical_name = "Accept-CH"
     description = """\
 The `Accept-CH` response header field allows servers to indicate the Client Hints that they are
@@ -102,14 +102,14 @@ As a result, it will likely be ignored by browsers.
 See [its definition](%(ref_uri)s) for more information."""
 
 
-class AcceptCHTest(FieldTest):
+class AcceptCHTest(FieldTest[ResponseLinterProtocol]):
     name = "Accept-CH"
     inputs = [b"Sec-CH-Example, Sec-CH-Example-2"]
     expected_out = [(Token("Sec-CH-Example"), {}), (Token("Sec-CH-Example-2"), {})]
     expected_notes: NoteClassListType = []
 
 
-class AcceptCHBadSyntaxTest(FieldTest):
+class AcceptCHBadSyntaxTest(FieldTest[ResponseLinterProtocol]):
     name = "Accept-CH"
     inputs = [b'"foo"']
     expected_out = [("foo", {})]
@@ -118,7 +118,7 @@ class AcceptCHBadSyntaxTest(FieldTest):
     ]
 
 
-class AcceptCHHTTPTest(FieldTest):
+class AcceptCHHTTPTest(FieldTest[ResponseLinterProtocol]):
     name = "Accept-CH"
     inputs = [b"Sec-CH-Example"]
     expected_out = [(Token("Sec-CH-Example"), {})]
@@ -129,7 +129,7 @@ class AcceptCHHTTPTest(FieldTest):
         message.related.uri = "http://example.com/"
 
 
-class AcceptCHMissingVaryTest(FieldTest):
+class AcceptCHMissingVaryTest(FieldTest[ResponseLinterProtocol]):
     name = "Accept-CH"
     inputs = [b"Sec-CH-Example"]
     expected_out = [(Token("Sec-CH-Example"), {})]

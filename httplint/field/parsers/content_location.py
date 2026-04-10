@@ -1,9 +1,12 @@
 from httplint.field.singleton_field import SingletonField
 from httplint.field.tests import FieldTest
 from httplint.syntax import rfc9110
+from httplint.types import (
+    ResponseLinterProtocol,
+)
 
 
-class content_location(SingletonField):
+class content_location(SingletonField[ResponseLinterProtocol]):
     canonical_name = "Content-Location"
     description = """\
 The `Content-Location` response header can used to supply an address for the
@@ -16,7 +19,7 @@ URI."""
     valid_in_responses = True
 
 
-class ContentLocationTest(FieldTest):
+class ContentLocationTest(FieldTest[ResponseLinterProtocol]):
     name = "Content-Location"
     inputs = [b"/foo"]
     expected_out = "/foo"

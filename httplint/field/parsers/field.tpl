@@ -6,7 +6,7 @@ from httplint.note import Note, categories, levels
 from httplint.types import AddNoteMethodType
 
 
-class SHORT_NAME(HttpListField):
+class SHORT_NAME(HttpListField[ResponseLinterProtocol]):
     canonical_name = "SHORT_NAME"
     description = """\
 FIXME
@@ -33,7 +33,7 @@ class SHORT_NAME_NOTE(Note):
 FIXME"""
 
 
-class SHORT_NAMETest(FieldTest):
+class SHORT_NAMETest(FieldTest[ResponseLinterProtocol]):
     name = 'SHORT_NAME'
     inputs = ['FIXME']
     expected_out = ('FIXME')

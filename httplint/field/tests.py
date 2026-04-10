@@ -1,6 +1,6 @@
 import unittest
 from functools import partial
-from typing import Any, Iterable, List, Tuple, Type, cast
+from typing import Any, Generic, Iterable, List, Optional, Tuple, Type, cast
 
 from httplint.field.cors import check_preflight_request, check_preflight_response
 from httplint.i18n import L_
@@ -11,6 +11,7 @@ from httplint.types import (
     NoteClassListType,
     RequestLinterProtocol,
     ResponseLinterProtocol,
+    TMessage,
 )
 
 
@@ -23,10 +24,10 @@ class FakeResponseLinter(HttpResponseLinter):
         HttpResponseLinter.__init__(self)
         self.base_uri = "http://example.com/foo/bar"
         self.status_phrase = ""
-        self.related = FakeRequestLinter()
+        self.related: Optional[LinterProtocol] = FakeRequestLinter()
 
     def post_checks(self) -> None:
-        if self.related and not hasattr(self.related, "headers"):
+        if self.related is not None and not hasattr(self.related, "headers"):
             return
         check_preflight_response(self)
 
@@ -56,7 +57,16 @@ class FakeRequest:
         self.method = "GET"
 
 
-class FieldTest(unittest.TestCase):
+class FakeCaching:
+    def __init__(self) -> None:
+        self.age = 0
+        self.store_private = False
+        self.freshness_lifetime_private = 0
+        self.store_shared = False
+        self.freshness_lifetime_shared = 0
+
+
+class FieldTest(unittest.TestCase, Generic[TMessage]):
     """
     Testing machinery for headers.
     """
@@ -65,7 +75,7 @@ class FieldTest(unittest.TestCase):
     inputs: List[bytes] = []
     expected_out: Any = []
     expected_notes: NoteClassListType = []
-    message: LinterProtocol
+    message: TMessage
 
     linter_class: Type[HttpMessageLinter] = FakeResponseLinter
 
@@ -73,16 +83,15 @@ class FieldTest(unittest.TestCase):
         "Test setup."
         if self.name:
             # pylint: disable=protected-access
-            headers = cast(Any, self.linter_class().headers)
+            headers = self.linter_class().headers
             handler = headers._finder.find_handler(self.name)
             if handler.valid_in_requests and not handler.valid_in_responses:
                 self.linter_class = FakeRequestLinter
-        self.message = self.linter_class()
-        message_type = getattr(self.message, "message_type", None)
-        if message_type == "request":
-            self.set_request_context(cast(RequestLinterProtocol, self.message))
-        elif message_type == "response":
-            self.set_response_context(cast(ResponseLinterProtocol, self.message))
+        self.message = cast(TMessage, self.linter_class())
+        if isinstance(self.message, HttpRequestLinter):
+            self.set_request_context(self.message)
+        elif isinstance(self.message, HttpResponseLinter):
+            self.set_response_context(self.message)
         else:
             self.set_context(self.message)
 

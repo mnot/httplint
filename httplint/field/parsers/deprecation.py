@@ -12,7 +12,7 @@ from httplint.types import (
 )
 
 
-class deprecation(StructuredField):
+class deprecation(StructuredField[ResponseLinterProtocol]):
     canonical_name = "Deprecation"
     description = """\
 The `Deprecation` header field allows a server to communicate to a client that the resource is or
@@ -77,7 +77,7 @@ The `Deprecation` [Structured Field](https://www.rfc-editor.org/rfc/rfc8941.html
 header must be a Date or a Boolean. Found: %(item_type)s."""
 
 
-class DeprecationDateTest(FieldTest):
+class DeprecationDateTest(FieldTest[ResponseLinterProtocol]):
     name = "Deprecation"
     inputs = [b"@1672531199"]
     expected_out: Any = (datetime.fromtimestamp(1672531199), {})
@@ -87,21 +87,21 @@ class DeprecationDateTest(FieldTest):
         message.start_time = 2000000000
 
 
-class DeprecationBoolTest(FieldTest):
+class DeprecationBoolTest(FieldTest[ResponseLinterProtocol]):
     name = "Deprecation"
     inputs = [b"?1"]
     expected_out: Any = (True, {})
     expected_notes: NoteClassListType = [DEPRECATION_TRUE]
 
 
-class DeprecationFalseTest(FieldTest):
+class DeprecationFalseTest(FieldTest[ResponseLinterProtocol]):
     name = "Deprecation"
     inputs = [b"?0"]
     expected_out: Any = (False, {})
     expected_notes: NoteClassListType = [DEPRECATION_BAD_TYPE]
 
 
-class DeprecationInvalidTest(FieldTest):
+class DeprecationInvalidTest(FieldTest[ResponseLinterProtocol]):
     name = "Deprecation"
     inputs = [b'""']
     expected_out: Any = ("", {})

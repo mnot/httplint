@@ -9,6 +9,7 @@ from typing import (
     Protocol,
     Tuple,
     Type,
+    TypeVar,
     Union,
     runtime_checkable,
 )
@@ -39,7 +40,17 @@ NoteClassListType = List[Type[Note]]  # classes
 
 
 class AddNoteMethodType(Protocol):
-    def __call__(self, note: Type[Note], **vrs: VariableType) -> Note: ...
+    def __call__(
+        self, note: Type[Note], category: Optional[Any] = None, **vrs: VariableType
+    ) -> Note: ...
+
+
+DeferredNoteType = Tuple[AddNoteMethodType, Type[Note], Optional[Any], Dict[str, VariableType]]
+
+NoteArgsType = Tuple[Type[Note], Dict[str, VariableType]]
+
+
+TMessage = TypeVar("TMessage", bound="LinterProtocol")
 
 
 # Linter Protocols
@@ -62,6 +73,7 @@ class SectionProtocol(Protocol):
     text: List[Tuple[str, str]]
     handlers: Dict[str, Any]  # Avoiding circularity with HttpField
     is_trailer: bool
+    _finder: Any  # Avoiding circularity with HttpFieldFinder; for tests
 
     def process(self, raw_fields: RawFieldListType) -> None: ...
 
@@ -103,6 +115,12 @@ class RequestLinterProtocol(LinterProtocol, Protocol):
     iri: Optional[str]
     uri: Optional[str]
 
+    @property
+    def response(self) -> Optional[ResponseLinterProtocol]: ...
+
+    @response.setter
+    def response(self, value: Optional[ResponseLinterProtocol]) -> None: ...
+
 
 @runtime_checkable
 class ResponseLinterProtocol(LinterProtocol, Protocol):
@@ -110,6 +128,12 @@ class ResponseLinterProtocol(LinterProtocol, Protocol):
     status_phrase: Optional[str]
     is_head_response: bool
     caching: CachingProtocol
+
+    @property
+    def request(self) -> Optional[RequestLinterProtocol]: ...
+
+    @request.setter
+    def request(self, value: Optional[RequestLinterProtocol]) -> None: ...
 
 
 AnyMessageLinterProtocol = Union[RequestLinterProtocol, ResponseLinterProtocol]

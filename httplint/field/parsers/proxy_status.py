@@ -6,10 +6,15 @@ from httplint.field.structured_field import StructuredField
 from httplint.field.tests import FieldTest
 from httplint.field.utils import check_sf_params
 from httplint.note import Note, categories, levels
-from httplint.types import AddNoteMethodType, NoteClassListType, SFListType
+from httplint.types import (
+    AddNoteMethodType,
+    NoteClassListType,
+    ResponseLinterProtocol,
+    SFListType,
+)
 
 
-class proxy_status(StructuredField):
+class proxy_status(StructuredField[ResponseLinterProtocol]):
     canonical_name = "Proxy-Status"
     description = """\
 The `Proxy-Status` header field indicates how intermediaries have handled the response."""
@@ -135,7 +140,7 @@ The value `%(value)s` is not defined for the `%(param)s` parameter.
 """
 
 
-class ProxyStatusTest(FieldTest):
+class ProxyStatusTest(FieldTest[ResponseLinterProtocol]):
     name = "Proxy-Status"
     inputs = [
         b"ExampleProxy; error=http_protocol_error",
@@ -148,14 +153,14 @@ class ProxyStatusTest(FieldTest):
     expected_notes: NoteClassListType = [PROXY_STATUS]
 
 
-class ProxyStatusUnknownParamTest(FieldTest):
+class ProxyStatusUnknownParamTest(FieldTest[ResponseLinterProtocol]):
     name = "Proxy-Status"
     inputs = [b"ExampleProxy; unknown=1"]
     expected_out = [(Token("ExampleProxy"), {"unknown": 1})]
     expected_notes: NoteClassListType = [PROXY_STATUS_UNKNOWN_PARAM, PROXY_STATUS]
 
 
-class ProxyStatusBadParamValTest(FieldTest):
+class ProxyStatusBadParamValTest(FieldTest[ResponseLinterProtocol]):
     name = "Proxy-Status"
     inputs = [b'ExampleProxy; error="string"']
     expected_out = [(Token("ExampleProxy"), {"error": "string"})]

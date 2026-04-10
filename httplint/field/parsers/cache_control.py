@@ -5,7 +5,11 @@ from httplint.field.tests import FieldTest
 from httplint.field.utils import unquote_string
 from httplint.note import Note, categories, levels
 from httplint.syntax import rfc9111
-from httplint.types import AddNoteMethodType, NoteClassListType
+from httplint.types import (
+    AddNoteMethodType,
+    AnyMessageLinterProtocol,
+    NoteClassListType,
+)
 from httplint.util import markdown_list
 
 # known cache directives; assumed to not allow duplicates
@@ -78,7 +82,7 @@ CONFLICTING_CC: List[Tuple[str, List[str]]] = [
 ]
 
 
-class cache_control(HttpListField):
+class cache_control(HttpListField[AnyMessageLinterProtocol]):
     canonical_name = "Cache-Control"
     description = """\
 The `Cache-Control` header is used to specify required directives to all caches that
@@ -344,59 +348,59 @@ showing it to the user.
 Note that these directives do not have any effect on other clients or caches."""
 
 
-class CacheControlTest(FieldTest):
+class CacheControlTest(FieldTest[AnyMessageLinterProtocol]):
     name = "Cache-Control"
     inputs = [b"a=b, c=d", b"e=f", b"g"]
     expected_out = [("a", "b"), ("c", "d"), ("e", "f"), ("g", None)]
 
 
-class CacheControlCaseTest(FieldTest):
+class CacheControlCaseTest(FieldTest[AnyMessageLinterProtocol]):
     name = "Cache-Control"
     inputs = [b"A=b, c=D"]
     expected_out = [("a", "b"), ("c", "D")]
     expected_notes: NoteClassListType = [CC_MISCAP]
 
 
-class CacheControlQuotedTest(FieldTest):
+class CacheControlQuotedTest(FieldTest[AnyMessageLinterProtocol]):
     name = "Cache-Control"
     inputs = [b'private="b,c", c=d']
     expected_out = [("private", "b,c"), ("c", "d")]
 
 
-class CacheControlMaxAgeTest(FieldTest):
+class CacheControlMaxAgeTest(FieldTest[AnyMessageLinterProtocol]):
     name = "Cache-Control"
     inputs = [b"max-age=5"]
     expected_out = [("max-age", 5)]
 
 
-class CacheControlBadMaxAgeTest(FieldTest):
+class CacheControlBadMaxAgeTest(FieldTest[AnyMessageLinterProtocol]):
     name = "Cache-Control"
     inputs = [b"max-age=foo"]
     expected_notes: NoteClassListType = [CC_BAD_VALUE_TYPE]
 
 
-class CacheControlBigTest(FieldTest):
+class CacheControlBigTest(FieldTest[AnyMessageLinterProtocol]):
     name = "Cache-Control"
     inputs = [b"max-age=2147483649"]
     expected_out = [("max-age", 2147483649)]
     expected_notes: NoteClassListType = [CC_MAX_AGE_TOO_LARGE]
 
 
-class CacheControlValueNotAllowedTest(FieldTest):
+class CacheControlValueNotAllowedTest(FieldTest[AnyMessageLinterProtocol]):
     name = "Cache-Control"
     inputs = [b"no-store=foo"]
     expected_out = [("no-store", "foo")]
     expected_notes: NoteClassListType = [CC_SHOULD_NOT_HAVE_VALUE]
 
 
-class CacheControlDupTest(FieldTest):
+class CacheControlDupTest(FieldTest[AnyMessageLinterProtocol]):
     name = "Cache-Control"
     inputs = [b"max-age=5, max-age=10"]
     expected_out = [("max-age", 5), ("max-age", 10)]
     expected_notes: NoteClassListType = [CC_DUP]
 
 
-class CacheControlUnknownDupTest(FieldTest):
+class CacheControlUnknownDupTest(FieldTest[AnyMessageLinterProtocol]):
     name = "Cache-Control"
     inputs = [b"foo=1, foo=2"]
     expected_out = [("foo", "1"), ("foo", "2")]

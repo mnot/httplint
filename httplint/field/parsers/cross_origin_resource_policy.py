@@ -3,10 +3,14 @@ from typing import Any
 from httplint.field.singleton_field import SingletonField
 from httplint.field.tests import FieldTest
 from httplint.note import Note, categories, levels
-from httplint.types import AddNoteMethodType, NoteClassListType
+from httplint.types import (
+    AddNoteMethodType,
+    NoteClassListType,
+    ResponseLinterProtocol,
+)
 
 
-class cross_origin_resource_policy(SingletonField):
+class cross_origin_resource_policy(SingletonField[ResponseLinterProtocol]):
     canonical_name = "Cross-Origin-Resource-Policy"
     description = """\
 The `Cross-Origin-Resource-Policy` header field allows a resource to indicate whether it can be
@@ -78,28 +82,28 @@ it must be one of `same-origin`, `same-site`, or `cross-origin`.
 """
 
 
-class CrossOriginResourcePolicySameOriginTest(FieldTest):
+class CrossOriginResourcePolicySameOriginTest(FieldTest[ResponseLinterProtocol]):
     name = "Cross-Origin-Resource-Policy"
     inputs = [b"same-origin"]
     expected_out = "same-origin"
     expected_notes: NoteClassListType = [CORP_SAME_ORIGIN]
 
 
-class CrossOriginResourcePolicySameSiteTest(FieldTest):
+class CrossOriginResourcePolicySameSiteTest(FieldTest[ResponseLinterProtocol]):
     name = "Cross-Origin-Resource-Policy"
     inputs = [b"same-site"]
     expected_out = "same-site"
     expected_notes: NoteClassListType = [CORP_SAME_SITE]
 
 
-class CrossOriginResourcePolicyCrossOriginTest(FieldTest):
+class CrossOriginResourcePolicyCrossOriginTest(FieldTest[ResponseLinterProtocol]):
     name = "Cross-Origin-Resource-Policy"
     inputs = [b"cross-origin"]
     expected_out = "cross-origin"
     expected_notes: NoteClassListType = [CORP_CROSS_ORIGIN]
 
 
-class CrossOriginResourcePolicyBadValueTest(FieldTest):
+class CrossOriginResourcePolicyBadValueTest(FieldTest[ResponseLinterProtocol]):
     name = "Cross-Origin-Resource-Policy"
     inputs = [b"foo"]
     expected_out = "foo"

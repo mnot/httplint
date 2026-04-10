@@ -3,10 +3,15 @@ from typing import Any, List, Union
 from httplint.field.structured_field import StructuredField
 from httplint.field.tests import FieldTest
 from httplint.note import Note, categories, levels
-from httplint.types import AddNoteMethodType, NoteClassListType, SFDictionaryType
+from httplint.types import (
+    AddNoteMethodType,
+    NoteClassListType,
+    ResponseLinterProtocol,
+    SFDictionaryType,
+)
 
 
-class use_as_dictionary(StructuredField):
+class use_as_dictionary(StructuredField[ResponseLinterProtocol]):
     canonical_name = "Use-As-Dictionary"
     description = """\
 The `Use-As-Dictionary` header field is used by a server to indicate that the response can be used
@@ -88,14 +93,14 @@ class USE_AS_DICTIONARY_BAD_MATCH_DEST(Note):
 The `match-dest` parameter must be a String or a list of Strings."""
 
 
-class UseAsDictionaryTest(FieldTest):
+class UseAsDictionaryTest(FieldTest[ResponseLinterProtocol]):
     name = "Use-As-Dictionary"
     inputs = [b'match="/foo/*", ttl=123']
     expected_out = {"match": ("/foo/*", {}), "ttl": (123, {})}
     expected_notes: NoteClassListType = []
 
 
-class UseAsDictionaryBadParamTest(FieldTest):
+class UseAsDictionaryBadParamTest(FieldTest[ResponseLinterProtocol]):
     name = "Use-As-Dictionary"
     inputs = [b'match=123, ttl="abc"']
     expected_out = {"match": (123, {}), "ttl": ("abc", {})}

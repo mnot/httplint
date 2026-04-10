@@ -19,7 +19,7 @@ from httplint.types import (
 )
 
 
-class access_control_allow_origin(SingletonField):
+class access_control_allow_origin(SingletonField[ResponseLinterProtocol]):
     canonical_name = "Access-Control-Allow-Origin"
     description = """\
 The `Access-Control-Allow-Origin` response header indicates whether the response can be shared with
@@ -32,30 +32,28 @@ requesting code from the given origin."""
     valid_in_responses = True
 
     def evaluate(self, add_note: AddNoteMethodType) -> None:
-        check_access_control_allow_origin(
-            str(self.value), cast(ResponseLinterProtocol, self.message)
-        )
+        check_access_control_allow_origin(str(self.value), self.message)
 
 
-class AccessControlAllowOriginTest(FieldTest):
+class AccessControlAllowOriginTest(FieldTest[ResponseLinterProtocol]):
     name = "Access-Control-Allow-Origin"
     inputs = [b"https://developer.mozilla.org"]
     expected_out = "https://developer.mozilla.org"
 
 
-class AccessControlAllowOriginStarTest(FieldTest):
+class AccessControlAllowOriginStarTest(FieldTest[ResponseLinterProtocol]):
     name = "Access-Control-Allow-Origin"
     inputs = [b"*"]
     expected_out = "*"
 
 
-class AccessControlAllowOriginNullTest(FieldTest):
+class AccessControlAllowOriginNullTest(FieldTest[ResponseLinterProtocol]):
     name = "Access-Control-Allow-Origin"
     inputs = [b"null"]
     expected_out = "null"
 
 
-class AccessControlAllowOriginMatchTest(FieldTest):
+class AccessControlAllowOriginMatchTest(FieldTest[ResponseLinterProtocol]):
     name = "Access-Control-Allow-Origin"
     inputs = [b"https://example.com"]
     expected_out = "https://example.com"
@@ -66,7 +64,7 @@ class AccessControlAllowOriginMatchTest(FieldTest):
         request.headers.process([(b"Origin", b"https://example.com")])
 
 
-class AccessControlAllowOriginMismatchTest(FieldTest):
+class AccessControlAllowOriginMismatchTest(FieldTest[ResponseLinterProtocol]):
     name = "Access-Control-Allow-Origin"
     inputs = [b"https://other.com"]
     expected_out = "https://other.com"
@@ -77,7 +75,7 @@ class AccessControlAllowOriginMismatchTest(FieldTest):
         request.headers.process([(b"Origin", b"https://example.com")])
 
 
-class AccessControlAllowOriginStarContextTest(FieldTest):
+class AccessControlAllowOriginStarContextTest(FieldTest[ResponseLinterProtocol]):
     name = "Access-Control-Allow-Origin"
     inputs = [b"*"]
     expected_out = "*"
@@ -88,7 +86,7 @@ class AccessControlAllowOriginStarContextTest(FieldTest):
         request.headers.process([(b"Origin", b"https://example.com")])
 
 
-class AccessControlAllowOriginNullContextTest(FieldTest):
+class AccessControlAllowOriginNullContextTest(FieldTest[ResponseLinterProtocol]):
     name = "Access-Control-Allow-Origin"
     inputs = [b"null"]
     expected_out = "null"

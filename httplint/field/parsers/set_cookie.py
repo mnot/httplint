@@ -1,13 +1,18 @@
 from calendar import timegm
 from re import match, split
-from typing import Any, Callable, List, Optional, Tuple, Union
+from typing import Any, List, Optional, Tuple, Union
 from urllib.parse import urlsplit
 
 from httplint.field import RFC6265
 from httplint.field.broken_field import BrokenField
 from httplint.field.tests import FieldTest
 from httplint.note import Note, categories, levels
-from httplint.types import AddNoteMethodType, LinterProtocol, NoteClassListType
+from httplint.types import (
+    AddNoteMethodType,
+    DeferredNoteType,
+    NoteClassListType,
+    ResponseLinterProtocol,
+)
 from httplint.util import relative_time
 
 CookieType = Tuple[str, str, List[Tuple[str, Union[str, int]]]]
@@ -16,7 +21,7 @@ CookieType = Tuple[str, str, List[Tuple[str, Union[str, int]]]]
 MAX_SET_COOKIE_VALUE_LENGTH = 128
 
 
-class set_cookie(BrokenField):
+class set_cookie(BrokenField[ResponseLinterProtocol]):
     canonical_name = "Set-Cookie"
     description = """\
 The `Set-Cookie` response header sets a stateful "cookie" on the client, to be included in future
@@ -29,13 +34,15 @@ requests to the server."""
     valid_in_requests = False
     valid_in_responses = True
 
-    def __init__(self, wire_name: str, message: LinterProtocol) -> None:
+    def __init__(self, wire_name: str, message: ResponseLinterProtocol) -> None:
         super().__init__(wire_name, message)
-        self._deferred_notes: List[Tuple[Callable[..., Any], type[Note], dict[str, Any]]] = []
+        self._deferred_notes: List[DeferredNoteType] = []
 
     def parse(self, field_value: str, add_note: AddNoteMethodType) -> CookieType:
-        def deferred_add_note(note: type[Note], **kwargs: Any) -> Any:
-            self._deferred_notes.append((add_note, note, kwargs))
+        def deferred_add_note(
+            note: type[Note], category: Optional[Any] = None, **kwargs: Any
+        ) -> Any:
+            self._deferred_notes.append((add_note, note, category, kwargs))
 
         path = urlsplit(self.message.base_uri).path
         return loose_parse(field_value, path, self.message.start_time, deferred_add_note)
@@ -51,8 +58,8 @@ requests to the server."""
                 seen.add(name)
             add_note(SET_COOKIE_NAME_DUP, cookie_names=", ".join(sorted(duplicates)))
 
-        for note_adder, note, kwargs in self._deferred_notes:
-            note_adder(note, **kwargs)
+        for note_adder, note, category, kwargs in self._deferred_notes:
+            note_adder(note, category=category, **kwargs)
 
 
 def loose_parse(  # pylint: disable=too-many-branches
@@ -525,7 +532,7 @@ This `Set-Cookie` value is %(set_cookie_value_length)s long.
 """
 
 
-class ValueTooLargeSCTest(FieldTest):
+class ValueTooLargeSCTest(FieldTest[ResponseLinterProtocol]):
     name = "Set-Cookie"
     inputs = [b"foo=" + b"a" * (MAX_SET_COOKIE_VALUE_LENGTH + 1)]
     expected_out = [("foo", "a" * (MAX_SET_COOKIE_VALUE_LENGTH + 1), [])]
@@ -595,19 +602,19 @@ Browsers will likely accept all of them, but the order of application
 may vary or be confusing."""
 
 
-class BasicSCTest(FieldTest):
+class BasicSCTest(FieldTest[ResponseLinterProtocol]):
     name = "Set-Cookie"
     inputs = [b"SID=31d4d96e407aad42"]
     expected_out = [("SID", "31d4d96e407aad42", [])]
 
 
-class ParameterSCTest(FieldTest):
+class ParameterSCTest(FieldTest[ResponseLinterProtocol]):
     name = "Set-Cookie"
     inputs = [b"SID=31d4d96e407aad42; Path=/; Domain=example.com"]
     expected_out = [("SID", "31d4d96e407aad42", [("Path", "/"), ("Domain", "example.com")])]
 
 
-class TwoSCTest(FieldTest):
+class TwoSCTest(FieldTest[ResponseLinterProtocol]):
     name = "Set-Cookie"
     inputs = [
         b"SID=31d4d96e407aad42; Path=/; Secure; HttpOnly",
@@ -619,38 +626,38 @@ class TwoSCTest(FieldTest):
     ]
 
 
-class ExpiresScTest(FieldTest):
+class ExpiresScTest(FieldTest[ResponseLinterProtocol]):
     name = "Set-Cookie"
     inputs = [b"lang=en-US; Expires=Wed, 09 Jun 2021 10:18:14 GMT"]
     expected_out = [("lang", "en-US", [("Expires", 1623233894)])]
 
 
-class ExpiresSingleScTest(FieldTest):
+class ExpiresSingleScTest(FieldTest[ResponseLinterProtocol]):
     name = "Set-Cookie"
     inputs = [b"lang=en-US; Expires=Wed, 9 Jun 2021 10:18:14 GMT"]
     expected_out = [("lang", "en-US", [("Expires", 1623233894)])]
 
 
-class MaxAgeScTest(FieldTest):
+class MaxAgeScTest(FieldTest[ResponseLinterProtocol]):
     name = "Set-Cookie"
     inputs = [b"lang=en-US; Max-Age=123"]
     expected_out = [("lang", "en-US", [("Max-Age", 123)])]
 
 
-class MaxAgeLeadingZeroScTest(FieldTest):
+class MaxAgeLeadingZeroScTest(FieldTest[ResponseLinterProtocol]):
     name = "Set-Cookie"
     inputs = [b"lang=en-US; Max-Age=0123"]
     expected_out = [("lang", "en-US", [("Max-Age", 123)])]
     expected_notes: NoteClassListType = [SET_COOKIE_LEADING_ZERO_MAX_AGE]
 
 
-class RemoveSCTest(FieldTest):
+class RemoveSCTest(FieldTest[ResponseLinterProtocol]):
     name = "Set-Cookie"
     inputs = [b"lang=; Expires=Sun, 06 Nov 1994 08:49:37 GMT"]
     expected_out = [("lang", "", [("Expires", 784111777)])]
 
 
-class WolframSCTest(FieldTest):
+class WolframSCTest(FieldTest[ResponseLinterProtocol]):
     name = "Set-Cookie"
     inputs = [b"WR_SID=50.56.234.188.1398; path=/; max-age=315360000; " b"domain=.wolframalpha.com"]
     expected_out = [
@@ -667,66 +674,66 @@ class WolframSCTest(FieldTest):
     expected_notes: NoteClassListType = [SET_COOKIE_LIFETIME_TOO_LONG]
 
 
-class PartitionedSCTest(FieldTest):
+class PartitionedSCTest(FieldTest[ResponseLinterProtocol]):
     name = "Set-Cookie"
     inputs = [b"SID=31d4d96e407aad42; Partitioned; Secure"]
     expected_out = [("SID", "31d4d96e407aad42", [("Partitioned", ""), ("Secure", "")])]
 
 
-class PartitionedNoSecureSCTest(FieldTest):
+class PartitionedNoSecureSCTest(FieldTest[ResponseLinterProtocol]):
     name = "Set-Cookie"
     inputs = [b"SID=31d4d96e407aad42; Partitioned"]
     expected_out = [("SID", "31d4d96e407aad42", [("Partitioned", "")])]
     expected_notes: NoteClassListType = [SET_COOKIE_PARTITIONED_NO_SECURE]
 
 
-class NamelessSCTest(FieldTest):
+class NamelessSCTest(FieldTest[ResponseLinterProtocol]):
     name = "Set-Cookie"
     inputs = [b"foo; Path=/"]
     expected_out = [("", "foo", [("Path", "/")])]
 
 
-class TooLargeSCTest(FieldTest):
+class TooLargeSCTest(FieldTest[ResponseLinterProtocol]):
     name = "Set-Cookie"
     inputs = [b"foo=" + b"a" * 4094]
     expected_out = [("foo", "a" * 4094, [])]
     expected_notes: NoteClassListType = [SET_COOKIE_TOO_LARGE, SET_COOKIE_VALUE_TOO_LARGE]
 
 
-class SecurePrefixSCTest(FieldTest):
+class SecurePrefixSCTest(FieldTest[ResponseLinterProtocol]):
     name = "Set-Cookie"
     inputs = [b"__Secure-ID=123; Secure; Path=/"]
     expected_out = [("__Secure-ID", "123", [("Secure", ""), ("Path", "/")])]
 
 
-class SecurePrefixMissingSecureSCTest(FieldTest):
+class SecurePrefixMissingSecureSCTest(FieldTest[ResponseLinterProtocol]):
     name = "Set-Cookie"
     inputs = [b"__Secure-ID=123; Path=/"]
     expected_out = [("__Secure-ID", "123", [("Path", "/")])]
     expected_notes: NoteClassListType = [SET_COOKIE_PREFIX_SECURE_MISSING]
 
 
-class HostPrefixSCTest(FieldTest):
+class HostPrefixSCTest(FieldTest[ResponseLinterProtocol]):
     name = "Set-Cookie"
     inputs = [b"__Host-ID=123; Secure; Path=/"]
     expected_out = [("__Host-ID", "123", [("Secure", ""), ("Path", "/")])]
 
 
-class HostPrefixMissingSecureSCTest(FieldTest):
+class HostPrefixMissingSecureSCTest(FieldTest[ResponseLinterProtocol]):
     name = "Set-Cookie"
     inputs = [b"__Host-ID=123; Path=/"]
     expected_out = [("__Host-ID", "123", [("Path", "/")])]
     expected_notes: NoteClassListType = [SET_COOKIE_PREFIX_SECURE_MISSING]
 
 
-class HostPrefixBadPathSCTest(FieldTest):
+class HostPrefixBadPathSCTest(FieldTest[ResponseLinterProtocol]):
     name = "Set-Cookie"
     inputs = [b"__Host-ID=123; Secure; Path=/foo"]
     expected_out = [("__Host-ID", "123", [("Secure", ""), ("Path", "/foo")])]
     expected_notes: NoteClassListType = [SET_COOKIE_PREFIX_HOST_BAD_PATH]
 
 
-class HostPrefixBadDomainSCTest(FieldTest):
+class HostPrefixBadDomainSCTest(FieldTest[ResponseLinterProtocol]):
     name = "Set-Cookie"
     inputs = [b"__Host-ID=123; Secure; Path=/; Domain=example.com"]
     expected_out = [
@@ -735,42 +742,42 @@ class HostPrefixBadDomainSCTest(FieldTest):
     expected_notes: NoteClassListType = [SET_COOKIE_PREFIX_HOST_BAD_DOMAIN]
 
 
-class LifetimeTooLongMaxAgeSCTest(FieldTest):
+class LifetimeTooLongMaxAgeSCTest(FieldTest[ResponseLinterProtocol]):
     name = "Set-Cookie"
     inputs = [b"lang=en-US; Max-Age=34560001"]
     expected_out = [("lang", "en-US", [("Max-Age", 34560001)])]
     expected_notes: NoteClassListType = [SET_COOKIE_LIFETIME_TOO_LONG]
 
 
-class LifetimeTooLongBothSCTest(FieldTest):
+class LifetimeTooLongBothSCTest(FieldTest[ResponseLinterProtocol]):
     name = "Set-Cookie"
     inputs = [b"lang=en-US; Max-Age=34560001; Expires=Wed, 09 Jun 2021 10:18:14 GMT"]
     expected_out = [("lang", "en-US", [("Max-Age", 34560001), ("Expires", 1623233894)])]
     expected_notes: NoteClassListType = [SET_COOKIE_LIFETIME_TOO_LONG]
 
 
-class SetCookieAttributeDupTest(FieldTest):
+class SetCookieAttributeDupTest(FieldTest[ResponseLinterProtocol]):
     name = "Set-Cookie"
     inputs = [b"a=b; Path=/; Path=/foo"]
     expected_out = [("a", "b", [("Path", "/"), ("Path", "/foo")])]
     expected_notes: NoteClassListType = [SET_COOKIE_ATTRIBUTE_DUP]
 
 
-class SetCookieNameDupTest(FieldTest):
+class SetCookieNameDupTest(FieldTest[ResponseLinterProtocol]):
     name = "Set-Cookie"
     inputs = [b"a=1; Path=/", b"a=2; Path=/"]
     expected_out = [("a", "1", [("Path", "/")]), ("a", "2", [("Path", "/")])]
     expected_notes: NoteClassListType = [SET_COOKIE_NAME_DUP]
 
 
-class SetCookiePriorityTest(FieldTest):
+class SetCookiePriorityTest(FieldTest[ResponseLinterProtocol]):
     name = "Set-Cookie"
     inputs = [b"a=1; Priority=High"]
     expected_out = [("a", "1", [])]
     expected_notes: NoteClassListType = [SET_COOKIE_PRIORITY]
 
 
-class SetCookieVersionTest(FieldTest):
+class SetCookieVersionTest(FieldTest[ResponseLinterProtocol]):
     name = "Set-Cookie"
     inputs = [b"a=1; Version=1"]
     expected_out = [("a", "1", [])]

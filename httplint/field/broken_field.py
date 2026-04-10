@@ -1,18 +1,18 @@
 import re
 from functools import partial
-from typing import Any, List, Tuple
+from typing import Any, Generic, List, Tuple
 
 from httplint.field import BAD_SYNTAX, HttpField
 from httplint.field.utils import RE_FLAGS
-from httplint.types import AddNoteMethodType, LinterProtocol
+from httplint.types import AddNoteMethodType, TMessage
 
 
-class BrokenField(HttpField):
+class BrokenField(HttpField[TMessage], Generic[TMessage]):
     """
     A HTTP field that allows multiple values, but is not a comma-separated list.
     """
 
-    def __init__(self, wire_name: str, message: LinterProtocol) -> None:
+    def __init__(self, wire_name: str, message: TMessage) -> None:
         super().__init__(wire_name, message)
         self.raw_values: List[Tuple[str, int]] = []
 
@@ -24,7 +24,7 @@ class BrokenField(HttpField):
     def handle_input(self, field_value: str, add_note: AddNoteMethodType, offset: int) -> None:
         self.raw_values.append((field_value, offset))
 
-    def finish(self, message: LinterProtocol, add_note: AddNoteMethodType) -> None:
+    def finish(self, message: TMessage, add_note: AddNoteMethodType) -> None:
         parsed_values = []
         for raw_value, offset in self.raw_values:
             # override add_note's subject to be offset-based

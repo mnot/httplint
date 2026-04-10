@@ -5,7 +5,7 @@ from httplint.note import Note, categories, levels
 from httplint.types import AddNoteMethodType, NoteClassListType, ResponseLinterProtocol
 
 
-class sunset(SingletonField):
+class sunset(SingletonField[ResponseLinterProtocol]):
     canonical_name = "Sunset"
     description = """\
 The `Sunset` header field indicates that the resource is likely to become unresponsive at the
@@ -33,13 +33,13 @@ The `Sunset` header indicates that this resource has already passed its sunset d
 unresponsive."""
 
 
-class SunsetTest(FieldTest):
+class SunsetTest(FieldTest[ResponseLinterProtocol]):
     name = "Sunset"
     inputs = [b"Sat, 31 Dec 2022 23:59:59 GMT"]
     expected_out = 1672531199
 
 
-class SunsetPastTest(FieldTest):
+class SunsetPastTest(FieldTest[ResponseLinterProtocol]):
     name = "Sunset"
     inputs = [b"Sat, 01 Jan 2000 00:00:00 GMT"]
     expected_out = 946684800
@@ -49,7 +49,7 @@ class SunsetPastTest(FieldTest):
         message.start_time = 1000000000
 
 
-class SunsetBadSyntaxTest(FieldTest):
+class SunsetBadSyntaxTest(FieldTest[ResponseLinterProtocol]):
     name = "Sunset"
     inputs = [b"not a date"]
     expected_out = None

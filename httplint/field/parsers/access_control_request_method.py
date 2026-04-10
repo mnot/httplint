@@ -3,10 +3,13 @@ from httplint.field.singleton_field import SingletonField
 from httplint.field.tests import FieldTest
 from httplint.note import categories
 from httplint.syntax import rfc9110
-from httplint.types import NoteClassListType, RequestLinterProtocol
+from httplint.types import (
+    NoteClassListType,
+    RequestLinterProtocol,
+)
 
 
-class access_control_request_method(SingletonField):
+class access_control_request_method(SingletonField[RequestLinterProtocol]):
     canonical_name = "Access-Control-Request-Method"
     description = """\
 The `Access-Control-Request-Method` request header is used by browsers when issuing a CORS
@@ -20,7 +23,7 @@ is made."""
     valid_in_responses = False
 
 
-class AccessControlRequestMethodTest(FieldTest):
+class AccessControlRequestMethodTest(FieldTest[RequestLinterProtocol]):
     name = "Access-Control-Request-Method"
     inputs = [b"POST"]
     expected_out = "POST"

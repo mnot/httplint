@@ -1,11 +1,12 @@
 import json
+from typing import Generic
 
 from httplint.field import HttpField
 from httplint.note import Note, categories, levels
-from httplint.types import AddNoteMethodType, LinterProtocol
+from httplint.types import AddNoteMethodType, TMessage
 
 
-class JsonField(HttpField):
+class JsonField(HttpField[TMessage], Generic[TMessage]):
     """
     A HTTP field that uses the JSON encoding for field values.
     See: https://reschke.github.io/json-fields/
@@ -17,7 +18,7 @@ class JsonField(HttpField):
     def handle_input(self, field_value: str, add_note: AddNoteMethodType, offset: int) -> None:
         self.value.append(field_value)
 
-    def finish(self, message: LinterProtocol, add_note: AddNoteMethodType) -> None:
+    def finish(self, message: TMessage, add_note: AddNoteMethodType) -> None:
         if not self.value:
             return
 

@@ -3,10 +3,14 @@ from httplint.field.list_field import HttpListField
 from httplint.field.tests import FieldTest
 from httplint.note import categories
 from httplint.syntax import rfc9110
-from httplint.types import AddNoteMethodType, NoteClassListType, RequestLinterProtocol
+from httplint.types import (
+    AddNoteMethodType,
+    NoteClassListType,
+    RequestLinterProtocol,
+)
 
 
-class access_control_request_headers(HttpListField):
+class access_control_request_headers(HttpListField[RequestLinterProtocol]):
     canonical_name = "Access-Control-Request-Headers"
     description = """\
 The `Access-Control-Request-Headers` request header is used by browsers when issuing a CORS
@@ -23,7 +27,7 @@ request is made."""
         return field_value.lower()
 
 
-class AccessControlRequestHeadersTest(FieldTest):
+class AccessControlRequestHeadersTest(FieldTest[RequestLinterProtocol]):
     name = "Access-Control-Request-Headers"
     inputs = [b"Custom-Header, Upgrade-Insecure-Requests"]
     expected_out = ["custom-header", "upgrade-insecure-requests"]

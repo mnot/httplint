@@ -1,7 +1,10 @@
 from httplint.field.singleton_field import SingletonField
+from httplint.types import (
+    AnyMessageLinterProtocol,
+)
 
 
-class content_transfer_encoding(SingletonField):
+class content_transfer_encoding(SingletonField[AnyMessageLinterProtocol]):
     canonical_name = "Content-Transfer-Encoding"
     description = """\
 The `Content-Transfer-Encoding` isn't part of HTTP, but it is used in MIME protocols in a manner

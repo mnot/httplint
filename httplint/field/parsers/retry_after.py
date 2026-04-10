@@ -1,8 +1,9 @@
 from httplint.field.singleton_field import SingletonField
 from httplint.syntax import rfc9110
+from httplint.types import ResponseLinterProtocol
 
 
-class retry_after(SingletonField):
+class retry_after(SingletonField[ResponseLinterProtocol]):
     canonical_name = "Retry-After"
     description = """\
 The `Retry-After` response header can be used with a `503` (Service Unavailable) response to

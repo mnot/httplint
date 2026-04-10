@@ -2,10 +2,14 @@ from httplint.field.list_field import HttpListField
 from httplint.field.tests import FieldTest
 from httplint.note import Note, categories, levels
 from httplint.syntax import rfc9110
-from httplint.types import AddNoteMethodType, NoteClassListType
+from httplint.types import (
+    AddNoteMethodType,
+    AnyMessageLinterProtocol,
+    NoteClassListType,
+)
 
 
-class content_language(HttpListField):
+class content_language(HttpListField[AnyMessageLinterProtocol]):
     canonical_name = "Content-Language"
     description = """\
 The `Content-Language` header describes the natural language(s) of the intended audience for the
@@ -43,19 +47,19 @@ The `%(lang)s` language tag is used more than once in the `Content-Language` hea
 Recipients will likely ignore duplicates."""
 
 
-class ContentLanguageTest(FieldTest):
+class ContentLanguageTest(FieldTest[AnyMessageLinterProtocol]):
     name = "Content-Language"
     inputs = [b"en-US"]
     expected_out = ["en-us"]
 
 
-class ContentLanguageListTest(FieldTest):
+class ContentLanguageListTest(FieldTest[AnyMessageLinterProtocol]):
     name = "Content-Language"
     inputs = [b"en-US, fr"]
     expected_out = ["en-us", "fr"]
 
 
-class ContentLanguageDupTest(FieldTest):
+class ContentLanguageDupTest(FieldTest[AnyMessageLinterProtocol]):
     name = "Content-Language"
     inputs = [b"en-US, en-US"]
     expected_out = ["en-us", "en-us"]

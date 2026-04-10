@@ -7,7 +7,12 @@ from httplint.field.tests import FieldTest
 from httplint.field.utils import parse_params
 from httplint.note import Note, categories, levels
 from httplint.syntax import rfc9110
-from httplint.types import AddNoteMethodType, NoteClassListType, ParamDictType
+from httplint.types import (
+    AddNoteMethodType,
+    NoteClassListType,
+    ParamDictType,
+    RequestLinterProtocol,
+)
 
 
 @dataclass
@@ -17,7 +22,7 @@ class AcceptValue:
     q: Optional[float]
 
 
-class accept(HttpListField):
+class accept(HttpListField[RequestLinterProtocol]):
     canonical_name = "Accept"
     description = """\
 The `Accept` header field can be used by user agents to specify response media types that are
@@ -82,7 +87,7 @@ The value for this field doesn't conform to its specified syntax; see [its
 definition](%(ref_uri)s) for more information."""
 
 
-class AcceptTest(FieldTest):
+class AcceptTest(FieldTest[RequestLinterProtocol]):
     name = "Accept"
     inputs = [b"audio/*; q=0.2, audio/basic"]
     expected_out = [
@@ -91,20 +96,20 @@ class AcceptTest(FieldTest):
     ]
 
 
-class AcceptComplexTest(FieldTest):
+class AcceptComplexTest(FieldTest[RequestLinterProtocol]):
     name = "Accept"
     inputs = [b"text/html; level=1; q=0.5"]
     expected_out = [AcceptValue("text/html", {"level": "1"}, 0.5)]
 
 
-class AcceptBadQTest(FieldTest):
+class AcceptBadQTest(FieldTest[RequestLinterProtocol]):
     name = "Accept"
     inputs = [b"text/html; q=1.001"]
     expected_out = [AcceptValue("text/html", {}, None)]
     expected_notes: NoteClassListType = [BAD_Q_VALUE]
 
 
-class AcceptBadTypeTest(FieldTest):
+class AcceptBadTypeTest(FieldTest[RequestLinterProtocol]):
     name = "Accept"
     inputs = [b"invalid"]
     expected_out = [AcceptValue("invalid", {}, None)]

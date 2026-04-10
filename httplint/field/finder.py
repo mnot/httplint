@@ -3,7 +3,6 @@ import weakref
 from typing import Any, Optional, Type, cast
 
 from httplint.field import HttpField, deprecated, unnecessary
-from httplint.field.list_field import HttpListField
 from httplint.types import AddNoteMethodType, LinterProtocol, SectionProtocol
 
 
@@ -32,22 +31,22 @@ class HttpFieldFinder:
         self.message = weakref.proxy(message)
         self.field_section = field_section
 
-    def find_handler(self, field_name: str) -> HttpField:
+    def find_handler(self, field_name: str) -> HttpField[Any]:
         """
         If a handler has already been instantiated for field_name, return it;
         otherwise, instantiate and return a new one.
         """
         norm_name = field_name.lower()
         if self.field_section and norm_name in self.field_section.handlers:
-            return cast(HttpField, self.field_section.handlers[norm_name])
+            return cast(HttpField[Any], self.field_section.handlers[norm_name])
         handler_class = self.find_handler_class(field_name) or UnknownHttpField
-        handler = handler_class(field_name, self.message)
+        handler = handler_class(field_name, cast(Any, self.message))
         if self.field_section:
             self.field_section.handlers[norm_name] = handler
         return handler
 
     @staticmethod
-    def find_handler_class(field_name: str) -> Type[HttpField] | None:
+    def find_handler_class(field_name: str) -> Type[HttpField[Any]] | None:
         """
         Return a handler class for the given field name. Returns None if not found.
         """
@@ -58,7 +57,7 @@ class HttpFieldFinder:
 
         module = HttpFieldFinder.find_module(field_name)
         if module and hasattr(module, name_token):
-            return cast(Type[HttpField], getattr(module, name_token))
+            return cast(Type[HttpField[Any]], getattr(module, name_token))
         if field_name.lower() in deprecated.field_lookup:
             return deprecated.DeprecatedField
         if field_name.lower() in unnecessary.UNNECESSARY_FIELDS:
@@ -89,7 +88,7 @@ class HttpFieldFinder:
         return field_name.replace("-", "_").lower()
 
 
-class UnknownHttpField(HttpListField):
+class UnknownHttpField(HttpField[Any]):
     """A HTTP field that we don't recognise."""
 
     description = "Unknown"
@@ -102,6 +101,9 @@ class UnknownHttpField(HttpListField):
 
     def parse(self, field_value: str, add_note: AddNoteMethodType) -> Any:
         return field_value
+
+    def handle_input(self, field_value: str, add_note: AddNoteMethodType, offset: int) -> None:
+        return
 
     def evaluate(self, add_note: AddNoteMethodType) -> None:
         return

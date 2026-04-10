@@ -2,10 +2,14 @@ from httplint.field.list_field import HttpListField
 from httplint.field.tests import FieldTest
 from httplint.note import Note, categories, levels
 from httplint.syntax import rfc9110
-from httplint.types import AddNoteMethodType, NoteClassListType
+from httplint.types import (
+    AddNoteMethodType,
+    NoteClassListType,
+    RequestLinterProtocol,
+)
 
 
-class expect(HttpListField):
+class expect(HttpListField[RequestLinterProtocol]):
     canonical_name = "Expect"
     description = """\
 The `Expect` header field in a request indicates behaviors (expectations) that need to be
@@ -46,7 +50,7 @@ class EXPECT_HTTP_1_0(Note):
 The `Expect` header was added in HTTP/1.1; it has no meaning in HTTP/1.0."""
 
 
-class ExpectTest(FieldTest):
+class ExpectTest(FieldTest[RequestLinterProtocol]):
     name = "Expect"
     inputs = [b"100-continue"]
     expected_out = ["100-continue"]

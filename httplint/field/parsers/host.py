@@ -1,10 +1,13 @@
 from httplint.field.singleton_field import SingletonField
 from httplint.field.tests import FieldTest
 from httplint.syntax import rfc9110
-from httplint.types import AddNoteMethodType
+from httplint.types import (
+    AddNoteMethodType,
+    RequestLinterProtocol,
+)
 
 
-class host(SingletonField):
+class host(SingletonField[RequestLinterProtocol]):
     canonical_name = "Host"
     description = """\
 The `Host` header field provides the host and port information from the target URI, enabling the
@@ -20,7 +23,7 @@ a single IP address."""
         pass
 
 
-class HostTest(FieldTest):
+class HostTest(FieldTest[RequestLinterProtocol]):
     name = "Host"
     inputs = [b"www.example.org"]
     expected_out = "www.example.org"

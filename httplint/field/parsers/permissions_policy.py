@@ -3,10 +3,15 @@ from http_sf import Token
 from httplint.field.structured_field import StructuredField
 from httplint.field.tests import FieldTest
 from httplint.note import Note, categories, levels
-from httplint.types import AddNoteMethodType, NoteClassListType, SFDictionaryType
+from httplint.types import (
+    AddNoteMethodType,
+    NoteClassListType,
+    ResponseLinterProtocol,
+    SFDictionaryType,
+)
 
 
-class permissions_policy(StructuredField):
+class permissions_policy(StructuredField[ResponseLinterProtocol]):
     canonical_name = "Permissions-Policy"
     description = """\
 The `Permissions-Policy` response header allows a site to control the use of browser features."""
@@ -135,7 +140,7 @@ SENSITIVE_FEATURES = [
 ]
 
 
-class PermissionsPolicyTest(FieldTest):
+class PermissionsPolicyTest(FieldTest[ResponseLinterProtocol]):
     name = "Permissions-Policy"
     inputs = [b"geolocation=(), camera=self"]
     expected_out = {"geolocation": ([], {}), "camera": (Token("self"), {})}
@@ -145,14 +150,14 @@ class PermissionsPolicyTest(FieldTest):
     ]
 
 
-class PermissionsPolicyWildcardTest(FieldTest):
+class PermissionsPolicyWildcardTest(FieldTest[ResponseLinterProtocol]):
     name = "Permissions-Policy"
     inputs = [b"geolocation=*, camera=()"]
     expected_out = {"geolocation": (Token("*"), {}), "camera": ([], {})}
     expected_notes: NoteClassListType = [PERMISSIONS_POLICY_WILDCARD, PERMISSIONS_POLICY_PRESENT]
 
 
-class PermissionsPolicyInvalidTest(FieldTest):
+class PermissionsPolicyInvalidTest(FieldTest[ResponseLinterProtocol]):
     name = "Permissions-Policy"
     inputs = [b'geolocation=("self"), camera=(none)']
     expected_out = {

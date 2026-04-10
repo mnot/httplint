@@ -1,6 +1,6 @@
 import weakref
 from functools import partial
-from typing import Dict
+from typing import Any, Dict
 
 from httplint.field import HttpField
 from httplint.field.finder import HttpFieldFinder
@@ -29,7 +29,7 @@ class FieldSection:
         self.text: StrFieldListType = []  # unicode version of the field tuples as received
         self.parsed: FieldDictType = {}  # dictionary of parsed field values
         self.size: int = 0  # size of textual field block w/o delimiters, in bytes
-        self.handlers: Dict[str, HttpField] = {}
+        self.handlers: Dict[str, HttpField[Any]] = {}
         self._finder = HttpFieldFinder(message, self)
 
     def process(self, raw_fields: RawFieldListType) -> None:

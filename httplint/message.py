@@ -22,6 +22,7 @@ from httplint.types import (
     NotesProtocol,
     RawFieldListType,
     RequestLinterProtocol,
+    ResponseLinterProtocol,
     SectionProtocol,
 )
 from httplint.util import f_num, iri_to_uri
@@ -214,6 +215,14 @@ class HttpRequestLinter(HttpMessageLinter):
     def can_have_content(self) -> bool:
         return True
 
+    @property
+    def response(self) -> Optional[ResponseLinterProtocol]:
+        return cast(Optional[ResponseLinterProtocol], self.related)
+
+    @response.setter
+    def response(self, value: Optional[ResponseLinterProtocol]) -> None:
+        self.related = value
+
     def post_checks(self) -> None:
         check_preflight_request(self)
         if "user-agent" not in self.headers.parsed:
@@ -249,6 +258,14 @@ class HttpResponseLinter(HttpMessageLinter):
         self.is_head_response = False
         self.caching: CachingProtocol
 
+    @property
+    def request(self) -> Optional[RequestLinterProtocol]:
+        return cast(Optional[RequestLinterProtocol], self.related)
+
+    @request.setter
+    def request(self, value: Optional[RequestLinterProtocol]) -> None:
+        self.related = value
+
     def process_response_topline(
         self, version: bytes, status_code: bytes, status_phrase: Optional[bytes] = None
     ) -> None:
@@ -275,7 +292,7 @@ class HttpResponseLinter(HttpMessageLinter):
     def post_checks(self) -> None:
         check_preflight_response(self)
         self.caching = ResponseCacheChecker(self)
-        StatusChecker(self, cast(Optional[RequestLinterProtocol], self.related))
+        StatusChecker(self, self.request)
         if not self.no_content:
             verify_content_type(self)
 

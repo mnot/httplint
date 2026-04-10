@@ -4,7 +4,7 @@ from typing import List
 from httplint.field.broken_field import BrokenField
 from httplint.field.tests import FieldTest
 from httplint.note import categories
-from httplint.types import AddNoteMethodType
+from httplint.types import AddNoteMethodType, RequestLinterProtocol
 
 
 @dataclass
@@ -13,7 +13,7 @@ class CookiePair:
     value: str
 
 
-class cookie(BrokenField):
+class cookie(BrokenField[RequestLinterProtocol]):
     canonical_name = "Cookie"
     description = """\
 The `Cookie` header field contains stored HTTP cookies previously sent by the server with the
@@ -57,7 +57,7 @@ The `Cookie` header field contains stored HTTP cookies previously sent by the se
         return pairs
 
 
-class CookieTest(FieldTest):
+class CookieTest(FieldTest[RequestLinterProtocol]):
     name = "Cookie"
     inputs = [b"SID=31d4d96e407aad42"]
     expected_out = [[CookiePair("SID", "31d4d96e407aad42")]]

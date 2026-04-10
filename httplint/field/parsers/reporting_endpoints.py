@@ -12,7 +12,7 @@ from httplint.types import (
 )
 
 
-class reporting_endpoints(StructuredField):
+class reporting_endpoints(StructuredField[ResponseLinterProtocol]):
     canonical_name = "Reporting-Endpoints"
     description = """\
 The `Reporting-Endpoints` header field defines one or more reporting endpoints for the Reporting
@@ -59,27 +59,27 @@ class BAD_REPORTING_ENDPOINT_SYNTAX(Note):
 The reporting endpoint `%(name)s` must be a string URL. Found: %(value)s (type `%(found_type)s`)."""
 
 
-class ReportingEndpointsTest(FieldTest):
+class ReportingEndpointsTest(FieldTest[ResponseLinterProtocol]):
     name = "Reporting-Endpoints"
     inputs = [b'endpoint="https://example.com/reports"']
     expected_out: Any = {"endpoint": ("https://example.com/reports", {})}
 
 
-class ReportingEndpointsInsecureTest(FieldTest):
+class ReportingEndpointsInsecureTest(FieldTest[ResponseLinterProtocol]):
     name = "Reporting-Endpoints"
     inputs = [b'endpoint="http://example.com/reports"']
     expected_out: Any = {"endpoint": ("http://example.com/reports", {})}
     expected_notes: NoteClassListType = [ENDPOINT_NOT_SECURE]
 
 
-class ReportingEndpointsBadSyntaxTest(FieldTest):
+class ReportingEndpointsBadSyntaxTest(FieldTest[ResponseLinterProtocol]):
     name = "Reporting-Endpoints"
     inputs = [b"endpoint=123"]
     expected_out: Any = {"endpoint": (123, {})}
     expected_notes: NoteClassListType = [BAD_REPORTING_ENDPOINT_SYNTAX]
 
 
-class ReportingEndpointsRelativeTest(FieldTest):
+class ReportingEndpointsRelativeTest(FieldTest[ResponseLinterProtocol]):
     name = "Reporting-Endpoints"
     inputs = [b'endpoint="/reports"']
     expected_out: Any = {"endpoint": ("/reports", {})}
@@ -89,7 +89,7 @@ class ReportingEndpointsRelativeTest(FieldTest):
         message.base_uri = "https://example.com/"
 
 
-class ReportingEndpointsInsecureBaseTest(FieldTest):
+class ReportingEndpointsInsecureBaseTest(FieldTest[ResponseLinterProtocol]):
     name = "Reporting-Endpoints"
     inputs = [b'endpoint="/reports"']
     expected_out: Any = {"endpoint": ("/reports", {})}

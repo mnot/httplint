@@ -5,10 +5,14 @@ from httplint.field.tests import FieldTest
 from httplint.field.utils import parse_params
 from httplint.note import categories
 from httplint.syntax import rfc9110
-from httplint.types import AddNoteMethodType, ParamDictType
+from httplint.types import (
+    AddNoteMethodType,
+    ParamDictType,
+    RequestLinterProtocol,
+)
 
 
-class accept_encoding(HttpListField):
+class accept_encoding(HttpListField[RequestLinterProtocol]):
     canonical_name = "Accept-Encoding"
     description = """\
 The `Accept-Encoding` header field can be used by user agents to indicate what response content-codings are
@@ -33,7 +37,7 @@ acceptable in the response."""
         pass
 
 
-class AcceptEncodingTest(FieldTest):
+class AcceptEncodingTest(FieldTest[RequestLinterProtocol]):
     name = "Accept-Encoding"
     inputs = [b"gzip, identity; q=0.5, *;q=0"]
     expected_out = [

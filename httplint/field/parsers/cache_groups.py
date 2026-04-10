@@ -1,10 +1,15 @@
 from httplint.field.structured_field import StructuredField
 from httplint.field.tests import FieldTest
 from httplint.note import Note, categories, levels
-from httplint.types import AddNoteMethodType, NoteClassListType, SFListType
+from httplint.types import (
+    AddNoteMethodType,
+    NoteClassListType,
+    ResponseLinterProtocol,
+    SFListType,
+)
 
 
-class cache_groups(StructuredField):
+class cache_groups(StructuredField[ResponseLinterProtocol]):
     canonical_name = "Cache-Groups"
     description = """\
 The `Cache-Groups` header field helps caches group responses together for invalidation."""
@@ -41,21 +46,21 @@ class CACHE_GROUPS_BAD_TYPE(Note):
 The `%(field_name)s` header values must be Strings. Found `%(got)s`."""
 
 
-class CacheGroupsTest(FieldTest):
+class CacheGroupsTest(FieldTest[ResponseLinterProtocol]):
     name = "Cache-Groups"
     inputs = [b'"group1", "group2"']
     expected_out = [("group1", {}), ("group2", {})]
     expected_notes: NoteClassListType = []
 
 
-class CacheGroupsBadTypeTest(FieldTest):
+class CacheGroupsBadTypeTest(FieldTest[ResponseLinterProtocol]):
     name = "Cache-Groups"
     inputs = [b'123, "group2"']
     expected_out = [(123, {}), ("group2", {})]
     expected_notes: NoteClassListType = [CACHE_GROUPS_BAD_TYPE]
 
 
-class CacheGroupsMultipleBadTypesTest(FieldTest):
+class CacheGroupsMultipleBadTypesTest(FieldTest[ResponseLinterProtocol]):
     name = "Cache-Groups"
     inputs = [b'123, "group2", ?0']
     expected_out = [(123, {}), ("group2", {}), (False, {})]

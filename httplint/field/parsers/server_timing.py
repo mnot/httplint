@@ -5,10 +5,15 @@ from httplint.field.tests import FieldTest
 from httplint.field.utils import parse_params
 from httplint.note import Note, categories, levels
 from httplint.syntax import rfc9110
-from httplint.types import AddNoteMethodType, NoteClassListType, ParamDictType
+from httplint.types import (
+    AddNoteMethodType,
+    NoteClassListType,
+    ParamDictType,
+    ResponseLinterProtocol,
+)
 
 
-class server_timing(HttpListField):
+class server_timing(HttpListField[ResponseLinterProtocol]):
     canonical_name = "Server-Timing"
     description = """\
 The `Server-Timing` header field communicates one or more metrics and descriptions for the given
@@ -87,7 +92,7 @@ Descriptions can help contextualise a metric when displayed.
 """
 
 
-class ServerTimingTest(FieldTest):
+class ServerTimingTest(FieldTest[ResponseLinterProtocol]):
     name = "Server-Timing"
     inputs = [b"miss, db;dur=53, app;dur=47.2"]
     expected_out = [("miss", {}), ("db", {"dur": "53"}), ("app", {"dur": "47.2"})]
@@ -99,7 +104,7 @@ class ServerTimingTest(FieldTest):
     ]
 
 
-class ServerTimingDescTest(FieldTest):
+class ServerTimingDescTest(FieldTest[ResponseLinterProtocol]):
     name = "Server-Timing"
     inputs = [b'cache;desc="Cache Read", db;dur=50;desc="Database"']
     expected_out = [
@@ -111,7 +116,7 @@ class ServerTimingDescTest(FieldTest):
     ]
 
 
-class ServerTimingBadDurTest(FieldTest):
+class ServerTimingBadDurTest(FieldTest[ResponseLinterProtocol]):
     name = "Server-Timing"
     inputs = [b"db;dur=foo"]
     expected_out = [("db", {"dur": "foo"})]

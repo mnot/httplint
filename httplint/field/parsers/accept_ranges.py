@@ -2,10 +2,14 @@ from httplint.field.list_field import HttpListField
 from httplint.field.tests import FieldTest
 from httplint.note import Note, categories, levels
 from httplint.syntax import rfc9110
-from httplint.types import AddNoteMethodType, NoteClassListType
+from httplint.types import (
+    AddNoteMethodType,
+    NoteClassListType,
+    ResponseLinterProtocol,
+)
 
 
-class accept_ranges(HttpListField):
+class accept_ranges(HttpListField[ResponseLinterProtocol]):
     canonical_name = "Accept-Ranges"
     description = """\
 The `Accept-Ranges` response header allows the server to indicate that it accepts range requests
@@ -35,32 +39,32 @@ process in future requests. HTTP only defines two: `bytes` and `none`.
 Clients who don't know about the non-standard range-unit will not be able to use it."""
 
 
-class AcceptRangeTest(FieldTest):
+class AcceptRangeTest(FieldTest[ResponseLinterProtocol]):
     name = "Accept-Ranges"
     inputs = [b"bytes"]
     expected_out = ["bytes"]
 
 
-class NoneAcceptRangeTest(FieldTest):
+class NoneAcceptRangeTest(FieldTest[ResponseLinterProtocol]):
     name = "Accept-Ranges"
     inputs = [b"none"]
     expected_out = ["none"]
 
 
-class BothAcceptRangeTest(FieldTest):
+class BothAcceptRangeTest(FieldTest[ResponseLinterProtocol]):
     name = "Accept-Ranges"
     inputs = [b"bytes, none"]
     expected_out = ["bytes", "none"]
 
 
-class BadAcceptRangeTest(FieldTest):
+class BadAcceptRangeTest(FieldTest[ResponseLinterProtocol]):
     name = "Accept-Ranges"
     inputs = [b"foo"]
     expected_out = ["foo"]
     expected_notes: NoteClassListType = [UNKNOWN_RANGE]
 
 
-class CaseAcceptRangeTest(FieldTest):
+class CaseAcceptRangeTest(FieldTest[ResponseLinterProtocol]):
     name = "Accept-Ranges"
     inputs = [b"Bytes, NONE"]
     expected_out = ["bytes", "none"]

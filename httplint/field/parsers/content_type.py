@@ -4,10 +4,14 @@ from httplint.field.singleton_field import SingletonField
 from httplint.field.tests import FieldTest
 from httplint.field.utils import parse_params
 from httplint.syntax import rfc9110
-from httplint.types import AddNoteMethodType, ParamDictType
+from httplint.types import (
+    AddNoteMethodType,
+    AnyMessageLinterProtocol,
+    ParamDictType,
+)
 
 
-class content_type(SingletonField):
+class content_type(SingletonField[AnyMessageLinterProtocol]):
     canonical_name = "Content-Type"
     description = """\
 The `Content-Type` header indicates the media type of the content sent to the recipient or, in the
@@ -29,7 +33,7 @@ a GET."""
         return media_type, param_dict
 
 
-class BasicCTTest(FieldTest):
+class BasicCTTest(FieldTest[AnyMessageLinterProtocol]):
     name = "Content-Type"
     inputs = [b"text/plain; charset=utf-8"]
     expected_out = ("text/plain", {"charset": "utf-8"})

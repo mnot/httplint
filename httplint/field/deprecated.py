@@ -1,4 +1,4 @@
-from typing import Dict, Tuple
+from typing import Any, Dict, Tuple
 
 from httplint.field import FIELD_DEPRECATED
 from httplint.field.list_field import HttpListField
@@ -195,7 +195,7 @@ fields.update(OBSOLETED_FIELDS)
 field_lookup = {k.lower(): k for k in fields}
 
 
-class DeprecatedField(HttpListField):
+class DeprecatedField(HttpListField[Any]):
     syntax = False
     list_header = False
     deprecated = True

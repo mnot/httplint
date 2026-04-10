@@ -2,10 +2,10 @@ from httplint.field import FIELD_DEPRECATED
 from httplint.field.json_field import BAD_JSON, JsonField
 from httplint.field.tests import FieldTest
 from httplint.note import Note, categories, levels
-from httplint.types import AddNoteMethodType, NoteClassListType
+from httplint.types import AddNoteMethodType, NoteClassListType, ResponseLinterProtocol
 
 
-class report_to(JsonField):
+class report_to(JsonField[ResponseLinterProtocol]):
     canonical_name = "Report-To"
     description = """\
 The `Report-To` header field configured the browser to send reports to specified endpoints.
@@ -74,14 +74,14 @@ class REPORT_TO_BAD_TYPE(Note):
 The `%(key)s` key must be of type %(expected)s."""
 
 
-class ReportToTest(FieldTest):
+class ReportToTest(FieldTest[ResponseLinterProtocol]):
     name = "Report-To"
     inputs = [b'{"max_age": 10886400, "endpoints": [{"url": "https://example.com/reports"}]}']
     expected_out = [{"max_age": 10886400, "endpoints": [{"url": "https://example.com/reports"}]}]
     expected_notes: NoteClassListType = [FIELD_DEPRECATED]
 
 
-class ReportToMultiLineTest(FieldTest):
+class ReportToMultiLineTest(FieldTest[ResponseLinterProtocol]):
     name = "Report-To"
     inputs = [
         b'{"group": "a", "max_age": 1, "endpoints": [{"url": "https://a.com"}]}',
@@ -94,14 +94,14 @@ class ReportToMultiLineTest(FieldTest):
     expected_notes: NoteClassListType = [FIELD_DEPRECATED]
 
 
-class ReportToMissingMaxAgeTest(FieldTest):
+class ReportToMissingMaxAgeTest(FieldTest[ResponseLinterProtocol]):
     name = "Report-To"
     inputs = [b'{"endpoints": [{"url": "https://a.com"}]}']
     expected_out = [{"endpoints": [{"url": "https://a.com"}]}]
     expected_notes: NoteClassListType = [FIELD_DEPRECATED, REPORT_TO_MISSING_KEY]
 
 
-class ReportToBadJsonTest(FieldTest):
+class ReportToBadJsonTest(FieldTest[ResponseLinterProtocol]):
     name = "Report-To"
     inputs = [b'{unquoted: "keys"}']
     expected_out = None

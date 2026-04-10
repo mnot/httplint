@@ -1,3 +1,5 @@
+from typing import Any
+
 from httplint.field.list_field import HttpListField
 from httplint.note import Note, categories, levels
 from httplint.types import AddNoteMethodType, LinterProtocol
@@ -22,7 +24,7 @@ UNNECESSARY_FIELDS = {
 }
 
 
-class UnnecessaryField(HttpListField):
+class UnnecessaryField(HttpListField[Any]):
     syntax = False
     list_header = False
     deprecated = False

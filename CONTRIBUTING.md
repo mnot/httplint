@@ -76,7 +76,13 @@ If your field name doesn't work with this convention, please raise an issue.
 
 The easiest way to get started is to copy `httplint/field/parsers/field.tpl` to your new file.
 
-class vary(HttpListField):
+~~~ python
+from httplint.field import HttpListField
+from httplint.note import categories
+from httplint.syntax import rfc9110
+from httplint.types import ResponseLinterProtocol
+
+class vary(HttpListField[ResponseLinterProtocol]):
     canonical_name = "Vary"
     description = """..."""
     reference = f"{rfc9110.SPEC_URL}#field.vary"
@@ -85,6 +91,21 @@ class vary(HttpListField):
     valid_in_requests = False
     valid_in_responses = True
 ~~~
+
+
+#### Protocol Specialization
+
+All field classes and their tests should be specialized with the appropriate message protocol from `httplint.types`. This allows static analysis (Mypy) to ensure you only access attributes and methods available in that context.
+
+*   **`RequestLinterProtocol`**: Use for headers that only appear in requests (e.g., `Cookie`, `User-Agent`, `Host`).
+*   **`ResponseLinterProtocol`**: Use for headers that only appear in responses (e.g., `Set-Cookie`, `Age`, `Vary`).
+*   **`AnyMessageLinterProtocol`**: Use for headers that can appear in both requests and responses (e.g., `Connection`, `Upgrade`, `Trailer`).
+
+Example import:
+~~~ python
+from httplint.types import AddNoteMethodType, RequestLinterProtocol
+~~~
+
 
 #### The _HttpListField_ Class
 
@@ -113,7 +134,11 @@ When using `SingletonField`:
 For example, a `SingletonField` like `Age` starts with:
 
 ~~~ python
-class age(SingletonField):
+from httplint.field.singleton_field import SingletonField
+from httplint.syntax import rfc9111
+from httplint.types import ResponseLinterProtocol
+
+class age(SingletonField[ResponseLinterProtocol]):
     canonical_name = "Age"
     description = """\
 The `Age` response header conveys the sender's estimate of the amount of time since the response
@@ -138,7 +163,10 @@ When using `StructuredField`, you do not need to provide a `syntax` regex or imp
 For example, a `StructuredField` like `Cache-Status` starts with:
 
 ~~~ python
-class cache_status(StructuredField):
+from httplint.field.structured_field import StructuredField
+from httplint.types import ResponseLinterProtocol
+
+class cache_status(StructuredField[ResponseLinterProtocol]):
     canonical_name = "Cache-Status"
     reference = "https://www.rfc-editor.org/rfc/rfc9211.html"
     description = """..."""
@@ -230,10 +258,9 @@ parent_note.add_child(MY_SUB_NOTE)
 ~~~
 
 
-#### Writing Tests
+Each field definition should also include tests, as subclasses of `httplint.field.tests.FieldTest`, which should be specialized with the appropriate message protocol.
 
-Each field definition should also include tests, as subclasses of
-`httplint.field.tests.FieldTest`. It expects the following class properties:
+It expects the following class properties:
 
 * `name` - the field field-name
 * `inputs` - a list of field field-values, one item per line.
@@ -242,6 +269,15 @@ Each field definition should also include tests, as subclasses of
     the inputs
 * `expected_notes` - a list of `httplint.note.Note` classes that are expected
     to be set with `add_note` when parsing the inputs
+
+Example:
+~~~ python
+from httplint.field.tests import FieldTest
+from httplint.types import ResponseLinterProtocol
+
+class YourFieldTest(FieldTest[ResponseLinterProtocol]):
+    ...
+~~~
 
 You can create any number of tests this way; they will be run automatically when
 _tests/test\_fields.py_ is run.

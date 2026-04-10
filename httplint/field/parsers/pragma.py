@@ -3,10 +3,14 @@ from httplint.field.list_field import HttpListField
 from httplint.field.tests import FieldTest
 from httplint.note import Note, categories, levels
 from httplint.syntax import rfc9111
-from httplint.types import AddNoteMethodType, NoteClassListType
+from httplint.types import (
+    AddNoteMethodType,
+    NoteClassListType,
+    RequestLinterProtocol,
+)
 
 
-class pragma(HttpListField):
+class pragma(HttpListField[RequestLinterProtocol]):
     canonical_name = "Pragma"
     description = """\
 The `Pragma` header is used to include implementation-specific directives that might apply to any
@@ -36,7 +40,7 @@ class PRAGMA_OTHER(Note):
     _text = """HTTP only defines `Pragma: no-cache`; other uses of this header are deprecated."""
 
 
-class PragmaTest(FieldTest):
+class PragmaTest(FieldTest[RequestLinterProtocol]):
     name = "Pragma"
     inputs = [b"no-cache"]
     expected_out = ["no-cache"]

@@ -7,13 +7,14 @@ from httplint.note import Note, categories, levels
 from httplint.syntax import rfc9110
 from httplint.types import (
     AddNoteMethodType,
+    AnyMessageLinterProtocol,
     LinterProtocol,
     NoteClassListType,
     ResponseLinterProtocol,
 )
 
 
-class content_encoding(HttpListField):
+class content_encoding(HttpListField[AnyMessageLinterProtocol]):
     canonical_name = "Content-Encoding"
     description = """\
 The `Content-Encoding` header's value indicates what content codings have
@@ -86,7 +87,7 @@ Normally, clients ask for the encodings they want in the `Accept-Encoding` reque
 encodings that the client doesn't explicitly request can lead to interoperability problems."""
 
 
-class ContentEncodingTest(FieldTest):
+class ContentEncodingTest(FieldTest[AnyMessageLinterProtocol]):
     name = "Content-Encoding"
     inputs = [b"gzip"]
     expected_out = ["gzip"]
@@ -96,7 +97,7 @@ class ContentEncodingTest(FieldTest):
         message.related.headers.process([(b"accept-encoding", b"gzip")])
 
 
-class ContentEncodingCaseTest(FieldTest):
+class ContentEncodingCaseTest(FieldTest[AnyMessageLinterProtocol]):
     name = "Content-Encoding"
     inputs = [b"GZip"]
     expected_out = ["gzip"]
@@ -106,7 +107,7 @@ class ContentEncodingCaseTest(FieldTest):
         message.related.headers.process([(b"accept-encoding", b"gzip")])
 
 
-class ContentEncodingUnwantedTest(FieldTest):
+class ContentEncodingUnwantedTest(FieldTest[AnyMessageLinterProtocol]):
     name = "Content-Encoding"
     inputs = [b"gzip, foo"]
     expected_out = ["gzip", "foo"]
@@ -118,7 +119,7 @@ class ContentEncodingUnwantedTest(FieldTest):
         message.related = request
 
 
-class DictionaryCompressedMissingVaryTest(FieldTest):
+class DictionaryCompressedMissingVaryTest(FieldTest[AnyMessageLinterProtocol]):
     name = "Content-Encoding"
     inputs = [b"dcb"]
     expected_out = ["dcb"]

@@ -2,11 +2,11 @@ from httplint.field.list_field import HttpListField
 from httplint.field.tests import FieldTest
 from httplint.note import Note, categories, levels
 from httplint.syntax import rfc9110
-from httplint.types import AddNoteMethodType, NoteClassListType
+from httplint.types import AddNoteMethodType, NoteClassListType, ResponseLinterProtocol
 from httplint.util import f_num
 
 
-class vary(HttpListField):
+class vary(HttpListField[ResponseLinterProtocol]):
     canonical_name = "Vary"
     description = """\
 The `Vary` response header indicates the set of request headers that determines whether a cache is
@@ -114,21 +114,21 @@ change, over; each listed header is another dimension.
 Varying by too many dimensions makes using this information impractical."""
 
 
-class VaryTest(FieldTest):
+class VaryTest(FieldTest[ResponseLinterProtocol]):
     name = "Vary"
     inputs = [b"Accept-Encoding", b"*, User-Agent", b"Host"]
     expected_out = ["accept-encoding", "*", "user-agent", "host"]
     expected_notes: NoteClassListType = [VARY_ASTERISK, VARY_USER_AGENT, VARY_HOST, VARY_COMPLEX]
 
 
-class VaryNegotiateTest(FieldTest):
+class VaryNegotiateTest(FieldTest[ResponseLinterProtocol]):
     name = "Vary"
     inputs = [b"Negotiate"]
     expected_out = ["negotiate"]
     expected_notes: NoteClassListType = [VARY_NEGOTIATE]
 
 
-class VaryDuplicateTest(FieldTest):
+class VaryDuplicateTest(FieldTest[ResponseLinterProtocol]):
     name = "Vary"
     inputs = [b"a, b", b"a, c"]
     expected_out = ["a", "b", "c"]

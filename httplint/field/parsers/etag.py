@@ -6,10 +6,14 @@ from httplint.field.tests import FieldTest
 from httplint.field.utils import unquote_string
 from httplint.note import categories
 from httplint.syntax import rfc9110
-from httplint.types import AddNoteMethodType, NoteClassListType
+from httplint.types import (
+    AddNoteMethodType,
+    AnyMessageLinterProtocol,
+    NoteClassListType,
+)
 
 
-class etag(SingletonField):
+class etag(SingletonField[AnyMessageLinterProtocol]):
     canonical_name = "ETag"
     description = """\
 The `ETag` header provides an opaque identifier for the representation."""
@@ -26,19 +30,19 @@ The `ETag` header provides an opaque identifier for the representation."""
         return (False, unquote_string(field_value))
 
 
-class ETagTest(FieldTest):
+class ETagTest(FieldTest[AnyMessageLinterProtocol]):
     name = "ETag"
     inputs = [b'"foo"']
     expected_out = (False, "foo")
 
 
-class WeakETagTest(FieldTest):
+class WeakETagTest(FieldTest[AnyMessageLinterProtocol]):
     name = "ETag"
     inputs = [b'W/"foo"']
     expected_out = (True, "foo")
 
 
-class UnquotedETagTest(FieldTest):
+class UnquotedETagTest(FieldTest[AnyMessageLinterProtocol]):
     name = "ETag"
     inputs = [b"foo"]
     expected_out = (False, "foo")

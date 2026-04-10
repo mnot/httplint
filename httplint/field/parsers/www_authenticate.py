@@ -1,10 +1,10 @@
 from httplint.field.list_field import HttpListField
 from httplint.field.tests import FieldTest
 from httplint.syntax import rfc9110
-from httplint.types import NoteClassListType
+from httplint.types import NoteClassListType, ResponseLinterProtocol
 
 
-class www_authenticate(HttpListField):
+class www_authenticate(HttpListField[ResponseLinterProtocol]):
     canonical_name = "WWW-Authenticate"
     description = """\
 The `WWW-Authenticate` response header consists of at least one challenge that
@@ -16,7 +16,7 @@ indicates the authentication scheme(s) and parameters applicable."""
     valid_in_responses = True
 
 
-class WWWAuthenticateTest(FieldTest):
+class WWWAuthenticateTest(FieldTest[ResponseLinterProtocol]):
     name = "WWW-Authenticate"
     inputs = [b'Basic realm="WallyWorld"']
     expected_out = ['Basic realm="WallyWorld"']

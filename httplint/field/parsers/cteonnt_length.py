@@ -1,7 +1,8 @@
 from httplint.field.singleton_field import SingletonField
+from httplint.types import AnyMessageLinterProtocol
 
 
-class cteonnt_length(SingletonField):
+class cteonnt_length(SingletonField[AnyMessageLinterProtocol]):
     description = """\
 The `%(field_name)s` field usually means that a HTTP load balancer, proxy or
 other intermediary in front of the server has rewritten the `Content-Length`

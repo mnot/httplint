@@ -9,7 +9,11 @@ from httplint.field.parsers.cross_origin_embedder_policy import (
 )
 from httplint.field.tests import FieldTest
 from httplint.note import Note, categories, levels
-from httplint.types import AddNoteMethodType, NoteClassListType
+from httplint.types import (
+    AddNoteMethodType,
+    NoteClassListType,
+    ResponseLinterProtocol,
+)
 
 
 class cross_origin_embedder_policy_report_only(cross_origin_embedder_policy):
@@ -36,14 +40,14 @@ A response should not have both `Cross-Origin-Embedder-Policy` and
 `Cross-Origin-Embedder-Policy-Report-Only` headers. The report-only header will be ignored."""
 
 
-class CrossOriginEmbedderPolicyReportOnlyRequireCorpTest(FieldTest):
+class CrossOriginEmbedderPolicyReportOnlyRequireCorpTest(FieldTest[ResponseLinterProtocol]):
     name = "Cross-Origin-Embedder-Policy-Report-Only"
     inputs = [b"require-corp"]
     expected_out: Any = (Token("require-corp"), {})
     expected_notes: NoteClassListType = [COEP_REQUIRE_CORP]
 
 
-class CrossOriginEmbedderPolicyReportOnlyBadValueTest(FieldTest):
+class CrossOriginEmbedderPolicyReportOnlyBadValueTest(FieldTest[ResponseLinterProtocol]):
     name = "Cross-Origin-Embedder-Policy-Report-Only"
     inputs = [b"foo"]
     expected_out: Any = (Token("foo"), {})

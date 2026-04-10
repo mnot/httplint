@@ -3,13 +3,17 @@ from httplint.field.tests import FieldTest
 from httplint.field.utils import BAD_DATE_SYNTAX, parse_http_date
 from httplint.note import Note, categories, levels
 from httplint.syntax import rfc9110
-from httplint.types import AddNoteMethodType, NoteClassListType
+from httplint.types import (
+    AddNoteMethodType,
+    AnyMessageLinterProtocol,
+    NoteClassListType,
+)
 from httplint.util import relative_time
 
 MAX_CLOCK_SKEW = 5  # seconds
 
 
-class date(SingletonField):
+class date(SingletonField[AnyMessageLinterProtocol]):
     canonical_name = "Date"
     description = """\
 The `Date` header represents the time when the message was generated, regardless of caching that
@@ -84,20 +88,20 @@ See [this paper](https://www.usenix.org/legacy/events/usits01/full_papers/cohen/
 for more information."""
 
 
-class BasicDateTest(FieldTest):
+class BasicDateTest(FieldTest[AnyMessageLinterProtocol]):
     name = "Date"
     inputs = [b"Mon, 04 Jul 2011 09:08:06 GMT"]
     expected_out = 1309770486
 
 
-class BadDateTest(FieldTest):
+class BadDateTest(FieldTest[AnyMessageLinterProtocol]):
     name = "Date"
     inputs = [b"0"]
     expected_out = None
     expected_notes: NoteClassListType = [BAD_DATE_SYNTAX]
 
 
-class BlankDateTest(FieldTest):
+class BlankDateTest(FieldTest[AnyMessageLinterProtocol]):
     name = "Date"
     inputs = [b""]
     expected_out = None

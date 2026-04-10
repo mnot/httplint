@@ -1,9 +1,12 @@
 from httplint.field.list_field import HttpListField
 from httplint.field.tests import FieldTest
 from httplint.syntax import rfc9110
+from httplint.types import (
+    AnyMessageLinterProtocol,
+)
 
 
-class connection(HttpListField):
+class connection(HttpListField[AnyMessageLinterProtocol]):
     canonical_name = "Connection"
     description = """\
 The `Connection` header allows senders to specify which headers are hop-by-hop; that is, those that
@@ -20,7 +23,7 @@ Connection is only valid in HTTP/1.x; HTTP/2 and HTTP/3 forbit it."""
     valid_in_responses = True
 
 
-class ConnectionTest(FieldTest):
+class ConnectionTest(FieldTest[AnyMessageLinterProtocol]):
     name = "Connection"
     inputs = [b"close"]
     expected_out = ["close"]

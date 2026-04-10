@@ -3,7 +3,7 @@ from httplint.field.singleton_field import SingletonField
 from httplint.field.tests import FieldTest
 from httplint.note import Note, categories, levels
 from httplint.syntax import rfc3986, rfc9110
-from httplint.types import AddNoteMethodType, NoteClassListType
+from httplint.types import AddNoteMethodType, NoteClassListType, ResponseLinterProtocol
 
 # X-Frame-Options = "DENY"
 #          / "SAMEORIGIN"
@@ -21,7 +21,7 @@ X_Frame_Options = rf"""(?:
 )"""
 
 
-class x_frame_options(SingletonField):
+class x_frame_options(SingletonField[ResponseLinterProtocol]):
     canonical_name = "X-Frame-Options"
     reference = "https://www.rfc-editor.org/rfc/rfc7034"
     description = """
@@ -94,28 +94,28 @@ See [MDN](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-Frame-Opti
 """
 
 
-class DenyXFOTest(FieldTest):
+class DenyXFOTest(FieldTest[ResponseLinterProtocol]):
     name = "X-Frame-Options"
     inputs = [b"DENY"]
     expected_out = "DENY"
     expected_notes: NoteClassListType = [FRAME_OPTIONS_DENY]
 
 
-class DenyXFOCaseTest(FieldTest):
+class DenyXFOCaseTest(FieldTest[ResponseLinterProtocol]):
     name = "X-Frame-Options"
     inputs = [b"deny"]
     expected_out = "DENY"
     expected_notes: NoteClassListType = [FRAME_OPTIONS_DENY]
 
 
-class SameOriginXFOTest(FieldTest):
+class SameOriginXFOTest(FieldTest[ResponseLinterProtocol]):
     name = "X-Frame-Options"
     inputs = [b"SAMEORIGIN"]
     expected_out = "SAMEORIGIN"
     expected_notes: NoteClassListType = [FRAME_OPTIONS_SAMEORIGIN]
 
 
-class UnknownXFOTest(FieldTest):
+class UnknownXFOTest(FieldTest[ResponseLinterProtocol]):
     name = "X-Frame-Options"
     inputs = [b"foO"]
     expected_out = "FOO"

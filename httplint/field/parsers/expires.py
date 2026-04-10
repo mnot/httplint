@@ -3,10 +3,14 @@ from httplint.field.tests import FieldTest
 from httplint.field.utils import BAD_DATE_SYNTAX, parse_http_date
 from httplint.note import categories
 from httplint.syntax import rfc9111
-from httplint.types import AddNoteMethodType, NoteClassListType
+from httplint.types import (
+    AddNoteMethodType,
+    NoteClassListType,
+    ResponseLinterProtocol,
+)
 
 
-class expires(SingletonField):
+class expires(SingletonField[ResponseLinterProtocol]):
     canonical_name = "Expires"
     description = """\
 The `Expires` response header gives a time after which the response is considered stale by
@@ -22,27 +26,27 @@ caches."""
         return parse_http_date(field_value, add_note, category=self.category)
 
 
-class BasicExpiresTest(FieldTest):
+class BasicExpiresTest(FieldTest[ResponseLinterProtocol]):
     name = "Expires"
     inputs = [b"Mon, 04 Jul 2011 09:08:06 GMT"]
     expected_out = 1309770486
 
 
-class BadExpiresTest(FieldTest):
+class BadExpiresTest(FieldTest[ResponseLinterProtocol]):
     name = "Expires"
     inputs = [b"0"]
     expected_out = None
     expected_notes: NoteClassListType = [BAD_DATE_SYNTAX]
 
 
-class BlankExpiresTest(FieldTest):
+class BlankExpiresTest(FieldTest[ResponseLinterProtocol]):
     name = "Expires"
     inputs = [b""]
     expected_out = None
     expected_notes: NoteClassListType = [BAD_DATE_SYNTAX]
 
 
-class ExpiresYearBigTest(FieldTest):
+class ExpiresYearBigTest(FieldTest[ResponseLinterProtocol]):
     name = "Expires"
     inputs = [b"Fri, 31 Dec 9999 23:59:59 GMT"]
     expected_out = 253402300799

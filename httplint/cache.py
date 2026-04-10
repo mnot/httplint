@@ -1,9 +1,8 @@
 # pylint: disable=too-many-branches,too-many-statements
 
-from typing import Optional, cast
 
 from httplint.note import Note, categories, levels
-from httplint.types import RequestLinterProtocol, ResponseLinterProtocol
+from httplint.types import ResponseLinterProtocol
 from httplint.util import relative_time
 
 ### configuration
@@ -14,7 +13,7 @@ HEURISTIC_CACHEABLE_STATUS = [200, 203, 206, 300, 301, 410]
 class ResponseCacheChecker:
     def __init__(self, response: ResponseLinterProtocol) -> None:
         self._response = response
-        self._request = cast(Optional[RequestLinterProtocol], response.related)
+        self._request = response.request
         self.notes = response.notes
         self.age: int = 0
         self.store_private = True

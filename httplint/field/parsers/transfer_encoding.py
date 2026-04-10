@@ -8,6 +8,7 @@ from httplint.note import Note, categories, levels
 from httplint.syntax import rfc9112
 from httplint.types import (
     AddNoteMethodType,
+    AnyMessageLinterProtocol,
     NoteClassListType,
     ParamDictType,
     RequestLinterProtocol,
@@ -15,7 +16,7 @@ from httplint.types import (
 )
 
 
-class transfer_encoding(HttpListField):
+class transfer_encoding(HttpListField[AnyMessageLinterProtocol]):
     canonical_name = "Transfer-Encoding"
     description = """\
 The `Transfer-Encoding` header indicates what (if any) type of transformation has been applied to
@@ -101,61 +102,61 @@ This message has encodings with such parameters; although they're technically al
 cause interoperability problems. They should be removed."""
 
 
-class TransferEncodingTest(FieldTest):
+class TransferEncodingTest(FieldTest[AnyMessageLinterProtocol]):
     name = "Transfer-Encoding"
     inputs = [b"chunked"]
     expected_out = [("chunked", {})]
 
 
-class TransferEncodingParamTest(FieldTest):
+class TransferEncodingParamTest(FieldTest[AnyMessageLinterProtocol]):
     name = "Transfer-Encoding"
     inputs = [b"chunked; foo=bar"]
     expected_out = [("chunked", {"foo": "bar"})]
     expected_notes: NoteClassListType = [TRANSFER_CODING_PARAM]
 
 
-class BadTransferEncodingTest(FieldTest):
+class BadTransferEncodingTest(FieldTest[AnyMessageLinterProtocol]):
     name = "Transfer-Encoding"
     inputs = [b"chunked=foo"]
     expected_out = [("chunked=foo", {})]
     expected_notes: NoteClassListType = [BAD_SYNTAX, TRANSFER_CODING_UNWANTED]
 
 
-class TransferEncodingCaseTest(FieldTest):
+class TransferEncodingCaseTest(FieldTest[AnyMessageLinterProtocol]):
     name = "Transfer-Encoding"
     inputs = [b"chUNked"]
     expected_out = [("chunked", {})]
 
 
-class TransferEncodingIdentityTest(FieldTest):
+class TransferEncodingIdentityTest(FieldTest[AnyMessageLinterProtocol]):
     name = "Transfer-Encoding"
     inputs = [b"identity"]
     expected_out = [("identity", {})]
     expected_notes: NoteClassListType = [TRANSFER_CODING_IDENTITY]
 
 
-class TransferEncodingUnwantedTest(FieldTest):
+class TransferEncodingUnwantedTest(FieldTest[AnyMessageLinterProtocol]):
     name = "Transfer-Encoding"
     inputs = [b"foo"]
     expected_out = [("foo", {})]
     expected_notes: NoteClassListType = [TRANSFER_CODING_UNWANTED]
 
 
-class TransferEncodingMultTest(FieldTest):
+class TransferEncodingMultTest(FieldTest[AnyMessageLinterProtocol]):
     name = "Transfer-Encoding"
     inputs = [b"chunked", b"identity"]
     expected_out = [("chunked", {}), ("identity", {})]
     expected_notes: NoteClassListType = [TRANSFER_CODING_IDENTITY]
 
 
-class TransferEncodingMultUnwantedTest(FieldTest):
+class TransferEncodingMultUnwantedTest(FieldTest[AnyMessageLinterProtocol]):
     name = "Transfer-Encoding"
     inputs = [b"chunked", b"foo", b"bar"]
     expected_out = [("chunked", {}), ("foo", {}), ("bar", {})]
     expected_notes: NoteClassListType = [TRANSFER_CODING_UNWANTED]
 
 
-class TransferEncodingWantedTest(FieldTest):
+class TransferEncodingWantedTest(FieldTest[AnyMessageLinterProtocol]):
     name = "Transfer-Encoding"
     inputs = [b"foo"]
     expected_out = [("foo", {})]

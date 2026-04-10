@@ -14,7 +14,7 @@ from httplint.types import (
 )
 
 
-class cross_origin_embedder_policy(StructuredField):
+class cross_origin_embedder_policy(StructuredField[ResponseLinterProtocol]):
     canonical_name = "Cross-Origin-Embedder-Policy"
     description = """\
 The `Cross-Origin-Embedder-Policy` header field prevents a document from loading any cross-origin
@@ -145,35 +145,35 @@ header specifies a reporting endpoint, but no matching endpoint refers to it in 
 `Reporting-Endpoints` header."""
 
 
-class CrossOriginEmbedderPolicyRequireCorpTest(FieldTest):
+class CrossOriginEmbedderPolicyRequireCorpTest(FieldTest[ResponseLinterProtocol]):
     name = "Cross-Origin-Embedder-Policy"
     inputs = [b"require-corp"]
     expected_out: Any = (Token("require-corp"), {})
     expected_notes: NoteClassListType = [COEP_REQUIRE_CORP]
 
 
-class CrossOriginEmbedderPolicyCredentiallessTest(FieldTest):
+class CrossOriginEmbedderPolicyCredentiallessTest(FieldTest[ResponseLinterProtocol]):
     name = "Cross-Origin-Embedder-Policy"
     inputs = [b"credentialless"]
     expected_out: Any = (Token("credentialless"), {})
     expected_notes: NoteClassListType = [COEP_CREDENTIALLESS]
 
 
-class CrossOriginEmbedderPolicyUnsafeNoneTest(FieldTest):
+class CrossOriginEmbedderPolicyUnsafeNoneTest(FieldTest[ResponseLinterProtocol]):
     name = "Cross-Origin-Embedder-Policy"
     inputs = [b"unsafe-none"]
     expected_out: Any = (Token("unsafe-none"), {})
     expected_notes: NoteClassListType = [COEP_UNSAFE_NONE]
 
 
-class CrossOriginEmbedderPolicyBadValueTest(FieldTest):
+class CrossOriginEmbedderPolicyBadValueTest(FieldTest[ResponseLinterProtocol]):
     name = "Cross-Origin-Embedder-Policy"
     inputs = [b"foo"]
     expected_out: Any = (Token("foo"), {})
     expected_notes: NoteClassListType = [CROSS_ORIGIN_EMBEDDER_POLICY_BAD_VALUE]
 
 
-class CrossOriginEmbedderPolicyReportToTest(FieldTest):
+class CrossOriginEmbedderPolicyReportToTest(FieldTest[ResponseLinterProtocol]):
     name = "Cross-Origin-Embedder-Policy"
     inputs = [b"require-corp; report-to=endpoint"]
     expected_out: Any = (Token("require-corp"), {"report-to": "endpoint"})
@@ -185,7 +185,7 @@ class CrossOriginEmbedderPolicyReportToTest(FieldTest):
         )
 
 
-class CrossOriginEmbedderPolicyReportToMissingTest(FieldTest):
+class CrossOriginEmbedderPolicyReportToMissingTest(FieldTest[ResponseLinterProtocol]):
     name = "Cross-Origin-Embedder-Policy"
     inputs = [b"require-corp; report-to=endpoint"]
     expected_out: Any = (Token("require-corp"), {"report-to": "endpoint"})

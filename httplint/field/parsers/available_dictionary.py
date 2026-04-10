@@ -12,7 +12,7 @@ from httplint.types import (
 )
 
 
-class available_dictionary(StructuredField):
+class available_dictionary(StructuredField[RequestLinterProtocol]):
     canonical_name = "Available-Dictionary"
     description = """\
 The `Available-Dictionary` header field is used by a client to indicate that it has a matching
@@ -67,7 +67,7 @@ class AVAILABLE_DICTIONARY_BAD_TYPE(Note):
 The `Available-Dictionary` header value must be a Byte Sequence. Found `%(got)s`."""
 
 
-class AvailableDictionaryTest(FieldTest):
+class AvailableDictionaryTest(FieldTest[RequestLinterProtocol]):
     name = "Available-Dictionary"
     inputs = [b":pZGm1Av0IEBKARczz7exkNYsZb8LzaMrV7J32a2fFG4=:"]
     expected_out: tuple[bytes, dict[str, Any]] = (
@@ -81,7 +81,7 @@ class AvailableDictionaryTest(FieldTest):
         message.headers.parsed["accept-encoding"] = [("dcb", {})]
 
 
-class AvailableDictionaryBadTypeTest(FieldTest):
+class AvailableDictionaryBadTypeTest(FieldTest[RequestLinterProtocol]):
     name = "Available-Dictionary"
     inputs = [b'"not-binary"']
     expected_out: tuple[str, dict[str, Any]] = ("not-binary", {})
@@ -91,7 +91,7 @@ class AvailableDictionaryBadTypeTest(FieldTest):
         message.headers.parsed["accept-encoding"] = [("dcb", {})]
 
 
-class AvailableDictionaryMissingAETest(FieldTest):
+class AvailableDictionaryMissingAETest(FieldTest[RequestLinterProtocol]):
     name = "Available-Dictionary"
     inputs = [b":pZGm1Av0IEBKARczz7exkNYsZb8LzaMrV7J32a2fFG4=:"]
     expected_out: tuple[bytes, dict[str, Any]] = (

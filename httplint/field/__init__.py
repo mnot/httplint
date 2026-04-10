@@ -1,6 +1,6 @@
 import re
 from abc import ABC, abstractmethod
-from typing import Any, Union
+from typing import Any, Generic, Union
 
 from httplint.field.utils import RE_FLAGS
 from httplint.note import Note, categories, levels
@@ -11,6 +11,7 @@ from httplint.types import (
     LinterProtocol,
     RawFieldListType,
     StrFieldListType,
+    TMessage,
 )
 
 # base URLs for references
@@ -23,7 +24,7 @@ MAX_HDR_SIZE = 4 * 1024
 MAX_TTL_HDR = 8 * 1000
 
 
-class HttpField(ABC):
+class HttpField(ABC, Generic[TMessage]):
     """A HTTP Field."""
 
     canonical_name: str
@@ -38,8 +39,9 @@ class HttpField(ABC):
     valid_in_responses: bool
     deprecated: bool = False
     no_coverage: bool = False  # Turns off coverage checks.
+    message: TMessage
 
-    def __init__(self, wire_name: str, message: LinterProtocol) -> None:
+    def __init__(self, wire_name: str, message: TMessage) -> None:
         self.wire_name = wire_name.strip()
         self.message = message
         self.norm_name = self.wire_name.lower()
@@ -53,7 +55,7 @@ class HttpField(ABC):
         field's values.
         """
 
-    def post_check(self, message: LinterProtocol, add_note: AddNoteMethodType) -> None:
+    def post_check(self, message: TMessage, add_note: AddNoteMethodType) -> None:
         """
         Called after the message is complete and other processing has occurred.
         """
@@ -64,7 +66,7 @@ class HttpField(ABC):
         Basic input processing on a new field value.
         """
 
-    def pre_check(self, message: LinterProtocol, add_note: AddNoteMethodType) -> bool:
+    def pre_check(self, message: TMessage, add_note: AddNoteMethodType) -> bool:
         """
         Called before parsing or evaluating the field.
         If False is returned, processing is aborted.
@@ -92,7 +94,7 @@ class HttpField(ABC):
 
         return True
 
-    def finish(self, message: LinterProtocol, add_note: AddNoteMethodType) -> None:
+    def finish(self, message: TMessage, add_note: AddNoteMethodType) -> None:
         """
         Called when all field lines in the section are available.
         """

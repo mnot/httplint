@@ -15,7 +15,7 @@ from httplint.types import (
 )
 
 
-class speculation_rules(StructuredField):
+class speculation_rules(StructuredField[ResponseLinterProtocol]):
     canonical_name = "Speculation-Rules"
     description = """\
 The `Speculation-Rules` header field allows the server to provide the client with a list of URLs that
@@ -61,13 +61,13 @@ The speculation rule is a
 each item must be a string URL. Found: %(value)s (type `%(found_type)s`)."""
 
 
-class SpeculationRulesTest(FieldTest):
+class SpeculationRulesTest(FieldTest[ResponseLinterProtocol]):
     name = "Speculation-Rules"
     inputs = [b'"https://example.com/rules.json"']
     expected_out: Any = [("https://example.com/rules.json", {})]
 
 
-class SpeculationRulesMultipleTest(FieldTest):
+class SpeculationRulesMultipleTest(FieldTest[ResponseLinterProtocol]):
     name = "Speculation-Rules"
     inputs = [b'"https://example.com/rules1.json", "https://example.com/rules2.json"']
     expected_out: Any = [
@@ -76,21 +76,21 @@ class SpeculationRulesMultipleTest(FieldTest):
     ]
 
 
-class SpeculationRulesInsecureTest(FieldTest):
+class SpeculationRulesInsecureTest(FieldTest[ResponseLinterProtocol]):
     name = "Speculation-Rules"
     inputs = [b'"http://example.com/rules.json"']
     expected_out: Any = [("http://example.com/rules.json", {})]
     expected_notes: NoteClassListType = [SPECULATION_RULE_NOT_SECURE]
 
 
-class SpeculationRulesBadSyntaxTest(FieldTest):
+class SpeculationRulesBadSyntaxTest(FieldTest[ResponseLinterProtocol]):
     name = "Speculation-Rules"
     inputs = [b"123"]
     expected_out: Any = [(123, {})]
     expected_notes: NoteClassListType = [SPECULATION_RULES_BAD_TYPE]
 
 
-class SpeculationRulesRelativeTest(FieldTest):
+class SpeculationRulesRelativeTest(FieldTest[ResponseLinterProtocol]):
     name = "Speculation-Rules"
     inputs = [b'"/rules.json"']
     expected_out: Any = [("/rules.json", {})]
@@ -100,7 +100,7 @@ class SpeculationRulesRelativeTest(FieldTest):
         message.base_uri = "https://example.com/"
 
 
-class SpeculationRulesRelativeInsecureTest(FieldTest):
+class SpeculationRulesRelativeInsecureTest(FieldTest[ResponseLinterProtocol]):
     name = "Speculation-Rules"
     inputs = [b'"/rules.json"']
     expected_out: Any = [("/rules.json", {})]
@@ -110,7 +110,7 @@ class SpeculationRulesRelativeInsecureTest(FieldTest):
         message.base_uri = "http://example.com/"
 
 
-class SpeculationRulesInvalidSFTest(FieldTest):
+class SpeculationRulesInvalidSFTest(FieldTest[ResponseLinterProtocol]):
     name = "Speculation-Rules"
     inputs = [b"<script>"]
     expected_out: Any = None

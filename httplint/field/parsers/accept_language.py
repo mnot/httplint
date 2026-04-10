@@ -7,7 +7,11 @@ from httplint.field.tests import FieldTest
 from httplint.field.utils import parse_params
 from httplint.note import Note, categories, levels
 from httplint.syntax import rfc9110
-from httplint.types import AddNoteMethodType, NoteClassListType
+from httplint.types import (
+    AddNoteMethodType,
+    NoteClassListType,
+    RequestLinterProtocol,
+)
 
 
 @dataclass
@@ -16,7 +20,7 @@ class AcceptLanguageValue:
     q: Optional[float]
 
 
-class accept_language(HttpListField):
+class accept_language(HttpListField[RequestLinterProtocol]):
     canonical_name = "Accept-Language"
     description = """\
 The `Accept-Language` header field can be used by user agents to indicate the set of natural languages that are
@@ -79,7 +83,7 @@ The value for this field doesn't conform to its specified syntax; see [its
 definition](%(ref_uri)s) for more information."""
 
 
-class AcceptLanguageTest(FieldTest):
+class AcceptLanguageTest(FieldTest[RequestLinterProtocol]):
     name = "Accept-Language"
     inputs = [b"da, en-gb;q=0.8, en;q=0.7"]
     expected_out = [
@@ -89,14 +93,14 @@ class AcceptLanguageTest(FieldTest):
     ]
 
 
-class AcceptLanguageParamTest(FieldTest):
+class AcceptLanguageParamTest(FieldTest[RequestLinterProtocol]):
     name = "Accept-Language"
     inputs = [b"en; foo=bar"]
     expected_out = [AcceptLanguageValue("en", None)]
     expected_notes: NoteClassListType = [ACCEPT_LANGUAGE_BAD_SYNTAX, BAD_SYNTAX]
 
 
-class AcceptLanguageBadQTest(FieldTest):
+class AcceptLanguageBadQTest(FieldTest[RequestLinterProtocol]):
     name = "Accept-Language"
     inputs = [b"en; q=abc"]
     expected_out = [AcceptLanguageValue("en", None)]

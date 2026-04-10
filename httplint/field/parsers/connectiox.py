@@ -1,7 +1,10 @@
 from httplint.field.singleton_field import SingletonField
+from httplint.types import (
+    AnyMessageLinterProtocol,
+)
 
 
-class connectiox(SingletonField):
+class connectiox(SingletonField[AnyMessageLinterProtocol]):
     description = """\
 The `%(field_name)s` field usually means that a HTTP load balancer, proxy or other intermediary in
 front of the server has rewritten the `Connection` header, to allow it to insert its own.

@@ -6,10 +6,15 @@ from httplint.field.structured_field import StructuredField
 from httplint.field.tests import FieldTest
 from httplint.field.utils import check_sf_params
 from httplint.note import Note, categories, levels
-from httplint.types import AddNoteMethodType, NoteClassListType, SFListType
+from httplint.types import (
+    AddNoteMethodType,
+    NoteClassListType,
+    ResponseLinterProtocol,
+    SFListType,
+)
 
 
-class cache_status(StructuredField):
+class cache_status(StructuredField[ResponseLinterProtocol]):
     canonical_name = "Cache-Status"
     description = """\
 The `Cache-Status` header field indicates how caches have handled the response, to help with
@@ -117,7 +122,7 @@ The value `%(value)s` is not defined for the `%(param)s` parameter.
 """
 
 
-class CacheStatusTest(FieldTest):
+class CacheStatusTest(FieldTest[ResponseLinterProtocol]):
     name = "Cache-Status"
     inputs = [b"ExampleCache; hit; ttl=3700", b"AnotherCache; fwd=uri-miss"]
     expected_out = [
@@ -127,14 +132,14 @@ class CacheStatusTest(FieldTest):
     expected_notes: NoteClassListType = [CACHE_STATUS]
 
 
-class CacheStatusUnknownParamTest(FieldTest):
+class CacheStatusUnknownParamTest(FieldTest[ResponseLinterProtocol]):
     name = "Cache-Status"
     inputs = [b"ExampleCache; unknown=1"]
     expected_out = [(Token("ExampleCache"), {"unknown": 1})]
     expected_notes: NoteClassListType = [CACHE_STATUS_UNKNOWN_PARAM, CACHE_STATUS]
 
 
-class CacheStatusBadParamValTest(FieldTest):
+class CacheStatusBadParamValTest(FieldTest[ResponseLinterProtocol]):
     name = "Cache-Status"
     inputs = [b"ExampleCache; fwd=invalid"]
     expected_out = [(Token("ExampleCache"), {"fwd": Token("invalid")})]

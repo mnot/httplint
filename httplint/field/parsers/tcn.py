@@ -1,9 +1,9 @@
 from httplint.field.list_field import HttpListField
 from httplint.note import categories
-from httplint.types import AddNoteMethodType
+from httplint.types import AddNoteMethodType, ResponseLinterProtocol
 
 
-class tcn(HttpListField):
+class tcn(HttpListField[ResponseLinterProtocol]):
     canonical_name = "TCN"
     description = """\
 The `TCN` response header is part of an experimental transparent content negotiation scheme. It

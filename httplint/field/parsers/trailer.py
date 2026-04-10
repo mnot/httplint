@@ -1,8 +1,9 @@
 from httplint.field.list_field import HttpListField
 from httplint.syntax import rfc9110
+from httplint.types import AnyMessageLinterProtocol
 
 
-class trailer(HttpListField):
+class trailer(HttpListField[AnyMessageLinterProtocol]):
     canonical_name = "Trailer"
     description = """\
 The `Trailer` header indicates that the given set of headers will be

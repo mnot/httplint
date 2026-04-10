@@ -7,10 +7,15 @@ from httplint.field.tests import FieldTest
 from httplint.field.utils import PARAM_REPEATS, parse_params
 from httplint.note import Note, categories, levels
 from httplint.syntax import rfc3986, rfc8288, rfc9110
-from httplint.types import AddNoteMethodType, NoteClassListType, ParamDictType
+from httplint.types import (
+    AddNoteMethodType,
+    AnyMessageLinterProtocol,
+    NoteClassListType,
+    ParamDictType,
+)
 
 
-class link(HttpListField):
+class link(HttpListField[AnyMessageLinterProtocol]):
     canonical_name = "Link"
     description = """\
 The `Link` header allows links related to the content to be conveyed. A link can be viewed as a
@@ -78,53 +83,53 @@ The `Link` header, defined by [RFC 8288](https://www.rfc-editor.org/rfc/rfc8288#
 However, `%(type)s` is not a valid media type."""
 
 
-class BasicLinkTest(FieldTest):
+class BasicLinkTest(FieldTest[AnyMessageLinterProtocol]):
     name = "Link"
     inputs = [b"<http://www.example.com/>; rel=example"]
     expected_out = [("http://www.example.com/", {"rel": "example"})]
 
 
-class QuotedLinkTest(FieldTest):
+class QuotedLinkTest(FieldTest[AnyMessageLinterProtocol]):
     name = "Link"
     inputs = [b'"http://www.example.com/"; rel=example']
     expected_out = [("http://www.example.com/", {"rel": "example"})]
     expected_notes: NoteClassListType = [BAD_SYNTAX]
 
 
-class QuotedRelationLinkTest(FieldTest):
+class QuotedRelationLinkTest(FieldTest[AnyMessageLinterProtocol]):
     name = "Link"
     inputs = [b'<http://www.example.com/>; rel="example"']
     expected_out = [("http://www.example.com/", {"rel": "example"})]
 
 
-class RelativeLinkTest(FieldTest):
+class RelativeLinkTest(FieldTest[AnyMessageLinterProtocol]):
     name = "Link"
     inputs = [b'</foo>; rel="example"']
     expected_out = [("/foo", {"rel": "example"})]
 
 
-class RepeatingRelationLinkTest(FieldTest):
+class RepeatingRelationLinkTest(FieldTest[AnyMessageLinterProtocol]):
     name = "Link"
     inputs = [b'</foo>; rel="example"; rel="another"']
     expected_out = [("/foo", {"rel": "another"})]
     expected_notes: NoteClassListType = [PARAM_REPEATS]
 
 
-class RevLinkTest(FieldTest):
+class RevLinkTest(FieldTest[AnyMessageLinterProtocol]):
     name = "Link"
     inputs = [b'</foo>; rev="bar"']
     expected_out = [("/foo", {"rev": "bar"})]
     expected_notes: NoteClassListType = [LINK_REV]
 
 
-class BadAnchorLinkTest(FieldTest):
+class BadAnchorLinkTest(FieldTest[AnyMessageLinterProtocol]):
     name = "Link"
     inputs = [b'</foo>; rel="bar"; anchor="{blah}"']
     expected_out = [("/foo", {"rel": "bar", "anchor": "{blah}"})]
     expected_notes: NoteClassListType = [LINK_BAD_ANCHOR]
 
 
-class BadTypeLinkTest(FieldTest):
+class BadTypeLinkTest(FieldTest[AnyMessageLinterProtocol]):
     name = "Link"
     inputs = [b'</foo>; rel="bar"; type="{blah}"']
     expected_out = [("/foo", {"rel": "bar", "type": "{blah}"})]

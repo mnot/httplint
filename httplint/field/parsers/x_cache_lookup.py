@@ -1,8 +1,9 @@
 from httplint.field.list_field import HttpListField
 from httplint.note import categories
+from httplint.types import ResponseLinterProtocol
 
 
-class x_cache_lookup(HttpListField):
+class x_cache_lookup(HttpListField[ResponseLinterProtocol]):
     canonical_name = "X-Cache-Lookup"
     description = """\
 The `X-Cache-Lookup` response header is used by some caches to show whether there was a response in

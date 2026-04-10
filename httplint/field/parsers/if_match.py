@@ -1,10 +1,13 @@
 from httplint.field.list_field import HttpListField
 from httplint.field.tests import FieldTest
 from httplint.syntax import rfc9110
-from httplint.types import AddNoteMethodType
+from httplint.types import (
+    AddNoteMethodType,
+    RequestLinterProtocol,
+)
 
 
-class if_match(HttpListField):
+class if_match(HttpListField[RequestLinterProtocol]):
     canonical_name = "If-Match"
     description = """\
 The `If-Match` header field makes the request method conditional on the recipient origin server
@@ -19,7 +22,7 @@ having a current representation of the target resource."""
         pass
 
 
-class IfMatchTest(FieldTest):
+class IfMatchTest(FieldTest[RequestLinterProtocol]):
     name = "If-Match"
     inputs = [b'"xyzzy", "r2d2xxxx", "c3piozzzz"']
     expected_out = ['"xyzzy"', '"r2d2xxxx"', '"c3piozzzz"']

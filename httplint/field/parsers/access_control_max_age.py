@@ -3,10 +3,14 @@ from httplint.field.singleton_field import SingletonField
 from httplint.field.tests import FieldTest
 from httplint.note import Note, categories, levels
 from httplint.syntax import rfc9110
-from httplint.types import AddNoteMethodType, NoteClassListType
+from httplint.types import (
+    AddNoteMethodType,
+    NoteClassListType,
+    ResponseLinterProtocol,
+)
 
 
-class access_control_max_age(SingletonField):
+class access_control_max_age(SingletonField[ResponseLinterProtocol]):
     canonical_name = "Access-Control-Max-Age"
     description = """\
 The `Access-Control-Max-Age` response header indicates how long the results of a CORS preflight
@@ -51,21 +55,21 @@ The `Access-Control-Max-Age` header indicates how many seconds a preflight respo
 for. It cannot be less than zero."""
 
 
-class AccessControlMaxAgeTest(FieldTest):
+class AccessControlMaxAgeTest(FieldTest[ResponseLinterProtocol]):
     name = "Access-Control-Max-Age"
     inputs = [b"123"]
     expected_out = 123
     expected_notes: NoteClassListType = [CORS_PREFLIGHT_ONLY]
 
 
-class AccessControlMaxAgeInvalidTest(FieldTest):
+class AccessControlMaxAgeInvalidTest(FieldTest[ResponseLinterProtocol]):
     name = "Access-Control-Max-Age"
     inputs = [b"abc"]
     expected_out = None
     expected_notes: NoteClassListType = [CORS_MAX_AGE_INVALID, CORS_PREFLIGHT_ONLY]
 
 
-class AccessControlMaxAgeNegativeTest(FieldTest):
+class AccessControlMaxAgeNegativeTest(FieldTest[ResponseLinterProtocol]):
     name = "Access-Control-Max-Age"
     inputs = [b"-1"]
     expected_out = None

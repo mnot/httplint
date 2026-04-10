@@ -4,7 +4,10 @@ from httplint.field.parsers.content_security_policy import (
     content_security_policy,
 )
 from httplint.field.tests import FieldTest
-from httplint.types import NoteClassListType
+from httplint.types import (
+    NoteClassListType,
+    ResponseLinterProtocol,
+)
 
 
 class content_security_policy_report_only(content_security_policy):
@@ -20,7 +23,7 @@ the effects of a content security policy without enforcing it."""
     report_only_text = "\n\nBrowsers will only report violations of this policy, not enforce it."
 
 
-class CSPROTest(FieldTest):
+class CSPROTest(FieldTest[ResponseLinterProtocol]):
     name = "Content-Security-Policy-Report-Only"
     inputs = [b"default-src 'self'; script-src 'unsafe-inline'"]
     expected_out = [{"default-src": "'self'", "script-src": "'unsafe-inline'"}]

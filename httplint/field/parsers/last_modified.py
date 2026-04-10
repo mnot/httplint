@@ -3,11 +3,15 @@ from httplint.field.tests import FieldTest
 from httplint.field.utils import BAD_DATE_SYNTAX, parse_http_date
 from httplint.note import Note, categories, levels
 from httplint.syntax import rfc9110
-from httplint.types import AddNoteMethodType, NoteClassListType
+from httplint.types import (
+    AddNoteMethodType,
+    NoteClassListType,
+    ResponseLinterProtocol,
+)
 from httplint.util import relative_time
 
 
-class last_modified(SingletonField):
+class last_modified(SingletonField[ResponseLinterProtocol]):
     canonical_name = "Last-Modified"
     description = """\
 The `Last-Modified` response header indicates the time that the origin server believes the
@@ -59,20 +63,20 @@ used in HTTP for validating cached responses, and for calculating heuristic fres
 This resource last changed %(last_modified_string)s."""
 
 
-class BasicLMTest(FieldTest):
+class BasicLMTest(FieldTest[ResponseLinterProtocol]):
     name = "Last-Modified"
     inputs = [b"Mon, 04 Jul 2011 09:08:06 GMT"]
     expected_out = 1309770486
 
 
-class BadLMTest(FieldTest):
+class BadLMTest(FieldTest[ResponseLinterProtocol]):
     name = "Last-Modified"
     inputs = [b"0"]
     expected_out = None
     expected_notes: NoteClassListType = [BAD_DATE_SYNTAX]
 
 
-class BlankLMTest(FieldTest):
+class BlankLMTest(FieldTest[ResponseLinterProtocol]):
     name = "Last-Modified"
     inputs = [b""]
     expected_out = None

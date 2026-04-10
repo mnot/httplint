@@ -2,10 +2,14 @@ from httplint.field.list_field import HttpListField
 from httplint.field.tests import FieldTest
 from httplint.note import Note, categories, levels
 from httplint.syntax import rfc9110
-from httplint.types import AddNoteMethodType, NoteClassListType
+from httplint.types import (
+    AddNoteMethodType,
+    AnyMessageLinterProtocol,
+    NoteClassListType,
+)
 
 
-class via(HttpListField):
+class via(HttpListField[AnyMessageLinterProtocol]):
     canonical_name = "Via"
     description = """\
 The `Via` header is added to requests and responses by proxies and other HTTP intermediaries. It
@@ -39,7 +43,7 @@ and then optionally a product identifier or comment (usually used to identify th
 used)."""
 
 
-class ViaTest(FieldTest):
+class ViaTest(FieldTest[AnyMessageLinterProtocol]):
     name = "Via"
     inputs = [b"1.1 test"]
     expected_out = ["1.1 test"]
