@@ -1,6 +1,7 @@
 from httplint.field import FIELD_DEPRECATED
 from httplint.field.singleton_field import SingletonField
 from httplint.field.tests import FieldTest
+from httplint.types import NoteClassListType
 
 
 class content_md5(SingletonField):
@@ -22,4 +23,4 @@ class ContentMD5Test(FieldTest):
     name = "Content-MD5"
     inputs = [b"Q2hlY2sgSW50ZWdyaXR5IQ=="]
     expected_out = "Q2hlY2sgSW50ZWdyaXR5IQ=="
-    expected_notes = [FIELD_DEPRECATED]
+    expected_notes: NoteClassListType = [FIELD_DEPRECATED]

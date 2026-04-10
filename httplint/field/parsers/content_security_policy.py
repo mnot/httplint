@@ -4,7 +4,12 @@ from httplint.field.list_field import HttpListField
 from httplint.field.tests import FieldTest
 from httplint.note import Note, categories, levels
 from httplint.syntax import rfc9110
-from httplint.types import AddNoteMethodType, LinterProtocol, ResponseLinterProtocol
+from httplint.types import (
+    AddNoteMethodType,
+    LinterProtocol,
+    NoteClassListType,
+    ResponseLinterProtocol,
+)
 
 # directive-name = 1*( ALPHA / DIGIT / "-" )
 DIRECTIVE_NAME = r"[a-zA-Z0-9-]+"
@@ -277,49 +282,49 @@ class CSPTest(FieldTest):
     name = "Content-Security-Policy"
     inputs = [b"default-src 'self'; script-src 'unsafe-inline'"]
     expected_out = [{"default-src": "'self'", "script-src": "'unsafe-inline'"}]
-    expected_notes = [CONTENT_SECURITY_POLICY, CSP_UNSAFE_INLINE]
+    expected_notes: NoteClassListType = [CONTENT_SECURITY_POLICY, CSP_UNSAFE_INLINE]
 
 
 class CSPMultipleTest(FieldTest):
     name = "Content-Security-Policy"
     inputs = [b"default-src 'self'", b"script-src 'unsafe-eval'"]
     expected_out = [{"default-src": "'self'"}, {"script-src": "'unsafe-eval'"}]
-    expected_notes = [CONTENT_SECURITY_POLICY, CSP_UNSAFE_EVAL]
+    expected_notes: NoteClassListType = [CONTENT_SECURITY_POLICY, CSP_UNSAFE_EVAL]
 
 
 class CSPDuplicateTest(FieldTest):
     name = "Content-Security-Policy"
     inputs = [b"default-src 'self'; default-src 'none'"]
     expected_out = [{"default-src": "'self'"}]
-    expected_notes = [CONTENT_SECURITY_POLICY, CSP_DUPLICATE_DIRECTIVE]
+    expected_notes: NoteClassListType = [CONTENT_SECURITY_POLICY, CSP_DUPLICATE_DIRECTIVE]
 
 
 class CSPReportUriTest(FieldTest):
     name = "Content-Security-Policy"
     inputs = [b"report-uri /csp-report"]
     expected_out = [{"report-uri": "/csp-report"}]
-    expected_notes = [CONTENT_SECURITY_POLICY, CSP_DEPRECATED_REPORT_URI]
+    expected_notes: NoteClassListType = [CONTENT_SECURITY_POLICY, CSP_DEPRECATED_REPORT_URI]
 
 
 class CSPWideOpenTest(FieldTest):
     name = "Content-Security-Policy"
     inputs = [b"script-src *"]
     expected_out = [{"script-src": "*"}]
-    expected_notes = [CONTENT_SECURITY_POLICY, CSP_WIDE_OPEN]
+    expected_notes: NoteClassListType = [CONTENT_SECURITY_POLICY, CSP_WIDE_OPEN]
 
 
 class CSPTrailingSemiTest(FieldTest):
     name = "Content-Security-Policy"
     inputs = [b"default-src 'self'; script-src 'self';"]
     expected_out = [{"default-src": "'self'", "script-src": "'self'"}]
-    expected_notes = [CONTENT_SECURITY_POLICY]
+    expected_notes: NoteClassListType = [CONTENT_SECURITY_POLICY]
 
 
 class CSPReportToTest(FieldTest):
     name = "Content-Security-Policy"
     inputs = [b"sort-src 'self'; report-to endpoint"]
     expected_out = [{"sort-src": "'self'", "report-to": "endpoint"}]
-    expected_notes = [CONTENT_SECURITY_POLICY]
+    expected_notes: NoteClassListType = [CONTENT_SECURITY_POLICY]
 
     def set_response_context(self, message: ResponseLinterProtocol) -> None:
         message.headers.process(
@@ -331,14 +336,14 @@ class CSPReportToMissingTest(FieldTest):
     name = "Content-Security-Policy"
     inputs = [b"script-src 'self'; report-to endpoint"]
     expected_out = [{"script-src": "'self'", "report-to": "endpoint"}]
-    expected_notes = [CONTENT_SECURITY_POLICY, CSP_REPORT_TO_MISSING]
+    expected_notes: NoteClassListType = [CONTENT_SECURITY_POLICY, CSP_REPORT_TO_MISSING]
 
 
 class CSPReportToMismatchTest(FieldTest):
     name = "Content-Security-Policy"
     inputs = [b"script-src 'self'; report-to endpoint"]
     expected_out = [{"script-src": "'self'", "report-to": "endpoint"}]
-    expected_notes = [CONTENT_SECURITY_POLICY, CSP_REPORT_TO_MISSING]
+    expected_notes: NoteClassListType = [CONTENT_SECURITY_POLICY, CSP_REPORT_TO_MISSING]
 
     def set_response_context(self, message: ResponseLinterProtocol) -> None:
         message.headers.process([(b"Reporting-Endpoints", b'endpoint-2="https://example.com"')])

@@ -5,7 +5,13 @@ from http_sf import Token
 from httplint.field.structured_field import StructuredField
 from httplint.field.tests import FieldTest
 from httplint.note import Note, categories, levels
-from httplint.types import AddNoteMethodType, LinterProtocol, ResponseLinterProtocol
+from httplint.types import (
+    AddNoteMethodType,
+    LinterProtocol,
+    NoteClassListType,
+    ResponseLinterProtocol,
+    SFItemType,
+)
 
 
 class cross_origin_embedder_policy(StructuredField):
@@ -20,37 +26,31 @@ resources that don't explicitly grant the document permission (using CORP or COR
     valid_in_requests = False
     valid_in_responses = True
     sf_type = "item"
+    value: SFItemType
     report_only_string = ""
     report_only_text = ""
 
     def evaluate(self, add_note: AddNoteMethodType) -> None:
-        if isinstance(self.value, tuple):
-            val = self.value[0]
-            if isinstance(val, Token):
-                if val == "require-corp":
-                    add_note(
-                        COEP_REQUIRE_CORP,
-                        report_only=self.report_only_string,
-                        report_only_text=self.report_only_text,
-                    )
-                elif val == "credentialless":
-                    add_note(
-                        COEP_CREDENTIALLESS,
-                        report_only=self.report_only_string,
-                        report_only_text=self.report_only_text,
-                    )
-                elif val == "unsafe-none":
-                    add_note(
-                        COEP_UNSAFE_NONE,
-                        report_only=self.report_only_string,
-                        report_only_text=self.report_only_text,
-                    )
-                else:
-                    add_note(
-                        CROSS_ORIGIN_EMBEDDER_POLICY_BAD_VALUE,
-                        value=val,
-                        report_only=self.report_only_string,
-                    )
+        val = self.value[0]
+        if isinstance(val, Token):
+            if val == "require-corp":
+                add_note(
+                    COEP_REQUIRE_CORP,
+                    report_only=self.report_only_string,
+                    report_only_text=self.report_only_text,
+                )
+            elif val == "credentialless":
+                add_note(
+                    COEP_CREDENTIALLESS,
+                    report_only=self.report_only_string,
+                    report_only_text=self.report_only_text,
+                )
+            elif val == "unsafe-none":
+                add_note(
+                    COEP_UNSAFE_NONE,
+                    report_only=self.report_only_string,
+                    report_only_text=self.report_only_text,
+                )
             else:
                 add_note(
                     CROSS_ORIGIN_EMBEDDER_POLICY_BAD_VALUE,
@@ -60,13 +60,11 @@ resources that don't explicitly grant the document permission (using CORP or COR
         else:
             add_note(
                 CROSS_ORIGIN_EMBEDDER_POLICY_BAD_VALUE,
-                value=self.value,
+                value=val,
                 report_only=self.report_only_string,
             )
 
     def post_check(self, message: LinterProtocol, add_note: AddNoteMethodType) -> None:
-        if not self.value or not isinstance(self.value, tuple):
-            return
 
         # self.value is (item, params)
         params = self.value[1]
@@ -151,35 +149,35 @@ class CrossOriginEmbedderPolicyRequireCorpTest(FieldTest):
     name = "Cross-Origin-Embedder-Policy"
     inputs = [b"require-corp"]
     expected_out: Any = (Token("require-corp"), {})
-    expected_notes = [COEP_REQUIRE_CORP]
+    expected_notes: NoteClassListType = [COEP_REQUIRE_CORP]
 
 
 class CrossOriginEmbedderPolicyCredentiallessTest(FieldTest):
     name = "Cross-Origin-Embedder-Policy"
     inputs = [b"credentialless"]
     expected_out: Any = (Token("credentialless"), {})
-    expected_notes = [COEP_CREDENTIALLESS]
+    expected_notes: NoteClassListType = [COEP_CREDENTIALLESS]
 
 
 class CrossOriginEmbedderPolicyUnsafeNoneTest(FieldTest):
     name = "Cross-Origin-Embedder-Policy"
     inputs = [b"unsafe-none"]
     expected_out: Any = (Token("unsafe-none"), {})
-    expected_notes = [COEP_UNSAFE_NONE]
+    expected_notes: NoteClassListType = [COEP_UNSAFE_NONE]
 
 
 class CrossOriginEmbedderPolicyBadValueTest(FieldTest):
     name = "Cross-Origin-Embedder-Policy"
     inputs = [b"foo"]
     expected_out: Any = (Token("foo"), {})
-    expected_notes = [CROSS_ORIGIN_EMBEDDER_POLICY_BAD_VALUE]
+    expected_notes: NoteClassListType = [CROSS_ORIGIN_EMBEDDER_POLICY_BAD_VALUE]
 
 
 class CrossOriginEmbedderPolicyReportToTest(FieldTest):
     name = "Cross-Origin-Embedder-Policy"
     inputs = [b"require-corp; report-to=endpoint"]
     expected_out: Any = (Token("require-corp"), {"report-to": "endpoint"})
-    expected_notes = [COEP_REQUIRE_CORP]
+    expected_notes: NoteClassListType = [COEP_REQUIRE_CORP]
 
     def set_response_context(self, message: ResponseLinterProtocol) -> None:
         message.headers.process(
@@ -191,4 +189,4 @@ class CrossOriginEmbedderPolicyReportToMissingTest(FieldTest):
     name = "Cross-Origin-Embedder-Policy"
     inputs = [b"require-corp; report-to=endpoint"]
     expected_out: Any = (Token("require-corp"), {"report-to": "endpoint"})
-    expected_notes = [COEP_REQUIRE_CORP, COEP_REPORT_TO_MISSING]
+    expected_notes: NoteClassListType = [COEP_REQUIRE_CORP, COEP_REPORT_TO_MISSING]

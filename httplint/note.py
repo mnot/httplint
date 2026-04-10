@@ -2,13 +2,13 @@ from __future__ import annotations
 
 from collections import UserList
 from enum import Enum
-from typing import Any, Dict, List, MutableMapping, Optional, Type
+from typing import Any, Dict, MutableMapping, Optional, Type
 
 from markdown import Markdown
 from markupsafe import Markup, escape
 
 from httplint.i18n import L_, translate
-from httplint.types import VariableType
+from httplint.types import NoteListType, VariableType
 
 
 class categories(Enum):
@@ -79,7 +79,7 @@ class Note:
     def __init__(self, subject: str, **vrs: VariableType) -> None:
         self.subject = subject
         self.vars = vrs or {}
-        self.subnotes: List[Note] = []
+        self.subnotes: NoteListType = []
 
     def add_child(self, note: Type[Note], **vrs: VariableType) -> Note:
         tmp_vars = self.vars.copy()

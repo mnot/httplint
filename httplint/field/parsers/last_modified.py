@@ -3,7 +3,7 @@ from httplint.field.tests import FieldTest
 from httplint.field.utils import BAD_DATE_SYNTAX, parse_http_date
 from httplint.note import Note, categories, levels
 from httplint.syntax import rfc9110
-from httplint.types import AddNoteMethodType
+from httplint.types import AddNoteMethodType, NoteClassListType
 from httplint.util import relative_time
 
 
@@ -69,11 +69,11 @@ class BadLMTest(FieldTest):
     name = "Last-Modified"
     inputs = [b"0"]
     expected_out = None
-    expected_notes = [BAD_DATE_SYNTAX]
+    expected_notes: NoteClassListType = [BAD_DATE_SYNTAX]
 
 
 class BlankLMTest(FieldTest):
     name = "Last-Modified"
     inputs = [b""]
     expected_out = None
-    expected_notes = [BAD_DATE_SYNTAX]
+    expected_notes: NoteClassListType = [BAD_DATE_SYNTAX]

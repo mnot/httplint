@@ -3,7 +3,7 @@ from http_sf import Token
 from httplint.field.structured_field import StructuredField
 from httplint.field.tests import FieldTest
 from httplint.note import Note, categories, levels
-from httplint.types import AddNoteMethodType
+from httplint.types import AddNoteMethodType, NoteClassListType, SFDictionaryType
 
 
 class permissions_policy(StructuredField):
@@ -17,6 +17,7 @@ The `Permissions-Policy` response header allows a site to control the use of bro
     valid_in_requests = False
     valid_in_responses = True
     sf_type = "dictionary"
+    value: SFDictionaryType
 
     def evaluate(self, add_note: AddNoteMethodType) -> None:
         if not self.value:
@@ -26,6 +27,8 @@ The `Permissions-Policy` response header allows a site to control the use of bro
             val, _ = allowlist
             if isinstance(val, list):
                 for item in val:
+                    if not isinstance(item, tuple):
+                        continue
                     i_val, _ = item
                     if isinstance(i_val, Token):
                         if str(i_val) not in ["self", "src"]:
@@ -136,14 +139,17 @@ class PermissionsPolicyTest(FieldTest):
     name = "Permissions-Policy"
     inputs = [b"geolocation=(), camera=self"]
     expected_out = {"geolocation": ([], {}), "camera": (Token("self"), {})}
-    expected_notes = [PERMISSIONS_POLICY_INVALID_VALUE, PERMISSIONS_POLICY_PRESENT]
+    expected_notes: NoteClassListType = [
+        PERMISSIONS_POLICY_INVALID_VALUE,
+        PERMISSIONS_POLICY_PRESENT,
+    ]
 
 
 class PermissionsPolicyWildcardTest(FieldTest):
     name = "Permissions-Policy"
     inputs = [b"geolocation=*, camera=()"]
     expected_out = {"geolocation": (Token("*"), {}), "camera": ([], {})}
-    expected_notes = [PERMISSIONS_POLICY_WILDCARD, PERMISSIONS_POLICY_PRESENT]
+    expected_notes: NoteClassListType = [PERMISSIONS_POLICY_WILDCARD, PERMISSIONS_POLICY_PRESENT]
 
 
 class PermissionsPolicyInvalidTest(FieldTest):
@@ -153,7 +159,7 @@ class PermissionsPolicyInvalidTest(FieldTest):
         "geolocation": ([("self", {})], {}),
         "camera": ([(Token("none"), {})], {}),
     }
-    expected_notes = [
+    expected_notes: NoteClassListType = [
         PERMISSIONS_POLICY_QUOTED_KEYWORD,
         PERMISSIONS_POLICY_UNKNOWN_TOKEN,
         PERMISSIONS_POLICY_PRESENT,

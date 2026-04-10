@@ -3,7 +3,7 @@ from httplint.field.singleton_field import SingletonField
 from httplint.field.tests import FieldTest
 from httplint.note import Note, categories, levels
 from httplint.syntax import rfc3986, rfc9110
-from httplint.types import AddNoteMethodType
+from httplint.types import AddNoteMethodType, NoteClassListType
 
 # X-Frame-Options = "DENY"
 #          / "SAMEORIGIN"
@@ -98,25 +98,25 @@ class DenyXFOTest(FieldTest):
     name = "X-Frame-Options"
     inputs = [b"DENY"]
     expected_out = "DENY"
-    expected_notes = [FRAME_OPTIONS_DENY]
+    expected_notes: NoteClassListType = [FRAME_OPTIONS_DENY]
 
 
 class DenyXFOCaseTest(FieldTest):
     name = "X-Frame-Options"
     inputs = [b"deny"]
     expected_out = "DENY"
-    expected_notes = [FRAME_OPTIONS_DENY]
+    expected_notes: NoteClassListType = [FRAME_OPTIONS_DENY]
 
 
 class SameOriginXFOTest(FieldTest):
     name = "X-Frame-Options"
     inputs = [b"SAMEORIGIN"]
     expected_out = "SAMEORIGIN"
-    expected_notes = [FRAME_OPTIONS_SAMEORIGIN]
+    expected_notes: NoteClassListType = [FRAME_OPTIONS_SAMEORIGIN]
 
 
 class UnknownXFOTest(FieldTest):
     name = "X-Frame-Options"
     inputs = [b"foO"]
     expected_out = "FOO"
-    expected_notes = [BAD_SYNTAX, FRAME_OPTIONS_UNKNOWN]
+    expected_notes: NoteClassListType = [BAD_SYNTAX, FRAME_OPTIONS_UNKNOWN]

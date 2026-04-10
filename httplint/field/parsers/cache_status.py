@@ -6,7 +6,7 @@ from httplint.field.structured_field import StructuredField
 from httplint.field.tests import FieldTest
 from httplint.field.utils import check_sf_params
 from httplint.note import Note, categories, levels
-from httplint.types import AddNoteMethodType
+from httplint.types import AddNoteMethodType, NoteClassListType, SFListType
 
 
 class cache_status(StructuredField):
@@ -21,18 +21,15 @@ debugging caches."""
     valid_in_requests = False
     valid_in_responses = True
     sf_type = "list"
+    value: SFListType
 
     def evaluate(self, add_note: AddNoteMethodType) -> None:
         status_list = []
-        bad_structure = False
-        for member in self.value:
-            if isinstance(member, tuple):
-                target = member[0]
-                params = member[1]
-            else:
-                bad_structure = True
-                continue
+        for target, params in self.value:
 
+            target_str = (
+                target.decode("ascii", "replace") if isinstance(target, bytes) else str(target)
+            )
             param_str = check_sf_params(
                 params,
                 KNOWN_PARAMS,
@@ -40,13 +37,10 @@ debugging caches."""
                 CACHE_STATUS_UNKNOWN_PARAM,
                 CACHE_STATUS_BAD_PARAM_VAL,
             )
-            status_list.append(f"**{target}**:\n{param_str}")
+            status_list.append(f"**{target_str}**:\n{param_str}")
 
         if status_list:
             add_note(CACHE_STATUS, status="\n\n".join(status_list))
-
-        if bad_structure:
-            add_note(CACHE_STATUS_BAD_STRUCTURE)
 
 
 KNOWN_PARAMS: Dict[str, Dict[str, Any]] = {
@@ -105,16 +99,6 @@ The `Cache-Status` header field indicates how caches have handled the response.
 """
 
 
-class CACHE_STATUS_BAD_STRUCTURE(Note):
-    category = categories.CACHING
-    level = levels.WARN
-    _summary = "The Cache-Status header has an invalid structure."
-    _text = """\
-The `Cache-Status` header must be a list of members, where each member is a 
-Token or String (identifying the cache) with optional parameters.
-"""
-
-
 class CACHE_STATUS_UNKNOWN_PARAM(Note):
     category = categories.CACHING
     level = levels.INFO
@@ -140,18 +124,18 @@ class CacheStatusTest(FieldTest):
         (Token("ExampleCache"), {"hit": True, "ttl": 3700}),
         (Token("AnotherCache"), {"fwd": Token("uri-miss")}),
     ]
-    expected_notes = [CACHE_STATUS]
+    expected_notes: NoteClassListType = [CACHE_STATUS]
 
 
 class CacheStatusUnknownParamTest(FieldTest):
     name = "Cache-Status"
     inputs = [b"ExampleCache; unknown=1"]
     expected_out = [(Token("ExampleCache"), {"unknown": 1})]
-    expected_notes = [CACHE_STATUS_UNKNOWN_PARAM, CACHE_STATUS]
+    expected_notes: NoteClassListType = [CACHE_STATUS_UNKNOWN_PARAM, CACHE_STATUS]
 
 
 class CacheStatusBadParamValTest(FieldTest):
     name = "Cache-Status"
     inputs = [b"ExampleCache; fwd=invalid"]
     expected_out = [(Token("ExampleCache"), {"fwd": Token("invalid")})]
-    expected_notes = [CACHE_STATUS_BAD_PARAM_VAL, CACHE_STATUS]
+    expected_notes: NoteClassListType = [CACHE_STATUS_BAD_PARAM_VAL, CACHE_STATUS]

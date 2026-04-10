@@ -5,7 +5,13 @@ from http_sf import Token
 from httplint.field.structured_field import StructuredField
 from httplint.field.tests import FieldTest
 from httplint.note import Note, categories, levels
-from httplint.types import AddNoteMethodType, LinterProtocol, ResponseLinterProtocol
+from httplint.types import (
+    AddNoteMethodType,
+    LinterProtocol,
+    NoteClassListType,
+    ResponseLinterProtocol,
+    SFItemType,
+)
 
 
 class cross_origin_opener_policy(StructuredField):
@@ -20,37 +26,31 @@ it doesn't have a reference to the opener's window object."""
     valid_in_requests = False
     valid_in_responses = True
     sf_type = "item"
+    value: SFItemType
     report_only_string = ""
     report_only_text = ""
 
     def evaluate(self, add_note: AddNoteMethodType) -> None:
-        if isinstance(self.value, tuple):
-            val = self.value[0]
-            if isinstance(val, Token):
-                if val == "same-origin":
-                    add_note(
-                        COOP_SAME_ORIGIN,
-                        report_only=self.report_only_string,
-                        report_only_text=self.report_only_text,
-                    )
-                elif val == "same-origin-allow-popups":
-                    add_note(
-                        COOP_SAME_ORIGIN_ALLOW_POPUPS,
-                        report_only=self.report_only_string,
-                        report_only_text=self.report_only_text,
-                    )
-                elif val == "unsafe-none":
-                    add_note(
-                        COOP_UNSAFE_NONE,
-                        report_only=self.report_only_string,
-                        report_only_text=self.report_only_text,
-                    )
-                else:
-                    add_note(
-                        CROSS_ORIGIN_OPENER_POLICY_BAD_VALUE,
-                        value=val,
-                        report_only=self.report_only_string,
-                    )
+        val = self.value[0]
+        if isinstance(val, Token):
+            if val == "same-origin":
+                add_note(
+                    COOP_SAME_ORIGIN,
+                    report_only=self.report_only_string,
+                    report_only_text=self.report_only_text,
+                )
+            elif val == "same-origin-allow-popups":
+                add_note(
+                    COOP_SAME_ORIGIN_ALLOW_POPUPS,
+                    report_only=self.report_only_string,
+                    report_only_text=self.report_only_text,
+                )
+            elif val == "unsafe-none":
+                add_note(
+                    COOP_UNSAFE_NONE,
+                    report_only=self.report_only_string,
+                    report_only_text=self.report_only_text,
+                )
             else:
                 add_note(
                     CROSS_ORIGIN_OPENER_POLICY_BAD_VALUE,
@@ -60,13 +60,11 @@ it doesn't have a reference to the opener's window object."""
         else:
             add_note(
                 CROSS_ORIGIN_OPENER_POLICY_BAD_VALUE,
-                value=self.value,
+                value=val,
                 report_only=self.report_only_string,
             )
 
     def post_check(self, message: LinterProtocol, add_note: AddNoteMethodType) -> None:
-        if not self.value or not isinstance(self.value, tuple):
-            return
 
         # self.value is (item, params)
         params = self.value[1]
@@ -149,35 +147,35 @@ class CrossOriginOpenerPolicySameOriginTest(FieldTest):
     name = "Cross-Origin-Opener-Policy"
     inputs = [b"same-origin"]
     expected_out: Any = (Token("same-origin"), {})
-    expected_notes = [COOP_SAME_ORIGIN]
+    expected_notes: NoteClassListType = [COOP_SAME_ORIGIN]
 
 
 class CrossOriginOpenerPolicySameOriginAllowPopupsTest(FieldTest):
     name = "Cross-Origin-Opener-Policy"
     inputs = [b"same-origin-allow-popups"]
     expected_out: Any = (Token("same-origin-allow-popups"), {})
-    expected_notes = [COOP_SAME_ORIGIN_ALLOW_POPUPS]
+    expected_notes: NoteClassListType = [COOP_SAME_ORIGIN_ALLOW_POPUPS]
 
 
 class CrossOriginOpenerPolicyUnsafeNoneTest(FieldTest):
     name = "Cross-Origin-Opener-Policy"
     inputs = [b"unsafe-none"]
     expected_out: Any = (Token("unsafe-none"), {})
-    expected_notes = [COOP_UNSAFE_NONE]
+    expected_notes: NoteClassListType = [COOP_UNSAFE_NONE]
 
 
 class CrossOriginOpenerPolicyBadValueTest(FieldTest):
     name = "Cross-Origin-Opener-Policy"
     inputs = [b"foo"]
     expected_out: Any = (Token("foo"), {})
-    expected_notes = [CROSS_ORIGIN_OPENER_POLICY_BAD_VALUE]
+    expected_notes: NoteClassListType = [CROSS_ORIGIN_OPENER_POLICY_BAD_VALUE]
 
 
 class CrossOriginOpenerPolicyReportToTest(FieldTest):
     name = "Cross-Origin-Opener-Policy"
     inputs = [b"same-origin; report-to=endpoint"]
     expected_out: Any = (Token("same-origin"), {"report-to": "endpoint"})
-    expected_notes = [COOP_SAME_ORIGIN]
+    expected_notes: NoteClassListType = [COOP_SAME_ORIGIN]
 
     def set_response_context(self, message: ResponseLinterProtocol) -> None:
         message.headers.process(
@@ -189,4 +187,4 @@ class CrossOriginOpenerPolicyReportToMissingTest(FieldTest):
     name = "Cross-Origin-Opener-Policy"
     inputs = [b"same-origin; report-to=endpoint"]
     expected_out: Any = (Token("same-origin"), {"report-to": "endpoint"})
-    expected_notes = [COOP_SAME_ORIGIN, COOP_REPORT_TO_MISSING]
+    expected_notes: NoteClassListType = [COOP_SAME_ORIGIN, COOP_REPORT_TO_MISSING]

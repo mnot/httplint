@@ -5,7 +5,7 @@ from httplint.field.tests import FieldTest
 from httplint.field.utils import parse_params
 from httplint.note import Note, categories, levels
 from httplint.syntax import rfc9110
-from httplint.types import AddNoteMethodType, ParamDictType
+from httplint.types import AddNoteMethodType, NoteClassListType, ParamDictType
 
 
 class server_timing(HttpListField):
@@ -91,7 +91,7 @@ class ServerTimingTest(FieldTest):
     name = "Server-Timing"
     inputs = [b"miss, db;dur=53, app;dur=47.2"]
     expected_out = [("miss", {}), ("db", {"dur": "53"}), ("app", {"dur": "47.2"})]
-    expected_notes = [
+    expected_notes: NoteClassListType = [
         SERVER_TIMING_MISSING_DUR,
         SERVER_TIMING_MISSING_DESC,  # miss
         SERVER_TIMING_MISSING_DESC,  # db
@@ -106,7 +106,7 @@ class ServerTimingDescTest(FieldTest):
         ("cache", {"desc": "Cache Read"}),
         ("db", {"dur": "50", "desc": "Database"}),
     ]
-    expected_notes = [
+    expected_notes: NoteClassListType = [
         SERVER_TIMING_MISSING_DUR,  # cache
     ]
 
@@ -115,4 +115,4 @@ class ServerTimingBadDurTest(FieldTest):
     name = "Server-Timing"
     inputs = [b"db;dur=foo"]
     expected_out = [("db", {"dur": "foo"})]
-    expected_notes = [SERVER_TIMING_BAD_PARAM, SERVER_TIMING_MISSING_DESC]
+    expected_notes: NoteClassListType = [SERVER_TIMING_BAD_PARAM, SERVER_TIMING_MISSING_DESC]

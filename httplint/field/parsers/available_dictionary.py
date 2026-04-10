@@ -6,7 +6,9 @@ from httplint.note import Note, categories, levels
 from httplint.types import (
     AddNoteMethodType,
     LinterProtocol,
+    NoteClassListType,
     RequestLinterProtocol,
+    SFItemType,
 )
 
 
@@ -22,6 +24,7 @@ dictionary available for use in compressing the response."""
     valid_in_requests = True
     valid_in_responses = False
     sf_type = "item"
+    value: SFItemType
 
     def evaluate(self, add_note: AddNoteMethodType) -> None:
         # self.value is (item, params) for sf_type="item"
@@ -72,7 +75,7 @@ class AvailableDictionaryTest(FieldTest):
         b"+W\xb2w\xd9\xad\x9f\x14n",
         {},
     )
-    expected_notes = []
+    expected_notes: NoteClassListType = []
 
     def set_request_context(self, message: RequestLinterProtocol) -> None:
         message.headers.parsed["accept-encoding"] = [("dcb", {})]
@@ -82,7 +85,7 @@ class AvailableDictionaryBadTypeTest(FieldTest):
     name = "Available-Dictionary"
     inputs = [b'"not-binary"']
     expected_out: tuple[str, dict[str, Any]] = ("not-binary", {})
-    expected_notes = [AVAILABLE_DICTIONARY_BAD_TYPE]
+    expected_notes: NoteClassListType = [AVAILABLE_DICTIONARY_BAD_TYPE]
 
     def set_request_context(self, message: RequestLinterProtocol) -> None:
         message.headers.parsed["accept-encoding"] = [("dcb", {})]
@@ -96,7 +99,7 @@ class AvailableDictionaryMissingAETest(FieldTest):
         b"+W\xb2w\xd9\xad\x9f\x14n",
         {},
     )
-    expected_notes = [AVAILABLE_DICTIONARY_MISSING_AE]
+    expected_notes: NoteClassListType = [AVAILABLE_DICTIONARY_MISSING_AE]
 
     def set_request_context(self, message: RequestLinterProtocol) -> None:
         # Accept-Encoding missing 'dcb' or 'dcz'

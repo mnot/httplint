@@ -2,7 +2,7 @@ from httplint.field.list_field import HttpListField
 from httplint.field.tests import FieldTest
 from httplint.note import Note, categories, levels
 from httplint.syntax import rfc9110
-from httplint.types import AddNoteMethodType
+from httplint.types import AddNoteMethodType, NoteClassListType
 
 
 class accept_ranges(HttpListField):
@@ -57,7 +57,7 @@ class BadAcceptRangeTest(FieldTest):
     name = "Accept-Ranges"
     inputs = [b"foo"]
     expected_out = ["foo"]
-    expected_notes = [UNKNOWN_RANGE]
+    expected_notes: NoteClassListType = [UNKNOWN_RANGE]
 
 
 class CaseAcceptRangeTest(FieldTest):

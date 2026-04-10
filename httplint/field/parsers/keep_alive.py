@@ -5,7 +5,7 @@ from httplint.field.list_field import HttpListField
 from httplint.field.tests import FieldTest
 from httplint.field.utils import unquote_string
 from httplint.syntax import rfc9110
-from httplint.types import AddNoteMethodType
+from httplint.types import AddNoteMethodType, NoteClassListType
 
 
 class keep_alive(HttpListField):
@@ -39,10 +39,10 @@ class KeepAliveTest(FieldTest):
     name = "Keep-Alive"
     inputs = [b"timeout=30"]
     expected_out = [("timeout", "30")]
-    expected_notes = [FIELD_DEPRECATED]
+    expected_notes: NoteClassListType = [FIELD_DEPRECATED]
 
 
 class EmptyKeepAliveTest(FieldTest):
     name = "Keep-Alive"
     inputs = [b""]
-    expected_notes = [FIELD_DEPRECATED]
+    expected_notes: NoteClassListType = [FIELD_DEPRECATED]

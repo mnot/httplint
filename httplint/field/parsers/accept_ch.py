@@ -9,8 +9,10 @@ from httplint.note import Note, categories, levels
 from httplint.types import (
     AddNoteMethodType,
     LinterProtocol,
+    NoteClassListType,
     RequestLinterProtocol,
     ResponseLinterProtocol,
+    SFListType,
 )
 
 
@@ -26,13 +28,14 @@ willing to process."""
     valid_in_requests = False
     valid_in_responses = True
     sf_type = "list"
+    value: SFListType
 
     def evaluate(self, add_note: AddNoteMethodType) -> None:
         # Check for valid syntax (must be Tokens)
         for item in self.value:
             if not isinstance(item[0], Token):
                 add_note(
-                    ACCEPT_CH_BAD_SYNTAX,
+                    ACCEPT_CH_BAD_TYPE,
                     ref_uri=self.reference,
                 )
                 return
@@ -87,13 +90,14 @@ Because these fields can affect the response content, they should be included in
 that caches store separate responses for different client hints."""
 
 
-class ACCEPT_CH_BAD_SYNTAX(Note):
+class ACCEPT_CH_BAD_TYPE(Note):
     category = categories.CONNEG
     level = levels.BAD
     _summary = "The Accept-CH header isn't a List of Tokens."
     _text = """\
-The value for this field doesn't conform to its specified syntax; it will likely be ignored
-by browsers.
+The value for this field is legally formatted as a
+[Structured Field](https://www.rfc-editor.org/rfc/rfc8941.html), but it isn't a list of Tokens.
+As a result, it will likely be ignored by browsers.
 
 See [its definition](%(ref_uri)s) for more information."""
 
@@ -102,15 +106,15 @@ class AcceptCHTest(FieldTest):
     name = "Accept-CH"
     inputs = [b"Sec-CH-Example, Sec-CH-Example-2"]
     expected_out = [(Token("Sec-CH-Example"), {}), (Token("Sec-CH-Example-2"), {})]
-    expected_notes = []
+    expected_notes: NoteClassListType = []
 
 
 class AcceptCHBadSyntaxTest(FieldTest):
     name = "Accept-CH"
     inputs = [b'"foo"']
     expected_out = [("foo", {})]
-    expected_notes = [
-        ACCEPT_CH_BAD_SYNTAX,
+    expected_notes: NoteClassListType = [
+        ACCEPT_CH_BAD_TYPE,
     ]
 
 

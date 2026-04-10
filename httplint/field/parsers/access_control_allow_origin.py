@@ -13,6 +13,7 @@ from httplint.note import categories
 from httplint.syntax import rfc3986
 from httplint.types import (
     AddNoteMethodType,
+    NoteClassListType,
     RequestLinterProtocol,
     ResponseLinterProtocol,
 )
@@ -58,7 +59,7 @@ class AccessControlAllowOriginMatchTest(FieldTest):
     name = "Access-Control-Allow-Origin"
     inputs = [b"https://example.com"]
     expected_out = "https://example.com"
-    expected_notes = [CORS_ORIGIN_MATCH]
+    expected_notes: NoteClassListType = [CORS_ORIGIN_MATCH]
 
     def set_response_context(self, message: ResponseLinterProtocol) -> None:
         request = cast(RequestLinterProtocol, message.related)
@@ -69,7 +70,7 @@ class AccessControlAllowOriginMismatchTest(FieldTest):
     name = "Access-Control-Allow-Origin"
     inputs = [b"https://other.com"]
     expected_out = "https://other.com"
-    expected_notes = [CORS_ORIGIN_MISMATCH]
+    expected_notes: NoteClassListType = [CORS_ORIGIN_MISMATCH]
 
     def set_response_context(self, message: ResponseLinterProtocol) -> None:
         request = cast(RequestLinterProtocol, message.related)
@@ -80,7 +81,7 @@ class AccessControlAllowOriginStarContextTest(FieldTest):
     name = "Access-Control-Allow-Origin"
     inputs = [b"*"]
     expected_out = "*"
-    expected_notes = [CORS_ORIGIN_STAR]
+    expected_notes: NoteClassListType = [CORS_ORIGIN_STAR]
 
     def set_response_context(self, message: ResponseLinterProtocol) -> None:
         request = cast(RequestLinterProtocol, message.related)
@@ -91,7 +92,7 @@ class AccessControlAllowOriginNullContextTest(FieldTest):
     name = "Access-Control-Allow-Origin"
     inputs = [b"null"]
     expected_out = "null"
-    expected_notes = [CORS_ORIGIN_NULL]
+    expected_notes: NoteClassListType = [CORS_ORIGIN_NULL]
 
     def set_response_context(self, message: ResponseLinterProtocol) -> None:
         request = cast(RequestLinterProtocol, message.related)

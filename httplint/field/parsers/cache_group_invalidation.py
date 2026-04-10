@@ -3,7 +3,7 @@ from typing import Any, cast
 from httplint.field.structured_field import StructuredField
 from httplint.field.tests import FieldTest
 from httplint.note import Note, categories, levels
-from httplint.types import AddNoteMethodType
+from httplint.types import AddNoteMethodType, NoteClassListType, SFListType
 
 
 class cache_group_invalidation(StructuredField):
@@ -18,6 +18,7 @@ responses."""
     valid_in_requests = False
     valid_in_responses = True
     sf_type = "list"
+    value: SFListType
 
     def evaluate(self, add_note: AddNoteMethodType) -> None:
         # Check if the method is safe
@@ -71,7 +72,7 @@ class CacheGroupInvalidationTest(FieldTest):
 
         self.message.related = cast(Any, MockRequest())
 
-    expected_notes = []
+    expected_notes: NoteClassListType = []
 
 
 class CacheGroupInvalidationIgnoredTest(FieldTest):
@@ -87,7 +88,7 @@ class CacheGroupInvalidationIgnoredTest(FieldTest):
 
         self.message.related = cast(Any, MockRequest())
 
-    expected_notes = [CACHE_GROUP_INVALIDATION_IGNORED]
+    expected_notes: NoteClassListType = [CACHE_GROUP_INVALIDATION_IGNORED]
 
 
 class CacheGroupInvalidationBadTypeTest(FieldTest):
@@ -104,7 +105,7 @@ class CacheGroupInvalidationBadTypeTest(FieldTest):
 
         self.message.related = cast(Any, MockRequest())
 
-    expected_notes = [CACHE_GROUP_INVALIDATION_BAD_TYPE]
+    expected_notes: NoteClassListType = [CACHE_GROUP_INVALIDATION_BAD_TYPE]
 
 
 class CacheGroupInvalidationMultipleBadTypesTest(FieldTest):
@@ -120,4 +121,4 @@ class CacheGroupInvalidationMultipleBadTypesTest(FieldTest):
 
         self.message.related = cast(Any, MockRequest())
 
-    expected_notes = [CACHE_GROUP_INVALIDATION_BAD_TYPE]
+    expected_notes: NoteClassListType = [CACHE_GROUP_INVALIDATION_BAD_TYPE]

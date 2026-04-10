@@ -4,7 +4,12 @@ from urllib.parse import urljoin, urlsplit
 from httplint.field.structured_field import StructuredField
 from httplint.field.tests import FieldTest
 from httplint.note import Note, categories, levels
-from httplint.types import AddNoteMethodType, ResponseLinterProtocol
+from httplint.types import (
+    AddNoteMethodType,
+    NoteClassListType,
+    ResponseLinterProtocol,
+    SFDictionaryType,
+)
 
 
 class reporting_endpoints(StructuredField):
@@ -17,6 +22,7 @@ API."""
     valid_in_requests = False
     valid_in_responses = True
     sf_type = "dictionary"
+    value: SFDictionaryType
 
     def evaluate(self, add_note: AddNoteMethodType) -> None:
         for name, item in self.value.items():
@@ -63,21 +69,21 @@ class ReportingEndpointsInsecureTest(FieldTest):
     name = "Reporting-Endpoints"
     inputs = [b'endpoint="http://example.com/reports"']
     expected_out: Any = {"endpoint": ("http://example.com/reports", {})}
-    expected_notes = [ENDPOINT_NOT_SECURE]
+    expected_notes: NoteClassListType = [ENDPOINT_NOT_SECURE]
 
 
 class ReportingEndpointsBadSyntaxTest(FieldTest):
     name = "Reporting-Endpoints"
     inputs = [b"endpoint=123"]
     expected_out: Any = {"endpoint": (123, {})}
-    expected_notes = [BAD_REPORTING_ENDPOINT_SYNTAX]
+    expected_notes: NoteClassListType = [BAD_REPORTING_ENDPOINT_SYNTAX]
 
 
 class ReportingEndpointsRelativeTest(FieldTest):
     name = "Reporting-Endpoints"
     inputs = [b'endpoint="/reports"']
     expected_out: Any = {"endpoint": ("/reports", {})}
-    expected_notes = []
+    expected_notes: NoteClassListType = []
 
     def set_response_context(self, message: ResponseLinterProtocol) -> None:
         message.base_uri = "https://example.com/"
@@ -87,7 +93,7 @@ class ReportingEndpointsInsecureBaseTest(FieldTest):
     name = "Reporting-Endpoints"
     inputs = [b'endpoint="/reports"']
     expected_out: Any = {"endpoint": ("/reports", {})}
-    expected_notes = [ENDPOINT_NOT_SECURE]
+    expected_notes: NoteClassListType = [ENDPOINT_NOT_SECURE]
 
     def set_response_context(self, message: ResponseLinterProtocol) -> None:
         message.base_uri = "http://example.com/"

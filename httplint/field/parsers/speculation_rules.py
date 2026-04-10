@@ -7,7 +7,12 @@ from httplint.field.structured_field import (
 )
 from httplint.field.tests import FieldTest
 from httplint.note import Note, categories, levels
-from httplint.types import AddNoteMethodType, ResponseLinterProtocol
+from httplint.types import (
+    AddNoteMethodType,
+    NoteClassListType,
+    ResponseLinterProtocol,
+    SFListType,
+)
 
 
 class speculation_rules(StructuredField):
@@ -19,13 +24,14 @@ point to speculation rules files."""
     valid_in_requests = False
     valid_in_responses = True
     sf_type = "list"
+    value: SFListType
 
     def evaluate(self, add_note: AddNoteMethodType) -> None:
         for item in self.value:
             url = item[0]
             if not isinstance(url, str):
                 add_note(
-                    BAD_SPECULATION_RULES_SYNTAX,
+                    SPECULATION_RULES_BAD_TYPE,
                     value=url,
                     found_type=type(url).__name__,
                 )
@@ -45,12 +51,14 @@ class SPECULATION_RULE_NOT_SECURE(Note):
 The speculation rule `%(url)s` uses an insecure URL. Browsers may ignore it."""
 
 
-class BAD_SPECULATION_RULES_SYNTAX(Note):
+class SPECULATION_RULES_BAD_TYPE(Note):
     category = categories.GENERAL
     level = levels.BAD
     _summary = "The speculation rule value is invalid."
     _text = """\
-The speculation rule must be a string URL. Found: %(value)s (type `%(found_type)s`)."""
+The speculation rule is a
+[Structured Field](https://www.rfc-editor.org/rfc/rfc8941.html) list of Items, where
+each item must be a string URL. Found: %(value)s (type `%(found_type)s`)."""
 
 
 class SpeculationRulesTest(FieldTest):
@@ -72,21 +80,21 @@ class SpeculationRulesInsecureTest(FieldTest):
     name = "Speculation-Rules"
     inputs = [b'"http://example.com/rules.json"']
     expected_out: Any = [("http://example.com/rules.json", {})]
-    expected_notes = [SPECULATION_RULE_NOT_SECURE]
+    expected_notes: NoteClassListType = [SPECULATION_RULE_NOT_SECURE]
 
 
 class SpeculationRulesBadSyntaxTest(FieldTest):
     name = "Speculation-Rules"
     inputs = [b"123"]
     expected_out: Any = [(123, {})]
-    expected_notes = [BAD_SPECULATION_RULES_SYNTAX]
+    expected_notes: NoteClassListType = [SPECULATION_RULES_BAD_TYPE]
 
 
 class SpeculationRulesRelativeTest(FieldTest):
     name = "Speculation-Rules"
     inputs = [b'"/rules.json"']
     expected_out: Any = [("/rules.json", {})]
-    expected_notes = []
+    expected_notes: NoteClassListType = []
 
     def set_response_context(self, message: ResponseLinterProtocol) -> None:
         message.base_uri = "https://example.com/"
@@ -96,7 +104,7 @@ class SpeculationRulesRelativeInsecureTest(FieldTest):
     name = "Speculation-Rules"
     inputs = [b'"/rules.json"']
     expected_out: Any = [("/rules.json", {})]
-    expected_notes = [SPECULATION_RULE_NOT_SECURE]
+    expected_notes: NoteClassListType = [SPECULATION_RULE_NOT_SECURE]
 
     def set_response_context(self, message: ResponseLinterProtocol) -> None:
         message.base_uri = "http://example.com/"
@@ -106,4 +114,4 @@ class SpeculationRulesInvalidSFTest(FieldTest):
     name = "Speculation-Rules"
     inputs = [b"<script>"]
     expected_out: Any = None
-    expected_notes = [STRUCTURED_FIELD_PARSE_ERROR]
+    expected_notes: NoteClassListType = [STRUCTURED_FIELD_PARSE_ERROR]

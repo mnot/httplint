@@ -8,6 +8,7 @@ from httplint.note import Note, categories, levels
 from httplint.syntax import rfc9112
 from httplint.types import (
     AddNoteMethodType,
+    NoteClassListType,
     ParamDictType,
     RequestLinterProtocol,
     ResponseLinterProtocol,
@@ -110,14 +111,14 @@ class TransferEncodingParamTest(FieldTest):
     name = "Transfer-Encoding"
     inputs = [b"chunked; foo=bar"]
     expected_out = [("chunked", {"foo": "bar"})]
-    expected_notes = [TRANSFER_CODING_PARAM]
+    expected_notes: NoteClassListType = [TRANSFER_CODING_PARAM]
 
 
 class BadTransferEncodingTest(FieldTest):
     name = "Transfer-Encoding"
     inputs = [b"chunked=foo"]
     expected_out = [("chunked=foo", {})]
-    expected_notes = [BAD_SYNTAX, TRANSFER_CODING_UNWANTED]
+    expected_notes: NoteClassListType = [BAD_SYNTAX, TRANSFER_CODING_UNWANTED]
 
 
 class TransferEncodingCaseTest(FieldTest):
@@ -130,28 +131,28 @@ class TransferEncodingIdentityTest(FieldTest):
     name = "Transfer-Encoding"
     inputs = [b"identity"]
     expected_out = [("identity", {})]
-    expected_notes = [TRANSFER_CODING_IDENTITY]
+    expected_notes: NoteClassListType = [TRANSFER_CODING_IDENTITY]
 
 
 class TransferEncodingUnwantedTest(FieldTest):
     name = "Transfer-Encoding"
     inputs = [b"foo"]
     expected_out = [("foo", {})]
-    expected_notes = [TRANSFER_CODING_UNWANTED]
+    expected_notes: NoteClassListType = [TRANSFER_CODING_UNWANTED]
 
 
 class TransferEncodingMultTest(FieldTest):
     name = "Transfer-Encoding"
     inputs = [b"chunked", b"identity"]
     expected_out = [("chunked", {}), ("identity", {})]
-    expected_notes = [TRANSFER_CODING_IDENTITY]
+    expected_notes: NoteClassListType = [TRANSFER_CODING_IDENTITY]
 
 
 class TransferEncodingMultUnwantedTest(FieldTest):
     name = "Transfer-Encoding"
     inputs = [b"chunked", b"foo", b"bar"]
     expected_out = [("chunked", {}), ("foo", {}), ("bar", {})]
-    expected_notes = [TRANSFER_CODING_UNWANTED]
+    expected_notes: NoteClassListType = [TRANSFER_CODING_UNWANTED]
 
 
 class TransferEncodingWantedTest(FieldTest):

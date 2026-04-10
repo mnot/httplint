@@ -2,7 +2,7 @@ from httplint.field.list_field import HttpListField
 from httplint.field.tests import FieldTest
 from httplint.note import Note, categories, levels
 from httplint.syntax import rfc9110
-from httplint.types import AddNoteMethodType
+from httplint.types import AddNoteMethodType, NoteClassListType
 
 
 class content_language(HttpListField):
@@ -59,4 +59,4 @@ class ContentLanguageDupTest(FieldTest):
     name = "Content-Language"
     inputs = [b"en-US, en-US"]
     expected_out = ["en-us", "en-us"]
-    expected_notes = [CONTENT_LANGUAGE_DUP]
+    expected_notes: NoteClassListType = [CONTENT_LANGUAGE_DUP]

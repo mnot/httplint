@@ -2,7 +2,7 @@ from httplint.field.singleton_field import SINGLE_HEADER_REPEAT, SingletonField
 from httplint.field.tests import FieldTest
 from httplint.note import Note, categories, levels
 from httplint.syntax import rfc9110
-from httplint.types import AddNoteMethodType, ResponseLinterProtocol
+from httplint.types import AddNoteMethodType, NoteClassListType, ResponseLinterProtocol
 
 
 class content_length(SingletonField):
@@ -74,14 +74,14 @@ class ContentLengthTextTest(FieldTest):
     name = "Content-Length"
     inputs = [b"a"]
     expected_out = None
-    expected_notes = [CL_BAD_SYNTAX]
+    expected_notes: NoteClassListType = [CL_BAD_SYNTAX]
 
 
 class ContentLengthSemiTest(FieldTest):
     name = "Content-Length"
     inputs = [b"1;"]
     expected_out = None
-    expected_notes = [CL_BAD_SYNTAX]
+    expected_notes: NoteClassListType = [CL_BAD_SYNTAX]
 
 
 class ContentLengthSpaceTest(FieldTest):
@@ -94,42 +94,42 @@ class ContentLengthBigTest(FieldTest):
     name = "Content-Length"
     inputs = [b"9" * 999]
     expected_out = int("9" * 999)
-    expected_notes = [CL_TOO_LARGE]
+    expected_notes: NoteClassListType = [CL_TOO_LARGE]
 
 
 class ContentLengthDuplicateTest(FieldTest):
     name = "Content-Length"
     inputs = [b"1", b"1"]
     expected_out = 1
-    expected_notes = [SINGLE_HEADER_REPEAT]
+    expected_notes: NoteClassListType = [SINGLE_HEADER_REPEAT]
 
 
 class ContentLengthCommaTest(FieldTest):
     name = "Content-Length"
     inputs = [b"1, 1"]
     expected_out = None
-    expected_notes = [CL_BAD_SYNTAX]
+    expected_notes: NoteClassListType = [CL_BAD_SYNTAX]
 
 
 class ContentLengthDiffTest(FieldTest):
     name = "Content-Length"
     inputs = [b"1", b"2"]
     expected_out = 1
-    expected_notes = [SINGLE_HEADER_REPEAT]
+    expected_notes: NoteClassListType = [SINGLE_HEADER_REPEAT]
 
 
 class ContentLengthDiffCommaTest(FieldTest):
     name = "Content-Length"
     inputs = [b"1, 2"]
     expected_out = None
-    expected_notes = [CL_BAD_SYNTAX]
+    expected_notes: NoteClassListType = [CL_BAD_SYNTAX]
 
 
 class ContentLengthTEPresentTest(FieldTest):
     name = "Content-Length"
     inputs = [b"1"]
     expected_out = 1
-    expected_notes = [CL_AND_TE_PRESENT]
+    expected_notes: NoteClassListType = [CL_AND_TE_PRESENT]
 
     def set_response_context(self, message: ResponseLinterProtocol) -> None:
         message.headers.parsed["transfer-encoding"] = "chunked"

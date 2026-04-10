@@ -7,7 +7,7 @@ from httplint.field import RFC6265
 from httplint.field.broken_field import BrokenField
 from httplint.field.tests import FieldTest
 from httplint.note import Note, categories, levels
-from httplint.types import AddNoteMethodType, LinterProtocol
+from httplint.types import AddNoteMethodType, LinterProtocol, NoteClassListType
 from httplint.util import relative_time
 
 CookieType = Tuple[str, str, List[Tuple[str, Union[str, int]]]]
@@ -529,7 +529,7 @@ class ValueTooLargeSCTest(FieldTest):
     name = "Set-Cookie"
     inputs = [b"foo=" + b"a" * (MAX_SET_COOKIE_VALUE_LENGTH + 1)]
     expected_out = [("foo", "a" * (MAX_SET_COOKIE_VALUE_LENGTH + 1), [])]
-    expected_notes = [SET_COOKIE_VALUE_TOO_LARGE]
+    expected_notes: NoteClassListType = [SET_COOKIE_VALUE_TOO_LARGE]
 
 
 class SET_COOKIE_LIFETIME_TOO_LONG(Note):
@@ -641,7 +641,7 @@ class MaxAgeLeadingZeroScTest(FieldTest):
     name = "Set-Cookie"
     inputs = [b"lang=en-US; Max-Age=0123"]
     expected_out = [("lang", "en-US", [("Max-Age", 123)])]
-    expected_notes = [SET_COOKIE_LEADING_ZERO_MAX_AGE]
+    expected_notes: NoteClassListType = [SET_COOKIE_LEADING_ZERO_MAX_AGE]
 
 
 class RemoveSCTest(FieldTest):
@@ -664,7 +664,7 @@ class WolframSCTest(FieldTest):
             ],
         )
     ]
-    expected_notes = [SET_COOKIE_LIFETIME_TOO_LONG]
+    expected_notes: NoteClassListType = [SET_COOKIE_LIFETIME_TOO_LONG]
 
 
 class PartitionedSCTest(FieldTest):
@@ -677,7 +677,7 @@ class PartitionedNoSecureSCTest(FieldTest):
     name = "Set-Cookie"
     inputs = [b"SID=31d4d96e407aad42; Partitioned"]
     expected_out = [("SID", "31d4d96e407aad42", [("Partitioned", "")])]
-    expected_notes = [SET_COOKIE_PARTITIONED_NO_SECURE]
+    expected_notes: NoteClassListType = [SET_COOKIE_PARTITIONED_NO_SECURE]
 
 
 class NamelessSCTest(FieldTest):
@@ -690,7 +690,7 @@ class TooLargeSCTest(FieldTest):
     name = "Set-Cookie"
     inputs = [b"foo=" + b"a" * 4094]
     expected_out = [("foo", "a" * 4094, [])]
-    expected_notes = [SET_COOKIE_TOO_LARGE, SET_COOKIE_VALUE_TOO_LARGE]
+    expected_notes: NoteClassListType = [SET_COOKIE_TOO_LARGE, SET_COOKIE_VALUE_TOO_LARGE]
 
 
 class SecurePrefixSCTest(FieldTest):
@@ -703,7 +703,7 @@ class SecurePrefixMissingSecureSCTest(FieldTest):
     name = "Set-Cookie"
     inputs = [b"__Secure-ID=123; Path=/"]
     expected_out = [("__Secure-ID", "123", [("Path", "/")])]
-    expected_notes = [SET_COOKIE_PREFIX_SECURE_MISSING]
+    expected_notes: NoteClassListType = [SET_COOKIE_PREFIX_SECURE_MISSING]
 
 
 class HostPrefixSCTest(FieldTest):
@@ -716,14 +716,14 @@ class HostPrefixMissingSecureSCTest(FieldTest):
     name = "Set-Cookie"
     inputs = [b"__Host-ID=123; Path=/"]
     expected_out = [("__Host-ID", "123", [("Path", "/")])]
-    expected_notes = [SET_COOKIE_PREFIX_SECURE_MISSING]
+    expected_notes: NoteClassListType = [SET_COOKIE_PREFIX_SECURE_MISSING]
 
 
 class HostPrefixBadPathSCTest(FieldTest):
     name = "Set-Cookie"
     inputs = [b"__Host-ID=123; Secure; Path=/foo"]
     expected_out = [("__Host-ID", "123", [("Secure", ""), ("Path", "/foo")])]
-    expected_notes = [SET_COOKIE_PREFIX_HOST_BAD_PATH]
+    expected_notes: NoteClassListType = [SET_COOKIE_PREFIX_HOST_BAD_PATH]
 
 
 class HostPrefixBadDomainSCTest(FieldTest):
@@ -732,46 +732,46 @@ class HostPrefixBadDomainSCTest(FieldTest):
     expected_out = [
         ("__Host-ID", "123", [("Secure", ""), ("Path", "/"), ("Domain", "example.com")])
     ]
-    expected_notes = [SET_COOKIE_PREFIX_HOST_BAD_DOMAIN]
+    expected_notes: NoteClassListType = [SET_COOKIE_PREFIX_HOST_BAD_DOMAIN]
 
 
 class LifetimeTooLongMaxAgeSCTest(FieldTest):
     name = "Set-Cookie"
     inputs = [b"lang=en-US; Max-Age=34560001"]
     expected_out = [("lang", "en-US", [("Max-Age", 34560001)])]
-    expected_notes = [SET_COOKIE_LIFETIME_TOO_LONG]
+    expected_notes: NoteClassListType = [SET_COOKIE_LIFETIME_TOO_LONG]
 
 
 class LifetimeTooLongBothSCTest(FieldTest):
     name = "Set-Cookie"
     inputs = [b"lang=en-US; Max-Age=34560001; Expires=Wed, 09 Jun 2021 10:18:14 GMT"]
     expected_out = [("lang", "en-US", [("Max-Age", 34560001), ("Expires", 1623233894)])]
-    expected_notes = [SET_COOKIE_LIFETIME_TOO_LONG]
+    expected_notes: NoteClassListType = [SET_COOKIE_LIFETIME_TOO_LONG]
 
 
 class SetCookieAttributeDupTest(FieldTest):
     name = "Set-Cookie"
     inputs = [b"a=b; Path=/; Path=/foo"]
     expected_out = [("a", "b", [("Path", "/"), ("Path", "/foo")])]
-    expected_notes = [SET_COOKIE_ATTRIBUTE_DUP]
+    expected_notes: NoteClassListType = [SET_COOKIE_ATTRIBUTE_DUP]
 
 
 class SetCookieNameDupTest(FieldTest):
     name = "Set-Cookie"
     inputs = [b"a=1; Path=/", b"a=2; Path=/"]
     expected_out = [("a", "1", [("Path", "/")]), ("a", "2", [("Path", "/")])]
-    expected_notes = [SET_COOKIE_NAME_DUP]
+    expected_notes: NoteClassListType = [SET_COOKIE_NAME_DUP]
 
 
 class SetCookiePriorityTest(FieldTest):
     name = "Set-Cookie"
     inputs = [b"a=1; Priority=High"]
     expected_out = [("a", "1", [])]
-    expected_notes = [SET_COOKIE_PRIORITY]
+    expected_notes: NoteClassListType = [SET_COOKIE_PRIORITY]
 
 
 class SetCookieVersionTest(FieldTest):
     name = "Set-Cookie"
     inputs = [b"a=1; Version=1"]
     expected_out = [("a", "1", [])]
-    expected_notes = [SET_COOKIE_VERSION]
+    expected_notes: NoteClassListType = [SET_COOKIE_VERSION]

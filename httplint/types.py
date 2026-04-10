@@ -13,12 +13,16 @@ from typing import (
     runtime_checkable,
 )
 
-if TYPE_CHECKING:
-    from http_sf import Token
+from http_sf import DisplayString, Token
+from http_sf.types import (
+    BareItemType,
+    InnerListType,
+    ParamsType,
+)
 
+if TYPE_CHECKING:
     from httplint.note import Note
 else:
-    Token = Any
     Note = Any
 
 # General types
@@ -30,6 +34,8 @@ ParamDictType = Dict[str, Union[str, None]]
 
 # Note-related types
 VariableType = Union[str, int, float, bool, None, Note, Any]
+NoteListType = List[Note]  # instances
+NoteClassListType = List[Type[Note]]  # classes
 
 
 class AddNoteMethodType(Protocol):
@@ -106,7 +112,17 @@ class ResponseLinterProtocol(LinterProtocol, Protocol):
     caching: CachingProtocol
 
 
+AnyMessageLinterProtocol = Union[RequestLinterProtocol, ResponseLinterProtocol]
+
+
 # Structured Field types
 SFToken = Token
-SFItemType = Union[str, int, float, bool, SFToken, tuple[Any, Any]]
-SFParamsType = Dict[str, SFItemType]
+SFDisplayString = DisplayString
+SFBareItemType = BareItemType
+SFParamsType = ParamsType
+SFInnerListType = InnerListType
+
+# Parsed SF types are strictly normalized to (value, params) tuples
+SFItemType = Tuple[Union[SFBareItemType, SFInnerListType], SFParamsType]
+SFListType = List[SFItemType]
+SFDictionaryType = Dict[str, SFItemType]

@@ -4,6 +4,7 @@ from httplint.field.parsers.content_security_policy import (
     content_security_policy,
 )
 from httplint.field.tests import FieldTest
+from httplint.types import NoteClassListType
 
 
 class content_security_policy_report_only(content_security_policy):
@@ -23,4 +24,4 @@ class CSPROTest(FieldTest):
     name = "Content-Security-Policy-Report-Only"
     inputs = [b"default-src 'self'; script-src 'unsafe-inline'"]
     expected_out = [{"default-src": "'self'", "script-src": "'unsafe-inline'"}]
-    expected_notes = [CONTENT_SECURITY_POLICY, CSP_UNSAFE_INLINE]
+    expected_notes: NoteClassListType = [CONTENT_SECURITY_POLICY, CSP_UNSAFE_INLINE]

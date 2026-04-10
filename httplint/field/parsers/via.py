@@ -2,7 +2,7 @@ from httplint.field.list_field import HttpListField
 from httplint.field.tests import FieldTest
 from httplint.note import Note, categories, levels
 from httplint.syntax import rfc9110
-from httplint.types import AddNoteMethodType
+from httplint.types import AddNoteMethodType, NoteClassListType
 
 
 class via(HttpListField):
@@ -43,4 +43,4 @@ class ViaTest(FieldTest):
     name = "Via"
     inputs = [b"1.1 test"]
     expected_out = ["1.1 test"]
-    expected_notes = [VIA_PRESENT]
+    expected_notes: NoteClassListType = [VIA_PRESENT]

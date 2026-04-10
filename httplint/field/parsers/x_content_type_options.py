@@ -2,7 +2,7 @@ from httplint.field import BAD_SYNTAX
 from httplint.field.list_field import HttpListField
 from httplint.field.tests import FieldTest
 from httplint.note import Note, categories, levels
-from httplint.types import AddNoteMethodType
+from httplint.types import AddNoteMethodType, NoteClassListType
 
 
 class x_content_type_options(HttpListField):
@@ -58,4 +58,4 @@ class XContentTypeOptionsTest(FieldTest):
     name = "X-Content-Type-Options"
     inputs = [b"nosniff", b"foo"]
     expected_out = ["nosniff", "foo"]
-    expected_notes = [CONTENT_TYPE_OPTIONS, BAD_SYNTAX]
+    expected_notes: NoteClassListType = [CONTENT_TYPE_OPTIONS, BAD_SYNTAX]

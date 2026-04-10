@@ -3,7 +3,7 @@ from httplint.field.tests import FieldTest
 from httplint.field.utils import BAD_DATE_SYNTAX, parse_http_date
 from httplint.note import categories
 from httplint.syntax import rfc9111
-from httplint.types import AddNoteMethodType
+from httplint.types import AddNoteMethodType, NoteClassListType
 
 
 class expires(SingletonField):
@@ -32,14 +32,14 @@ class BadExpiresTest(FieldTest):
     name = "Expires"
     inputs = [b"0"]
     expected_out = None
-    expected_notes = [BAD_DATE_SYNTAX]
+    expected_notes: NoteClassListType = [BAD_DATE_SYNTAX]
 
 
 class BlankExpiresTest(FieldTest):
     name = "Expires"
     inputs = [b""]
     expected_out = None
-    expected_notes = [BAD_DATE_SYNTAX]
+    expected_notes: NoteClassListType = [BAD_DATE_SYNTAX]
 
 
 class ExpiresYearBigTest(FieldTest):

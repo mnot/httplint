@@ -3,7 +3,7 @@ from httplint.field.list_field import HttpListField
 from httplint.field.tests import FieldTest
 from httplint.note import categories
 from httplint.syntax import rfc9110
-from httplint.types import AddNoteMethodType, RequestLinterProtocol
+from httplint.types import AddNoteMethodType, NoteClassListType, RequestLinterProtocol
 
 
 class access_control_request_headers(HttpListField):
@@ -27,7 +27,7 @@ class AccessControlRequestHeadersTest(FieldTest):
     name = "Access-Control-Request-Headers"
     inputs = [b"Custom-Header, Upgrade-Insecure-Requests"]
     expected_out = ["custom-header", "upgrade-insecure-requests"]
-    expected_notes = [CORS_PREFLIGHT_REQUEST]
+    expected_notes: NoteClassListType = [CORS_PREFLIGHT_REQUEST]
 
     def set_request_context(self, message: RequestLinterProtocol) -> None:
         message.method = "OPTIONS"

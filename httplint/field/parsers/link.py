@@ -7,7 +7,7 @@ from httplint.field.tests import FieldTest
 from httplint.field.utils import PARAM_REPEATS, parse_params
 from httplint.note import Note, categories, levels
 from httplint.syntax import rfc3986, rfc8288, rfc9110
-from httplint.types import AddNoteMethodType, ParamDictType
+from httplint.types import AddNoteMethodType, NoteClassListType, ParamDictType
 
 
 class link(HttpListField):
@@ -88,7 +88,7 @@ class QuotedLinkTest(FieldTest):
     name = "Link"
     inputs = [b'"http://www.example.com/"; rel=example']
     expected_out = [("http://www.example.com/", {"rel": "example"})]
-    expected_notes = [BAD_SYNTAX]
+    expected_notes: NoteClassListType = [BAD_SYNTAX]
 
 
 class QuotedRelationLinkTest(FieldTest):
@@ -107,25 +107,25 @@ class RepeatingRelationLinkTest(FieldTest):
     name = "Link"
     inputs = [b'</foo>; rel="example"; rel="another"']
     expected_out = [("/foo", {"rel": "another"})]
-    expected_notes = [PARAM_REPEATS]
+    expected_notes: NoteClassListType = [PARAM_REPEATS]
 
 
 class RevLinkTest(FieldTest):
     name = "Link"
     inputs = [b'</foo>; rev="bar"']
     expected_out = [("/foo", {"rev": "bar"})]
-    expected_notes = [LINK_REV]
+    expected_notes: NoteClassListType = [LINK_REV]
 
 
 class BadAnchorLinkTest(FieldTest):
     name = "Link"
     inputs = [b'</foo>; rel="bar"; anchor="{blah}"']
     expected_out = [("/foo", {"rel": "bar", "anchor": "{blah}"})]
-    expected_notes = [LINK_BAD_ANCHOR]
+    expected_notes: NoteClassListType = [LINK_BAD_ANCHOR]
 
 
 class BadTypeLinkTest(FieldTest):
     name = "Link"
     inputs = [b'</foo>; rel="bar"; type="{blah}"']
     expected_out = [("/foo", {"rel": "bar", "type": "{blah}"})]
-    expected_notes = [LINK_BAD_TYPE]
+    expected_notes: NoteClassListType = [LINK_BAD_TYPE]

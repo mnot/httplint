@@ -5,7 +5,7 @@ from httplint.field.tests import FieldTest
 from httplint.field.utils import PARAM_STAR_QUOTED, parse_params
 from httplint.note import Note, categories, levels
 from httplint.syntax import rfc9110
-from httplint.types import AddNoteMethodType, ParamDictType
+from httplint.types import AddNoteMethodType, NoteClassListType, ParamDictType
 
 
 class content_disposition(SingletonField):
@@ -121,7 +121,7 @@ class RepeatCDTest(FieldTest):
     name = "Content-Disposition"
     inputs = [b"attachment; filename=foo.txt", b"inline; filename=bar.txt"]
     expected_out = ("attachment", {"filename": "foo.txt"})
-    expected_notes = [SINGLE_HEADER_REPEAT]
+    expected_notes: NoteClassListType = [SINGLE_HEADER_REPEAT]
 
 
 class FilenameStarCDTest(FieldTest):
@@ -134,18 +134,18 @@ class FilenameStarQuotedCDTest(FieldTest):
     name = "Content-Disposition"
     inputs = [b"attachment; filename=foo.txt; filename*=\"UTF-8''a%cc%88.txt\""]
     expected_out = ("attachment", {"filename": "foo.txt", "filename*": "a\u0308.txt"})
-    expected_notes = [PARAM_STAR_QUOTED]
+    expected_notes: NoteClassListType = [PARAM_STAR_QUOTED]
 
 
 class FilenamePercentCDTest(FieldTest):
     name = "Content-Disposition"
     inputs = [b"attachment; filename=fo%22o.txt"]
     expected_out = ("attachment", {"filename": "fo%22o.txt"})
-    expected_notes = [DISPOSITION_FILENAME_PERCENT]
+    expected_notes: NoteClassListType = [DISPOSITION_FILENAME_PERCENT]
 
 
 class FilenamePathCharCDTest(FieldTest):
     name = "Content-Disposition"
     inputs = [b'attachment; filename="/foo.txt"']
     expected_out = ("attachment", {"filename": "/foo.txt"})
-    expected_notes = [DISPOSITION_FILENAME_PATH_CHAR]
+    expected_notes: NoteClassListType = [DISPOSITION_FILENAME_PATH_CHAR]

@@ -3,7 +3,7 @@ from typing import Any
 from httplint.field.singleton_field import SingletonField
 from httplint.field.tests import FieldTest
 from httplint.note import Note, categories, levels
-from httplint.types import AddNoteMethodType
+from httplint.types import AddNoteMethodType, NoteClassListType
 
 
 class cross_origin_resource_policy(SingletonField):
@@ -82,25 +82,25 @@ class CrossOriginResourcePolicySameOriginTest(FieldTest):
     name = "Cross-Origin-Resource-Policy"
     inputs = [b"same-origin"]
     expected_out = "same-origin"
-    expected_notes = [CORP_SAME_ORIGIN]
+    expected_notes: NoteClassListType = [CORP_SAME_ORIGIN]
 
 
 class CrossOriginResourcePolicySameSiteTest(FieldTest):
     name = "Cross-Origin-Resource-Policy"
     inputs = [b"same-site"]
     expected_out = "same-site"
-    expected_notes = [CORP_SAME_SITE]
+    expected_notes: NoteClassListType = [CORP_SAME_SITE]
 
 
 class CrossOriginResourcePolicyCrossOriginTest(FieldTest):
     name = "Cross-Origin-Resource-Policy"
     inputs = [b"cross-origin"]
     expected_out = "cross-origin"
-    expected_notes = [CORP_CROSS_ORIGIN]
+    expected_notes: NoteClassListType = [CORP_CROSS_ORIGIN]
 
 
 class CrossOriginResourcePolicyBadValueTest(FieldTest):
     name = "Cross-Origin-Resource-Policy"
     inputs = [b"foo"]
     expected_out = "foo"
-    expected_notes = [CROSS_ORIGIN_RESOURCE_POLICY_BAD_VALUE]
+    expected_notes: NoteClassListType = [CROSS_ORIGIN_RESOURCE_POLICY_BAD_VALUE]

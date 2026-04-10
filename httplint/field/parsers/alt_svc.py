@@ -5,7 +5,7 @@ from httplint.field.list_field import HttpListField
 from httplint.field.tests import FieldTest
 from httplint.note import Note, categories, levels
 from httplint.syntax import rfc9110
-from httplint.types import AddNoteMethodType, ParamDictType
+from httplint.types import AddNoteMethodType, NoteClassListType, ParamDictType
 
 
 class alt_svc(HttpListField):
@@ -73,10 +73,10 @@ class AltSvcMixedTest(FieldTest):
     name = "Alt-Svc"
     inputs = [b'clear, h2=":443"']
     expected_out = ["clear", 'h2=":443"']
-    expected_notes = [ALTSVC_CLEAR_LIST]
+    expected_notes: NoteClassListType = [ALTSVC_CLEAR_LIST]
 
 
 class AltSvcBadTest(FieldTest):
     name = "Alt-Svc"
     inputs = [b"foo"]
-    expected_notes = [BAD_SYNTAX]
+    expected_notes: NoteClassListType = [BAD_SYNTAX]

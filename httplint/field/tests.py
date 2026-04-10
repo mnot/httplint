@@ -8,6 +8,7 @@ from httplint.message import HttpMessageLinter, HttpRequestLinter, HttpResponseL
 from httplint.note import Note
 from httplint.types import (
     LinterProtocol,
+    NoteClassListType,
     RequestLinterProtocol,
     ResponseLinterProtocol,
 )
@@ -63,7 +64,7 @@ class FieldTest(unittest.TestCase):
     name: str = ""
     inputs: List[bytes] = []
     expected_out: Any = []
-    expected_notes: List[Type[Note]] = []
+    expected_notes: NoteClassListType = []
     message: LinterProtocol
 
     linter_class: Type[HttpMessageLinter] = FakeResponseLinter

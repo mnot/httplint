@@ -2,7 +2,7 @@ from httplint.field.list_field import HttpListField
 from httplint.field.tests import FieldTest
 from httplint.note import Note, categories, levels
 from httplint.syntax import rfc9110
-from httplint.types import AddNoteMethodType
+from httplint.types import AddNoteMethodType, NoteClassListType
 
 MAX_SERVER_LENGTH = 64
 
@@ -32,7 +32,7 @@ class ServerTest(FieldTest):
     name = "Server"
     inputs = [b"Apache/2.4.1 (Unix)", b"CERN/3.0 libwww/2.17"]
     expected_out = ["Apache/2.4.1 (Unix)", "CERN/3.0 libwww/2.17"]
-    expected_notes = []
+    expected_notes: NoteClassListType = []
 
 
 class SERVER_TOO_LONG(Note):
@@ -50,4 +50,4 @@ class ServerTooLongTest(FieldTest):
     name = "Server"
     inputs = [b"a" * (MAX_SERVER_LENGTH + 1)]
     expected_out = ["a" * (MAX_SERVER_LENGTH + 1)]
-    expected_notes = [SERVER_TOO_LONG]
+    expected_notes: NoteClassListType = [SERVER_TOO_LONG]

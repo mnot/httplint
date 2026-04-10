@@ -6,7 +6,7 @@ from httplint.field.structured_field import StructuredField
 from httplint.field.tests import FieldTest
 from httplint.field.utils import check_sf_params
 from httplint.note import Note, categories, levels
-from httplint.types import AddNoteMethodType
+from httplint.types import AddNoteMethodType, NoteClassListType, SFListType
 
 
 class proxy_status(StructuredField):
@@ -19,18 +19,15 @@ The `Proxy-Status` header field indicates how intermediaries have handled the re
     valid_in_requests = False
     valid_in_responses = True
     sf_type = "list"
+    value: SFListType
 
     def evaluate(self, add_note: AddNoteMethodType) -> None:
         status_list = []
-        bad_structure = False
-        for member in self.value:
-            if isinstance(member, tuple):
-                target = member[0]
-                params = member[1]
-            else:
-                bad_structure = True
-                continue
+        for target, params in self.value:
 
+            target_str = (
+                target.decode("ascii", "replace") if isinstance(target, bytes) else str(target)
+            )
             param_str = check_sf_params(
                 params,
                 KNOWN_PARAMS,
@@ -38,13 +35,10 @@ The `Proxy-Status` header field indicates how intermediaries have handled the re
                 PROXY_STATUS_UNKNOWN_PARAM,
                 PROXY_STATUS_BAD_PARAM_VAL,
             )
-            status_list.append(f"**{target}**:\n{param_str}")
+            status_list.append(f"**{target_str}**:\n{param_str}")
 
         if status_list:
             add_note(PROXY_STATUS, status="\n\n".join(status_list))
-
-        if bad_structure:
-            add_note(PROXY_STATUS_BAD_STRUCTURE)
 
 
 KNOWN_PARAMS: Dict[str, Dict[str, Any]] = {
@@ -123,16 +117,6 @@ The `Proxy-Status` header field indicates how intermediaries have handled the re
 """
 
 
-class PROXY_STATUS_BAD_STRUCTURE(Note):
-    category = categories.CACHING
-    level = levels.WARN
-    _summary = "The Proxy-Status header has an invalid structure."
-    _text = """\
-The `Proxy-Status` header must be a list of members, where each member is
-a Token or String (identifying the proxy) with optional parameters.
-"""
-
-
 class PROXY_STATUS_UNKNOWN_PARAM(Note):
     category = categories.CACHING
     level = levels.INFO
@@ -161,18 +145,18 @@ class ProxyStatusTest(FieldTest):
         (Token("ExampleProxy"), {"error": Token("http_protocol_error")}),
         (Token("AnotherProxy"), {"next-hop": "example.com"}),
     ]
-    expected_notes = [PROXY_STATUS]
+    expected_notes: NoteClassListType = [PROXY_STATUS]
 
 
 class ProxyStatusUnknownParamTest(FieldTest):
     name = "Proxy-Status"
     inputs = [b"ExampleProxy; unknown=1"]
     expected_out = [(Token("ExampleProxy"), {"unknown": 1})]
-    expected_notes = [PROXY_STATUS_UNKNOWN_PARAM, PROXY_STATUS]
+    expected_notes: NoteClassListType = [PROXY_STATUS_UNKNOWN_PARAM, PROXY_STATUS]
 
 
 class ProxyStatusBadParamValTest(FieldTest):
     name = "Proxy-Status"
     inputs = [b'ExampleProxy; error="string"']
     expected_out = [(Token("ExampleProxy"), {"error": "string"})]
-    expected_notes = [PROXY_STATUS_BAD_PARAM_VAL, PROXY_STATUS]
+    expected_notes: NoteClassListType = [PROXY_STATUS_BAD_PARAM_VAL, PROXY_STATUS]

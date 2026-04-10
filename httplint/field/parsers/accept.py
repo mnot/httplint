@@ -7,7 +7,7 @@ from httplint.field.tests import FieldTest
 from httplint.field.utils import parse_params
 from httplint.note import Note, categories, levels
 from httplint.syntax import rfc9110
-from httplint.types import AddNoteMethodType, ParamDictType
+from httplint.types import AddNoteMethodType, NoteClassListType, ParamDictType
 
 
 @dataclass
@@ -101,11 +101,11 @@ class AcceptBadQTest(FieldTest):
     name = "Accept"
     inputs = [b"text/html; q=1.001"]
     expected_out = [AcceptValue("text/html", {}, None)]
-    expected_notes = [BAD_Q_VALUE]
+    expected_notes: NoteClassListType = [BAD_Q_VALUE]
 
 
 class AcceptBadTypeTest(FieldTest):
     name = "Accept"
     inputs = [b"invalid"]
     expected_out = [AcceptValue("invalid", {}, None)]
-    expected_notes = [ACCEPT_BAD_SYNTAX, BAD_SYNTAX]
+    expected_notes: NoteClassListType = [ACCEPT_BAD_SYNTAX, BAD_SYNTAX]

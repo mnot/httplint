@@ -9,7 +9,7 @@ from httplint.field.parsers.cross_origin_embedder_policy import (
 )
 from httplint.field.tests import FieldTest
 from httplint.note import Note, categories, levels
-from httplint.types import AddNoteMethodType
+from httplint.types import AddNoteMethodType, NoteClassListType
 
 
 class cross_origin_embedder_policy_report_only(cross_origin_embedder_policy):
@@ -40,11 +40,11 @@ class CrossOriginEmbedderPolicyReportOnlyRequireCorpTest(FieldTest):
     name = "Cross-Origin-Embedder-Policy-Report-Only"
     inputs = [b"require-corp"]
     expected_out: Any = (Token("require-corp"), {})
-    expected_notes = [COEP_REQUIRE_CORP]
+    expected_notes: NoteClassListType = [COEP_REQUIRE_CORP]
 
 
 class CrossOriginEmbedderPolicyReportOnlyBadValueTest(FieldTest):
     name = "Cross-Origin-Embedder-Policy-Report-Only"
     inputs = [b"foo"]
     expected_out: Any = (Token("foo"), {})
-    expected_notes = [CROSS_ORIGIN_EMBEDDER_POLICY_BAD_VALUE]
+    expected_notes: NoteClassListType = [CROSS_ORIGIN_EMBEDDER_POLICY_BAD_VALUE]

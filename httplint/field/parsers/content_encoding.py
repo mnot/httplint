@@ -5,7 +5,12 @@ from httplint.field.list_field import HttpListField
 from httplint.field.tests import FakeRequestLinter, FieldTest
 from httplint.note import Note, categories, levels
 from httplint.syntax import rfc9110
-from httplint.types import AddNoteMethodType, LinterProtocol, ResponseLinterProtocol
+from httplint.types import (
+    AddNoteMethodType,
+    LinterProtocol,
+    NoteClassListType,
+    ResponseLinterProtocol,
+)
 
 
 class content_encoding(HttpListField):
@@ -105,7 +110,7 @@ class ContentEncodingUnwantedTest(FieldTest):
     name = "Content-Encoding"
     inputs = [b"gzip, foo"]
     expected_out = ["gzip", "foo"]
-    expected_notes = [ENCODING_UNWANTED]
+    expected_notes: NoteClassListType = [ENCODING_UNWANTED]
 
     def set_response_context(self, message: ResponseLinterProtocol) -> None:
         request = FakeRequestLinter()
@@ -117,7 +122,7 @@ class DictionaryCompressedMissingVaryTest(FieldTest):
     name = "Content-Encoding"
     inputs = [b"dcb"]
     expected_out = ["dcb"]
-    expected_notes = [DICTIONARY_COMPRESSED_MISSING_VARY]
+    expected_notes: NoteClassListType = [DICTIONARY_COMPRESSED_MISSING_VARY]
 
     def set_response_context(self, message: ResponseLinterProtocol) -> None:
         assert message.related is not None

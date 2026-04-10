@@ -5,7 +5,7 @@ from httplint.field.singleton_field import SingletonField
 from httplint.field.tests import FieldTest
 from httplint.note import Note, categories, levels
 from httplint.syntax import rfc9110
-from httplint.types import AddNoteMethodType
+from httplint.types import AddNoteMethodType, NoteClassListType
 
 
 @dataclass
@@ -140,18 +140,18 @@ class RangeInvalidOrderTest(FieldTest):
     name = "Range"
     inputs = [b"bytes=500-100"]
     expected_out = RangeValue("bytes", [(500, 100)])
-    expected_notes = [RANGE_INVALID]
+    expected_notes: NoteClassListType = [RANGE_INVALID]
 
 
 class RangeSyntaxErrorTest(FieldTest):
     name = "Range"
     inputs = [b"bytes=a-b"]
     expected_out = None
-    expected_notes = [RANGE_BAD_SYNTAX]
+    expected_notes: NoteClassListType = [RANGE_BAD_SYNTAX]
 
 
 class RangeNoSplitTest(FieldTest):
     name = "Range"
     inputs = [b"bytes"]
     expected_out = None
-    expected_notes = [RANGE_BAD_SYNTAX]
+    expected_notes: NoteClassListType = [RANGE_BAD_SYNTAX]

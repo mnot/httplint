@@ -3,7 +3,7 @@ from httplint.field.list_field import HttpListField
 from httplint.field.tests import FieldTest
 from httplint.note import Note, categories, levels
 from httplint.syntax import rfc9111
-from httplint.types import AddNoteMethodType
+from httplint.types import AddNoteMethodType, NoteClassListType
 
 
 class pragma(HttpListField):
@@ -40,4 +40,4 @@ class PragmaTest(FieldTest):
     name = "Pragma"
     inputs = [b"no-cache"]
     expected_out = ["no-cache"]
-    expected_notes = [FIELD_DEPRECATED]
+    expected_notes: NoteClassListType = [FIELD_DEPRECATED]

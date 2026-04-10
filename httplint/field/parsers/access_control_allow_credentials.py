@@ -2,7 +2,7 @@ from httplint.field import BAD_SYNTAX
 from httplint.field.singleton_field import SingletonField
 from httplint.field.tests import FieldTest
 from httplint.note import categories
-from httplint.types import AddNoteMethodType
+from httplint.types import AddNoteMethodType, NoteClassListType
 
 
 class access_control_allow_credentials(SingletonField):
@@ -34,18 +34,18 @@ class AccessControlAllowCredentialsTestFalse(FieldTest):
     name = "Access-Control-Allow-Credentials"
     inputs = [b"false"]
     expected_out = None
-    expected_notes = [BAD_SYNTAX]
+    expected_notes: NoteClassListType = [BAD_SYNTAX]
 
 
 class AccessControlAllowCredentialsTestTruethy(FieldTest):
     name = "Access-Control-Allow-Credentials"
     inputs = [b"truethy"]
     expected_out = None
-    expected_notes = [BAD_SYNTAX]
+    expected_notes: NoteClassListType = [BAD_SYNTAX]
 
 
 class AccessControlAllowCredentialsTestCapTrue(FieldTest):
     name = "Access-Control-Allow-Credentials"
     inputs = [b"True"]
     expected_out = None
-    expected_notes = [BAD_SYNTAX]
+    expected_notes: NoteClassListType = [BAD_SYNTAX]

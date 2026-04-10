@@ -5,7 +5,7 @@ from httplint.field.tests import FieldTest
 from httplint.field.utils import unquote_string
 from httplint.note import Note, categories, levels
 from httplint.syntax import rfc9111
-from httplint.types import AddNoteMethodType
+from httplint.types import AddNoteMethodType, NoteClassListType
 from httplint.util import markdown_list
 
 # known cache directives; assumed to not allow duplicates
@@ -354,7 +354,7 @@ class CacheControlCaseTest(FieldTest):
     name = "Cache-Control"
     inputs = [b"A=b, c=D"]
     expected_out = [("a", "b"), ("c", "D")]
-    expected_notes = [CC_MISCAP]
+    expected_notes: NoteClassListType = [CC_MISCAP]
 
 
 class CacheControlQuotedTest(FieldTest):
@@ -372,32 +372,32 @@ class CacheControlMaxAgeTest(FieldTest):
 class CacheControlBadMaxAgeTest(FieldTest):
     name = "Cache-Control"
     inputs = [b"max-age=foo"]
-    expected_notes = [CC_BAD_VALUE_TYPE]
+    expected_notes: NoteClassListType = [CC_BAD_VALUE_TYPE]
 
 
 class CacheControlBigTest(FieldTest):
     name = "Cache-Control"
     inputs = [b"max-age=2147483649"]
     expected_out = [("max-age", 2147483649)]
-    expected_notes = [CC_MAX_AGE_TOO_LARGE]
+    expected_notes: NoteClassListType = [CC_MAX_AGE_TOO_LARGE]
 
 
 class CacheControlValueNotAllowedTest(FieldTest):
     name = "Cache-Control"
     inputs = [b"no-store=foo"]
     expected_out = [("no-store", "foo")]
-    expected_notes = [CC_SHOULD_NOT_HAVE_VALUE]
+    expected_notes: NoteClassListType = [CC_SHOULD_NOT_HAVE_VALUE]
 
 
 class CacheControlDupTest(FieldTest):
     name = "Cache-Control"
     inputs = [b"max-age=5, max-age=10"]
     expected_out = [("max-age", 5), ("max-age", 10)]
-    expected_notes = [CC_DUP]
+    expected_notes: NoteClassListType = [CC_DUP]
 
 
 class CacheControlUnknownDupTest(FieldTest):
     name = "Cache-Control"
     inputs = [b"foo=1, foo=2"]
     expected_out = [("foo", "1"), ("foo", "2")]
-    expected_notes = []
+    expected_notes: NoteClassListType = []

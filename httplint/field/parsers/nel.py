@@ -1,7 +1,12 @@
 from httplint.field.json_field import BAD_JSON, JsonField
 from httplint.field.tests import FieldTest
 from httplint.note import Note, categories, levels
-from httplint.types import AddNoteMethodType, LinterProtocol, ResponseLinterProtocol
+from httplint.types import (
+    AddNoteMethodType,
+    LinterProtocol,
+    NoteClassListType,
+    ResponseLinterProtocol,
+)
 
 
 class nel(JsonField):
@@ -141,7 +146,7 @@ class NelTest(FieldTest):
             "success_fraction": 0.5,
         }
     ]
-    expected_notes = []
+    expected_notes: NoteClassListType = []
 
     def set_response_context(self, message: ResponseLinterProtocol) -> None:
         message.headers.process([(b"Reporting-Endpoints", b'group1="https://example.com/reports"')])
@@ -157,7 +162,7 @@ class NelMultiLineTest(FieldTest):
         {"report_to": "group1", "max_age": 2592000},
         {"report_to": "group2", "max_age": 3600},
     ]
-    expected_notes = []
+    expected_notes: NoteClassListType = []
 
     def set_response_context(self, message: ResponseLinterProtocol) -> None:
         message.headers.process(
@@ -174,14 +179,14 @@ class NelMissingReportToTest(FieldTest):
     name = "NEL"
     inputs = [b'{"max_age": 100}']
     expected_out = [{"max_age": 100}]
-    expected_notes = [NEL_MISSING_KEY]
+    expected_notes: NoteClassListType = [NEL_MISSING_KEY]
 
 
 class NelBadFractionTest(FieldTest):
     name = "NEL"
     inputs = [b'{"report_to": "a", "max_age": 1, "success_fraction": 1.5}']
     expected_out = [{"report_to": "a", "max_age": 1, "success_fraction": 1.5}]
-    expected_notes = [NEL_BAD_VALUE]
+    expected_notes: NoteClassListType = [NEL_BAD_VALUE]
 
     def set_response_context(self, message: ResponseLinterProtocol) -> None:
         message.headers.process([(b"Reporting-Endpoints", b'a="https://example.com/reports"')])
@@ -192,14 +197,14 @@ class NelBadJsonTest(FieldTest):
     inputs = [b"{unquoted: key}"]
     expected_out = None
     expected_out = None
-    expected_notes = [BAD_JSON]
+    expected_notes: NoteClassListType = [BAD_JSON]
 
 
 class NelReportToTest(FieldTest):
     name = "NEL"
     inputs = [b'{"report_to": "group1", "max_age": 100}']
     expected_out = [{"report_to": "group1", "max_age": 100}]
-    expected_notes = []
+    expected_notes: NoteClassListType = []
 
     def set_response_context(self, message: ResponseLinterProtocol) -> None:
         message.headers.process([(b"Reporting-Endpoints", b'group1="https://example.com/reports"')])
@@ -209,4 +214,4 @@ class NelReportToMissingTest(FieldTest):
     name = "NEL"
     inputs = [b'{"report_to": "group1", "max_age": 100}']
     expected_out = [{"report_to": "group1", "max_age": 100}]
-    expected_notes = [NEL_REPORT_TO_MISSING]
+    expected_notes: NoteClassListType = [NEL_REPORT_TO_MISSING]

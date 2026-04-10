@@ -3,6 +3,7 @@ from httplint.field.list_field import HttpListField
 from httplint.field.tests import FieldTest
 from httplint.note import categories
 from httplint.syntax import rfc9111
+from httplint.types import NoteClassListType
 
 
 class warning(HttpListField):
@@ -22,4 +23,4 @@ class WarningTest(FieldTest):
     name = "Warning"
     inputs = [b'110 - "Response is stale"', b'299 - "Miscellaneous warning"']
     expected_out = ['110 - "Response is stale"', '299 - "Miscellaneous warning"']
-    expected_notes = [FIELD_DEPRECATED]
+    expected_notes: NoteClassListType = [FIELD_DEPRECATED]

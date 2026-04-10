@@ -2,7 +2,7 @@ from httplint.field.singleton_field import SINGLE_HEADER_REPEAT, SingletonField
 from httplint.field.tests import FieldTest
 from httplint.note import Note, categories, levels
 from httplint.syntax import rfc9111
-from httplint.types import AddNoteMethodType
+from httplint.types import AddNoteMethodType, NoteClassListType
 
 
 class age(SingletonField):
@@ -70,25 +70,25 @@ class MultipleAgeTest(FieldTest):
     name = "Age"
     inputs = [b"20", b"10"]
     expected_out = 20
-    expected_notes = [SINGLE_HEADER_REPEAT]
+    expected_notes: NoteClassListType = [SINGLE_HEADER_REPEAT]
 
 
 class CharAgeTest(FieldTest):
     name = "Age"
     inputs = [b"foo"]
     expected_out = None
-    expected_notes = [AGE_NOT_INT]
+    expected_notes: NoteClassListType = [AGE_NOT_INT]
 
 
 class NegAgeTest(FieldTest):
     name = "Age"
     inputs = [b"-20"]
     expected_out = None
-    expected_notes = [AGE_NEGATIVE]
+    expected_notes: NoteClassListType = [AGE_NEGATIVE]
 
 
 class BigAgeTest(FieldTest):
     name = "Age"
     inputs = [b"2147483649"]
     expected_out = 2147483649
-    expected_notes = [AGE_LARGE]
+    expected_notes: NoteClassListType = [AGE_LARGE]

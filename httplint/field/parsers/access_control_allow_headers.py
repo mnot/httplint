@@ -3,7 +3,7 @@ from httplint.field.list_field import HttpListField
 from httplint.field.tests import FieldTest
 from httplint.note import categories
 from httplint.syntax import rfc9110
-from httplint.types import AddNoteMethodType
+from httplint.types import AddNoteMethodType, NoteClassListType
 
 
 class access_control_allow_headers(HttpListField):
@@ -26,4 +26,4 @@ class AccessControlAllowHeadersTest(FieldTest):
     name = "Access-Control-Allow-Headers"
     inputs = [b"a, b"]
     expected_out = ["a", "b"]
-    expected_notes = [CORS_PREFLIGHT_ONLY]
+    expected_notes: NoteClassListType = [CORS_PREFLIGHT_ONLY]

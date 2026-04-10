@@ -3,7 +3,7 @@ from httplint.field.singleton_field import SingletonField
 from httplint.field.tests import FieldTest
 from httplint.note import Note, categories, levels
 from httplint.syntax import rfc9110
-from httplint.types import AddNoteMethodType
+from httplint.types import AddNoteMethodType, NoteClassListType
 
 
 class access_control_max_age(SingletonField):
@@ -55,18 +55,18 @@ class AccessControlMaxAgeTest(FieldTest):
     name = "Access-Control-Max-Age"
     inputs = [b"123"]
     expected_out = 123
-    expected_notes = [CORS_PREFLIGHT_ONLY]
+    expected_notes: NoteClassListType = [CORS_PREFLIGHT_ONLY]
 
 
 class AccessControlMaxAgeInvalidTest(FieldTest):
     name = "Access-Control-Max-Age"
     inputs = [b"abc"]
     expected_out = None
-    expected_notes = [CORS_MAX_AGE_INVALID, CORS_PREFLIGHT_ONLY]
+    expected_notes: NoteClassListType = [CORS_MAX_AGE_INVALID, CORS_PREFLIGHT_ONLY]
 
 
 class AccessControlMaxAgeNegativeTest(FieldTest):
     name = "Access-Control-Max-Age"
     inputs = [b"-1"]
     expected_out = None
-    expected_notes = [CORS_MAX_AGE_NEGATIVE, CORS_PREFLIGHT_ONLY]
+    expected_notes: NoteClassListType = [CORS_MAX_AGE_NEGATIVE, CORS_PREFLIGHT_ONLY]

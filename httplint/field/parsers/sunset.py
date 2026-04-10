@@ -2,7 +2,7 @@ from httplint.field.singleton_field import SingletonField
 from httplint.field.tests import FieldTest
 from httplint.field.utils import BAD_DATE_SYNTAX, parse_http_date
 from httplint.note import Note, categories, levels
-from httplint.types import AddNoteMethodType, ResponseLinterProtocol
+from httplint.types import AddNoteMethodType, NoteClassListType, ResponseLinterProtocol
 
 
 class sunset(SingletonField):
@@ -43,7 +43,7 @@ class SunsetPastTest(FieldTest):
     name = "Sunset"
     inputs = [b"Sat, 01 Jan 2000 00:00:00 GMT"]
     expected_out = 946684800
-    expected_notes = [SUNSET_PAST]
+    expected_notes: NoteClassListType = [SUNSET_PAST]
 
     def set_response_context(self, message: ResponseLinterProtocol) -> None:
         message.start_time = 1000000000
@@ -53,4 +53,4 @@ class SunsetBadSyntaxTest(FieldTest):
     name = "Sunset"
     inputs = [b"not a date"]
     expected_out = None
-    expected_notes = [BAD_DATE_SYNTAX]
+    expected_notes: NoteClassListType = [BAD_DATE_SYNTAX]

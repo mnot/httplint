@@ -6,7 +6,7 @@ from httplint.field.tests import FieldTest
 from httplint.field.utils import unquote_string
 from httplint.note import categories
 from httplint.syntax import rfc9110
-from httplint.types import AddNoteMethodType
+from httplint.types import AddNoteMethodType, NoteClassListType
 
 
 class etag(SingletonField):
@@ -42,4 +42,4 @@ class UnquotedETagTest(FieldTest):
     name = "ETag"
     inputs = [b"foo"]
     expected_out = (False, "foo")
-    expected_notes = [BAD_SYNTAX]
+    expected_notes: NoteClassListType = [BAD_SYNTAX]

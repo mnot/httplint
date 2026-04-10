@@ -6,7 +6,7 @@ from httplint.field.singleton_field import SingletonField
 from httplint.field.tests import FieldTest
 from httplint.note import Note, categories, levels
 from httplint.syntax import rfc3986
-from httplint.types import AddNoteMethodType
+from httplint.types import AddNoteMethodType, NoteClassListType
 
 
 @dataclass
@@ -89,11 +89,11 @@ class OriginMultipleTest(FieldTest):
     name = "Origin"
     inputs = [b"https://example.com http://example.org:8080"]
     expected_out = OriginValue("https", "example.com", None)
-    expected_notes = [ORIGIN_MULTIPLE_VALUES]
+    expected_notes: NoteClassListType = [ORIGIN_MULTIPLE_VALUES]
 
 
 class OriginBadSyntaxTest(FieldTest):
     name = "Origin"
     inputs = [b"https://example.com/foo"]
-    expected_notes = [BAD_ORIGIN_SYNTAX]
+    expected_notes: NoteClassListType = [BAD_ORIGIN_SYNTAX]
     expected_out = None

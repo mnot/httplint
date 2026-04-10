@@ -2,7 +2,7 @@ from httplint.field.list_field import HttpListField
 from httplint.field.tests import FieldTest
 from httplint.note import Note, categories, levels
 from httplint.syntax import rfc9110
-from httplint.types import AddNoteMethodType
+from httplint.types import AddNoteMethodType, NoteClassListType
 
 
 class expect(HttpListField):
@@ -50,7 +50,7 @@ class ExpectTest(FieldTest):
     name = "Expect"
     inputs = [b"100-continue"]
     expected_out = ["100-continue"]
-    expected_notes = []
+    expected_notes: NoteClassListType = []
 
     def test_unknown(self) -> None:
         self.inputs = [b"foo"]
