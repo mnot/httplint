@@ -30,11 +30,7 @@ The `Cookie` header field contains stored HTTP cookies previously sent by the se
         # cookie-string = cookie-pair *( ";" SP cookie-pair )
         pairs: List[CookiePair] = []
 
-        # We split by ";" to handle the list nature, although BrokenField helps with multiple
-        # headers. But a single header value can contain multiple pairs.
-        # BrokenField.parse is called for each *header line* value.
-        # So we need to parse the semicolon-separated list inside `parse`.
-
+        # Split by ";" to handle semicolon-separated pairs within a single header value.
         items = field_value.split(";")
         for item in items:
             item = item.strip()
@@ -47,9 +43,7 @@ The `Cookie` header field contains stored HTTP cookies previously sent by the se
                 name = ""
                 value = item
 
-            # Basic validation could go here, but RFC 6265 is pretty loose on parsing
-            # ("let valid=true"). However, we can check for characters allowed in cookie-name
-            # and cookie-value.
+            # Validation for allowed characters in cookie-name and cookie-value not yet handled.
             # cookie-octet = %x21 / %x23-2B / %x2D-3A / %x3C-5B / %x5D-7E
             # Excluding: CTLs, SP, DQUOTE, comma, semicolon, backslash
 
@@ -58,7 +52,6 @@ The `Cookie` header field contains stored HTTP cookies previously sent by the se
             # cookie-name       = token
             # cookie-value      = *cookie-octet / ( DQUOTE *cookie-octet DQUOTE )
 
-            # For now, let's just store it.
             pairs.append(CookiePair(name, value))
 
         return pairs

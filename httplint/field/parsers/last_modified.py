@@ -28,7 +28,7 @@ representation was last modified."""
         if lm_value:
             serv_date = date_value or self.message.start_time
             if not serv_date:
-                return  # we don't know
+                return  # cannot determine relative time without a server timestamp
             if lm_value > serv_date:
                 add_note(LM_FUTURE)
             else:

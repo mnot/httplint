@@ -20,7 +20,7 @@ class ContentEncodingProcessor:
         self.hash: Optional[bytes] = None
         self._hash_processor = hashlib.new("md5")
 
-        self.decode_ok: bool = True  # turn False if we have a problem
+        self.decode_ok: bool = True
 
         # Pipeline is built lazily to ensure headers are parsed
         self.pipeline: Optional[Callable[[bytes], None]] = None
@@ -50,8 +50,7 @@ class ContentEncodingProcessor:
 
         content_codings = self.message.headers.parsed.get("content-encoding", [])
 
-        # We iterate forward regarding processing order.
-        # See init comments in previous version.
+        # Iterate forward regarding processing order.
 
         for coding in content_codings:
             if coding in ["gzip", "x-gzip"]:
