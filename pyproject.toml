@@ -29,6 +29,7 @@ dependencies = [
 dev = [
     "mypy",
     "black",
+    "isort",
     "pylint",
     "pytest",
     "pytest-md",
@@ -113,3 +114,6 @@ python_files = ["message.py", "util.py", "field/parsers/*.py", "content_type.py"
 
 [tool.black]
 line-length = 100
+
+[tool.isort]
+profile = "black"
