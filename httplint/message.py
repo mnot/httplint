@@ -16,13 +16,20 @@ from httplint.i18n import L_, translate
 from httplint.note import Note, Notes, categories, levels
 from httplint.status import StatusChecker
 from httplint.syntax import rfc3986
-from httplint.types import RawFieldListType
+from httplint.types import (
+    CachingProtocol,
+    LinterProtocol,
+    NotesProtocol,
+    RawFieldListType,
+    RequestLinterProtocol,
+    SectionProtocol,
+)
 from httplint.util import f_num, iri_to_uri
 
 
 class HttpMessageParams(TypedDict):
     start_time: NotRequired[Optional[float]]
-    related: NotRequired["HttpMessageLinter"]
+    related: NotRequired[Optional[LinterProtocol]]
     no_content: NotRequired[bool]
 
 
@@ -36,10 +43,10 @@ class HttpMessageLinter:
     def __init__(
         self,
         start_time: Optional[float] = None,
-        related: Optional["HttpMessageLinter"] = None,
+        related: Optional[LinterProtocol] = None,
         no_content: bool = False,
     ) -> None:
-        self.notes = Notes({"message_type": translate(self.message_type)})
+        self.notes: NotesProtocol = Notes({"message_type": translate(self.message_type)})
         self.related = related
         self.start_time = start_time
         self.finish_time: Optional[float] = None
@@ -47,8 +54,8 @@ class HttpMessageLinter:
 
         self.version: str = ""
         self.base_uri: str = ""
-        self.headers = FieldSection(self)
-        self.trailers = FieldSection(self, is_trailer=True)
+        self.headers: SectionProtocol = FieldSection(self)
+        self.trailers: SectionProtocol = FieldSection(self, is_trailer=True)
 
         self.content_length: int = 0
         self.content_hash: Optional[bytes] = None
@@ -239,7 +246,7 @@ class HttpResponseLinter(HttpMessageLinter):
         self.status_code: Optional[int] = None
         self.status_phrase: Optional[str] = None
         self.is_head_response = False
-        self.caching: ResponseCacheChecker
+        self.caching: CachingProtocol
 
     def process_response_topline(
         self, version: bytes, status_code: bytes, status_phrase: Optional[bytes] = None
@@ -267,7 +274,7 @@ class HttpResponseLinter(HttpMessageLinter):
     def post_checks(self) -> None:
         check_preflight_response(self)
         self.caching = ResponseCacheChecker(self)
-        StatusChecker(self, cast(Optional[HttpRequestLinter], self.related))
+        StatusChecker(self, cast(Optional[RequestLinterProtocol], self.related))
         if not self.no_content:
             verify_content_type(self)
 

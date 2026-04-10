@@ -1,19 +1,10 @@
 import sys
 import weakref
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Optional,
-    Type,
-)
+from typing import Any, Optional, Type, cast
 
 from httplint.field import HttpField, deprecated, unnecessary
 from httplint.field.list_field import HttpListField
-from httplint.types import AddNoteMethodType
-
-if TYPE_CHECKING:
-    from httplint.field.section import FieldSection
-    from httplint.message import HttpMessageLinter
+from httplint.types import AddNoteMethodType, LinterProtocol, SectionProtocol
 
 
 class HttpFieldFinder:
@@ -35,8 +26,8 @@ class HttpFieldFinder:
 
     def __init__(
         self,
-        message: "HttpMessageLinter",
-        field_section: Optional["FieldSection"] = None,
+        message: LinterProtocol,
+        field_section: Optional[SectionProtocol] = None,
     ) -> None:
         self.message = weakref.proxy(message)
         self.field_section = field_section
@@ -48,7 +39,7 @@ class HttpFieldFinder:
         """
         norm_name = field_name.lower()
         if self.field_section and norm_name in self.field_section.handlers:
-            return self.field_section.handlers[norm_name]
+            return cast(HttpField, self.field_section.handlers[norm_name])
         handler_class = self.find_handler_class(field_name) or UnknownHttpField
         handler = handler_class(field_name, self.message)
         if self.field_section:

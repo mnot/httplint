@@ -1,13 +1,10 @@
 import re
-from typing import TYPE_CHECKING, Any, List
+from typing import Any, List
 
 from httplint.field import BAD_SYNTAX, HttpField
 from httplint.field.utils import RE_FLAGS
 from httplint.note import Note, categories, levels
-from httplint.types import AddNoteMethodType
-
-if TYPE_CHECKING:
-    from httplint.message import HttpMessageLinter
+from httplint.types import AddNoteMethodType, LinterProtocol
 
 
 class SingletonField(HttpField):
@@ -15,7 +12,7 @@ class SingletonField(HttpField):
     A HTTP field that strictly allows only one value.
     """
 
-    def __init__(self, wire_name: str, message: "HttpMessageLinter") -> None:
+    def __init__(self, wire_name: str, message: LinterProtocol) -> None:
         super().__init__(wire_name, message)
         self.raw_values: List[str] = []
 
@@ -26,10 +23,10 @@ class SingletonField(HttpField):
         """
         return field_value
 
-    def handle_input(self, field_value: str, add_note: "AddNoteMethodType", offset: int) -> None:
+    def handle_input(self, field_value: str, add_note: AddNoteMethodType, offset: int) -> None:
         self.raw_values.append(field_value)
 
-    def finish(self, message: "HttpMessageLinter", add_note: "AddNoteMethodType") -> None:
+    def finish(self, message: LinterProtocol, add_note: AddNoteMethodType) -> None:
         if not self.raw_values:
             self.value = None
         else:

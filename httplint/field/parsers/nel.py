@@ -1,12 +1,7 @@
-from typing import TYPE_CHECKING
-
 from httplint.field.json_field import BAD_JSON, JsonField
 from httplint.field.tests import FieldTest
 from httplint.note import Note, categories, levels
-from httplint.types import AddNoteMethodType
-
-if TYPE_CHECKING:
-    from httplint.message import HttpMessageLinter
+from httplint.types import AddNoteMethodType, LinterProtocol, ResponseLinterProtocol
 
 
 class nel(JsonField):
@@ -69,7 +64,7 @@ It allows websites to declare that they want to receive reports about network er
                         details="it must be between 0.0 and 1.0",
                     )
 
-    def post_check(self, message: "HttpMessageLinter", add_note: AddNoteMethodType) -> None:
+    def post_check(self, message: LinterProtocol, add_note: AddNoteMethodType) -> None:
         if not self.value:
             return
 
@@ -148,7 +143,7 @@ class NelTest(FieldTest):
     ]
     expected_notes = []
 
-    def set_context(self, message: "HttpMessageLinter") -> None:
+    def set_response_context(self, message: ResponseLinterProtocol) -> None:
         message.headers.process([(b"Reporting-Endpoints", b'group1="https://example.com/reports"')])
 
 
@@ -164,7 +159,7 @@ class NelMultiLineTest(FieldTest):
     ]
     expected_notes = []
 
-    def set_context(self, message: "HttpMessageLinter") -> None:
+    def set_response_context(self, message: ResponseLinterProtocol) -> None:
         message.headers.process(
             [
                 (
@@ -188,7 +183,7 @@ class NelBadFractionTest(FieldTest):
     expected_out = [{"report_to": "a", "max_age": 1, "success_fraction": 1.5}]
     expected_notes = [NEL_BAD_VALUE]
 
-    def set_context(self, message: "HttpMessageLinter") -> None:
+    def set_response_context(self, message: ResponseLinterProtocol) -> None:
         message.headers.process([(b"Reporting-Endpoints", b'a="https://example.com/reports"')])
 
 
@@ -206,7 +201,7 @@ class NelReportToTest(FieldTest):
     expected_out = [{"report_to": "group1", "max_age": 100}]
     expected_notes = []
 
-    def set_context(self, message: "HttpMessageLinter") -> None:
+    def set_response_context(self, message: ResponseLinterProtocol) -> None:
         message.headers.process([(b"Reporting-Endpoints", b'group1="https://example.com/reports"')])
 
 

@@ -9,10 +9,13 @@ from httplint.field.cors import (
 )
 from httplint.field.singleton_field import SingletonField
 from httplint.field.tests import FieldTest
-from httplint.message import HttpMessageLinter, HttpRequestLinter, HttpResponseLinter
 from httplint.note import categories
 from httplint.syntax import rfc3986
-from httplint.types import AddNoteMethodType
+from httplint.types import (
+    AddNoteMethodType,
+    RequestLinterProtocol,
+    ResponseLinterProtocol,
+)
 
 
 class access_control_allow_origin(SingletonField):
@@ -28,7 +31,9 @@ requesting code from the given origin."""
     valid_in_responses = True
 
     def evaluate(self, add_note: AddNoteMethodType) -> None:
-        check_access_control_allow_origin(str(self.value), cast(HttpResponseLinter, self.message))
+        check_access_control_allow_origin(
+            str(self.value), cast(ResponseLinterProtocol, self.message)
+        )
 
 
 class AccessControlAllowOriginTest(FieldTest):
@@ -55,8 +60,8 @@ class AccessControlAllowOriginMatchTest(FieldTest):
     expected_out = "https://example.com"
     expected_notes = [CORS_ORIGIN_MATCH]
 
-    def set_context(self, message: HttpMessageLinter) -> None:
-        request = cast(HttpRequestLinter, message.related)
+    def set_response_context(self, message: ResponseLinterProtocol) -> None:
+        request = cast(RequestLinterProtocol, message.related)
         request.headers.process([(b"Origin", b"https://example.com")])
 
 
@@ -66,8 +71,8 @@ class AccessControlAllowOriginMismatchTest(FieldTest):
     expected_out = "https://other.com"
     expected_notes = [CORS_ORIGIN_MISMATCH]
 
-    def set_context(self, message: HttpMessageLinter) -> None:
-        request = cast(HttpRequestLinter, message.related)
+    def set_response_context(self, message: ResponseLinterProtocol) -> None:
+        request = cast(RequestLinterProtocol, message.related)
         request.headers.process([(b"Origin", b"https://example.com")])
 
 
@@ -77,8 +82,8 @@ class AccessControlAllowOriginStarContextTest(FieldTest):
     expected_out = "*"
     expected_notes = [CORS_ORIGIN_STAR]
 
-    def set_context(self, message: HttpMessageLinter) -> None:
-        request = cast(HttpRequestLinter, message.related)
+    def set_response_context(self, message: ResponseLinterProtocol) -> None:
+        request = cast(RequestLinterProtocol, message.related)
         request.headers.process([(b"Origin", b"https://example.com")])
 
 
@@ -88,6 +93,6 @@ class AccessControlAllowOriginNullContextTest(FieldTest):
     expected_out = "null"
     expected_notes = [CORS_ORIGIN_NULL]
 
-    def set_context(self, message: HttpMessageLinter) -> None:
-        request = cast(HttpRequestLinter, message.related)
+    def set_response_context(self, message: ResponseLinterProtocol) -> None:
+        request = cast(RequestLinterProtocol, message.related)
         request.headers.process([(b"Origin", b"https://example.com")])

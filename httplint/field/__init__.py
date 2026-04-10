@@ -1,12 +1,6 @@
 import re
 from abc import ABC, abstractmethod
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Dict,
-    List,
-    Union,
-)
+from typing import Any, Union
 
 from httplint.field.utils import RE_FLAGS
 from httplint.note import Note, categories, levels
@@ -14,12 +8,10 @@ from httplint.syntax import rfc9110
 from httplint.types import (
     AddNoteMethodType,
     FieldDictType,
+    LinterProtocol,
     RawFieldListType,
     StrFieldListType,
 )
-
-if TYPE_CHECKING:
-    from httplint.message import HttpMessageLinter
 
 # base URLs for references
 RFC2616 = "https://www.rfc-editor.org/rfc/rfc2616.html#%s"
@@ -47,7 +39,7 @@ class HttpField(ABC):
     deprecated: bool = False
     no_coverage: bool = False  # Turns off coverage checks.
 
-    def __init__(self, wire_name: str, message: "HttpMessageLinter") -> None:
+    def __init__(self, wire_name: str, message: LinterProtocol) -> None:
         self.wire_name = wire_name.strip()
         self.message = message
         self.norm_name = self.wire_name.lower()
@@ -61,7 +53,7 @@ class HttpField(ABC):
         field's values.
         """
 
-    def post_check(self, message: "HttpMessageLinter", add_note: AddNoteMethodType) -> None:
+    def post_check(self, message: LinterProtocol, add_note: AddNoteMethodType) -> None:
         """
         Called after the message is complete and other processing has occurred.
         """
@@ -72,7 +64,7 @@ class HttpField(ABC):
         Basic input processing on a new field value.
         """
 
-    def pre_check(self, message: "HttpMessageLinter", add_note: AddNoteMethodType) -> bool:
+    def pre_check(self, message: LinterProtocol, add_note: AddNoteMethodType) -> bool:
         """
         Called before parsing or evaluating the field.
         If False is returned, processing is aborted.
@@ -100,7 +92,7 @@ class HttpField(ABC):
 
         return True
 
-    def finish(self, message: "HttpMessageLinter", add_note: AddNoteMethodType) -> None:
+    def finish(self, message: LinterProtocol, add_note: AddNoteMethodType) -> None:
         """
         Called when all field lines in the section are available.
         """

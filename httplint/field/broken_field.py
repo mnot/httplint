@@ -1,13 +1,10 @@
 import re
 from functools import partial
-from typing import TYPE_CHECKING, Any, List, Tuple
+from typing import Any, List, Tuple
 
 from httplint.field import BAD_SYNTAX, HttpField
 from httplint.field.utils import RE_FLAGS
-from httplint.types import AddNoteMethodType
-
-if TYPE_CHECKING:
-    from httplint.message import HttpMessageLinter
+from httplint.types import AddNoteMethodType, LinterProtocol
 
 
 class BrokenField(HttpField):
@@ -15,7 +12,7 @@ class BrokenField(HttpField):
     A HTTP field that allows multiple values, but is not a comma-separated list.
     """
 
-    def __init__(self, wire_name: str, message: "HttpMessageLinter") -> None:
+    def __init__(self, wire_name: str, message: LinterProtocol) -> None:
         super().__init__(wire_name, message)
         self.raw_values: List[Tuple[str, int]] = []
 
@@ -24,10 +21,10 @@ class BrokenField(HttpField):
         Given a string value representing a field line, parse and return the result."""
         return field_value
 
-    def handle_input(self, field_value: str, add_note: "AddNoteMethodType", offset: int) -> None:
+    def handle_input(self, field_value: str, add_note: AddNoteMethodType, offset: int) -> None:
         self.raw_values.append((field_value, offset))
 
-    def finish(self, message: "HttpMessageLinter", add_note: "AddNoteMethodType") -> None:
+    def finish(self, message: LinterProtocol, add_note: AddNoteMethodType) -> None:
         parsed_values = []
         for raw_value, offset in self.raw_values:
             # override add_note's subject to be offset-based

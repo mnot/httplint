@@ -1,16 +1,18 @@
 import weakref
 from functools import partial
-from typing import TYPE_CHECKING, Dict
+from typing import Dict
 
 from httplint.field import HttpField
 from httplint.field.finder import HttpFieldFinder
 from httplint.i18n import L_
 from httplint.note import Note, categories, levels
-from httplint.types import FieldDictType, RawFieldListType, StrFieldListType
+from httplint.types import (
+    FieldDictType,
+    LinterProtocol,
+    RawFieldListType,
+    StrFieldListType,
+)
 from httplint.util import f_num
-
-if TYPE_CHECKING:
-    from httplint.message import HttpMessageLinter
 
 
 class FieldSection:
@@ -21,7 +23,7 @@ class FieldSection:
     max_field_size = 8 * 1024
     max_total_size = 32 * 1024
 
-    def __init__(self, message: "HttpMessageLinter", is_trailer: bool = False) -> None:
+    def __init__(self, message: LinterProtocol, is_trailer: bool = False) -> None:
         self.message = weakref.proxy(message)
         self.is_trailer = is_trailer
         self.text: StrFieldListType = []  # unicode version of the field tuples as received

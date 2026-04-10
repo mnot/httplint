@@ -1,17 +1,14 @@
 from calendar import timegm
 from re import match, split
-from typing import TYPE_CHECKING, Any, Callable, List, Optional, Tuple, Union
+from typing import Any, Callable, List, Optional, Tuple, Union
 from urllib.parse import urlsplit
 
 from httplint.field import RFC6265
 from httplint.field.broken_field import BrokenField
 from httplint.field.tests import FieldTest
 from httplint.note import Note, categories, levels
-from httplint.types import AddNoteMethodType
+from httplint.types import AddNoteMethodType, LinterProtocol
 from httplint.util import relative_time
-
-if TYPE_CHECKING:
-    from httplint.message import HttpMessageLinter
 
 CookieType = Tuple[str, str, List[Tuple[str, Union[str, int]]]]
 
@@ -32,7 +29,7 @@ requests to the server."""
     valid_in_requests = False
     valid_in_responses = True
 
-    def __init__(self, wire_name: str, message: "HttpMessageLinter") -> None:
+    def __init__(self, wire_name: str, message: LinterProtocol) -> None:
         super().__init__(wire_name, message)
         self._deferred_notes: List[Tuple[Callable[..., Any], type[Note], dict[str, Any]]] = []
 

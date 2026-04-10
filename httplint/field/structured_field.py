@@ -1,15 +1,11 @@
 import re
-from typing import TYPE_CHECKING
 
 import http_sf
 from markupsafe import Markup, escape
 
 from httplint.field import HttpField
 from httplint.note import Note, categories, levels
-from httplint.types import AddNoteMethodType
-
-if TYPE_CHECKING:
-    from httplint.message import HttpMessageLinter
+from httplint.types import AddNoteMethodType, LinterProtocol
 
 RE_FLAGS = re.VERBOSE | re.IGNORECASE
 CONTEXT_CHARS = 35
@@ -24,7 +20,7 @@ class StructuredField(HttpField):
     nonstandard_syntax = True
     sf_type: str = "item"  # item, list, dict
 
-    def __init__(self, wire_name: str, message: "HttpMessageLinter") -> None:
+    def __init__(self, wire_name: str, message: LinterProtocol) -> None:
         super().__init__(wire_name, message)
         self._sf_parsed = False
 
@@ -32,7 +28,7 @@ class StructuredField(HttpField):
         self.value.append(field_value)
         self._sf_parsed = False
 
-    def finish(self, message: "HttpMessageLinter", add_note: AddNoteMethodType) -> None:
+    def finish(self, message: LinterProtocol, add_note: AddNoteMethodType) -> None:
         if not self.value:
             return
 

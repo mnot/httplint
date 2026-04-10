@@ -1,12 +1,10 @@
 import unittest
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 import sniffpy  # type: ignore[import-untyped]
 
 from httplint.note import Note, categories, levels
-
-if TYPE_CHECKING:
-    from httplint.message import HttpMessageLinter
+from httplint.types import LinterProtocol
 
 
 class CONTENT_TYPE_MISMATCH(Note):
@@ -18,7 +16,7 @@ The `Content-Type` header declares the content as `%(declared_type)s`, but it lo
 `%(sniffed_type)s`."""
 
 
-def verify_content_type(linter: "HttpMessageLinter") -> None:
+def verify_content_type(linter: LinterProtocol) -> None:
     """
     Verify that the content matches the declared Content-Type.
     """

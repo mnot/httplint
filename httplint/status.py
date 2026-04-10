@@ -1,13 +1,14 @@
 # pylint: disable=too-many-public-methods
 
 from functools import partial
-from typing import TYPE_CHECKING, List, Optional
+from typing import List, Optional
 
 from httplint.note import Note, categories, levels
-from httplint.types import StrFieldListType
-
-if TYPE_CHECKING:
-    from httplint.message import HttpRequestLinter, HttpResponseLinter
+from httplint.types import (
+    RequestLinterProtocol,
+    ResponseLinterProtocol,
+    StrFieldListType,
+)
 
 safe_methods = ["GET", "HEAD", "OPTIONS", "TRACE"]
 
@@ -41,8 +42,8 @@ class StatusChecker:
 
     def __init__(
         self,
-        response: "HttpResponseLinter",
-        request: Optional["HttpRequestLinter"] = None,
+        response: ResponseLinterProtocol,
+        request: Optional[RequestLinterProtocol] = None,
     ) -> None:
         self.request = request
         self.response = response

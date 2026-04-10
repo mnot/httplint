@@ -1,16 +1,17 @@
 from types import SimpleNamespace
-from typing import TYPE_CHECKING, Any, cast
+from typing import Any, cast
 
 from http_sf import Token
 
 from httplint.field.structured_field import StructuredField
-from httplint.field.tests import FakeRequestLinter, FakeResponseLinter, FieldTest
-from httplint.message import HttpRequestLinter, HttpResponseLinter
+from httplint.field.tests import FakeRequestLinter, FieldTest
 from httplint.note import Note, categories, levels
-from httplint.types import AddNoteMethodType
-
-if TYPE_CHECKING:
-    from httplint.message import HttpMessageLinter
+from httplint.types import (
+    AddNoteMethodType,
+    LinterProtocol,
+    RequestLinterProtocol,
+    ResponseLinterProtocol,
+)
 
 
 class accept_ch(StructuredField):
@@ -36,16 +37,16 @@ willing to process."""
                 )
                 return
 
-    def post_check(self, message: "HttpMessageLinter", add_note: AddNoteMethodType) -> None:
+    def post_check(self, message: LinterProtocol, add_note: AddNoteMethodType) -> None:
         # Warn if the request URI scheme is http
         request = self.message.related
-        if request and isinstance(request, HttpRequestLinter) and request.uri:
-            if request.uri.lower().startswith("http:"):
+        if request and getattr(request, "message_type", None) == "request":
+            req = cast(RequestLinterProtocol, request)
+            if req.uri and req.uri.lower().startswith("http:"):
                 add_note(ACCEPT_CH_IN_PLAIN_HTTP)
 
         # Check if every field name in Accept-CH is also present in the Vary header
         # if the response is cacheable.
-        message = cast(HttpResponseLinter, message)
         if hasattr(message, "caching") and (
             message.caching.store_shared or message.caching.store_private
         ):
@@ -119,8 +120,7 @@ class AcceptCHHTTPTest(FieldTest):
     expected_out = [(Token("Sec-CH-Example"), {})]
     expected_notes = [ACCEPT_CH_IN_PLAIN_HTTP]
 
-    def set_context(self, message: "HttpMessageLinter") -> None:
-        message = cast(FakeResponseLinter, message)
+    def set_response_context(self, message: ResponseLinterProtocol) -> None:
         message.related = FakeRequestLinter()
         message.related.uri = "http://example.com/"
 
@@ -131,6 +131,5 @@ class AcceptCHMissingVaryTest(FieldTest):
     expected_out = [(Token("Sec-CH-Example"), {})]
     expected_notes = [ACCEPT_CH_MISSING_VARY]
 
-    def set_context(self, message: "HttpMessageLinter") -> None:
-        message = cast(FakeResponseLinter, message)
+    def set_response_context(self, message: ResponseLinterProtocol) -> None:
         message.caching = cast(Any, SimpleNamespace(store_shared=True, store_private=True))

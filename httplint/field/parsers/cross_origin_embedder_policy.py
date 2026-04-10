@@ -1,14 +1,11 @@
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 from http_sf import Token
 
 from httplint.field.structured_field import StructuredField
 from httplint.field.tests import FieldTest
 from httplint.note import Note, categories, levels
-from httplint.types import AddNoteMethodType
-
-if TYPE_CHECKING:
-    from httplint.message import HttpMessageLinter
+from httplint.types import AddNoteMethodType, LinterProtocol, ResponseLinterProtocol
 
 
 class cross_origin_embedder_policy(StructuredField):
@@ -67,7 +64,7 @@ resources that don't explicitly grant the document permission (using CORP or COR
                 report_only=self.report_only_string,
             )
 
-    def post_check(self, message: "HttpMessageLinter", add_note: AddNoteMethodType) -> None:
+    def post_check(self, message: LinterProtocol, add_note: AddNoteMethodType) -> None:
         if not self.value or not isinstance(self.value, tuple):
             return
 
@@ -184,7 +181,7 @@ class CrossOriginEmbedderPolicyReportToTest(FieldTest):
     expected_out: Any = (Token("require-corp"), {"report-to": "endpoint"})
     expected_notes = [COEP_REQUIRE_CORP]
 
-    def set_context(self, message: "HttpMessageLinter") -> None:
+    def set_response_context(self, message: ResponseLinterProtocol) -> None:
         message.headers.process(
             [(b"Reporting-Endpoints", b'endpoint="https://example.com/reports"')]
         )

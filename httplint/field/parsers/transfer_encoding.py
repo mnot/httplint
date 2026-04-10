@@ -1,13 +1,17 @@
-from typing import Tuple
+from typing import Tuple, cast
 
 from httplint.field import BAD_SYNTAX
 from httplint.field.list_field import HttpListField
 from httplint.field.tests import FakeRequestLinter, FieldTest
 from httplint.field.utils import parse_params
-from httplint.message import HttpMessageLinter, HttpRequestLinter, HttpResponseLinter
 from httplint.note import Note, categories, levels
 from httplint.syntax import rfc9112
-from httplint.types import AddNoteMethodType, ParamDictType
+from httplint.types import (
+    AddNoteMethodType,
+    ParamDictType,
+    RequestLinterProtocol,
+    ResponseLinterProtocol,
+)
 
 
 class transfer_encoding(HttpListField):
@@ -46,10 +50,12 @@ Transfer codings can only be used in HTTP/1; HTTP/2 and HTTP/3 do not support th
         unwanted = {c[0] for c in self.value if c[0] not in ["chunked", "identity"]}
         if unwanted:
             # check to see if the client asked for it
-            if isinstance(self.message, HttpResponseLinter) and isinstance(
-                self.message.related, HttpRequestLinter
+            if (
+                getattr(self.message, "message_type", None) == "response"
+                and getattr(self.message.related, "message_type", None) == "request"
             ):
-                te = [t[0] for t in self.message.related.headers.parsed.get("te", [])]
+                related = cast(RequestLinterProtocol, self.message.related)
+                te = [t[0] for t in related.headers.parsed.get("te", [])]
                 unwanted = {c for c in unwanted if c not in te}
 
         if unwanted:
@@ -153,7 +159,7 @@ class TransferEncodingWantedTest(FieldTest):
     inputs = [b"foo"]
     expected_out = [("foo", {})]
 
-    def set_context(self, message: HttpMessageLinter) -> None:
+    def set_response_context(self, message: ResponseLinterProtocol) -> None:
         request = FakeRequestLinter()
         request.headers.process([(b"te", b"foo")])
         message.related = request

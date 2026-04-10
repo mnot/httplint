@@ -18,7 +18,7 @@ accessing the resource in response to a CORS preflight request."""
     valid_in_requests = False
     valid_in_responses = True
 
-    def parse(self, field_value: str, add_note: "AddNoteMethodType") -> str:
+    def parse(self, field_value: str, add_note: AddNoteMethodType) -> str:
         return field_value
 
 

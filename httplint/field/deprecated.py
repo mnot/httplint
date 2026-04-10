@@ -1,13 +1,9 @@
-from typing import TYPE_CHECKING, Dict, Tuple
+from typing import Dict, Tuple
 
 from httplint.field import FIELD_DEPRECATED
 from httplint.field.list_field import HttpListField
 from httplint.note import categories
-from httplint.types import AddNoteMethodType
-
-if TYPE_CHECKING:
-    from httplint.message import HttpMessageLinter
-
+from httplint.types import AddNoteMethodType, LinterProtocol
 
 # pylint: disable=line-too-long
 DEPRECATED_FIELDS: Dict[str, Tuple[categories, str]] = {
@@ -207,7 +203,7 @@ class DeprecatedField(HttpListField):
     valid_in_requests = True
     valid_in_responses = True  # dont' want to complain about these
 
-    def __init__(self, wire_name: str, message: "HttpMessageLinter") -> None:
+    def __init__(self, wire_name: str, message: LinterProtocol) -> None:
         HttpListField.__init__(self, wire_name, message)
         assert self.norm_name in field_lookup
         self.canonical_name = field_lookup[self.norm_name]
@@ -219,7 +215,7 @@ It is safe to remove it from this message. For more information, see [here]({sel
     def parse(self, field_value: str, add_note: AddNoteMethodType) -> None:
         return
 
-    def pre_check(self, message: "HttpMessageLinter", add_note: AddNoteMethodType) -> bool:
+    def pre_check(self, message: LinterProtocol, add_note: AddNoteMethodType) -> bool:
         # Override pre_check to use the specific note category
         # First, standard checks (copied from HttpField.pre_check, excluding deprecated check)
 

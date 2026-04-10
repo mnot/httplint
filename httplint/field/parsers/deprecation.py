@@ -3,9 +3,8 @@ from typing import Any
 
 from httplint.field.structured_field import StructuredField
 from httplint.field.tests import FieldTest
-from httplint.message import HttpMessageLinter
 from httplint.note import Note, categories, levels
-from httplint.types import AddNoteMethodType
+from httplint.types import AddNoteMethodType, ResponseLinterProtocol
 
 
 class deprecation(StructuredField):
@@ -80,7 +79,7 @@ class DeprecationDateTest(FieldTest):
     expected_out: Any = (datetime.fromtimestamp(1672531199), {})
     expected_notes = [DEPRECATION_PAST]
 
-    def set_context(self, message: "HttpMessageLinter") -> None:
+    def set_response_context(self, message: ResponseLinterProtocol) -> None:
         message.start_time = 2000000000
 
 

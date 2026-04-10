@@ -7,7 +7,7 @@ from httplint.field.structured_field import (
 )
 from httplint.field.tests import FieldTest
 from httplint.note import Note, categories, levels
-from httplint.types import AddNoteMethodType
+from httplint.types import AddNoteMethodType, ResponseLinterProtocol
 
 
 class speculation_rules(StructuredField):
@@ -88,7 +88,7 @@ class SpeculationRulesRelativeTest(FieldTest):
     expected_out: Any = [("/rules.json", {})]
     expected_notes = []
 
-    def set_context(self, message: Any) -> None:
+    def set_response_context(self, message: ResponseLinterProtocol) -> None:
         message.base_uri = "https://example.com/"
 
 
@@ -98,7 +98,7 @@ class SpeculationRulesRelativeInsecureTest(FieldTest):
     expected_out: Any = [("/rules.json", {})]
     expected_notes = [SPECULATION_RULE_NOT_SECURE]
 
-    def set_context(self, message: Any) -> None:
+    def set_response_context(self, message: ResponseLinterProtocol) -> None:
         message.base_uri = "http://example.com/"
 
 

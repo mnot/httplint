@@ -2,19 +2,17 @@ import binascii
 import hashlib
 import weakref
 import zlib
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional
 
 import brotli
 
 from httplint.note import Note, categories, levels
+from httplint.types import LinterProtocol
 from httplint.util import display_bytes, f_num
-
-if TYPE_CHECKING:
-    from httplint.message import HttpMessageLinter
 
 
 class ContentEncodingProcessor:
-    def __init__(self, message: "HttpMessageLinter") -> None:
+    def __init__(self, message: LinterProtocol) -> None:
         self.message = weakref.proxy(message)
         self.processors: List[Callable[[bytes], None]] = []
 
@@ -78,9 +76,7 @@ class ContentEncodingProcessor:
 
 
 class GzipProcessor:
-    def __init__(
-        self, message: "HttpMessageLinter", next_processor: Callable[[bytes], None]
-    ) -> None:
+    def __init__(self, message: LinterProtocol, next_processor: Callable[[bytes], None]) -> None:
         self.message = message
         self.next_processor = next_processor
         self._gzip_processor = zlib.decompressobj(-zlib.MAX_WBITS)
@@ -200,9 +196,7 @@ class GzipProcessor:
 
 
 class BrotliProcessor:
-    def __init__(
-        self, message: "HttpMessageLinter", next_processor: Callable[[bytes], None]
-    ) -> None:
+    def __init__(self, message: LinterProtocol, next_processor: Callable[[bytes], None]) -> None:
         self.message = message
         self.next_processor = next_processor
         self._brotli_processor = brotli.Decompressor()

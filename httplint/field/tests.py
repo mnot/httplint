@@ -1,11 +1,16 @@
 import unittest
 from functools import partial
-from typing import Any, Iterable, List, Tuple, Type
+from typing import Any, Iterable, List, Tuple, Type, cast
 
 from httplint.field.cors import check_preflight_request, check_preflight_response
 from httplint.i18n import L_
 from httplint.message import HttpMessageLinter, HttpRequestLinter, HttpResponseLinter
 from httplint.note import Note
+from httplint.types import (
+    LinterProtocol,
+    RequestLinterProtocol,
+    ResponseLinterProtocol,
+)
 
 
 class FakeResponseLinter(HttpResponseLinter):
@@ -59,7 +64,7 @@ class FieldTest(unittest.TestCase):
     inputs: List[bytes] = []
     expected_out: Any = []
     expected_notes: List[Type[Note]] = []
-    message: HttpMessageLinter
+    message: LinterProtocol
 
     linter_class: Type[HttpMessageLinter] = FakeResponseLinter
 
@@ -67,11 +72,18 @@ class FieldTest(unittest.TestCase):
         "Test setup."
         if self.name:
             # pylint: disable=protected-access
-            handler = self.linter_class().headers._finder.find_handler(self.name)
+            headers = cast(Any, self.linter_class().headers)
+            handler = headers._finder.find_handler(self.name)
             if handler.valid_in_requests and not handler.valid_in_responses:
                 self.linter_class = FakeRequestLinter
         self.message = self.linter_class()
-        self.set_context(self.message)
+        message_type = getattr(self.message, "message_type", None)
+        if message_type == "request":
+            self.set_request_context(cast(RequestLinterProtocol, self.message))
+        elif message_type == "response":
+            self.set_response_context(cast(ResponseLinterProtocol, self.message))
+        else:
+            self.set_context(self.message)
 
     def test_header(self) -> Any:
         "Test the header."
@@ -124,7 +136,13 @@ class FieldTest(unittest.TestCase):
         self.assertEqual(len(diff), 0, f"Mismatched notes: {diff}")
         return None
 
-    def set_context(self, message: "HttpMessageLinter") -> None:
+    def set_context(self, message: LinterProtocol) -> None:
+        pass
+
+    def set_request_context(self, message: RequestLinterProtocol) -> None:
+        pass
+
+    def set_response_context(self, message: ResponseLinterProtocol) -> None:
         pass
 
     def assert_note(self, input_bytes: bytes, note: Type[Note], expected_out: Any = None) -> None:

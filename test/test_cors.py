@@ -14,6 +14,7 @@ from httplint.field.cors import (
 from httplint.field.tests import FieldTest
 from httplint.field import BAD_SYNTAX
 from httplint.message import HttpMessageLinter, HttpRequestLinter
+from httplint.types import RequestLinterProtocol
 
 
 class AccessControlAllowOriginMultipleTest(FieldTest):
@@ -121,7 +122,7 @@ class AccessControlRequestMethodPreflightTest(FieldTest):
     request_method = "OPTIONS"
     request_headers = [(b"Origin", b"http://example.com")]
 
-    def set_context(self, message: HttpMessageLinter) -> None:
+    def set_request_context(self, message: RequestLinterProtocol) -> None:
         request = cast(HttpRequestLinter, self.message)
         request.method = self.request_method
         self.message.headers.parsed = {}  # Clear parsed to avoid side effects
@@ -145,7 +146,7 @@ class AccessControlRequestHeadersPreflightTest(FieldTest):
     request_method = "OPTIONS"
     request_headers = [(b"Origin", b"http://example.com")]
 
-    def set_context(self, message: HttpMessageLinter) -> None:
+    def set_request_context(self, message: RequestLinterProtocol) -> None:
         self.message.headers.parsed = {}  # Clear existing headers to avoid repeat note
         self.message.headers.handlers = {}
 

@@ -1,14 +1,11 @@
-from typing import TYPE_CHECKING, cast
+from typing import cast
 from urllib.parse import urlparse
 
 from httplint.field.singleton_field import SingletonField
 from httplint.field.tests import FieldTest
 from httplint.note import Note, categories, levels
 from httplint.syntax import rfc9110
-from httplint.types import AddNoteMethodType
-
-if TYPE_CHECKING:
-    from httplint.message import HttpRequestLinter
+from httplint.types import AddNoteMethodType, RequestLinterProtocol
 
 
 class referer(SingletonField):
@@ -27,7 +24,7 @@ resource from which the target URI was obtained (i.e., the "referrer")."""
             return
 
         referer_uri = self.value
-        request_uri = cast("HttpRequestLinter", self.message).uri
+        request_uri = cast(RequestLinterProtocol, self.message).uri
 
         if not referer_uri or not request_uri:
             return

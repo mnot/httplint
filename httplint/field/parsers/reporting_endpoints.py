@@ -4,7 +4,7 @@ from urllib.parse import urljoin, urlsplit
 from httplint.field.structured_field import StructuredField
 from httplint.field.tests import FieldTest
 from httplint.note import Note, categories, levels
-from httplint.types import AddNoteMethodType
+from httplint.types import AddNoteMethodType, ResponseLinterProtocol
 
 
 class reporting_endpoints(StructuredField):
@@ -79,7 +79,7 @@ class ReportingEndpointsRelativeTest(FieldTest):
     expected_out: Any = {"endpoint": ("/reports", {})}
     expected_notes = []
 
-    def set_context(self, message: Any) -> None:
+    def set_response_context(self, message: ResponseLinterProtocol) -> None:
         message.base_uri = "https://example.com/"
 
 
@@ -89,5 +89,5 @@ class ReportingEndpointsInsecureBaseTest(FieldTest):
     expected_out: Any = {"endpoint": ("/reports", {})}
     expected_notes = [ENDPOINT_NOT_SECURE]
 
-    def set_context(self, message: Any) -> None:
+    def set_response_context(self, message: ResponseLinterProtocol) -> None:
         message.base_uri = "http://example.com/"

@@ -2,10 +2,9 @@ from typing import Any, Dict, List, Tuple
 
 from httplint.field.list_field import HttpListField
 from httplint.field.tests import FieldTest
-from httplint.message import HttpMessageLinter
 from httplint.note import Note, categories, levels
 from httplint.syntax import rfc9110
-from httplint.types import AddNoteMethodType
+from httplint.types import AddNoteMethodType, LinterProtocol, ResponseLinterProtocol
 
 # directive-name = 1*( ALPHA / DIGIT / "-" )
 DIRECTIVE_NAME = r"[a-zA-Z0-9-]+"
@@ -31,7 +30,7 @@ sources of content that browsers are allowed to load on a page."""
     report_only_string = ""
     report_only_text = ""
 
-    def __init__(self, wire_name: str, message: "HttpMessageLinter") -> None:
+    def __init__(self, wire_name: str, message: LinterProtocol) -> None:
         super().__init__(wire_name, message)
         self._deferred_notes: List[Tuple[Any, Dict[str, Any]]] = []
 
@@ -133,7 +132,7 @@ sources of content that browsers are allowed to load on a page."""
                 report_only_text=self.report_only_text,
             )
 
-    def post_check(self, message: "HttpMessageLinter", add_note: AddNoteMethodType) -> None:
+    def post_check(self, message: LinterProtocol, add_note: AddNoteMethodType) -> None:
         if not self.value:
             return
 
@@ -322,7 +321,7 @@ class CSPReportToTest(FieldTest):
     expected_out = [{"sort-src": "'self'", "report-to": "endpoint"}]
     expected_notes = [CONTENT_SECURITY_POLICY]
 
-    def set_context(self, message: "HttpMessageLinter") -> None:
+    def set_response_context(self, message: ResponseLinterProtocol) -> None:
         message.headers.process(
             [(b"Reporting-Endpoints", b'endpoint="https://example.com/reports"')]
         )
@@ -341,5 +340,5 @@ class CSPReportToMismatchTest(FieldTest):
     expected_out = [{"script-src": "'self'", "report-to": "endpoint"}]
     expected_notes = [CONTENT_SECURITY_POLICY, CSP_REPORT_TO_MISSING]
 
-    def set_context(self, message: "HttpMessageLinter") -> None:
+    def set_response_context(self, message: ResponseLinterProtocol) -> None:
         message.headers.process([(b"Reporting-Endpoints", b'endpoint-2="https://example.com"')])

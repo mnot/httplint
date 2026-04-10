@@ -20,7 +20,7 @@ request (as scoped by the `Access-Control-Allow-Methods` and
     valid_in_requests = False
     valid_in_responses = True
 
-    def parse(self, field_value: str, add_note: "AddNoteMethodType") -> int:
+    def parse(self, field_value: str, add_note: AddNoteMethodType) -> int:
         try:
             val = int(field_value)
         except ValueError:

@@ -1,12 +1,10 @@
-from typing import TYPE_CHECKING, cast
+from typing import cast
 
 from httplint.note import Note, categories, levels
-
-if TYPE_CHECKING:
-    from httplint.message import HttpRequestLinter, HttpResponseLinter
+from httplint.types import RequestLinterProtocol, ResponseLinterProtocol
 
 
-def is_cors_preflight_request(message: "HttpRequestLinter") -> bool:
+def is_cors_preflight_request(message: RequestLinterProtocol) -> bool:
     """
     Check if the message is a CORS preflight request.
     """
@@ -17,7 +15,7 @@ def is_cors_preflight_request(message: "HttpRequestLinter") -> bool:
     )
 
 
-def check_preflight_request(message: "HttpRequestLinter") -> None:
+def check_preflight_request(message: RequestLinterProtocol) -> None:
     """
     Check if the message is a CORS preflight request.
     """
@@ -52,13 +50,13 @@ def check_preflight_request(message: "HttpRequestLinter") -> None:
             )
 
 
-def check_preflight_response(message: "HttpResponseLinter") -> None:
+def check_preflight_response(message: ResponseLinterProtocol) -> None:
     """
     Check if the message is a CORS preflight response.
     """
     is_preflight = False
     if message.related:
-        request = cast("HttpRequestLinter", message.related)
+        request = cast(RequestLinterProtocol, message.related)
         is_preflight = is_cors_preflight_request(request)
 
     if is_preflight:
@@ -89,14 +87,14 @@ def check_preflight_response(message: "HttpResponseLinter") -> None:
                 message.notes.add("header-access-control-allow-origin", ACAO_MULTIPLE_VALUES)
 
 
-def check_access_control_allow_origin(acao_value: str, message: "HttpResponseLinter") -> None:
+def check_access_control_allow_origin(acao_value: str, message: ResponseLinterProtocol) -> None:
     """
     Check the Access-Control-Allow-Origin header against the request origin.
     """
     if not message.related:
         return
 
-    request = cast("HttpRequestLinter", message.related)
+    request = cast(RequestLinterProtocol, message.related)
     if "origin" not in request.headers.parsed:
         return
 

@@ -1,12 +1,6 @@
-from typing import TYPE_CHECKING
-
 from httplint.field.list_field import HttpListField
 from httplint.note import Note, categories, levels
-from httplint.types import AddNoteMethodType
-
-if TYPE_CHECKING:
-    from httplint.message import HttpMessageLinter
-
+from httplint.types import AddNoteMethodType, LinterProtocol
 
 UNNECESSARY_FIELDS = {
     "x-aspnet-version": "x-aspnet-version reveals the ASP.NET version.",
@@ -36,7 +30,7 @@ class UnnecessaryField(HttpListField):
     valid_in_requests = True
     valid_in_responses = True
 
-    def __init__(self, wire_name: str, message: "HttpMessageLinter") -> None:
+    def __init__(self, wire_name: str, message: LinterProtocol) -> None:
         HttpListField.__init__(self, wire_name, message)
         self.reference = "about:blank"
         self.description = UNNECESSARY_FIELDS.get(self.norm_name, "")

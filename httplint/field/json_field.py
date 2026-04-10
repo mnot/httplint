@@ -1,12 +1,8 @@
 import json
-from typing import TYPE_CHECKING
 
 from httplint.field import HttpField
 from httplint.note import Note, categories, levels
-from httplint.types import AddNoteMethodType
-
-if TYPE_CHECKING:
-    from httplint.message import HttpMessageLinter
+from httplint.types import AddNoteMethodType, LinterProtocol
 
 
 class JsonField(HttpField):
@@ -21,7 +17,7 @@ class JsonField(HttpField):
     def handle_input(self, field_value: str, add_note: AddNoteMethodType, offset: int) -> None:
         self.value.append(field_value)
 
-    def finish(self, message: "HttpMessageLinter", add_note: AddNoteMethodType) -> None:
+    def finish(self, message: LinterProtocol, add_note: AddNoteMethodType) -> None:
         if not self.value:
             return
 

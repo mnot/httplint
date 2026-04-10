@@ -1,13 +1,8 @@
-from typing import TYPE_CHECKING
-
 from httplint.field.singleton_field import SINGLE_HEADER_REPEAT, SingletonField
 from httplint.field.tests import FieldTest
 from httplint.note import Note, categories, levels
 from httplint.syntax import rfc9110
-from httplint.types import AddNoteMethodType
-
-if TYPE_CHECKING:
-    from httplint.message import HttpMessageLinter
+from httplint.types import AddNoteMethodType, ResponseLinterProtocol
 
 
 class content_length(SingletonField):
@@ -136,5 +131,5 @@ class ContentLengthTEPresentTest(FieldTest):
     expected_out = 1
     expected_notes = [CL_AND_TE_PRESENT]
 
-    def set_context(self, message: "HttpMessageLinter") -> None:
+    def set_response_context(self, message: ResponseLinterProtocol) -> None:
         message.headers.parsed["transfer-encoding"] = "chunked"

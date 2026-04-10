@@ -1,11 +1,14 @@
-from typing import Any
+from typing import Any, cast
 
 from httplint.field.singleton_field import SINGLE_HEADER_REPEAT, SingletonField
 from httplint.field.tests import FieldTest
-from httplint.message import HttpMessageLinter
 from httplint.note import Note, categories, levels
 from httplint.syntax import rfc9110
-from httplint.types import AddNoteMethodType
+from httplint.types import (
+    AddNoteMethodType,
+    LinterProtocol,
+    ResponseLinterProtocol,
+)
 
 sts_dir = rf"(?: {rfc9110.token} (?: {rfc9110.BWS} = {rfc9110.BWS} {rfc9110.parameter_value} )? )"
 
@@ -24,7 +27,7 @@ browsers that it should only be communicated with using HTTPS, instead of using 
     valid_in_requests = False
     valid_in_responses = True
 
-    def __init__(self, wire_name: str, message: "HttpMessageLinter") -> None:
+    def __init__(self, wire_name: str, message: LinterProtocol) -> None:
         super().__init__(wire_name, message)
         self._deferred_notes: list[tuple[type[Note], dict[str, Any]]] = []
 
@@ -112,9 +115,11 @@ browsers that it should only be communicated with using HTTPS, instead of using 
             notes_to_add.append(HSTS_NO_SUBDOMAINS)
 
         if self.message.base_uri and self.message.base_uri.startswith("http:"):
-            if hasattr(self.message, "status_code") and self.message.status_code != 301:
-                notes_to_add.append(HSTS_OVER_HTTP)
-                is_valid = False
+            if getattr(self.message, "message_type", None) == "response":
+                response = cast(ResponseLinterProtocol, self.message)
+                if response.status_code != 301:
+                    notes_to_add.append(HSTS_OVER_HTTP)
+                    is_valid = False
 
         invalidating_notes = (
             HSTS_DUPLICATE_DIRECTIVE,
@@ -300,7 +305,7 @@ class HSTSTest(FieldTest):
     expected_out = {"max-age": 31536000, "includesubdomains": True, "preload": False}
     expected_notes = [HSTS_SUBDOMAINS, HSTS_NO_PRELOAD, HSTS_VALID]
 
-    def set_context(self, message: HttpMessageLinter) -> None:
+    def set_response_context(self, message: ResponseLinterProtocol) -> None:
         message.base_uri = "https://www.example.com/"
 
 
@@ -310,7 +315,7 @@ class HSTSValidTest(FieldTest):
     expected_out = {"max-age": 31536000, "includesubdomains": True, "preload": True}
     expected_notes = [HSTS_SUBDOMAINS, HSTS_PRELOAD, HSTS_VALID]
 
-    def set_context(self, message: HttpMessageLinter) -> None:
+    def set_response_context(self, message: ResponseLinterProtocol) -> None:
         message.base_uri = "https://www.example.com/"
 
 
@@ -320,7 +325,7 @@ class HSTSHttpTest(FieldTest):
     expected_out = {"max-age": 31536000, "includesubdomains": False, "preload": False}
     expected_notes = [HSTS_OVER_HTTP, HSTS_NO_SUBDOMAINS, HSTS_NO_PRELOAD, HSTS_INVALID]
 
-    def set_context(self, message: HttpMessageLinter) -> None:
+    def set_response_context(self, message: ResponseLinterProtocol) -> None:
         message.base_uri = "http://www.example.com/"
 
 
@@ -335,7 +340,7 @@ class HSTSDuplicateTest(FieldTest):
         HSTS_INVALID,
     ]
 
-    def set_context(self, message: HttpMessageLinter) -> None:
+    def set_response_context(self, message: ResponseLinterProtocol) -> None:
         message.base_uri = "https://www.example.com/"
 
 
@@ -350,7 +355,7 @@ class HSTSTripleDuplicateTest(FieldTest):
         HSTS_INVALID,
     ]
 
-    def set_context(self, message: HttpMessageLinter) -> None:
+    def set_response_context(self, message: ResponseLinterProtocol) -> None:
         message.base_uri = "https://www.example.com/"
 
 
@@ -365,7 +370,7 @@ class HSTSMultipleHeadersTest(FieldTest):
         HSTS_VALID,
     ]
 
-    def set_context(self, message: HttpMessageLinter) -> None:
+    def set_response_context(self, message: ResponseLinterProtocol) -> None:
         message.base_uri = "https://www.example.com/"
 
 
@@ -380,7 +385,7 @@ class HSTSPreloadNotSuitableTest(FieldTest):
         HSTS_VALID,
     ]
 
-    def set_context(self, message: HttpMessageLinter) -> None:
+    def set_response_context(self, message: ResponseLinterProtocol) -> None:
         message.base_uri = "https://www.example.com/"
 
 
@@ -395,7 +400,7 @@ class HSTSShortMaxAgeTest(FieldTest):
         HSTS_VALID,
     ]
 
-    def set_context(self, message: HttpMessageLinter) -> None:
+    def set_response_context(self, message: ResponseLinterProtocol) -> None:
         message.base_uri = "https://www.example.com/"
 
 
@@ -410,7 +415,7 @@ class HSTSMaxAgeZeroTest(FieldTest):
         HSTS_VALID,
     ]
 
-    def set_context(self, message: HttpMessageLinter) -> None:
+    def set_response_context(self, message: ResponseLinterProtocol) -> None:
         message.base_uri = "https://www.example.com/"
 
 
@@ -420,7 +425,7 @@ class HSTSNoSubdomainsTest(FieldTest):
     expected_out = {"max-age": 31536000, "includesubdomains": False, "preload": False}
     expected_notes = [HSTS_NO_SUBDOMAINS, HSTS_NO_PRELOAD, HSTS_VALID]
 
-    def set_context(self, message: HttpMessageLinter) -> None:
+    def set_response_context(self, message: ResponseLinterProtocol) -> None:
         message.base_uri = "https://www.example.com/"
 
 
@@ -435,7 +440,7 @@ class HSTSPreloadMissingMaxAgeTest(FieldTest):
         HSTS_INVALID,
     ]
 
-    def set_context(self, message: HttpMessageLinter) -> None:
+    def set_response_context(self, message: ResponseLinterProtocol) -> None:
         message.base_uri = "https://www.example.com/"
 
 
@@ -450,7 +455,7 @@ class HSTSBadMaxAgeValueTest(FieldTest):
         HSTS_INVALID,
     ]
 
-    def set_context(self, message: HttpMessageLinter) -> None:
+    def set_response_context(self, message: ResponseLinterProtocol) -> None:
         message.base_uri = "https://www.example.com/"
 
 
@@ -460,5 +465,5 @@ class HSTSTrailingSemicolonTest(FieldTest):
     expected_out = {"max-age": 31536000, "includesubdomains": True, "preload": False}
     expected_notes = [HSTS_SUBDOMAINS, HSTS_NO_PRELOAD, HSTS_VALID, HSTS_TRAILING_SEMICOLON]
 
-    def set_context(self, message: HttpMessageLinter) -> None:
+    def set_response_context(self, message: ResponseLinterProtocol) -> None:
         message.base_uri = "https://www.example.com/"
