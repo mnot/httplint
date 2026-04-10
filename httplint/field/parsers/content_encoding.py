@@ -87,7 +87,8 @@ class ContentEncodingTest(FieldTest):
     expected_out = ["gzip"]
 
     def set_response_context(self, message: ResponseLinterProtocol) -> None:
-        message.related.headers.process([(b"accept-encoding", b"gzip")])  # type: ignore[union-attr]
+        assert message.related is not None
+        message.related.headers.process([(b"accept-encoding", b"gzip")])
 
 
 class ContentEncodingCaseTest(FieldTest):
@@ -96,7 +97,8 @@ class ContentEncodingCaseTest(FieldTest):
     expected_out = ["gzip"]
 
     def set_response_context(self, message: ResponseLinterProtocol) -> None:
-        message.related.headers.process([(b"accept-encoding", b"gzip")])  # type: ignore[union-attr]
+        assert message.related is not None
+        message.related.headers.process([(b"accept-encoding", b"gzip")])
 
 
 class ContentEncodingUnwantedTest(FieldTest):

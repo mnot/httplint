@@ -1,3 +1,4 @@
+from typing import Any, cast
 from httplint.field.structured_field import StructuredField
 from httplint.field.tests import FieldTest
 from httplint.note import Note, categories, levels
@@ -67,7 +68,7 @@ class CacheGroupInvalidationTest(FieldTest):
         class MockRequest:
             method = "POST"
 
-        self.message.related = MockRequest()  # type: ignore[assignment]
+        self.message.related = cast(Any, MockRequest())
 
     expected_notes = []
 
@@ -83,7 +84,7 @@ class CacheGroupInvalidationIgnoredTest(FieldTest):
         class MockRequest:
             method = "GET"
 
-        self.message.related = MockRequest()  # type: ignore[assignment]
+        self.message.related = cast(Any, MockRequest())
 
     expected_notes = [CACHE_GROUP_INVALIDATION_IGNORED]
 
@@ -100,7 +101,7 @@ class CacheGroupInvalidationBadTypeTest(FieldTest):
         class MockRequest:
             method = "POST"
 
-        self.message.related = MockRequest()  # type: ignore[assignment]
+        self.message.related = cast(Any, MockRequest())
 
     expected_notes = [CACHE_GROUP_INVALIDATION_BAD_TYPE]
 
@@ -116,6 +117,6 @@ class CacheGroupInvalidationMultipleBadTypesTest(FieldTest):
         class MockRequest:
             method = "POST"
 
-        self.message.related = MockRequest()  # type: ignore[assignment]
+        self.message.related = cast(Any, MockRequest())
 
     expected_notes = [CACHE_GROUP_INVALIDATION_BAD_TYPE]

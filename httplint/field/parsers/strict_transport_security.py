@@ -55,7 +55,10 @@ browsers that it should only be communicated with using HTTPS, instead of using 
 
             if name == "max-age":
                 try:
-                    parsed["max-age"] = int(value)  # type: ignore[arg-type]
+                    if value is not None:
+                        parsed["max-age"] = int(value)
+                    else:
+                        raise ValueError
                 except (ValueError, TypeError):
                     self._deferred_notes.append((HSTS_BAD_MAX_AGE, {"max_age": str(value)}))
             elif name == "includesubdomains":

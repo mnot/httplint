@@ -64,7 +64,7 @@ else:
         from httplint.field.tests import FieldTest
     except ImportError:
         # satisfy discovery if not running as a test
-        class FieldTest:  # type: ignore
+        class FieldTest:
             def setUp(self) -> None:
                 pass
 
