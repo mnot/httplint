@@ -77,6 +77,10 @@ show_error_codes = true
 warn_unreachable = true
 enable_error_code = ["ignore-without-code", "redundant-expr", "truthy-bool"]
 
+[[tool.mypy.overrides]]
+module = "sniffpy"
+ignore_missing_imports = true
+
 [tool.pylint.basic]
 function-rgx = "[a-z_][a-z0-9_]{1,30}$"
 variable-rgx = "[a-z_][a-z0-9_]{1,30}$"

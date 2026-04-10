@@ -1,7 +1,6 @@
-import unittest
-from typing import Any
+from typing import TYPE_CHECKING
 
-import sniffpy  # type: ignore[import-untyped]
+import sniffpy
 
 from httplint.note import Note, categories, levels
 from httplint.types import LinterProtocol
@@ -58,133 +57,91 @@ def verify_content_type(linter: LinterProtocol) -> None:
         )
 
 
-class MockLinter:
-    def __init__(self, status_code: int = 200) -> None:
-        self.content_hash: bytes = b"hash"
-        self.headers = MockHeaders()
-        self.content_sample: bytes = b""
-        self.notes = MockNotes()
-        self.status_code = status_code
-        self.is_head_response = False
+if TYPE_CHECKING:
+    from httplint.field.tests import FieldTest
+else:
+    try:
+        from httplint.field.tests import FieldTest
+    except ImportError:
+        # satisfy discovery if not running as a test
+        class FieldTest:  # type: ignore
+            def setUp(self) -> None:
+                pass
 
 
-class MockHeaders:
-    def __init__(self) -> None:
-        self.parsed: dict[str, Any] = {}
+# pylint: disable=attribute-defined-outside-init
+class TestVerifyContentType(FieldTest):
+    def setUp(self) -> None:
+        super().setUp()
+        self.message.content_hash = b"hash"
 
+    def check(
+        self,
+        content: bytes,
+        declared_type: str | None,
+        expected_notes: list[type[Note]] | None = None,
+        status_code: int = 200,
+        is_head_response: bool = False,
+    ) -> None:
+        self.message.content_sample = content
+        if hasattr(self.message, "status_code"):
+            setattr(self.message, "status_code", status_code)
+        if hasattr(self.message, "is_head_response"):
+            setattr(self.message, "is_head_response", is_head_response)
+        if declared_type:
+            self.inputs = [declared_type.encode("ascii")]
+        else:
+            self.inputs = []
+        self.expected_notes = expected_notes or []
+        self.test_header()
 
-class MockNotes:
-    def __init__(self) -> None:
-        self._notes: list[Any] = []
-
-    def add(self, subject: str, note: type[Note], **kw: Any) -> None:
-        self._notes.append(note)
-
-    def __iter__(self) -> Any:
-        return iter(self._notes)
-
-
-class TestVerifyContentType(unittest.TestCase):
     def test_match(self) -> None:
-        linter = MockLinter()
-        linter.headers.parsed["content-type"] = ("text/plain", {})
-        linter.content_sample = b"Hello world"
-        verify_content_type(linter)  # type: ignore[arg-type]
-        self.assertNotIn(CONTENT_TYPE_MISMATCH, linter.notes)
+        self.check(b"Hello world", "text/plain")
 
     def test_mismatch(self) -> None:
-        linter = MockLinter()
-        linter.headers.parsed["content-type"] = ("image/png", {})
-        linter.content_sample = b"Hello world"
-        verify_content_type(linter)  # type: ignore[arg-type]
-        self.assertIn(CONTENT_TYPE_MISMATCH, linter.notes)
+        self.check(b"Hello world", "image/png", [CONTENT_TYPE_MISMATCH])
 
     def test_missing_content_type(self) -> None:
-        linter = MockLinter()
-        linter.content_sample = b"Hello world"
-        verify_content_type(linter)  # type: ignore[arg-type]
-        self.assertNotIn(CONTENT_TYPE_MISMATCH, linter.notes)
+        self.check(b"Hello world", None)
 
     def test_empty_content(self) -> None:
-        linter = MockLinter()
-        linter.headers.parsed["content-type"] = ("text/plain", {})
-        linter.content_sample = b""
-        verify_content_type(linter)  # type: ignore[arg-type]
-        self.assertNotIn(CONTENT_TYPE_MISMATCH, linter.notes)
+        self.check(b"", "text/plain")
 
     def test_long_content_match(self) -> None:
-        linter = MockLinter()
-        linter.headers.parsed["content-type"] = ("text/plain", {})
-        linter.content_sample = b"a" * 2048
-        verify_content_type(linter)  # type: ignore[arg-type]
-        self.assertNotIn(CONTENT_TYPE_MISMATCH, linter.notes)
+        self.check(b"a" * 2048, "text/plain")
 
     def test_long_content_mismatch(self) -> None:
-        linter = MockLinter()
-        linter.headers.parsed["content-type"] = ("image/png", {})
-        linter.content_sample = b"a" * 2048
-        verify_content_type(linter)  # type: ignore[arg-type]
-        self.assertIn(CONTENT_TYPE_MISMATCH, linter.notes)
+        self.check(b"a" * 2048, "image/png", [CONTENT_TYPE_MISMATCH])
 
     def test_304_not_modified(self) -> None:
-        linter = MockLinter(status_code=304)
-        linter.headers.parsed["content-type"] = ("image/png", {})
-        linter.content_sample = b""
-        verify_content_type(linter)  # type: ignore[arg-type]
-        self.assertNotIn(CONTENT_TYPE_MISMATCH, linter.notes)
+        self.check(b"", "image/png", status_code=304)
 
     def test_206_partial_content(self) -> None:
-        linter = MockLinter(status_code=206)
-        linter.headers.parsed["content-type"] = ("image/png", {})
-        # Partial content might look like anything
-        linter.content_sample = b"some partial content"
-        verify_content_type(linter)  # type: ignore[arg-type]
-        self.assertNotIn(CONTENT_TYPE_MISMATCH, linter.notes)
+        self.check(b"some partial content", "image/png", status_code=206)
 
     def test_204_no_content(self) -> None:
-        linter = MockLinter(status_code=204)
-        linter.headers.parsed["content-type"] = ("image/png", {})
-        linter.content_sample = b""
-        verify_content_type(linter)  # type: ignore[arg-type]
-        self.assertNotIn(CONTENT_TYPE_MISMATCH, linter.notes)
+        self.check(b"", "image/png", status_code=204)
 
     def test_head_request(self) -> None:
-        linter = MockLinter()
-        linter.is_head_response = True
-        linter.headers.parsed["content-type"] = ("image/png", {})
-        linter.content_sample = b""
-        verify_content_type(linter)  # type: ignore[arg-type]
-        self.assertNotIn(CONTENT_TYPE_MISMATCH, linter.notes)
+        self.check(b"", "image/png", is_head_response=True)
 
     def test_mimesniff_types(self) -> None:
-        """
-        Test various content types that should be correctly identified by WHATWG mimesniff.
-        """
         cases = [
-            (b"<!DOCTYPE html>", b"text/html"),
-            (b"<html><head></head><body></body></html>", b"text/html"),
-            (b"\xef\xbb\xbf<!DOCTYPE html>", b"text/html"),  # UTF-8 BOM
-            (b"<?xml version='1.0'?>", b"text/xml"),
-            (b"\x89PNG\r\n\x1a\n", b"image/png"),
-            (b"GIF87a", b"image/gif"),
-            (b"GIF89a", b"image/gif"),
-            (b"\xff\xd8\xff", b"image/jpeg"),
-            (b"RIFF....WEBPVP8 ", b"image/webp"),
-            # (b"\x1a\x45\xdf\xa3", b"video/webm"),
-            # EBML ID for WebM/Matroska (simplified) - sniffpy doesn't support this yet
-            (b"%PDF-1.4", b"application/pdf"),
-            (b"%!PS-Adobe-", b"application/postscript"),
-            (b"Simple text", b"text/plain"),
+            (b"<!DOCTYPE html>", "text/html"),
+            (b"<html><head></head><body></body></html>", "text/html"),
+            (b"\xef\xbb\xbf<!DOCTYPE html>", "text/html"),
+            (b"<?xml version='1.0'?>", "text/xml"),
+            (b"\x89PNG\r\n\x1a\n", "image/png"),
+            (b"GIF87a", "image/gif"),
+            (b"GIF89a", "image/gif"),
+            (b"\xff\xd8\xff", "image/jpeg"),
+            (b"RIFF....WEBPVP8 ", "image/webp"),
+            (b"%PDF-1.4", "application/pdf"),
+            (b"%!PS-Adobe-", "application/postscript"),
+            (b"Simple text", "text/plain"),
         ]
 
         for content, mime_type in cases:
             with self.subTest(mime_type=mime_type):
-                linter = MockLinter()
-                linter.headers.parsed["content-type"] = (mime_type.decode("ascii"), {})
-                linter.content_sample = content
-                verify_content_type(linter)  # type: ignore[arg-type]
-                self.assertNotIn(
-                    CONTENT_TYPE_MISMATCH,
-                    linter.notes,
-                    f"Failed to match {mime_type!r} for content starting with {content[:10]!r}",
-                )
+                self.setUp()
+                self.check(content, mime_type)
