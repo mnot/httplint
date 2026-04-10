@@ -1,4 +1,5 @@
-from typing import Any, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
+
 from http_sf import Token
 
 from httplint.field.structured_field import StructuredField

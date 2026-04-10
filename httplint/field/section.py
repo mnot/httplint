@@ -1,12 +1,12 @@
 import weakref
 from functools import partial
-from typing import Dict, TYPE_CHECKING
+from typing import TYPE_CHECKING, Dict
 
 from httplint.field import HttpField
 from httplint.field.finder import HttpFieldFinder
 from httplint.i18n import L_
 from httplint.note import Note, categories, levels
-from httplint.types import StrFieldListType, RawFieldListType, FieldDictType
+from httplint.types import FieldDictType, RawFieldListType, StrFieldListType
 from httplint.util import f_num
 
 if TYPE_CHECKING:

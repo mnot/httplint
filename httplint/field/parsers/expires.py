@@ -1,10 +1,9 @@
 from httplint.field.singleton_field import SingletonField
 from httplint.field.tests import FieldTest
+from httplint.field.utils import BAD_DATE_SYNTAX, parse_http_date
+from httplint.note import categories
 from httplint.syntax import rfc9111
 from httplint.types import AddNoteMethodType
-from httplint.field.utils import BAD_DATE_SYNTAX
-from httplint.field.utils import parse_http_date
-from httplint.note import categories
 
 
 class expires(SingletonField):

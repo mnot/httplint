@@ -1,9 +1,8 @@
-from httplint.field.singleton_field import SingletonField
+from httplint.field.singleton_field import SINGLE_HEADER_REPEAT, SingletonField
 from httplint.field.tests import FieldTest
 from httplint.note import Note, categories, levels
 from httplint.syntax import rfc9111
 from httplint.types import AddNoteMethodType
-from httplint.field.singleton_field import SINGLE_HEADER_REPEAT
 
 
 class age(SingletonField):

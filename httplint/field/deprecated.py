@@ -1,8 +1,7 @@
-from typing import TYPE_CHECKING, Tuple, Dict
+from typing import TYPE_CHECKING, Dict, Tuple
 
-
-from httplint.field.list_field import HttpListField
 from httplint.field import FIELD_DEPRECATED
+from httplint.field.list_field import HttpListField
 from httplint.note import categories
 from httplint.types import AddNoteMethodType
 

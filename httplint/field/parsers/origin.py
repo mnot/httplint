@@ -1,12 +1,12 @@
+import re
 from dataclasses import dataclass
 from typing import Union
-import re
 
 from httplint.field.singleton_field import SingletonField
 from httplint.field.tests import FieldTest
+from httplint.note import Note, categories, levels
 from httplint.syntax import rfc3986
 from httplint.types import AddNoteMethodType
-from httplint.note import Note, categories, levels
 
 
 @dataclass

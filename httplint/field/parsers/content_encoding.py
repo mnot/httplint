@@ -1,9 +1,9 @@
-from typing import Any, cast
 from types import SimpleNamespace
+from typing import Any, cast
 
 from httplint.field.list_field import HttpListField
-from httplint.field.tests import FieldTest, FakeRequestLinter, FakeResponseLinter
-from httplint.message import HttpRequestLinter, HttpResponseLinter, HttpMessageLinter
+from httplint.field.tests import FakeRequestLinter, FakeResponseLinter, FieldTest
+from httplint.message import HttpMessageLinter, HttpRequestLinter, HttpResponseLinter
 from httplint.note import Note, categories, levels
 from httplint.syntax import rfc9110
 from httplint.types import AddNoteMethodType

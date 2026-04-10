@@ -1,12 +1,11 @@
 from typing import Any
 
-from httplint.field.singleton_field import SingletonField, SINGLE_HEADER_REPEAT
+from httplint.field.singleton_field import SINGLE_HEADER_REPEAT, SingletonField
 from httplint.field.tests import FieldTest
 from httplint.message import HttpMessageLinter
 from httplint.note import Note, categories, levels
 from httplint.syntax import rfc9110
 from httplint.types import AddNoteMethodType
-
 
 sts_dir = rf"(?: {rfc9110.token} (?: {rfc9110.BWS} = {rfc9110.BWS} {rfc9110.parameter_value} )? )"
 

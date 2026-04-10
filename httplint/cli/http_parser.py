@@ -1,13 +1,13 @@
 from argparse import Namespace
 from enum import Enum
-from typing import List, Tuple, Optional
+from typing import List, Optional, Tuple
 
-from thor.http.common import HttpMessageHandler, States, Delimiters, no_body_status
-from thor.http.error import HttpError, StartLineError, HttpVersionError
+from thor.http.common import Delimiters, HttpMessageHandler, States, no_body_status
+from thor.http.error import HttpError, HttpVersionError, StartLineError
 
+from httplint.i18n import translate
 from httplint.message import HttpMessageLinter, HttpRequestLinter, HttpResponseLinter
 from httplint.types import RawFieldListType
-from httplint.i18n import translate
 
 
 class modes(Enum):

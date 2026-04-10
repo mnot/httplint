@@ -1,12 +1,13 @@
-from binascii import b2a_hex
-from datetime import timedelta
 import locale
 import time
-from typing import List, Any
 import unittest
-from urllib.parse import urlsplit, urlunsplit, quote as urlquote
+from binascii import b2a_hex
+from datetime import timedelta
+from typing import Any, List
+from urllib.parse import quote as urlquote
+from urllib.parse import urlsplit, urlunsplit
 
-from httplint.i18n import translate, format_timedelta
+from httplint.i18n import format_timedelta, translate
 
 
 def iri_to_uri(iri: str) -> str:

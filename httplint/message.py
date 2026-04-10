@@ -1,22 +1,23 @@
-from functools import partial
 import codecs
 import hashlib
 import re
 import weakref
-from typing import Optional, Any, Dict, TypedDict, cast
-from typing_extensions import Unpack, NotRequired
+from functools import partial
+from typing import Any, Dict, Optional, TypedDict, cast
+
+from typing_extensions import NotRequired, Unpack
 
 from httplint.cache import ResponseCacheChecker
 from httplint.content_encoding import ContentEncodingProcessor
+from httplint.content_type import verify_content_type
+from httplint.field.cors import check_preflight_request, check_preflight_response
 from httplint.field.section import FieldSection
-from httplint.note import Notes, Note, levels, categories
+from httplint.i18n import L_, translate
+from httplint.note import Note, Notes, categories, levels
+from httplint.status import StatusChecker
 from httplint.syntax import rfc3986
 from httplint.types import RawFieldListType
-from httplint.util import iri_to_uri, f_num
-from httplint.status import StatusChecker
-from httplint.content_type import verify_content_type
-from httplint.i18n import L_, translate
-from httplint.field.cors import check_preflight_request, check_preflight_response
+from httplint.util import f_num, iri_to_uri
 
 
 class HttpMessageParams(TypedDict):

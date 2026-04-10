@@ -1,7 +1,7 @@
+from httplint.field import BAD_SYNTAX
 from httplint.field.singleton_field import SingletonField
 from httplint.field.tests import FieldTest
 from httplint.note import categories
-from httplint.field import BAD_SYNTAX
 from httplint.types import AddNoteMethodType
 
 

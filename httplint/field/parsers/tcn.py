@@ -1,6 +1,6 @@
 from httplint.field.list_field import HttpListField
-from httplint.types import AddNoteMethodType
 from httplint.note import categories
+from httplint.types import AddNoteMethodType
 
 
 class tcn(HttpListField):

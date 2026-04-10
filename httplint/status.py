@@ -1,9 +1,9 @@
 # pylint: disable=too-many-public-methods
 
 from functools import partial
-from typing import Optional, List, TYPE_CHECKING
+from typing import TYPE_CHECKING, List, Optional
 
-from httplint.note import Note, levels, categories
+from httplint.note import Note, categories, levels
 from httplint.types import StrFieldListType
 
 if TYPE_CHECKING:

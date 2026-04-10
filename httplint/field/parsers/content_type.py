@@ -2,9 +2,9 @@ from typing import Tuple
 
 from httplint.field.singleton_field import SingletonField
 from httplint.field.tests import FieldTest
+from httplint.field.utils import parse_params
 from httplint.syntax import rfc9110
 from httplint.types import AddNoteMethodType, ParamDictType
-from httplint.field.utils import parse_params
 
 
 class content_type(SingletonField):

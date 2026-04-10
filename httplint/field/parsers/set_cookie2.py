@@ -1,5 +1,5 @@
-from httplint.field.list_field import HttpListField
 from httplint.field import RFC6265
+from httplint.field.list_field import HttpListField
 from httplint.note import categories
 
 

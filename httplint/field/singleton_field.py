@@ -1,9 +1,8 @@
 import re
-from typing import TYPE_CHECKING, List, Any
+from typing import TYPE_CHECKING, Any, List
 
-from httplint.field import HttpField
+from httplint.field import BAD_SYNTAX, HttpField
 from httplint.field.utils import RE_FLAGS
-from httplint.field import BAD_SYNTAX
 from httplint.note import Note, categories, levels
 from httplint.types import AddNoteMethodType
 

@@ -1,10 +1,10 @@
 from calendar import timegm
 from re import match, split
-from typing import List, Tuple, Union, Optional, Any, Callable, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Callable, List, Optional, Tuple, Union
 from urllib.parse import urlsplit
 
-from httplint.field.broken_field import BrokenField
 from httplint.field import RFC6265
+from httplint.field.broken_field import BrokenField
 from httplint.field.tests import FieldTest
 from httplint.note import Note, categories, levels
 from httplint.types import AddNoteMethodType

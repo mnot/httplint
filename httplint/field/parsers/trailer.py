@@ -1,5 +1,4 @@
 from httplint.field.list_field import HttpListField
-
 from httplint.syntax import rfc9110
 
 

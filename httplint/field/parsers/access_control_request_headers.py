@@ -1,7 +1,7 @@
 from typing import cast
 
-from httplint.field.list_field import HttpListField
 from httplint.field.cors import CORS_PREFLIGHT_REQUEST
+from httplint.field.list_field import HttpListField
 from httplint.field.tests import FieldTest
 from httplint.message import HttpMessageLinter, HttpRequestLinter
 from httplint.note import categories

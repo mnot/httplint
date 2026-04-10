@@ -1,5 +1,5 @@
-from httplint.field.json_field import JsonField, BAD_JSON
 from httplint.field import FIELD_DEPRECATED
+from httplint.field.json_field import BAD_JSON, JsonField
 from httplint.field.tests import FieldTest
 from httplint.note import Note, categories, levels
 from httplint.types import AddNoteMethodType

@@ -1,6 +1,6 @@
 # pylint: disable=too-many-branches,too-many-statements
 
-from typing import TYPE_CHECKING, cast, Optional
+from typing import TYPE_CHECKING, Optional, cast
 
 from httplint.note import Note, categories, levels
 from httplint.util import relative_time

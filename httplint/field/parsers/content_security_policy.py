@@ -7,7 +7,6 @@ from httplint.note import Note, categories, levels
 from httplint.syntax import rfc9110
 from httplint.types import AddNoteMethodType
 
-
 # directive-name = 1*( ALPHA / DIGIT / "-" )
 DIRECTIVE_NAME = r"[a-zA-Z0-9-]+"
 # directive-value = *( WSP / <VCHAR except ";" and ","> )

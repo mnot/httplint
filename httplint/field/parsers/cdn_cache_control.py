@@ -1,11 +1,11 @@
 from http_sf import Token
 
-from httplint.field.structured_field import StructuredField
-from httplint.field.tests import FieldTest, FakeRequestLinter
-from httplint.field.parsers.cache_control import KNOWN_CC
-from httplint.types import AddNoteMethodType
-from httplint.note import Note, categories, levels
 from httplint.field import RESPONSE_HDR_IN_REQUEST
+from httplint.field.parsers.cache_control import KNOWN_CC
+from httplint.field.structured_field import StructuredField
+from httplint.field.tests import FakeRequestLinter, FieldTest
+from httplint.note import Note, categories, levels
+from httplint.types import AddNoteMethodType
 
 
 class cdn_cache_control(StructuredField):

@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import List, Tuple, Optional
+from typing import List, Optional, Tuple
 
 from httplint.field.singleton_field import SingletonField
 from httplint.field.tests import FieldTest

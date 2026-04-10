@@ -1,19 +1,15 @@
-import weakref
 import sys
-
-
+import weakref
 from typing import (
+    TYPE_CHECKING,
     Any,
     Optional,
     Type,
-    TYPE_CHECKING,
 )
 
-from httplint.field import HttpField
+from httplint.field import HttpField, deprecated, unnecessary
 from httplint.field.list_field import HttpListField
-from httplint.field import deprecated, unnecessary
 from httplint.types import AddNoteMethodType
-
 
 if TYPE_CHECKING:
     from httplint.field.section import FieldSection

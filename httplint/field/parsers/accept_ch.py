@@ -1,12 +1,13 @@
-from typing import TYPE_CHECKING, cast, Any
 from types import SimpleNamespace
+from typing import TYPE_CHECKING, Any, cast
 
 from http_sf import Token
+
 from httplint.field.structured_field import StructuredField
-from httplint.field.tests import FieldTest, FakeResponseLinter, FakeRequestLinter
+from httplint.field.tests import FakeRequestLinter, FakeResponseLinter, FieldTest
+from httplint.message import HttpRequestLinter, HttpResponseLinter
 from httplint.note import Note, categories, levels
 from httplint.types import AddNoteMethodType
-from httplint.message import HttpResponseLinter, HttpRequestLinter
 
 if TYPE_CHECKING:
     from httplint.message import HttpMessageLinter

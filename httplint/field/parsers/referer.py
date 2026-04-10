@@ -1,11 +1,11 @@
-from typing import cast, TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 from urllib.parse import urlparse
 
 from httplint.field.singleton_field import SingletonField
 from httplint.field.tests import FieldTest
+from httplint.note import Note, categories, levels
 from httplint.syntax import rfc9110
 from httplint.types import AddNoteMethodType
-from httplint.note import Note, categories, levels
 
 if TYPE_CHECKING:
     from httplint.message import HttpRequestLinter

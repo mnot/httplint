@@ -1,12 +1,12 @@
 from typing import Tuple
 
+from httplint.field import BAD_SYNTAX
 from httplint.field.singleton_field import SingletonField
 from httplint.field.tests import FieldTest
+from httplint.field.utils import unquote_string
+from httplint.note import categories
 from httplint.syntax import rfc9110
 from httplint.types import AddNoteMethodType
-from httplint.field.utils import unquote_string
-from httplint.field import BAD_SYNTAX
-from httplint.note import categories
 
 
 class etag(SingletonField):

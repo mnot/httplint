@@ -1,6 +1,5 @@
-from httplint.field.singleton_field import SingletonField
-
 from httplint.field import RFC2616
+from httplint.field.singleton_field import SingletonField
 
 
 class mime_version(SingletonField):

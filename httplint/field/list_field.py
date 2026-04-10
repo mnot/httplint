@@ -1,8 +1,8 @@
-from functools import partial
 import re
+from functools import partial
 from typing import TYPE_CHECKING, Any
 
-from httplint.field import HttpField, BAD_SYNTAX, BAD_SYNTAX_DETAILED
+from httplint.field import BAD_SYNTAX, BAD_SYNTAX_DETAILED, HttpField
 from httplint.field.utils import RE_FLAGS, split_list_field
 from httplint.syntax import rfc9110
 from httplint.types import AddNoteMethodType

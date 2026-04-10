@@ -1,25 +1,22 @@
-from abc import ABC, abstractmethod
 import re
+from abc import ABC, abstractmethod
 from typing import (
-    Any,
-    List,
-    Dict,
-    Union,
     TYPE_CHECKING,
-)
-
-
-from httplint.syntax import rfc9110
-from httplint.types import (
-    StrFieldListType,
-    RawFieldListType,
-    FieldDictType,
-    AddNoteMethodType,
+    Any,
+    Dict,
+    List,
+    Union,
 )
 
 from httplint.field.utils import RE_FLAGS
 from httplint.note import Note, categories, levels
-
+from httplint.syntax import rfc9110
+from httplint.types import (
+    AddNoteMethodType,
+    FieldDictType,
+    RawFieldListType,
+    StrFieldListType,
+)
 
 if TYPE_CHECKING:
     from httplint.message import HttpMessageLinter

@@ -1,5 +1,5 @@
-from httplint.field.list_field import HttpListField
 from httplint.field import BAD_SYNTAX
+from httplint.field.list_field import HttpListField
 from httplint.field.tests import FieldTest
 from httplint.note import Note, categories, levels
 from httplint.types import AddNoteMethodType

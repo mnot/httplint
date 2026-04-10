@@ -1,14 +1,12 @@
-from typing import Any, Tuple, Union, Dict, List, Callable
+from typing import Any, Callable, Dict, List, Tuple, Union
 
 from httplint.field.list_field import HttpListField
 from httplint.field.tests import FieldTest
+from httplint.field.utils import unquote_string
 from httplint.note import Note, categories, levels
-
 from httplint.syntax import rfc9111
 from httplint.types import AddNoteMethodType
 from httplint.util import markdown_list
-from httplint.field.utils import unquote_string
-
 
 # known cache directives; assumed to not allow duplicates
 # values are (valid_in_requests, valid_in_responses, value_type, value_type_str)

@@ -1,11 +1,10 @@
 from httplint.field.singleton_field import SingletonField
 from httplint.field.tests import FieldTest
+from httplint.field.utils import BAD_DATE_SYNTAX, parse_http_date
+from httplint.note import Note, categories, levels
 from httplint.syntax import rfc9110
 from httplint.types import AddNoteMethodType
 from httplint.util import relative_time
-from httplint.note import Note, categories, levels
-from httplint.field.utils import BAD_DATE_SYNTAX
-from httplint.field.utils import parse_http_date
 
 MAX_CLOCK_SKEW = 5  # seconds
 

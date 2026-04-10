@@ -1,9 +1,8 @@
 from typing import Optional
 
 from httplint.field.finder import HttpFieldFinder
-from httplint.message import HttpMessageLinter
-
 from httplint.i18n import translate
+from httplint.message import HttpMessageLinter
 
 _linter = HttpMessageLinter()
 

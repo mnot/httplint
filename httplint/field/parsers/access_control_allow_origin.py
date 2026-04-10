@@ -1,6 +1,5 @@
 from typing import cast
 
-from httplint.field.singleton_field import SingletonField
 from httplint.field.cors import (
     CORS_ORIGIN_MATCH,
     CORS_ORIGIN_MISMATCH,
@@ -8,6 +7,7 @@ from httplint.field.cors import (
     CORS_ORIGIN_STAR,
     check_access_control_allow_origin,
 )
+from httplint.field.singleton_field import SingletonField
 from httplint.field.tests import FieldTest
 from httplint.message import HttpMessageLinter, HttpRequestLinter, HttpResponseLinter
 from httplint.note import categories

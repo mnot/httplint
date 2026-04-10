@@ -1,8 +1,8 @@
 from httplint.field.list_field import HttpListField
 from httplint.field.tests import FieldTest
+from httplint.note import categories
 from httplint.syntax import rfc9110
 from httplint.types import AddNoteMethodType
-from httplint.note import categories
 
 
 class if_none_match(HttpListField):

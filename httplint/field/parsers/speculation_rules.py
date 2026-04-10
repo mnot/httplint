@@ -2,8 +2,8 @@ from typing import Any
 from urllib.parse import urljoin, urlsplit
 
 from httplint.field.structured_field import (
-    StructuredField,
     STRUCTURED_FIELD_PARSE_ERROR,
+    StructuredField,
 )
 from httplint.field.tests import FieldTest
 from httplint.note import Note, categories, levels

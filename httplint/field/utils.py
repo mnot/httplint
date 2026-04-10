@@ -1,16 +1,14 @@
 import calendar
-from email.utils import parsedate as lib_parsedate
 import re
-from typing import Optional, List, Union, Dict, Any, Type
-
+from email.utils import parsedate as lib_parsedate
+from typing import Any, Dict, List, Optional, Type, Union
 from urllib.parse import unquote as urlunquote
 
 from http_sf import Token
 
+from httplint.note import Note, categories, levels
 from httplint.syntax import rfc9110
 from httplint.types import AddNoteMethodType, ParamDictType
-from httplint.note import Note, categories, levels
-
 
 RE_FLAGS = re.VERBOSE | re.IGNORECASE
 

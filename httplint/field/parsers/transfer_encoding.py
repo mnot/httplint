@@ -1,13 +1,13 @@
 from typing import Tuple
 
+from httplint.field import BAD_SYNTAX
 from httplint.field.list_field import HttpListField
-from httplint.field.tests import FieldTest, FakeRequestLinter
+from httplint.field.tests import FakeRequestLinter, FieldTest
+from httplint.field.utils import parse_params
+from httplint.message import HttpMessageLinter, HttpRequestLinter, HttpResponseLinter
 from httplint.note import Note, categories, levels
 from httplint.syntax import rfc9112
 from httplint.types import AddNoteMethodType, ParamDictType
-from httplint.field.utils import parse_params
-from httplint.field import BAD_SYNTAX
-from httplint.message import HttpResponseLinter, HttpRequestLinter, HttpMessageLinter
 
 
 class transfer_encoding(HttpListField):

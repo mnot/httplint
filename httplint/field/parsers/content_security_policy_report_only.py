@@ -1,9 +1,9 @@
-from httplint.field.tests import FieldTest
 from httplint.field.parsers.content_security_policy import (
-    content_security_policy,
     CONTENT_SECURITY_POLICY,
     CSP_UNSAFE_INLINE,
+    content_security_policy,
 )
+from httplint.field.tests import FieldTest
 
 
 class content_security_policy_report_only(content_security_policy):

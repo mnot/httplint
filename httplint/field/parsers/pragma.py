@@ -1,9 +1,9 @@
+from httplint.field import FIELD_DEPRECATED
 from httplint.field.list_field import HttpListField
 from httplint.field.tests import FieldTest
 from httplint.note import Note, categories, levels
 from httplint.syntax import rfc9111
 from httplint.types import AddNoteMethodType
-from httplint.field import FIELD_DEPRECATED
 
 
 class pragma(HttpListField):

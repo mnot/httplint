@@ -1,5 +1,5 @@
-from httplint.field.list_field import HttpListField
 from httplint.field import FIELD_DEPRECATED
+from httplint.field.list_field import HttpListField
 from httplint.field.tests import FieldTest
 from httplint.note import categories
 from httplint.syntax import rfc9111

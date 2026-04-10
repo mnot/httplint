@@ -1,11 +1,11 @@
-from typing import Any, List, Tuple, Type, Iterable
-from functools import partial
 import unittest
+from functools import partial
+from typing import Any, Iterable, List, Tuple, Type
 
-from httplint.i18n import L_
-from httplint.note import Note
 from httplint.field.cors import check_preflight_request, check_preflight_response
-from httplint.message import HttpResponseLinter, HttpMessageLinter, HttpRequestLinter
+from httplint.i18n import L_
+from httplint.message import HttpMessageLinter, HttpRequestLinter, HttpResponseLinter
+from httplint.note import Note
 
 
 class FakeResponseLinter(HttpResponseLinter):

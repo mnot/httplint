@@ -1,12 +1,12 @@
 from collections import UserList
 from enum import Enum
-from typing import Any, MutableMapping, Dict, Type, List, Optional
+from typing import Any, Dict, List, MutableMapping, Optional, Type
 
-from markupsafe import Markup, escape
 from markdown import Markdown
+from markupsafe import Markup, escape
 
+from httplint.i18n import L_, translate
 from httplint.types import VariableType
-from httplint.i18n import translate, L_
 
 
 class categories(Enum):

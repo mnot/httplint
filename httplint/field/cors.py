@@ -1,9 +1,9 @@
-from typing import cast, TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
 from httplint.note import Note, categories, levels
 
 if TYPE_CHECKING:
-    from httplint.message import HttpResponseLinter, HttpRequestLinter
+    from httplint.message import HttpRequestLinter, HttpResponseLinter
 
 
 def is_cors_preflight_request(message: "HttpRequestLinter") -> bool:

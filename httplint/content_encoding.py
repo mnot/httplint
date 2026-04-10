@@ -1,14 +1,13 @@
 import binascii
 import hashlib
-from typing import List, Dict, Any, Callable, Optional, TYPE_CHECKING
 import weakref
 import zlib
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional
 
 import brotli
 
-
-from httplint.note import Note, levels, categories
-from httplint.util import f_num, display_bytes
+from httplint.note import Note, categories, levels
+from httplint.util import display_bytes, f_num
 
 if TYPE_CHECKING:
     from httplint.message import HttpMessageLinter

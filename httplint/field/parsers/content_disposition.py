@@ -1,13 +1,11 @@
 from typing import Tuple
 
-from httplint.field.singleton_field import SingletonField
+from httplint.field.singleton_field import SINGLE_HEADER_REPEAT, SingletonField
 from httplint.field.tests import FieldTest
+from httplint.field.utils import PARAM_STAR_QUOTED, parse_params
 from httplint.note import Note, categories, levels
 from httplint.syntax import rfc9110
 from httplint.types import AddNoteMethodType, ParamDictType
-from httplint.field.utils import parse_params
-from httplint.field.singleton_field import SINGLE_HEADER_REPEAT
-from httplint.field.utils import PARAM_STAR_QUOTED
 
 
 class content_disposition(SingletonField):

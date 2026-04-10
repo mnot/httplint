@@ -1,12 +1,13 @@
 from typing import Any
+
 from http_sf import Token
 
-from httplint.field.tests import FieldTest
 from httplint.field.parsers.cross_origin_embedder_policy import (
-    cross_origin_embedder_policy,
     COEP_REQUIRE_CORP,
     CROSS_ORIGIN_EMBEDDER_POLICY_BAD_VALUE,
+    cross_origin_embedder_policy,
 )
+from httplint.field.tests import FieldTest
 from httplint.note import Note, categories, levels
 from httplint.types import AddNoteMethodType
 

@@ -5,6 +5,7 @@ from httplint.field.tests import FieldTest
 from httplint.note import Note, categories, levels
 from httplint.types import AddNoteMethodType
 
+
 class SHORT_NAME(HttpListField):
     canonical_name = "SHORT_NAME"
     description = """\

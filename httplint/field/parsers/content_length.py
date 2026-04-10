@@ -1,11 +1,10 @@
 from typing import TYPE_CHECKING
 
-from httplint.field.singleton_field import SingletonField
+from httplint.field.singleton_field import SINGLE_HEADER_REPEAT, SingletonField
 from httplint.field.tests import FieldTest
+from httplint.note import Note, categories, levels
 from httplint.syntax import rfc9110
 from httplint.types import AddNoteMethodType
-from httplint.field.singleton_field import SINGLE_HEADER_REPEAT
-from httplint.note import Note, categories, levels
 
 if TYPE_CHECKING:
     from httplint.message import HttpMessageLinter

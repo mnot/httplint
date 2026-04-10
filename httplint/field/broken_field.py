@@ -1,10 +1,9 @@
-from functools import partial
 import re
-from typing import TYPE_CHECKING, List, Tuple, Any
+from functools import partial
+from typing import TYPE_CHECKING, Any, List, Tuple
 
-from httplint.field import HttpField
+from httplint.field import BAD_SYNTAX, HttpField
 from httplint.field.utils import RE_FLAGS
-from httplint.field import BAD_SYNTAX
 from httplint.types import AddNoteMethodType
 
 if TYPE_CHECKING:

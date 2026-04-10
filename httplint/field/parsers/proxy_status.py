@@ -1,10 +1,11 @@
 from typing import Any, Dict
+
 from http_sf import Token
 
 from httplint.field.structured_field import StructuredField
 from httplint.field.tests import FieldTest
-from httplint.note import Note, categories, levels
 from httplint.field.utils import check_sf_params
+from httplint.note import Note, categories, levels
 from httplint.types import AddNoteMethodType
 
 

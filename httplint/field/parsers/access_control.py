@@ -1,6 +1,6 @@
+from httplint.field import FIELD_DEPRECATED
 from httplint.field.singleton_field import SingletonField
 from httplint.field.tests import FieldTest
-from httplint.field import FIELD_DEPRECATED
 from httplint.note import categories
 
 

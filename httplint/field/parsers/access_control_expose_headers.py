@@ -1,7 +1,7 @@
 from httplint.field.list_field import HttpListField
 from httplint.field.tests import FieldTest
-from httplint.syntax import rfc9110
 from httplint.note import categories
+from httplint.syntax import rfc9110
 
 
 class access_control_expose_headers(HttpListField):

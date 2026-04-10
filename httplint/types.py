@@ -1,16 +1,17 @@
 from typing import (
+    TYPE_CHECKING,
     Any,
     Dict,
     List,
-    Tuple,
-    Union,
     Protocol,
+    Tuple,
     Type,
-    TYPE_CHECKING,
+    Union,
 )
 
 if TYPE_CHECKING:
     from http_sf import Token
+
     from httplint.note import Note
 else:
     Token = Any
