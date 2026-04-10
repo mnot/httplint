@@ -216,29 +216,11 @@ It is safe to remove it from this message. For more information, see [here]({sel
         return
 
     def pre_check(self, message: LinterProtocol, add_note: AddNoteMethodType) -> bool:
-        # Override pre_check to use the specific note category
-        # First, standard checks (copied from HttpField.pre_check, excluding deprecated check)
-
-        # check whether we're in the right message type
-        # We can't call super().pre_check() because it would emit the generic FIELD_DEPRECATED note
-
-        if self.message.message_type == "request":
-            if not self.valid_in_requests:
-                # We can import these from the base class module or assume availability?
-                # They are imported in __init__.py but not exposed directly.
-                # We need to import them here or change imports.
-                pass  # Relying on HttpField logic for this part is tricky if we want to avoid double notes.
-        else:
-            if not self.valid_in_responses:
-                pass
-
-        # Let's see... HttpField.pre_check does request/response check, then syntax check, then deprecated check.
-        # If we want to replace ONLY the deprecated check, we would ideally just set deprecated=False on self
-        # but semantically we want it True.
-
-        # Actually... if we set self.deprecated = False just before calling super().pre_check(),
-        # then set it back?
-
+        """
+        Override pre_check to use the specific note category.
+        """
+        # We can't call super().pre_check() directly because it would emit
+        # the generic FIELD_DEPRECATED note; so, we temporarily disable it.
         self.deprecated = False
         result = super().pre_check(message, add_note)
         self.deprecated = True
