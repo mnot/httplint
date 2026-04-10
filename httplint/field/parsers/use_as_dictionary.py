@@ -1,4 +1,4 @@
-from typing import List, Union
+from typing import Any, List, Union
 
 from httplint.field.structured_field import StructuredField
 from httplint.field.tests import FieldTest
@@ -45,7 +45,7 @@ as a compression dictionary for future requests."""
 
     def _check_value_type(
         self,
-        val: Union[tuple, List],
+        val: Union[tuple[Any, Any], List[Any]],
         expected_type: type,
         add_note: AddNoteMethodType,
     ) -> None:

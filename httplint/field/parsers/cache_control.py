@@ -1,4 +1,4 @@
-from typing import Tuple, Union, Dict, List, Callable
+from typing import Any, Tuple, Union, Dict, List, Callable
 
 from httplint.field.list_field import HttpListField
 from httplint.field.tests import FieldTest
@@ -12,7 +12,7 @@ from httplint.field.utils import unquote_string
 
 # known cache directives; assumed to not allow duplicates
 # values are (valid_in_requests, valid_in_responses, value_type, value_type_str)
-KNOWN_CC: Dict[str, Tuple[bool, bool, Union[None, Callable], str]] = {
+KNOWN_CC: Dict[str, Tuple[bool, bool, Union[None, Callable[..., Any]], str]] = {
     "immutable": (False, True, None, "none"),
     "max-age": (True, True, int, "integer"),
     "max-stale": (True, False, int, "integer"),

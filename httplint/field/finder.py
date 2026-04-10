@@ -71,7 +71,7 @@ class HttpFieldFinder:
 
         module = HttpFieldFinder.find_module(field_name)
         if module and hasattr(module, name_token):
-            return getattr(module, name_token)  # type: ignore
+            return getattr(module, name_token)  # type: ignore[no-any-return]
         if field_name.lower() in deprecated.field_lookup:
             return deprecated.DeprecatedField
         if field_name.lower() in unnecessary.UNNECESSARY_FIELDS:

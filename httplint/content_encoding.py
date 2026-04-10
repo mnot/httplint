@@ -70,7 +70,6 @@ class ContentEncodingProcessor:
         for processor in self.processors:
             processor(chunk)
 
-
     def __getstate__(self) -> Dict[str, Any]:
         state: Dict[str, Any] = self.__dict__.copy()
         for key in ["_hash_processor", "pipeline", "processors"]:

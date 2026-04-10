@@ -166,12 +166,12 @@ OBSOLETED_FIELDS: Dict[str, Tuple[categories, str]] = {
     ),
     "X-Content-Security-Policy": (
         categories.SECURITY,
-        "https://cheatsheetseries.owasp.org/cheatsheets/Content_Security_Policy_Cheat_Sheet.html#warning"
+        "https://cheatsheetseries.owasp.org/cheatsheets/Content_Security_Policy_Cheat_Sheet.html#warning",
     ),
     "X-Webkit-CSP": (
         categories.SECURITY,
-        "https://cheatsheetseries.owasp.org/cheatsheets/Content_Security_Policy_Cheat_Sheet.html#warning"
-    )
+        "https://cheatsheetseries.owasp.org/cheatsheets/Content_Security_Policy_Cheat_Sheet.html#warning",
+    ),
 }
 
 UNREGISGTERED_DEPRECATED_FIELDS: Dict[str, Tuple[categories, str]] = {

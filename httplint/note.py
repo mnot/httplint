@@ -32,7 +32,7 @@ class levels(Enum):
     INFO = "info"
 
 
-class Notes(UserList):
+class Notes(UserList[Any]):
     """
     A list of notes.
     """

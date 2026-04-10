@@ -68,7 +68,7 @@ in `416` (Requested Range Not Satisfiable) responses."""
             raise ValueError
         else:
             # We have a valid range tuple
-            if first_byte_pos is not None and last_byte_pos is not None:
+            if last_byte_pos is not None:
                 if first_byte_pos > last_byte_pos:
                     add_note(RANGE_INVALID)
                 if complete_length is not None and last_byte_pos >= complete_length:
@@ -215,7 +215,7 @@ class ContentRangeTest(FieldTest):
     expected_out = ContentRangeValue("bytes", 1, 100, 200)
 
     def set_context(self, message: HttpMessageLinter) -> None:
-        message.status_code = 206  # type: ignore
+        message.status_code = 206  # type: ignore[attr-defined]
 
 
 class ContentRangeUnsatisfiedTest(FieldTest):
@@ -224,7 +224,7 @@ class ContentRangeUnsatisfiedTest(FieldTest):
     expected_out = ContentRangeValue("bytes", None, None, 1234)
 
     def set_context(self, message: HttpMessageLinter) -> None:
-        message.status_code = 416  # type: ignore
+        message.status_code = 416  # type: ignore[attr-defined]
 
 
 class ContentRangeUnknownLengthTest(FieldTest):
@@ -234,7 +234,7 @@ class ContentRangeUnknownLengthTest(FieldTest):
     expected_notes = [CONTENT_RANGE_UNKNOWN_LENGTH]
 
     def set_context(self, message: HttpMessageLinter) -> None:
-        message.status_code = 206  # type: ignore
+        message.status_code = 206  # type: ignore[attr-defined]
 
 
 class ContentRangeInvalidOrderTest(FieldTest):
@@ -244,7 +244,7 @@ class ContentRangeInvalidOrderTest(FieldTest):
     expected_notes = [RANGE_INVALID]
 
     def set_context(self, message: HttpMessageLinter) -> None:
-        message.status_code = 206  # type: ignore
+        message.status_code = 206  # type: ignore[attr-defined]
 
 
 class ContentRangeInvalidLengthTest(FieldTest):
@@ -254,7 +254,7 @@ class ContentRangeInvalidLengthTest(FieldTest):
     expected_notes = [RANGE_INVALID]
 
     def set_context(self, message: HttpMessageLinter) -> None:
-        message.status_code = 206  # type: ignore
+        message.status_code = 206  # type: ignore[attr-defined]
 
 
 class ContentRangeSyntaxErrorTest(FieldTest):
@@ -264,7 +264,7 @@ class ContentRangeSyntaxErrorTest(FieldTest):
     expected_notes = [CONTENT_RANGE_INVALID_ASTERISK]
 
     def set_context(self, message: HttpMessageLinter) -> None:
-        message.status_code = 416  # type: ignore
+        message.status_code = 416  # type: ignore[attr-defined]
 
 
 class ContentRangeMissingUnit(FieldTest):
@@ -274,7 +274,7 @@ class ContentRangeMissingUnit(FieldTest):
     expected_notes = [CONTENT_RANGE_MISSING_UNIT]
 
     def set_context(self, message: HttpMessageLinter) -> None:
-        message.status_code = 206  # type: ignore
+        message.status_code = 206  # type: ignore[attr-defined]
 
 
 class ContentRangeMissingHyphenTest(FieldTest):
@@ -284,7 +284,7 @@ class ContentRangeMissingHyphenTest(FieldTest):
     expected_notes = [RANGE_MISSING_HYPHEN]
 
     def set_context(self, message: HttpMessageLinter) -> None:
-        message.status_code = 206  # type: ignore
+        message.status_code = 206  # type: ignore[attr-defined]
 
 
 class ContentRangeInvalidIntegerTest(FieldTest):
@@ -294,7 +294,7 @@ class ContentRangeInvalidIntegerTest(FieldTest):
     expected_notes = [RANGE_INVALID_INTEGER]
 
     def set_context(self, message: HttpMessageLinter) -> None:
-        message.status_code = 206  # type: ignore
+        message.status_code = 206  # type: ignore[attr-defined]
 
 
 class ContentRangeUnsatisfiedBadSCTest(FieldTest):
@@ -304,7 +304,7 @@ class ContentRangeUnsatisfiedBadSCTest(FieldTest):
     expected_notes = [CONTENT_RANGE_UNSATISFIED_BAD_SC]
 
     def set_context(self, message: HttpMessageLinter) -> None:
-        message.status_code = 206  # type: ignore
+        message.status_code = 206  # type: ignore[attr-defined]
 
 
 class ContentRangeMissingSlashTest(FieldTest):
@@ -314,4 +314,4 @@ class ContentRangeMissingSlashTest(FieldTest):
     expected_notes = [CONTENT_RANGE_MISSING_SLASH]
 
     def set_context(self, message: HttpMessageLinter) -> None:
-        message.status_code = 206  # type: ignore
+        message.status_code = 206  # type: ignore[attr-defined]

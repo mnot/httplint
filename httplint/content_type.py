@@ -72,12 +72,12 @@ class MockLinter:
 
 class MockHeaders:
     def __init__(self) -> None:
-        self.parsed: dict = {}
+        self.parsed: dict[str, Any] = {}
 
 
 class MockNotes:
     def __init__(self) -> None:
-        self._notes: list = []
+        self._notes: list[Any] = []
 
     def add(self, subject: str, note: type[Note], **kw: Any) -> None:
         self._notes.append(note)

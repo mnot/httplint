@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, cast
+from typing import Any, TYPE_CHECKING, cast
 
 from httplint.field.structured_field import StructuredField
 from httplint.field.tests import FieldTest, FakeRequestLinter
@@ -67,7 +67,7 @@ The `Available-Dictionary` header value must be a Byte Sequence. Found `%(got)s`
 class AvailableDictionaryTest(FieldTest):
     name = "Available-Dictionary"
     inputs = [b":pZGm1Av0IEBKARczz7exkNYsZb8LzaMrV7J32a2fFG4=:"]
-    expected_out: tuple[bytes, dict] = (
+    expected_out: tuple[bytes, dict[str, Any]] = (
         b"\xa5\x91\xa6\xd4\x0b\xf4 @J\x01\x173\xcf\xb7\xb1\x90\xd6,e\xbf\x0b\xcd\xa3"
         b"+W\xb2w\xd9\xad\x9f\x14n",
         {},
@@ -82,7 +82,7 @@ class AvailableDictionaryTest(FieldTest):
 class AvailableDictionaryBadTypeTest(FieldTest):
     name = "Available-Dictionary"
     inputs = [b'"not-binary"']
-    expected_out: tuple[str, dict] = ("not-binary", {})
+    expected_out: tuple[str, dict[str, Any]] = ("not-binary", {})
     expected_notes = [AVAILABLE_DICTIONARY_BAD_TYPE]
 
     def set_context(self, message: "HttpMessageLinter") -> None:
@@ -93,7 +93,7 @@ class AvailableDictionaryBadTypeTest(FieldTest):
 class AvailableDictionaryMissingAETest(FieldTest):
     name = "Available-Dictionary"
     inputs = [b":pZGm1Av0IEBKARczz7exkNYsZb8LzaMrV7J32a2fFG4=:"]
-    expected_out: tuple[bytes, dict] = (
+    expected_out: tuple[bytes, dict[str, Any]] = (
         b"\xa5\x91\xa6\xd4\x0b\xf4 @J\x01\x173\xcf\xb7\xb1\x90\xd6,e\xbf\x0b\xcd\xa3"
         b"+W\xb2w\xd9\xad\x9f\x14n",
         {},

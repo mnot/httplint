@@ -11,7 +11,7 @@ from httplint.field.cors import (
 from httplint.field.tests import FieldTest
 from httplint.message import HttpMessageLinter, HttpRequestLinter, HttpResponseLinter
 from httplint.note import categories
-from httplint.syntax import rfc9110
+from httplint.syntax import rfc3986
 from httplint.types import AddNoteMethodType
 
 
@@ -21,7 +21,7 @@ class access_control_allow_origin(SingletonField):
 The `Access-Control-Allow-Origin` response header indicates whether the response can be shared with
 requesting code from the given origin."""
     reference = "https://fetch.spec.whatwg.org/#http-access-control-allow-origin"
-    syntax = rf"(?:\*|null|{rfc9110.URI_reference})"
+    syntax = rf"(?:\*|null|{rfc3986.URI_reference})"
     category = categories.CORS
     deprecated = False
     valid_in_requests = False

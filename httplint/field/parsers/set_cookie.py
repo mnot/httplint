@@ -34,7 +34,7 @@ requests to the server."""
 
     def __init__(self, wire_name: str, message: "HttpMessageLinter") -> None:
         super().__init__(wire_name, message)
-        self._deferred_notes: List[Tuple[Callable, type[Note], dict]] = []
+        self._deferred_notes: List[Tuple[Callable[..., Any], type[Note], dict[str, Any]]] = []
 
     def parse(self, field_value: str, add_note: AddNoteMethodType) -> CookieType:
         def deferred_add_note(note: type[Note], **kwargs: Any) -> Any:

@@ -67,7 +67,7 @@ class CacheGroupInvalidationTest(FieldTest):
         class MockRequest:
             method = "POST"
 
-        self.message.related = MockRequest()  # type: ignore
+        self.message.related = MockRequest()  # type: ignore[assignment]
 
     expected_notes = []
 
@@ -83,7 +83,7 @@ class CacheGroupInvalidationIgnoredTest(FieldTest):
         class MockRequest:
             method = "GET"
 
-        self.message.related = MockRequest()  # type: ignore
+        self.message.related = MockRequest()  # type: ignore[assignment]
 
     expected_notes = [CACHE_GROUP_INVALIDATION_IGNORED]
 
@@ -100,7 +100,7 @@ class CacheGroupInvalidationBadTypeTest(FieldTest):
         class MockRequest:
             method = "POST"
 
-        self.message.related = MockRequest()  # type: ignore
+        self.message.related = MockRequest()  # type: ignore[assignment]
 
     expected_notes = [CACHE_GROUP_INVALIDATION_BAD_TYPE]
 
@@ -116,6 +116,6 @@ class CacheGroupInvalidationMultipleBadTypesTest(FieldTest):
         class MockRequest:
             method = "POST"
 
-        self.message.related = MockRequest()  # type: ignore
+        self.message.related = MockRequest()  # type: ignore[assignment]
 
     expected_notes = [CACHE_GROUP_INVALIDATION_BAD_TYPE]
