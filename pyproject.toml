@@ -63,6 +63,7 @@ version = {attr = "httplint.__version__"}
 [tool.setuptools.packages.find]
 where = ["."]
 include = ["httplint", "httplint.*"]
+exclude = ["build", "test", "tools"]
 namespaces = false
 
 [tool.setuptools]
