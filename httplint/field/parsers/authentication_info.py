@@ -17,8 +17,6 @@ the client's authentication credentials have been accepted."""
     syntax = rfc9110.Authentication_Info
     category = categories.SECURITY
     deprecated = False
-    valid_in_requests = False
-    valid_in_responses = True
 
     def evaluate(self, add_note: AddNoteMethodType) -> None:
         pass

@@ -21,8 +21,6 @@ In `201` (Created) responses, it identifies a newly created resource."""
     reference = f"{rfc9110.SPEC_URL}#field.location"
     syntax = rfc9110.Location
     deprecated = False
-    valid_in_requests = False
-    valid_in_responses = True
 
     def parse(self, field_value: str, add_note: AddNoteMethodType) -> str:
         if getattr(self.message, "message_type", None) == "response":

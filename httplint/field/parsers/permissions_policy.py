@@ -19,8 +19,6 @@ The `Permissions-Policy` response header allows a site to control the use of bro
     syntax = False  # Uses SF parser
     category = categories.SECURITY
     deprecated = False
-    valid_in_requests = False
-    valid_in_responses = True
     sf_type = "dictionary"
     value: SFDictionaryType
 

@@ -12,8 +12,6 @@ The `Proxy-Authorization` header field allows a user agent to authenticate itsel
     reference = f"{rfc9110.SPEC_URL}#field.proxy-authorization"
     syntax = rfc9110.Proxy_Authorization
     deprecated = False
-    valid_in_requests = True
-    valid_in_responses = False
 
     def evaluate(self, add_note: AddNoteMethodType) -> None:
         pass

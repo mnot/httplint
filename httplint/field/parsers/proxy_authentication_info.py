@@ -12,8 +12,6 @@ the client's authentication credentials have been accepted by a proxy."""
     reference = f"{rfc9110.SPEC_URL}#field.proxy-authentication-info"
     syntax = rfc9110.Proxy_Authentication_Info
     deprecated = False
-    valid_in_requests = False
-    valid_in_responses = True
 
     def evaluate(self, add_note: AddNoteMethodType) -> None:
         pass

@@ -27,8 +27,6 @@ of its underlying media type; e.g., `gzip` and `deflate`."""
     syntax = rfc9110.Content_Encoding
     category = categories.CONNEG
     deprecated = False
-    valid_in_requests = True
-    valid_in_responses = True
 
     def parse(self, field_value: str, add_note: AddNoteMethodType) -> str:
         # check to see if there are any non-gzip encodings, because

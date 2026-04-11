@@ -25,8 +25,6 @@ browsers that it should only be communicated with using HTTPS, instead of using 
     )
     category = categories.SECURITY
     deprecated = False
-    valid_in_requests = False
-    valid_in_responses = True
 
     def __init__(self, wire_name: str, message: ResponseLinterProtocol) -> None:
         super().__init__(wire_name, message)

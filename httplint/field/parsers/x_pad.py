@@ -15,6 +15,4 @@ class x_pad(SingletonField[ResponseLinterProtocol]):
     reference = "https://www.oreilly.com/library/view/http-the-definitive/1565925092/re61.html"
     syntax = False
     deprecated = True
-    valid_in_requests = False
-    valid_in_responses = True
     no_coverage = True

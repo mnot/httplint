@@ -23,8 +23,6 @@ It is used by caches as input to expiration calculations, and to detect clock dr
     reference = f"{rfc9110.SPEC_URL}#field.date"
     syntax = False  # rfc9110.Date
     deprecated = False
-    valid_in_requests = True
-    valid_in_responses = True
 
     def parse(self, field_value: str, add_note: AddNoteMethodType) -> int:
         return parse_http_date(field_value, add_note, category=self.category)

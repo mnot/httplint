@@ -17,8 +17,6 @@ The `Authorization` header field allows a user agent to authenticate itself with
     syntax = rfc9110.Authorization
     category = categories.SECURITY
     deprecated = False
-    valid_in_requests = True
-    valid_in_responses = False
 
     def evaluate(self, add_note: AddNoteMethodType) -> None:
         pass

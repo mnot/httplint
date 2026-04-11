@@ -18,8 +18,6 @@ the request/response chain."""
     reference = f"{rfc9110.SPEC_URL}#field.via"
     syntax = rfc9110.Via
     deprecated = False
-    valid_in_requests = True
-    valid_in_responses = True
 
     def evaluate(self, add_note: AddNoteMethodType) -> None:
         via_list = "<ul>" + "\n".join([f"<li><code>{v}</code></li>" for v in self.value]) + "</ul>"

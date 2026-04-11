@@ -12,6 +12,4 @@ analogous to `Transfer-Encoding`."""
     reference = "https://www.rfc-editor.org/rfc/rfc2616#section-19.4.5"
     syntax = False
     deprecated = True
-    valid_in_requests = True
-    valid_in_responses = True
     no_coverage = True

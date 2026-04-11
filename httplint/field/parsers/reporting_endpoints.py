@@ -19,8 +19,6 @@ The `Reporting-Endpoints` header field defines one or more reporting endpoints f
 API."""
     reference = "https://www.w3.org/TR/reporting/#header"
     deprecated = False
-    valid_in_requests = False
-    valid_in_responses = True
     sf_type = "dictionary"
     value: SFDictionaryType
 

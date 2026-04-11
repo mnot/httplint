@@ -20,8 +20,6 @@ a GET."""
     reference = f"{rfc9110.SPEC_URL}#field.content-type"
     syntax = rfc9110.Content_Type
     deprecated = False
-    valid_in_requests = True
-    valid_in_responses = True
 
     def parse(self, field_value: str, add_note: AddNoteMethodType) -> Tuple[str, ParamDictType]:
         try:

@@ -23,8 +23,6 @@ the file, rather than display it."""
     reference = "https://www.rfc-editor.org/rfc/rfc6266.html"
     syntax = rf"(?:{rfc9110.token}(?:\s*;\s*{rfc9110.parameter})*)"
     deprecated = False
-    valid_in_requests = True
-    valid_in_responses = True
 
     def parse(self, field_value: str, add_note: AddNoteMethodType) -> Tuple[str, ParamDictType]:
         try:

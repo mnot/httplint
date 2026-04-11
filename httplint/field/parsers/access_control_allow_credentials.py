@@ -19,8 +19,6 @@ to frontend code when the request's credentials mode (`Request.credentials`) is
     syntax = "(?-i:true)"
     category = categories.CORS
     deprecated = False
-    valid_in_requests = False
-    valid_in_responses = True
 
     def parse(self, field_value: str, add_note: AddNoteMethodType) -> str:
         if field_value == "true":

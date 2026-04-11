@@ -21,8 +21,6 @@ The `ETag` header provides an opaque identifier for the representation."""
     syntax = rfc9110.ETag
     category = categories.CACHING
     deprecated = False
-    valid_in_requests = True
-    valid_in_responses = True
 
     def parse(self, field_value: str, add_note: AddNoteMethodType) -> Tuple[bool, str]:
         if field_value[:2] == "W/":

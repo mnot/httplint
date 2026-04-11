@@ -13,8 +13,6 @@ The `Allow` response header advertises the set of methods that are supported by 
     reference = f"{rfc9110.SPEC_URL}#field.allow"
     syntax = rfc9110.Allow
     deprecated = False
-    valid_in_requests = False
-    valid_in_responses = True
 
 
 class AllowTest(FieldTest[ResponseLinterProtocol]):

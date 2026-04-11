@@ -21,8 +21,6 @@ class speculation_rules(StructuredField[ResponseLinterProtocol]):
 The `Speculation-Rules` header field allows the server to provide the client with a list of URLs that
 point to speculation rules files."""
     reference = "https://wicg.github.io/nav-speculation/speculation-rules.html"
-    valid_in_requests = False
-    valid_in_responses = True
     sf_type = "list"
     value: SFListType
 

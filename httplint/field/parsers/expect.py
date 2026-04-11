@@ -17,8 +17,6 @@ fulfilled by the server in order to properly handle the request."""
     reference = f"{rfc9110.SPEC_URL}#field.expect"
     syntax = rfc9110.Expect
     deprecated = False
-    valid_in_requests = True
-    valid_in_responses = False
 
     def evaluate(self, add_note: AddNoteMethodType) -> None:
         if self.message.version == "1.0":

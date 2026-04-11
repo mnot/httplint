@@ -15,8 +15,6 @@ requesting user agent."""
     reference = f"{rfc9110.SPEC_URL}#field.from"
     syntax = rfc9110.From
     deprecated = False
-    valid_in_requests = True
-    valid_in_responses = False
 
     def evaluate(self, add_note: AddNoteMethodType) -> None:
         pass

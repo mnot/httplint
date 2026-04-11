@@ -21,8 +21,6 @@ request (as scoped by the `Access-Control-Allow-Methods` and
     report_syntax = False
     category = categories.CORS
     deprecated = False
-    valid_in_requests = False
-    valid_in_responses = True
 
     def parse(self, field_value: str, add_note: AddNoteMethodType) -> int:
         try:

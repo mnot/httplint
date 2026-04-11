@@ -18,8 +18,6 @@ not proof against malicious attacks."""
     reference = "https://www.rfc-editor.org/rfc/rfc1864"
     syntax = r"(?: [A-Za-z0-9+/]{22} ={2} )"
     deprecated = True
-    valid_in_requests = True
-    valid_in_responses = True
 
 
 class ContentMD5Test(FieldTest[AnyMessageLinterProtocol]):

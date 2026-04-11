@@ -15,8 +15,6 @@ URI."""
     reference = f"{rfc9110.SPEC_URL}#field.content-location"
     syntax = rfc9110.Content_Location
     deprecated = False
-    valid_in_requests = False
-    valid_in_responses = True
 
 
 class ContentLocationTest(FieldTest[ResponseLinterProtocol]):

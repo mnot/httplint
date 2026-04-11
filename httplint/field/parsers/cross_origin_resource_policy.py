@@ -19,8 +19,6 @@ loaded by a cross-origin document."""
     syntax = False  # Not a Structured Field in the strict sense, but uses token
     category = categories.SECURITY
     deprecated = False
-    valid_in_requests = False
-    valid_in_responses = True
     structured_field = False  # It's a simple string/token
 
     report_only_text = ""

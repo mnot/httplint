@@ -18,8 +18,6 @@ any current representation of the target resource."""
     syntax = rfc9110.If_None_Match
     category = categories.VALIDATION
     deprecated = False
-    valid_in_requests = True
-    valid_in_responses = False
 
     def evaluate(self, add_note: AddNoteMethodType) -> None:
         pass

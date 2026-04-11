@@ -13,5 +13,3 @@ The value of this field can be either a date or an integer number of seconds."""
     reference = f"{rfc9110.SPEC_URL}#field.retry-after"
     syntax = rfc9110.Retry_After
     deprecated = False
-    valid_in_requests = False
-    valid_in_responses = True

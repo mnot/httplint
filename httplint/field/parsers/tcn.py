@@ -13,8 +13,6 @@ is not widely supported in clients.
     syntax = False
     category = categories.CONNEG
     deprecated = False
-    valid_in_requests = False
-    valid_in_responses = True
     no_coverage = True
 
     def parse(self, field_value: str, add_note: AddNoteMethodType) -> str:

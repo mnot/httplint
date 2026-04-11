@@ -25,8 +25,6 @@ willing to process."""
     syntax = False  # SF
     category = categories.CONNEG
     deprecated = False
-    valid_in_requests = False
-    valid_in_responses = True
     sf_type = "list"
     value: SFListType
 

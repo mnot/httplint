@@ -17,8 +17,6 @@ obsolete and should not be used."""
     syntax = False
     category = categories.SECURITY
     deprecated = True
-    valid_in_requests = True
-    valid_in_responses = True
 
 
 class AccessControlTest(FieldTest[AnyMessageLinterProtocol]):

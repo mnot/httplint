@@ -92,8 +92,6 @@ ignoring it there."""
     syntax = rfc9111.Cache_Control
     category = categories.CACHING
     deprecated = False
-    valid_in_requests = True
-    valid_in_responses = True
 
     def parse(
         self, field_value: str, add_note: AddNoteMethodType

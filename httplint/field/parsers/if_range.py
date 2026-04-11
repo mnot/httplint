@@ -18,8 +18,6 @@ entire new representation."""
     syntax = rfc9110.If_Range
     category = categories.VALIDATION
     deprecated = False
-    valid_in_requests = True
-    valid_in_responses = False
 
     def evaluate(self, add_note: AddNoteMethodType) -> None:
         pass

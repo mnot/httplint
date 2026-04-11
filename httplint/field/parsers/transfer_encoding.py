@@ -34,8 +34,6 @@ Transfer codings can only be used in HTTP/1; HTTP/2 and HTTP/3 do not support th
     reference = f"{rfc9112.SPEC_URL}#field.transfer-encoding"
     syntax = rfc9112.Transfer_Encoding
     deprecated = False
-    valid_in_requests = True
-    valid_in_responses = True
 
     def parse(self, field_value: str, add_note: AddNoteMethodType) -> Tuple[str, ParamDictType]:
         try:

@@ -28,8 +28,6 @@ requesting code from the given origin."""
     syntax = rf"(?:\*|null|{rfc3986.URI_reference})"
     category = categories.CORS
     deprecated = False
-    valid_in_requests = False
-    valid_in_responses = True
 
     def evaluate(self, add_note: AddNoteMethodType) -> None:
         check_access_control_allow_origin(str(self.value), self.message)

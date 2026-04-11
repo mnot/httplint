@@ -20,8 +20,6 @@ request is made."""
     syntax = rfc9110.token
     category = categories.CORS
     deprecated = False
-    valid_in_requests = True
-    valid_in_responses = False
 
     def parse(self, field_value: str, add_note: AddNoteMethodType) -> str:
         return field_value.lower()

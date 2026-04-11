@@ -18,8 +18,6 @@ messsage. Note that this might not convey all of the languages used."""
     syntax = rfc9110.Content_Language
     category = categories.CONNEG
     deprecated = False
-    valid_in_requests = True
-    valid_in_responses = True
 
     def parse(self, field_value: str, add_note: AddNoteMethodType) -> str:
         return field_value.lower()

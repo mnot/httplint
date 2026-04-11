@@ -13,8 +13,6 @@ Indicates that the client should not 'sniff' the `Content-Type` of the message f
     syntax = "nosniff"
     category = categories.SECURITY
     deprecated = False
-    valid_in_requests = False
-    valid_in_responses = True
 
     def evaluate(self, add_note: AddNoteMethodType) -> None:
         if "nosniff" in self.value:

@@ -21,8 +21,6 @@ dictionary available for use in compressing the response."""
     syntax = False  # Structured Field
     category = categories.CONNEG
     deprecated = False
-    valid_in_requests = True
-    valid_in_responses = False
     sf_type = "item"
     value: SFItemType
 

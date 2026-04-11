@@ -18,5 +18,3 @@ to rearrange or change individual characters in its name.
     reference = "https://bugzilla.mozilla.org/show_bug.cgi?id=868638"
     syntax = False
     deprecated = False
-    valid_in_requests = True
-    valid_in_responses = True

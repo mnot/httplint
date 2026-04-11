@@ -22,8 +22,6 @@ The `Cookie` header field contains stored HTTP cookies previously sent by the se
     syntax = False
     category = categories.COOKIES
     deprecated = False
-    valid_in_requests = True
-    valid_in_responses = False
 
     def parse(self, field_value: str, add_note: AddNoteMethodType) -> List[CookiePair]:
         # RFC 6265 Section 4.1.1

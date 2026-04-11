@@ -19,8 +19,6 @@ The `Deprecation` header field allows a server to communicate to a client that t
 will be deprecated."""
     reference = "https://www.rfc-editor.org/rfc/rfc9651.html"
     deprecated = False
-    valid_in_requests = False
-    valid_in_responses = True
     sf_type = "item"
     value: SFItemType
 

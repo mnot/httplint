@@ -15,8 +15,6 @@ having a current representation of the target resource."""
     reference = f"{rfc9110.SPEC_URL}#field.if-match"
     syntax = rfc9110.If_Match
     deprecated = False
-    valid_in_requests = True
-    valid_in_responses = False
 
     def evaluate(self, add_note: AddNoteMethodType) -> None:
         pass

@@ -11,8 +11,6 @@ The `User-Agent` header field contains information about the user agent originat
     reference = f"{rfc9110.SPEC_URL}#field.user-agent"
     syntax = rfc9110.User_Agent
     deprecated = False
-    valid_in_requests = True
-    valid_in_responses = False
 
     def evaluate(self, add_note: AddNoteMethodType) -> None:
         pass

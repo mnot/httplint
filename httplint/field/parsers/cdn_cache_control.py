@@ -21,8 +21,6 @@ The `CDN-Cache-Control` header field targets cache directives to Content Deliver
     syntax = False  # SF
     category = categories.CACHING
     deprecated = False
-    valid_in_requests = False
-    valid_in_responses = True
     sf_type = "dictionary"
     value: SFDictionaryType
 

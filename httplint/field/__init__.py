@@ -1,15 +1,18 @@
 import re
 from abc import ABC, abstractmethod
-from typing import Any, Generic, Union
+from typing import Any, Generic, Union, get_args, get_origin
 
 from httplint.field.utils import RE_FLAGS
 from httplint.note import Note, categories, levels
 from httplint.syntax import rfc9110
 from httplint.types import (
     AddNoteMethodType,
+    AnyMessageLinterProtocol,
     FieldDictType,
     LinterProtocol,
     RawFieldListType,
+    RequestLinterProtocol,
+    ResponseLinterProtocol,
     StrFieldListType,
     TMessage,
 )
@@ -35,11 +38,64 @@ class HttpField(ABC, Generic[TMessage]):
         str, rfc9110.list_rule, bool
     ]  # Verbose regular expression to match, or False to indicate no syntax.
     report_syntax: bool = True  # If False, syntax mismatch suppresses BAD_SYNTAX.
-    valid_in_requests: bool
-    valid_in_responses: bool
     deprecated: bool = False
     no_coverage: bool = False  # Turns off coverage checks.
     message: TMessage
+    _valid_in_requests: bool = True
+    _valid_in_responses: bool = True
+
+    @property
+    def valid_in_requests(self) -> bool:
+        return self._valid_in_requests
+
+    @property
+    def valid_in_responses(self) -> bool:
+        return self._valid_in_responses
+
+    def __init_subclass__(cls, **kwargs: Any) -> None:
+        super().__init_subclass__(**kwargs)
+
+        # Map protocols to flags
+        context_map = {
+            RequestLinterProtocol: (True, False),
+            ResponseLinterProtocol: (False, True),
+            AnyMessageLinterProtocol: (True, True),
+            LinterProtocol: (True, True),
+        }
+
+        # Check for explicit flags in the class itself
+        has_requests = "valid_in_requests" in cls.__dict__ or "_valid_in_requests" in cls.__dict__
+        has_responses = (
+            "valid_in_responses" in cls.__dict__ or "_valid_in_responses" in cls.__dict__
+        )
+
+        # Calculate flags based on protocol specialization
+        for base in getattr(cls, "__orig_bases__", []):
+            origin = get_origin(base)
+            if origin and issubclass(origin, HttpField):
+                args = get_args(base)
+                if args:
+                    proto = args[0]
+                    if proto in context_map:
+                        req, res = context_map[proto]
+                        if not has_requests:
+                            cls._valid_in_requests = req
+                        if not has_responses:
+                            cls._valid_in_responses = res
+                        return
+                    # Handle Union cases (AnyMessageLinterProtocol)
+                    if get_origin(proto) is Union:
+                        if not has_requests:
+                            cls._valid_in_requests = True
+                        if not has_responses:
+                            cls._valid_in_responses = True
+                        return
+
+        # Default to both if not specialized or specialized with Any
+        if not has_requests:
+            cls._valid_in_requests = True
+        if not has_responses:
+            cls._valid_in_responses = True
 
     def __init__(self, wire_name: str, message: TMessage) -> None:
         self.wire_name = wire_name.strip()

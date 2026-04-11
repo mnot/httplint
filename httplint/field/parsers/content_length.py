@@ -23,8 +23,6 @@ store the response (since they can't be sure if they have the whole response).""
     syntax = rfc9110.Content_Length
     report_syntax = False
     deprecated = False
-    valid_in_requests = True
-    valid_in_responses = True
 
     def parse(self, field_value: str, add_note: AddNoteMethodType) -> int:
         try:

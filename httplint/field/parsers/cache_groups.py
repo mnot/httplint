@@ -17,8 +17,6 @@ The `Cache-Groups` header field helps caches group responses together for invali
     syntax = False  # Structured Field
     category = categories.CACHING
     deprecated = False
-    valid_in_requests = False
-    valid_in_responses = True
     sf_type = "list"
     value: SFListType
 

@@ -11,5 +11,3 @@ scheme and parameters applicable to the proxy for this request-target."""
     reference = f"{rfc9110.SPEC_URL}#field.proxy-authenticate"
     syntax = rfc9110.Proxy_Authenticate
     deprecated = False
-    valid_in_requests = False
-    valid_in_responses = True

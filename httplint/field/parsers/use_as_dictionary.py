@@ -20,8 +20,6 @@ as a compression dictionary for future requests."""
     syntax = False  # Structured Field
     category = categories.CONNEG
     deprecated = False
-    valid_in_requests = False
-    valid_in_responses = True
     sf_type = "dictionary"
     value: SFDictionaryType
 

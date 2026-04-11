@@ -29,8 +29,6 @@ Request Forgery (CSRF) and in Cross-Origin Resource Sharing (CORS)."""
     category = categories.CORS
     syntax = False
     deprecated = False
-    valid_in_requests = True
-    valid_in_responses = False
 
     # serialized-origin = scheme "://" host [ ":" port ]
     serialized_origin_re = re.compile(

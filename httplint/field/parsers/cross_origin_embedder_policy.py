@@ -23,8 +23,6 @@ resources that don't explicitly grant the document permission (using CORP or COR
     syntax = False  # Structured Field
     category = categories.SECURITY
     deprecated = False
-    valid_in_requests = False
-    valid_in_responses = True
     sf_type = "item"
     value: SFItemType
     report_only_string = ""

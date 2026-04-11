@@ -17,8 +17,6 @@ The `Content-Security-Policy-Report-Only` response header allows web site admini
 the effects of a content security policy without enforcing it."""
     reference = "https://www.w3.org/TR/CSP3/"
     deprecated = False
-    valid_in_requests = False
-    valid_in_responses = True
     report_only_string = " for reporting only"
     report_only_text = "\n\nBrowsers will only report violations of this policy, not enforce it."
 

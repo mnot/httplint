@@ -88,18 +88,20 @@ class vary(HttpListField[ResponseLinterProtocol]):
     reference = f"{rfc9110.SPEC_URL}#field.vary"
     syntax = rfc9110.Vary
     category = categories.CONNEG
-    valid_in_requests = False
-    valid_in_responses = True
 ~~~
 
 
 #### Protocol Specialization
 
-All field classes and their tests should be specialized with the appropriate message protocol from `httplint.types`. This allows static analysis (Mypy) to ensure you only access attributes and methods available in that context.
+All field classes and their tests should be specialized with the appropriate message protocol from `httplint.types`. 
 
-*   **`RequestLinterProtocol`**: Use for headers that only appear in requests (e.g., `Cookie`, `User-Agent`, `Host`).
-*   **`ResponseLinterProtocol`**: Use for headers that only appear in responses (e.g., `Set-Cookie`, `Age`, `Vary`).
-*   **`AnyMessageLinterProtocol`**: Use for headers that can appear in both requests and responses (e.g., `Connection`, `Upgrade`, `Trailer`).
+When you specialize a field handler, it **automatically** sets the `valid_in_requests` and `valid_in_responses` properties for you:
+
+*   **`RequestLinterProtocol`**: `valid_in_requests` is True, `valid_in_responses` is False.
+*   **`ResponseLinterProtocol`**: `valid_in_requests` is False, `valid_in_responses` is True.
+*   **`AnyMessageLinterProtocol`**: Both are True.
+
+These are exposed as instance properties to ensure they are only used during a linting pass. Do not access them on the class itself.
 
 Example import:
 ~~~ python
@@ -146,8 +148,6 @@ The `Age` response header conveys the sender's estimate of the amount of time si
     reference = f"{rfc9111.SPEC_URL}#field.age"
     syntax = False  # rfc9111.Age
     deprecated = False
-    valid_in_requests = False
-    valid_in_responses = True
 ~~~
 
 #### The _StructuredField_ Class
@@ -170,8 +170,6 @@ class cache_status(StructuredField[ResponseLinterProtocol]):
     canonical_name = "Cache-Status"
     reference = "https://www.rfc-editor.org/rfc/rfc9211.html"
     description = """..."""
-    valid_in_requests = False
-    valid_in_responses = True
     sf_type = "list"
 ~~~
 

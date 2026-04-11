@@ -24,8 +24,6 @@ statement of the form "[context IRI] has a [relation type] resource at [target I
     reference = f"{rfc8288.SPEC_URL}#header.link"
     syntax = rfc8288.Link
     deprecated = False
-    valid_in_requests = True
-    valid_in_responses = True
 
     def parse(self, field_value: str, add_note: AddNoteMethodType) -> Tuple[str, ParamDictType]:
         try:

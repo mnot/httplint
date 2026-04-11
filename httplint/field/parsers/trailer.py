@@ -11,5 +11,3 @@ present in the trailer of the message, after the content."""
     reference = f"{rfc9110.SPEC_URL}#field.trailer"
     syntax = rfc9110.Trailer
     deprecated = False
-    valid_in_requests = True
-    valid_in_responses = True

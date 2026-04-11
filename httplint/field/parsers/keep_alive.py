@@ -26,8 +26,6 @@ It's safe to remove this header if you wish to save a few bytes."""
     reference = "https://www.rfc-editor.org/rfc/rfc2068.html#section-19.7.1"
     syntax = rfc9110.list_rule(rfc9110.parameter)
     deprecated = True
-    valid_in_requests = True
-    valid_in_responses = True
 
     def parse(self, field_value: str, add_note: AddNoteMethodType) -> Tuple[str, Optional[str]]:
         try:

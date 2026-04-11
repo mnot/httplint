@@ -19,8 +19,6 @@ origin."""
     reference = "https://www.w3.org/TR/clear-site-data/#field-clear-site-data"
     syntax = list_rule(quoted_string, 1)
     deprecated = False
-    valid_in_requests = False
-    valid_in_responses = True
 
     KNOWN_VALUES = {"cache", "cookies", "storage", "executionContexts", "*"}
 

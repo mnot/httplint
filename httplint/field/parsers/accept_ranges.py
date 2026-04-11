@@ -18,8 +18,6 @@ for a resource."""
     syntax = rfc9110.Accept_Ranges
     category = categories.RANGE
     deprecated = False
-    valid_in_requests = False
-    valid_in_responses = True
 
     def parse(self, field_value: str, add_note: AddNoteMethodType) -> str:
         field_value = field_value.lower()

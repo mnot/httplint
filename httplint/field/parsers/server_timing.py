@@ -23,8 +23,6 @@ consumer of Server-Timing."""
     reference = "https://w3c.github.io/server-timing/#the-server-timing-header-field"
     syntax = rfc9110.list_rule(rf"{rfc9110.token} {rfc9110.parameters}")
     deprecated = False
-    valid_in_requests = False
-    valid_in_responses = True
     structured_field = False
 
     def parse(self, field_value: str, add_note: AddNoteMethodType) -> Tuple[str, ParamDictType]:

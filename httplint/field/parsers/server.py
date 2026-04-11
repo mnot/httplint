@@ -15,8 +15,6 @@ handle the request."""
     reference = f"{rfc9110.SPEC_URL}#field.server"
     syntax = rfc9110.Server
     deprecated = False
-    valid_in_requests = False
-    valid_in_responses = True
 
     def parse(self, field_value: str, add_note: AddNoteMethodType) -> str:
         if len(field_value) > MAX_SERVER_LENGTH:

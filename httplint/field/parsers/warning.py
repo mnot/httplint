@@ -15,8 +15,6 @@ transformation of a message that might not be reflected in it. It has been depre
     syntax = rfc9111.Warning_
     category = categories.CACHING
     deprecated = True
-    valid_in_requests = False
-    valid_in_responses = True
 
 
 class WarningTest(FieldTest[ResponseLinterProtocol]):

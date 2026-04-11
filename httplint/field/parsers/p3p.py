@@ -13,6 +13,4 @@ machine-readable way. It has been deprecated, because client support was poor.
     reference = "http://www.w3.org/TR/P3P/#syntax_ext"
     syntax = False
     deprecated = True
-    valid_in_requests = False
-    valid_in_responses = True
     no_coverage = True

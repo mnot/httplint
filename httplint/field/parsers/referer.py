@@ -18,8 +18,6 @@ resource from which the target URI was obtained (i.e., the "referrer")."""
     reference = f"{rfc9110.SPEC_URL}#field.referer"
     syntax = rfc9110.Referer
     deprecated = False
-    valid_in_requests = True
-    valid_in_responses = False
 
     def evaluate(self, add_note: AddNoteMethodType) -> None:
         if getattr(self.message, "message_type", None) != "request":

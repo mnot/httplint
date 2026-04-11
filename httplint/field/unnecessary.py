@@ -29,8 +29,6 @@ class UnnecessaryField(HttpListField[Any]):
     list_header = False
     deprecated = False
     no_coverage = True
-    valid_in_requests = True
-    valid_in_responses = True
 
     def __init__(self, wire_name: str, message: LinterProtocol) -> None:
         HttpListField.__init__(self, wire_name, message)

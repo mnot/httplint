@@ -17,8 +17,6 @@ protocol.
     reference = f"{rfc9110.SPEC_URL}#field.upgrade"
     syntax = rfc9110.Upgrade
     deprecated = False
-    valid_in_requests = True
-    valid_in_responses = True
 
 
 class UpgradeTest(FieldTest[AnyMessageLinterProtocol]):

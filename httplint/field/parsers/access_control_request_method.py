@@ -19,8 +19,6 @@ is made."""
     syntax = rfc9110.token
     category = categories.CORS
     deprecated = False
-    valid_in_requests = True
-    valid_in_responses = False
 
 
 class AccessControlRequestMethodTest(FieldTest[RequestLinterProtocol]):

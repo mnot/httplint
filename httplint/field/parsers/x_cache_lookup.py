@@ -13,5 +13,3 @@ cache for this URL; if it contains `HIT`, it was in cache (but not necessarily u
     category = categories.CACHING
     deprecated = False
     no_coverage = True
-    valid_in_requests = False
-    valid_in_responses = True

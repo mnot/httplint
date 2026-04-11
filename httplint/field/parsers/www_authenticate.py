@@ -12,8 +12,6 @@ indicates the authentication scheme(s) and parameters applicable."""
     reference = f"{rfc9110.SPEC_URL}#field.www-authenticate"
     syntax = rfc9110.WWW_Authenticate
     deprecated = False
-    valid_in_requests = False
-    valid_in_responses = True
 
 
 class WWWAuthenticateTest(FieldTest[ResponseLinterProtocol]):

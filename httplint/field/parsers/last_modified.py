@@ -20,8 +20,6 @@ representation was last modified."""
     syntax = False  # rfc9110.Last_Modified
     category = categories.CACHING
     deprecated = False
-    valid_in_requests = False
-    valid_in_responses = True
 
     def parse(self, field_value: str, add_note: AddNoteMethodType) -> int:
         return parse_http_date(field_value, add_note, category=self.category)

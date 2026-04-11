@@ -31,8 +31,6 @@ the transmitted content in frames that are part of other web pages.
     syntax = X_Frame_Options
     category = categories.SECURITY
     deprecated = False
-    valid_in_requests = False
-    valid_in_responses = True
 
     def parse(self, field_value: str, add_note: AddNoteMethodType) -> str:
         return field_value.upper()

@@ -16,8 +16,6 @@ a single IP address."""
     reference = f"{rfc9110.SPEC_URL}#field.host"
     syntax = rfc9110.Host
     deprecated = False
-    valid_in_requests = True
-    valid_in_responses = False
 
     def evaluate(self, add_note: AddNoteMethodType) -> None:
         pass

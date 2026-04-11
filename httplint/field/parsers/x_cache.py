@@ -13,5 +13,3 @@ served from cache; if it contains `HIT`, it was."""
     category = categories.CACHING
     deprecated = False
     no_coverage = True
-    valid_in_requests = False
-    valid_in_responses = True

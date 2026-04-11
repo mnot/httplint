@@ -16,8 +16,6 @@ field-value."""
     reference = f"{rfc9110.SPEC_URL}#field.if-modified-since"
     syntax = rfc9110.If_Modified_Since
     deprecated = False
-    valid_in_requests = True
-    valid_in_responses = False
 
     def evaluate(self, add_note: AddNoteMethodType) -> None:
         pass

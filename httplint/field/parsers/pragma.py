@@ -21,8 +21,6 @@ This header is deprecated, in favour of `Cache-Control`."""
     syntax = rfc9111.Pragma
     category = categories.CACHING
     deprecated = True
-    valid_in_requests = True
-    valid_in_responses = False
 
     def parse(self, field_value: str, add_note: AddNoteMethodType) -> str:
         return field_value.lower()

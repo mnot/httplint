@@ -31,8 +31,6 @@ acceptable in responses."""
     syntax = rfc9110.Accept
     category = categories.CONNEG
     deprecated = False
-    valid_in_requests = True
-    valid_in_responses = False
 
     def parse(self, field_value: str, add_note: AddNoteMethodType) -> AcceptValue:
         try:

@@ -200,8 +200,6 @@ class DeprecatedField(HttpListField[Any]):
     list_header = False
     deprecated = True
     no_coverage = True
-    valid_in_requests = True
-    valid_in_responses = True  # dont' want to complain about these
 
     def __init__(self, wire_name: str, message: LinterProtocol) -> None:
         HttpListField.__init__(self, wire_name, message)

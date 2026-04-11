@@ -33,8 +33,6 @@ in `416` (Requested Range Not Satisfiable) responses."""
     syntax = rfc9110.Content_Range
     report_syntax = False
     deprecated = False
-    valid_in_requests = False
-    valid_in_responses = True
 
     def parse(self, field_value: str, add_note: AddNoteMethodType) -> Optional[ContentRangeValue]:
         self._check_status(add_note)

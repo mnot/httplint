@@ -12,8 +12,6 @@ The `Report-To` header field configured the browser to send reports to specified
 It has been replaced by the Reporting-Endpoints header field."""
     reference = "https://w3c.github.io/reporting/#header"
     deprecated = True
-    valid_in_requests = False
-    valid_in_responses = True
 
     def evaluate(self, add_note: AddNoteMethodType) -> None:
         if self.value is None:

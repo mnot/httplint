@@ -25,8 +25,6 @@ the number of times that the request is forwarded by intermediaries."""
     reference = f"{rfc9110.SPEC_URL}#field.max-forwards"
     syntax = rfc9110.Max_Forwards
     deprecated = False
-    valid_in_requests = True
-    valid_in_responses = False
 
     def evaluate(self, add_note: AddNoteMethodType) -> None:
         if getattr(self.message, "method", None) not in ["TRACE", "OPTIONS"]:

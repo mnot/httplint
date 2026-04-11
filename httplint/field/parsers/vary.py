@@ -18,8 +18,6 @@ that were used to select the representation."""
     syntax = rfc9110.Vary
     category = categories.CACHING
     deprecated = False
-    valid_in_requests = False
-    valid_in_responses = True
 
     def parse(self, field_value: str, add_note: AddNoteMethodType) -> str:
         return field_value.lower()

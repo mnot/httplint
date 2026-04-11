@@ -19,8 +19,6 @@ The `Age` response header conveys the sender's estimate of the amount of time si
     report_syntax = False
     category = categories.CACHING
     deprecated = False
-    valid_in_requests = False
-    valid_in_responses = True
 
     def parse(self, field_value: str, add_note: AddNoteMethodType) -> int:
         try:

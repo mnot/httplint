@@ -19,8 +19,6 @@ accessing the resource in response to a CORS preflight request."""
     syntax = rfc9110.token
     category = categories.CORS
     deprecated = False
-    valid_in_requests = False
-    valid_in_responses = True
 
     def parse(self, field_value: str, add_note: AddNoteMethodType) -> str:
         return field_value

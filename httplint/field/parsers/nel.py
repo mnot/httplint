@@ -16,8 +16,6 @@ The `NEL` header field configures Network Error Logging policies.
 It allows websites to declare that they want to receive reports about network errors."""
     reference = "https://w3c.github.io/network-error-logging/#nel-header-field"
     deprecated = False
-    valid_in_requests = False
-    valid_in_responses = True
 
     def evaluate(self, add_note: AddNoteMethodType) -> None:
         if self.value is None:

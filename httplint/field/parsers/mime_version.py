@@ -15,6 +15,4 @@ protocol."""
     reference = f"{RFC2616}#section-19.4.1"
     syntax = False
     deprecated = True
-    valid_in_requests = True
-    valid_in_responses = True
     no_coverage = True

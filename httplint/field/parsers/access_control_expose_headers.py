@@ -17,8 +17,6 @@ request."""
     syntax = rfc9110.token
     category = categories.CORS
     deprecated = False
-    valid_in_requests = False
-    valid_in_responses = True
 
 
 class AccessControlExposeHeadersTest(FieldTest[ResponseLinterProtocol]):

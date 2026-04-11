@@ -31,8 +31,6 @@ requests to the server."""
     reference = RFC6265
     nonstandard_syntax = True
     deprecated = False
-    valid_in_requests = False
-    valid_in_responses = True
 
     def __init__(self, wire_name: str, message: ResponseLinterProtocol) -> None:
         super().__init__(wire_name, message)

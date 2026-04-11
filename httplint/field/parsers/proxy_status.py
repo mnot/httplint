@@ -21,8 +21,6 @@ The `Proxy-Status` header field indicates how intermediaries have handled the re
     reference = "https://www.rfc-editor.org/rfc/rfc9209.html#section-2"
     syntax = False  # Structured Field
     deprecated = False
-    valid_in_requests = False
-    valid_in_responses = True
     sf_type = "list"
     value: SFListType
 
