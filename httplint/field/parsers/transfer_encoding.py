@@ -1,4 +1,4 @@
-from typing import Tuple, cast
+from typing import Tuple
 
 from httplint.field import BAD_SYNTAX
 from httplint.field.list_field import HttpListField
@@ -11,7 +11,6 @@ from httplint.types import (
     AnyMessageLinterProtocol,
     NoteClassListType,
     ParamDictType,
-    RequestLinterProtocol,
     ResponseLinterProtocol,
 )
 
@@ -51,11 +50,12 @@ Transfer codings can only be used in HTTP/1; HTTP/2 and HTTP/3 do not support th
         if unwanted:
             # check to see if the client asked for it
             if (
-                getattr(self.message, "message_type", None) == "response"
-                and getattr(self.message.related, "message_type", None) == "request"
+                (response := self.message.as_response)
+                and response.request
+                and response.request.message_type == "request"
             ):
-                related = cast(RequestLinterProtocol, self.message.related)
-                te = [t[0] for t in related.headers.parsed.get("te", [])]
+                request = response.request
+                te = [t[0] for t in request.headers.parsed.get("te", [])]
                 unwanted = {c for c in unwanted if c not in te}
 
         if unwanted:
@@ -162,4 +162,4 @@ class TransferEncodingWantedTest(FieldTest[AnyMessageLinterProtocol]):
     def set_response_context(self, message: ResponseLinterProtocol) -> None:
         request = FakeRequestLinter()
         request.headers.process([(b"te", b"foo")])
-        message.related = request
+        message.request = request

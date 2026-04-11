@@ -1,6 +1,6 @@
 import unittest
 from functools import partial
-from typing import Any, Generic, Iterable, List, Optional, Tuple, Type, cast
+from typing import Any, Generic, Iterable, List, Tuple, Type, cast
 
 from httplint.field.cors import check_preflight_request, check_preflight_response
 from httplint.i18n import L_
@@ -24,10 +24,10 @@ class FakeResponseLinter(HttpResponseLinter):
         HttpResponseLinter.__init__(self)
         self.base_uri = "http://example.com/foo/bar"
         self.status_phrase = ""
-        self.related: Optional[LinterProtocol] = FakeRequestLinter()
+        self.request = FakeRequestLinter()
 
     def post_checks(self) -> None:
-        if self.related is not None and not hasattr(self.related, "headers"):
+        if self.request is not None and not hasattr(self.request, "headers"):
             return
         check_preflight_response(self)
 

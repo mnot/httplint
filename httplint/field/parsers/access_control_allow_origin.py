@@ -1,5 +1,3 @@
-from typing import cast
-
 from httplint.field.cors import (
     CORS_ORIGIN_MATCH,
     CORS_ORIGIN_MISMATCH,
@@ -14,7 +12,6 @@ from httplint.syntax import rfc3986
 from httplint.types import (
     AddNoteMethodType,
     NoteClassListType,
-    RequestLinterProtocol,
     ResponseLinterProtocol,
 )
 
@@ -58,7 +55,8 @@ class AccessControlAllowOriginMatchTest(FieldTest[ResponseLinterProtocol]):
     expected_notes: NoteClassListType = [CORS_ORIGIN_MATCH]
 
     def set_response_context(self, message: ResponseLinterProtocol) -> None:
-        request = cast(RequestLinterProtocol, message.related)
+        request = message.request
+        assert request is not None
         request.headers.process([(b"Origin", b"https://example.com")])
 
 
@@ -69,7 +67,8 @@ class AccessControlAllowOriginMismatchTest(FieldTest[ResponseLinterProtocol]):
     expected_notes: NoteClassListType = [CORS_ORIGIN_MISMATCH]
 
     def set_response_context(self, message: ResponseLinterProtocol) -> None:
-        request = cast(RequestLinterProtocol, message.related)
+        request = message.request
+        assert request is not None
         request.headers.process([(b"Origin", b"https://example.com")])
 
 
@@ -80,7 +79,8 @@ class AccessControlAllowOriginStarContextTest(FieldTest[ResponseLinterProtocol])
     expected_notes: NoteClassListType = [CORS_ORIGIN_STAR]
 
     def set_response_context(self, message: ResponseLinterProtocol) -> None:
-        request = cast(RequestLinterProtocol, message.related)
+        request = message.request
+        assert request is not None
         request.headers.process([(b"Origin", b"https://example.com")])
 
 
@@ -91,5 +91,6 @@ class AccessControlAllowOriginNullContextTest(FieldTest[ResponseLinterProtocol])
     expected_notes: NoteClassListType = [CORS_ORIGIN_NULL]
 
     def set_response_context(self, message: ResponseLinterProtocol) -> None:
-        request = cast(RequestLinterProtocol, message.related)
+        request = message.request
+        assert request is not None
         request.headers.process([(b"Origin", b"https://example.com")])

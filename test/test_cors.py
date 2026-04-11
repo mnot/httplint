@@ -13,108 +13,120 @@ from httplint.field.cors import (
 )
 from httplint.field.tests import FieldTest
 from httplint.field import BAD_SYNTAX
-from httplint.message import HttpMessageLinter, HttpRequestLinter
-from httplint.types import RequestLinterProtocol
+from httplint.message import HttpResponseLinter
+from httplint.types import RequestLinterProtocol, ResponseLinterProtocol
 
 
-class AccessControlAllowOriginMultipleTest(FieldTest):
+class AccessControlAllowOriginMultipleTest(FieldTest[ResponseLinterProtocol]):
     name = "Access-Control-Allow-Origin"
     inputs = [b"https://foo.com, https://bar.com"]
     expected_out = "https://foo.com, https://bar.com"
     expected_notes = [ACAO_MULTIPLE_VALUES, BAD_SYNTAX]
 
 
-class AccessControlAllowHeadersPreflightTest(FieldTest):
+class AccessControlAllowHeadersPreflightTest(FieldTest[ResponseLinterProtocol]):
     name = "Access-Control-Allow-Headers"
     inputs = [b"a, b"]
     expected_out = ["a", "b"]
     expected_notes = [CORS_PREFLIGHT_ONLY]
-
+ 
     def setUp(self) -> None:
         super().setUp()
-        self.message.method = "OPTIONS"  # type: ignore
-
-
-class AccessControlAllowHeadersValidPreflightTest(FieldTest):
+        request = self.message.request
+        assert request is not None
+        request.method = "OPTIONS"
+ 
+ 
+class AccessControlAllowHeadersValidPreflightTest(FieldTest[ResponseLinterProtocol]):
     name = "Access-Control-Allow-Headers"
     inputs = [b"a, b"]
     expected_out = ["a", "b"]
     expected_notes = [CORS_PREFLIGHT_RESPONSE]
-
+ 
     def setUp(self) -> None:
         super().setUp()
-        self.message.related.method = "OPTIONS"  # type: ignore
-        self.message.related.headers.text = [  # type: ignore
+        request = self.message.request
+        assert request is not None
+        request.method = "OPTIONS"
+        request.headers.text = [
             ("Origin", "http://example.com"),
             ("Access-Control-Request-Method", "POST"),
         ]
-        self.message.related.headers.parsed = {  # type: ignore
+        request.headers.parsed = {
             "origin": "http://example.com",
             "access-control-request-method": "POST",
         }
-
-
-class AccessControlAllowMethodsPreflightTest(FieldTest):
+ 
+ 
+class AccessControlAllowMethodsPreflightTest(FieldTest[ResponseLinterProtocol]):
     name = "Access-Control-Allow-Methods"
     inputs = [b"GET, PUT, DELETE"]
     expected_out = ["GET", "PUT", "DELETE"]
     expected_notes = [CORS_PREFLIGHT_ONLY]
-
+ 
     def setUp(self) -> None:
         super().setUp()
-        self.message.method = "OPTIONS"  # type: ignore
-
-
-class AccessControlAllowMethodsValidPreflightTest(FieldTest):
+        request = self.message.request
+        assert request is not None
+        request.method = "OPTIONS"
+ 
+ 
+class AccessControlAllowMethodsValidPreflightTest(FieldTest[ResponseLinterProtocol]):
     name = "Access-Control-Allow-Methods"
     inputs = [b"GET, PUT, DELETE"]
     expected_out = ["GET", "PUT", "DELETE"]
     expected_notes = [CORS_PREFLIGHT_RESPONSE]
-
+ 
     def setUp(self) -> None:
         super().setUp()
-        self.message.related.method = "OPTIONS"  # type: ignore
-        self.message.related.headers.text = [  # type: ignore
+        request = self.message.request
+        assert request is not None
+        request.method = "OPTIONS"
+        request.headers.text = [
             ("Origin", "http://example.com"),
             ("Access-Control-Request-Method", "POST"),
         ]
-        self.message.related.headers.parsed = {  # type: ignore
+        request.headers.parsed = {
             "origin": "http://example.com",
             "access-control-request-method": "POST",
         }
-
-
-class AccessControlMaxAgePreflightTest(FieldTest):
+ 
+ 
+class AccessControlMaxAgePreflightTest(FieldTest[ResponseLinterProtocol]):
     name = "Access-Control-Max-Age"
     inputs = [b"123"]
     expected_out = 123
     expected_notes = [CORS_PREFLIGHT_ONLY]
-
+ 
     def setUp(self) -> None:
         super().setUp()
-        self.message.method = "OPTIONS"  # type: ignore
-
-
-class AccessControlMaxAgeValidPreflightTest(FieldTest):
+        request = self.message.request
+        assert request is not None
+        request.method = "OPTIONS"
+ 
+ 
+class AccessControlMaxAgeValidPreflightTest(FieldTest[ResponseLinterProtocol]):
     name = "Access-Control-Max-Age"
     inputs = [b"123"]
     expected_out = 123
     expected_notes = [CORS_PREFLIGHT_RESPONSE]
-
+ 
     def setUp(self) -> None:
         super().setUp()
-        self.message.related.method = "OPTIONS"  # type: ignore
-        self.message.related.headers.text = [  # type: ignore
+        request = self.message.request
+        assert request is not None
+        request.method = "OPTIONS"
+        request.headers.text = [
             ("Origin", "http://example.com"),
             ("Access-Control-Request-Method", "POST"),
         ]
-        self.message.related.headers.parsed = {  # type: ignore
+        request.headers.parsed = {
             "origin": "http://example.com",
             "access-control-request-method": "POST",
         }
 
 
-class AccessControlRequestMethodPreflightTest(FieldTest):
+class AccessControlRequestMethodPreflightTest(FieldTest[RequestLinterProtocol]):
     name = "Access-Control-Request-Method"
     inputs = [b"GET"]
     expected_out = "GET"
@@ -123,10 +135,9 @@ class AccessControlRequestMethodPreflightTest(FieldTest):
     request_headers = [(b"Origin", b"http://example.com")]
 
     def set_request_context(self, message: RequestLinterProtocol) -> None:
-        request = cast(HttpRequestLinter, self.message)
-        request.method = self.request_method
-        self.message.headers.parsed = {}  # Clear parsed to avoid side effects
-        self.message.headers.process(self.request_headers)
+        message.method = self.request_method
+        message.headers.parsed = {}  # Clear parsed to avoid side effects
+        message.headers.process(self.request_headers)
 
 
 class AccessControlRequestMethodWrongTest(AccessControlRequestMethodPreflightTest):
@@ -139,7 +150,7 @@ class AccessControlRequestMethodNoOriginTest(AccessControlRequestMethodPreflight
     expected_notes = [CORS_PREFLIGHT_REQ_NO_ORIGIN]
 
 
-class AccessControlRequestHeadersPreflightTest(FieldTest):
+class AccessControlRequestHeadersPreflightTest(FieldTest[RequestLinterProtocol]):
     name = "Access-Control-Request-Headers"
     inputs = [b"a, b"]
     expected_out = ["a", "b"]
@@ -147,21 +158,20 @@ class AccessControlRequestHeadersPreflightTest(FieldTest):
     request_headers = [(b"Origin", b"http://example.com")]
 
     def set_request_context(self, message: RequestLinterProtocol) -> None:
-        self.message.headers.parsed = {}  # Clear existing headers to avoid repeat note
-        self.message.headers.handlers = {}
-
+        message.headers.parsed = {}  # Clear existing headers to avoid repeat note
+        message.headers.handlers = {}
+ 
         # Workaround for SINGLE_HEADER_REPEAT: manually populate parsed for Method
         # and remove from process list
         process_headers = []
         for name, value in self.request_headers:
             if name.lower() == b"access-control-request-method":
-                self.message.headers.parsed["access-control-request-method"] = value.decode("ascii")
+                message.headers.parsed["access-control-request-method"] = value.decode("ascii")
             else:
                 process_headers.append((name, value))
-
-        request = cast(HttpRequestLinter, self.message)
-        request.method = self.request_method
-        self.message.headers.process(process_headers)
+ 
+        message.method = self.request_method
+        message.headers.process(process_headers)
 
     def test_header(self) -> None:
         pass

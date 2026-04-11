@@ -1,5 +1,5 @@
 from types import SimpleNamespace
-from typing import Any, cast
+from typing import cast
 
 from http_sf import Token
 
@@ -8,9 +8,9 @@ from httplint.field.tests import FakeRequestLinter, FieldTest
 from httplint.note import Note, categories, levels
 from httplint.types import (
     AddNoteMethodType,
+    CachingProtocol,
     LinterProtocol,
     NoteClassListType,
-    RequestLinterProtocol,
     ResponseLinterProtocol,
     SFListType,
 )
@@ -40,10 +40,9 @@ willing to process."""
 
     def post_check(self, message: LinterProtocol, add_note: AddNoteMethodType) -> None:
         # Warn if the request URI scheme is http
-        request = self.message.related
-        if request and getattr(request, "message_type", None) == "request":
-            req = cast(RequestLinterProtocol, request)
-            if req.uri and req.uri.lower().startswith("http:"):
+        request = self.message.request
+        if request:
+            if request.uri and request.uri.lower().startswith("http:"):
                 add_note(ACCEPT_CH_IN_PLAIN_HTTP)
 
         # Check if every field name in Accept-CH is also present in the Vary header
@@ -123,8 +122,9 @@ class AcceptCHHTTPTest(FieldTest[ResponseLinterProtocol]):
     expected_notes = [ACCEPT_CH_IN_PLAIN_HTTP]
 
     def set_response_context(self, message: ResponseLinterProtocol) -> None:
-        message.related = FakeRequestLinter()
-        message.related.uri = "http://example.com/"
+        request = FakeRequestLinter()
+        request.uri = "http://example.com/"
+        message.request = request
 
 
 class AcceptCHMissingVaryTest(FieldTest[ResponseLinterProtocol]):
@@ -134,4 +134,6 @@ class AcceptCHMissingVaryTest(FieldTest[ResponseLinterProtocol]):
     expected_notes = [ACCEPT_CH_MISSING_VARY]
 
     def set_response_context(self, message: ResponseLinterProtocol) -> None:
-        message.caching = cast(Any, SimpleNamespace(store_shared=True, store_private=True))
+        message.caching = cast(
+            CachingProtocol, SimpleNamespace(store_shared=True, store_private=True)
+        )

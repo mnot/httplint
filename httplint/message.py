@@ -30,7 +30,7 @@ from httplint.util import f_num, iri_to_uri
 
 class HttpMessageParams(TypedDict):
     start_time: NotRequired[Optional[float]]
-    related: NotRequired[Optional[LinterProtocol]]
+    _related: NotRequired[Optional[LinterProtocol]]
     no_content: NotRequired[bool]
 
 
@@ -41,14 +41,26 @@ class HttpMessageLinter:
 
     message_type = L_("message")
 
+    @property
+    def as_request(self) -> Optional[RequestLinterProtocol]:
+        if self.message_type == "request":
+            return cast(RequestLinterProtocol, self)
+        return None
+
+    @property
+    def as_response(self) -> Optional[ResponseLinterProtocol]:
+        if self.message_type == "response":
+            return cast(ResponseLinterProtocol, self)
+        return None
+
     def __init__(
         self,
         start_time: Optional[float] = None,
-        related: Optional[LinterProtocol] = None,
+        _related: Optional[LinterProtocol] = None,
         no_content: bool = False,
     ) -> None:
         self.notes: NotesProtocol = Notes({"message_type": translate(self.message_type)})
-        self.related = related
+        self._related = _related
         self.start_time = start_time
         self.finish_time: Optional[float] = None
         self.no_content = no_content
@@ -217,11 +229,11 @@ class HttpRequestLinter(HttpMessageLinter):
 
     @property
     def response(self) -> Optional[ResponseLinterProtocol]:
-        return cast(Optional[ResponseLinterProtocol], self.related)
+        return cast(Optional[ResponseLinterProtocol], self._related)
 
     @response.setter
     def response(self, value: Optional[ResponseLinterProtocol]) -> None:
-        self.related = value
+        self._related = value
 
     def post_checks(self) -> None:
         check_preflight_request(self)
@@ -260,11 +272,11 @@ class HttpResponseLinter(HttpMessageLinter):
 
     @property
     def request(self) -> Optional[RequestLinterProtocol]:
-        return cast(Optional[RequestLinterProtocol], self.related)
+        return cast(Optional[RequestLinterProtocol], self._related)
 
     @request.setter
     def request(self, value: Optional[RequestLinterProtocol]) -> None:
-        self.related = value
+        self._related = value
 
     def process_response_topline(
         self, version: bytes, status_code: bytes, status_phrase: Optional[bytes] = None

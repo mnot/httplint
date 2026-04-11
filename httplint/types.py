@@ -90,7 +90,6 @@ class CachingProtocol(Protocol):
 @runtime_checkable
 class LinterProtocol(Protocol):
     notes: NotesProtocol
-    related: Optional[LinterProtocol]
     start_time: Optional[float]
     finish_time: Optional[float]
     version: str
@@ -101,6 +100,13 @@ class LinterProtocol(Protocol):
     content_hash: Optional[bytes]
     content_sample: bytes
     complete: bool
+
+    @property
+    def as_request(self) -> Optional[RequestLinterProtocol]: ...
+
+    @property
+    def as_response(self) -> Optional[ResponseLinterProtocol]: ...
+
     message_type: Any
     character_encoding: Optional[str]
 

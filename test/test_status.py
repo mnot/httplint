@@ -44,16 +44,12 @@ class TestStatus4xx(unittest.TestCase):
         linter.process_headers([(b"Date", b"Fri, 01 Jan 2021 00:00:00 GMT")])
 
         # Mock request
-        linter.related = (
-            HttpResponseLinter()
-        )  # Hack to satisfy type checker if needed, but we need HttpRequestLinter
-        # Better:
         from httplint.message import HttpRequestLinter
 
         req = HttpRequestLinter()
         req.process_request_topline(b"GET", b"/", b"HTTP/1.1")
         req.process_headers([])
-        linter.related = req
+        linter.request = req
 
         linter.finish_content(True)
         notes = [n.__class__ for n in linter.notes]
@@ -71,7 +67,7 @@ class TestStatus4xx(unittest.TestCase):
         req = HttpRequestLinter()
         req.process_request_topline(b"GET", b"/", b"HTTP/1.1")
         req.process_headers([])
-        linter.related = req
+        linter.request = req
 
         linter.finish_content(True)
         notes = [n.__class__ for n in linter.notes]
@@ -89,7 +85,7 @@ class TestStatus4xx(unittest.TestCase):
         req = HttpRequestLinter()
         req.process_request_topline(b"GET", b"/", b"HTTP/1.1")
         req.process_headers([])
-        linter.related = req
+        linter.request = req
 
         linter.finish_content(True)
         notes = [n.__class__ for n in linter.notes]
@@ -107,7 +103,7 @@ class TestStatus4xx(unittest.TestCase):
         req = HttpRequestLinter()
         req.process_request_topline(b"GET", b"/", b"HTTP/1.1")
         req.process_headers([(b"Expect", b"100-continue")])
-        linter.related = req
+        linter.request = req
 
         linter.finish_content(True)
         notes = [n.__class__ for n in linter.notes]
@@ -125,7 +121,7 @@ class TestStatus4xx(unittest.TestCase):
         req = HttpRequestLinter()
         req.process_request_topline(b"GET", b"/", b"HTTP/1.1")
         req.process_headers([])
-        linter.related = req
+        linter.request = req
 
         linter.finish_content(True)
         notes = [n.__class__ for n in linter.notes]
@@ -143,7 +139,7 @@ class TestStatus4xx(unittest.TestCase):
         req = HttpRequestLinter()
         req.process_request_topline(b"GET", b"/", b"HTTP/1.1")
         req.process_headers([(b"Accept", b"text/html")])
-        linter.related = req
+        linter.request = req
 
         linter.finish_content(True)
         notes = [n.__class__ for n in linter.notes]
@@ -165,7 +161,7 @@ class TestStatus405(unittest.TestCase):
         req = HttpRequestLinter()
         req.process_request_topline(b"GET", b"/", b"HTTP/1.1")
         req.process_headers([])
-        linter.related = req
+        linter.request = req
 
         linter.finish_content(True)
         notes = [n.__class__ for n in linter.notes]
@@ -186,7 +182,7 @@ class TestStatus405(unittest.TestCase):
         req = HttpRequestLinter()
         req.process_request_topline(b"GET", b"/", b"HTTP/1.1")
         req.process_headers([])
-        linter.related = req
+        linter.request = req
 
         linter.finish_content(True)
         notes = [n.__class__ for n in linter.notes]
@@ -205,7 +201,7 @@ class TestStatus405(unittest.TestCase):
         req = HttpRequestLinter()
         req.process_request_topline(b"GET", b"/", b"HTTP/1.1")
         req.process_headers([])
-        linter.related = req
+        linter.request = req
 
         linter.finish_content(True)
         notes = [n.__class__ for n in linter.notes]
@@ -227,7 +223,7 @@ class TestStatus412(unittest.TestCase):
         req = HttpRequestLinter()
         req.process_request_topline(b"GET", b"/", b"HTTP/1.1")
         req.process_headers([(b"If-Match", b'"123"')])
-        linter.related = req
+        linter.request = req
 
         linter.finish_content(True)
         notes = [n.__class__ for n in linter.notes]
@@ -248,7 +244,7 @@ class TestStatus412(unittest.TestCase):
         req = HttpRequestLinter()
         req.process_request_topline(b"GET", b"/", b"HTTP/1.1")
         req.process_headers([])
-        linter.related = req
+        linter.request = req
 
         linter.finish_content(True)
         notes = [n.__class__ for n in linter.notes]
@@ -269,7 +265,7 @@ class TestStatus417(unittest.TestCase):
         req = HttpRequestLinter()
         req.process_request_topline(b"GET", b"/", b"HTTP/1.1")
         req.process_headers([(b"Expect", b"foo")])
-        linter.related = req
+        linter.request = req
 
         linter.finish_content(True)
         notes = [n.__class__ for n in linter.notes]
@@ -287,7 +283,7 @@ class TestStatus417(unittest.TestCase):
         req = HttpRequestLinter()
         req.process_request_topline(b"GET", b"/", b"HTTP/1.1")
         req.process_headers([])
-        linter.related = req
+        linter.request = req
 
         linter.finish_content(True)
         notes = [n.__class__ for n in linter.notes]
@@ -309,7 +305,7 @@ class TestStatus417(unittest.TestCase):
         req = HttpRequestLinter()
         req.process_request_topline(b"GET", b"/", b"HTTP/1.1")
         req.process_headers([(b"Expect", b"100-continue")])
-        linter.related = req
+        linter.request = req
 
         linter.finish_content(True)
         notes = [n.__class__ for n in linter.notes]

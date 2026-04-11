@@ -1,7 +1,5 @@
-from typing import Any, cast
-
 from httplint.field.structured_field import StructuredField
-from httplint.field.tests import FieldTest
+from httplint.field.tests import FakeRequestLinter, FieldTest
 from httplint.note import Note, categories, levels
 from httplint.types import (
     AddNoteMethodType,
@@ -25,8 +23,8 @@ responses."""
 
     def evaluate(self, add_note: AddNoteMethodType) -> None:
         # Check if the method is safe
-        request = getattr(self.message, "related", None)
-        if request and hasattr(request, "method"):
+        request = self.message.request
+        if request and request.method:
             if request.method in ["GET", "HEAD", "OPTIONS", "TRACE"]:
                 add_note(CACHE_GROUP_INVALIDATION_IGNORED, method=request.method)
 
@@ -69,11 +67,9 @@ class CacheGroupInvalidationTest(FieldTest[ResponseLinterProtocol]):
 
     def setUp(self) -> None:
         super().setUp()
-
-        class MockRequest:
-            method = "POST"
-
-        self.message.related = cast(Any, MockRequest())
+        request = FakeRequestLinter()
+        request.method = "POST"
+        self.message.request = request
 
     expected_notes: NoteClassListType = []
 
@@ -85,11 +81,9 @@ class CacheGroupInvalidationIgnoredTest(FieldTest[ResponseLinterProtocol]):
 
     def setUp(self) -> None:
         super().setUp()
-
-        class MockRequest:
-            method = "GET"
-
-        self.message.related = cast(Any, MockRequest())
+        request = FakeRequestLinter()
+        request.method = "GET"
+        self.message.request = request
 
     expected_notes: NoteClassListType = [CACHE_GROUP_INVALIDATION_IGNORED]
 
@@ -101,12 +95,10 @@ class CacheGroupInvalidationBadTypeTest(FieldTest[ResponseLinterProtocol]):
 
     def setUp(self) -> None:
         super().setUp()
-
         # Ensure check passes (unsafe method)
-        class MockRequest:
-            method = "POST"
-
-        self.message.related = cast(Any, MockRequest())
+        request = FakeRequestLinter()
+        request.method = "POST"
+        self.message.request = request
 
     expected_notes: NoteClassListType = [CACHE_GROUP_INVALIDATION_BAD_TYPE]
 
@@ -118,10 +110,8 @@ class CacheGroupInvalidationMultipleBadTypesTest(FieldTest[ResponseLinterProtoco
 
     def setUp(self) -> None:
         super().setUp()
-
-        class MockRequest:
-            method = "POST"
-
-        self.message.related = cast(Any, MockRequest())
+        request = FakeRequestLinter()
+        request.method = "POST"
+        self.message.request = request
 
     expected_notes: NoteClassListType = [CACHE_GROUP_INVALIDATION_BAD_TYPE]

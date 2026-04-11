@@ -1,5 +1,5 @@
 from types import SimpleNamespace
-from typing import Any, cast
+from typing import cast
 
 from httplint.field.list_field import HttpListField
 from httplint.field.tests import FakeRequestLinter, FieldTest
@@ -8,6 +8,7 @@ from httplint.syntax import rfc9110
 from httplint.types import (
     AddNoteMethodType,
     AnyMessageLinterProtocol,
+    CachingProtocol,
     LinterProtocol,
     NoteClassListType,
     ResponseLinterProtocol,
@@ -32,19 +33,19 @@ of its underlying media type; e.g., `gzip` and `deflate`."""
         # check to see if there are any non-gzip encodings, because
         # that's the only one we ask for.
         if (
-            self.message.message_type == "response"
-            and self.message.related
-            and self.message.related.message_type == "request"
+            (response := self.message.as_response)
+            and response.request
+            and response.request.message_type == "request"
         ):
             accept_encoding = [
-                a[0] for a in self.message.related.headers.parsed.get("accept-encoding", [])
+                a[0] for a in response.request.headers.parsed.get("accept-encoding", [])
             ]
             if field_value.lower() not in accept_encoding:
                 add_note(ENCODING_UNWANTED, coding=field_value)
         return field_value.lower()
 
     def post_check(self, message: LinterProtocol, add_note: AddNoteMethodType) -> None:
-        if getattr(message, "message_type", None) != "response":
+        if not message.as_response:
             return
 
         ce_values = message.headers.parsed.get("content-encoding", [])
@@ -91,8 +92,8 @@ class ContentEncodingTest(FieldTest[AnyMessageLinterProtocol]):
     expected_out = ["gzip"]
 
     def set_response_context(self, message: ResponseLinterProtocol) -> None:
-        assert message.related is not None
-        message.related.headers.process([(b"accept-encoding", b"gzip")])
+        assert message.request is not None
+        message.request.headers.process([(b"accept-encoding", b"gzip")])
 
 
 class ContentEncodingCaseTest(FieldTest[AnyMessageLinterProtocol]):
@@ -101,8 +102,8 @@ class ContentEncodingCaseTest(FieldTest[AnyMessageLinterProtocol]):
     expected_out = ["gzip"]
 
     def set_response_context(self, message: ResponseLinterProtocol) -> None:
-        assert message.related is not None
-        message.related.headers.process([(b"accept-encoding", b"gzip")])
+        assert message.request is not None
+        message.request.headers.process([(b"accept-encoding", b"gzip")])
 
 
 class ContentEncodingUnwantedTest(FieldTest[AnyMessageLinterProtocol]):
@@ -114,7 +115,7 @@ class ContentEncodingUnwantedTest(FieldTest[AnyMessageLinterProtocol]):
     def set_response_context(self, message: ResponseLinterProtocol) -> None:
         request = FakeRequestLinter()
         request.headers.process([(b"accept-encoding", b"gzip")])
-        message.related = request
+        message.request = request
 
 
 class DictionaryCompressedMissingVaryTest(FieldTest[AnyMessageLinterProtocol]):
@@ -124,8 +125,10 @@ class DictionaryCompressedMissingVaryTest(FieldTest[AnyMessageLinterProtocol]):
     expected_notes: NoteClassListType = [DICTIONARY_COMPRESSED_MISSING_VARY]
 
     def set_response_context(self, message: ResponseLinterProtocol) -> None:
-        assert message.related is not None
-        message.related.headers.process([(b"accept-encoding", b"dcb")])
-        message.caching = cast(Any, SimpleNamespace(store_shared=True, store_private=True))
+        assert message.request is not None
+        message.request.headers.process([(b"accept-encoding", b"dcb")])
+        message.caching = cast(
+            CachingProtocol, SimpleNamespace(store_shared=True, store_private=True)
+        )
         # Vary missing 'Available-Dictionary'
         message.headers.parsed["vary"] = set()
