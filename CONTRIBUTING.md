@@ -196,20 +196,10 @@ When using `HttpListField`, _parse_ will be called for each _item_ in the list, 
 
 Note that `syntax` is checked against each item before _parse_ is called in a `HttpListField`.
 
-communicate something about the field_value. It returns the created _Note_ instance.
-
-_parse_ should return the parsed value corresponding to the `field_value`. If there is an error and
-the value shouldn't be remembered, raise `ValueError`.
-
 
 #### The _evaluate_ method
 
-_evaluate_ is called with one argument, `add_note`. As above, it allows setting _Note_s about the
-complete field.
-
-_evaluate_ is called once all of the field lines are processed, to enable the entire set of the
-field's values to be considered. To access the parsed value(s), use the _value_ instance
-variable.
+_evaluate_ is called with one argument, `add_note`. It allows setting _Note_s about the complete field.
 
 _evaluate_ is called once all of the field lines are processed, to enable the entire set of the
 field's values to be considered. To access the parsed value(s), use the _value_ instance
@@ -220,11 +210,16 @@ When using `HttpListField`, _value_ is a list of the results of calling _parse_.
 
 #### The _post_check_ method
 
-_post_check_ is called with two arguments, `message` (the message linter instance) and `add_note`.
+_post_check_ is called with one argument, `add_note`.
 
-It is called after the entire message has been processed, including the body and other post-parsing steps (like checking for cacheability). This is the appropriate place for checks that rely on the state of the message derived from other fields or the body.
+It is called after the entire message has been processed, including the body and other post-parsing steps (like checking for cacheability). This is the appropriate place for checks that rely on the state of the message derived from other fields or the body. Use `self.message` to access message state.
 
-Note that if `message.no_content` is set, the body will not be processed, so checks relying on it should be skipped.
+Note that if `self.message.no_content` is set, the body will not be processed, so checks relying on it should be skipped.
+
+
+#### The _pre_check_ method
+
+_pre_check_ is called with one argument, `add_note`. It is called before parsing or evaluating the field. If it returns `False`, processing for that field is aborted. This is useful for checking if a field is valid in the current context (e.g., request vs. response) before doing expensive parsing.
 
 
 #### The _message_ instance variable
