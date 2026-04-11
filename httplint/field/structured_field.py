@@ -29,7 +29,7 @@ class StructuredField(HttpField[TMessage], Generic[TMessage]):
         self.value.append(field_value)
         self._sf_parsed = False
 
-    def finish(self, message: TMessage, add_note: AddNoteMethodType) -> None:
+    def finish(self, add_note: AddNoteMethodType) -> None:
         if not self.value:
             return
 
@@ -82,7 +82,7 @@ class StructuredField(HttpField[TMessage], Generic[TMessage]):
             self.value = None
 
         self._sf_parsed = True
-        super().finish(message, add_note)
+        super().finish(add_note)
 
 
 class DUPLICATE_KEY(Note):

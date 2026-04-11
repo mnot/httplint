@@ -9,7 +9,6 @@ from httplint.note import Note, categories, levels
 from httplint.types import (
     AddNoteMethodType,
     CachingProtocol,
-    LinterProtocol,
     NoteClassListType,
     ResponseLinterProtocol,
     SFListType,
@@ -38,7 +37,7 @@ willing to process."""
                 )
                 return
 
-    def post_check(self, message: LinterProtocol, add_note: AddNoteMethodType) -> None:
+    def post_check(self, add_note: AddNoteMethodType) -> None:
         # Warn if the request URI scheme is http
         request = self.message.request
         if request:
@@ -47,10 +46,10 @@ willing to process."""
 
         # Check if every field name in Accept-CH is also present in the Vary header
         # if the response is cacheable.
-        if hasattr(message, "caching") and (
-            message.caching.store_shared or message.caching.store_private
+        if hasattr(self.message, "caching") and (
+            self.message.caching.store_shared or self.message.caching.store_private
         ):
-            vary_header = message.headers.parsed.get("vary", [])
+            vary_header = self.message.headers.parsed.get("vary", [])
             missing_vary = []
             for item in self.value:
                 # item is (value, params)

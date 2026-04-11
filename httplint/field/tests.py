@@ -110,7 +110,7 @@ class FieldTest(unittest.TestCase, Generic[TMessage]):
                 field_name=handler.canonical_name,
                 field_type=L_("header"),
             )
-            handler.post_check(self.message, field_add_note)
+            handler.post_check(field_add_note)
 
         out = self.message.headers.parsed.get(self.name.lower(), "HEADER HANDLER NOT FOUND")
         self.assertEqual(self.expected_out, out)

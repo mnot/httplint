@@ -9,7 +9,6 @@ from httplint.types import (
     AddNoteMethodType,
     AnyMessageLinterProtocol,
     CachingProtocol,
-    LinterProtocol,
     NoteClassListType,
     ResponseLinterProtocol,
 )
@@ -44,16 +43,16 @@ of its underlying media type; e.g., `gzip` and `deflate`."""
                 add_note(ENCODING_UNWANTED, coding=field_value)
         return field_value.lower()
 
-    def post_check(self, message: LinterProtocol, add_note: AddNoteMethodType) -> None:
-        if not message.as_response:
+    def post_check(self, add_note: AddNoteMethodType) -> None:
+        if not self.message.as_response:
             return
 
-        ce_values = message.headers.parsed.get("content-encoding", [])
+        ce_values = self.message.headers.parsed.get("content-encoding", [])
         if any(enc in ["dcb", "dcz"] for enc in ce_values):
-            if hasattr(message, "caching") and (
-                message.caching.store_shared or message.caching.store_private
+            if hasattr(self.message, "caching") and (
+                self.message.caching.store_shared or self.message.caching.store_private
             ):
-                vary_values = message.headers.parsed.get("vary", set())
+                vary_values = self.message.headers.parsed.get("vary", set())
                 if "available-dictionary" not in vary_values:
                     add_note(DICTIONARY_COMPRESSED_MISSING_VARY)
 

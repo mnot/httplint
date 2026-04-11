@@ -26,7 +26,7 @@ class SingletonField(HttpField[TMessage], Generic[TMessage]):
     def handle_input(self, field_value: str, add_note: AddNoteMethodType, offset: int) -> None:
         self.raw_values.append(field_value)
 
-    def finish(self, message: TMessage, add_note: AddNoteMethodType) -> None:
+    def finish(self, add_note: AddNoteMethodType) -> None:
         if not self.raw_values:
             self.value = None
         else:

@@ -6,7 +6,6 @@ from httplint.note import Note, categories, levels
 from httplint.syntax import rfc9110
 from httplint.types import (
     AddNoteMethodType,
-    LinterProtocol,
     NoteArgsType,
     NoteClassListType,
     ResponseLinterProtocol,
@@ -136,11 +135,11 @@ sources of content that browsers are allowed to load on a page."""
                 report_only_text=self.report_only_text,
             )
 
-    def post_check(self, message: LinterProtocol, add_note: AddNoteMethodType) -> None:
+    def post_check(self, add_note: AddNoteMethodType) -> None:
         if not self.value:
             return
 
-        reporting_endpoints_field = message.headers.parsed.get("reporting-endpoints")
+        reporting_endpoints_field = self.message.headers.parsed.get("reporting-endpoints")
         reporting_endpoints = (
             list(reporting_endpoints_field.keys()) if reporting_endpoints_field else []
         )
@@ -156,7 +155,7 @@ sources of content that browsers are allowed to load on a page."""
 
                 # Find the parent note
                 parent_note = None
-                for note in message.notes:
+                for note in self.message.notes:
                     if isinstance(note, CONTENT_SECURITY_POLICY):
                         parent_note = note
                         break

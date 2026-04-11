@@ -18,7 +18,7 @@ class JsonField(HttpField[TMessage], Generic[TMessage]):
     def handle_input(self, field_value: str, add_note: AddNoteMethodType, offset: int) -> None:
         self.value.append(field_value)
 
-    def finish(self, message: TMessage, add_note: AddNoteMethodType) -> None:
+    def finish(self, add_note: AddNoteMethodType) -> None:
         if not self.value:
             return
 
@@ -29,7 +29,7 @@ class JsonField(HttpField[TMessage], Generic[TMessage]):
             add_note(BAD_JSON, error=str(why), category=self.category)
             self.value = None
 
-        super().finish(message, add_note)
+        super().finish(add_note)
 
 
 class BAD_JSON(Note):

@@ -66,7 +66,7 @@ class FieldSection:
                 add_note,
                 field_name=handler.canonical_name,
             )
-            if not handler.pre_check(self.message, field_add_note):
+            if not handler.pre_check(field_add_note):
                 continue
             handler.handle_input(str_value, field_add_note, offset)
 
@@ -94,7 +94,7 @@ class FieldSection:
                 field_name=handler.canonical_name,
                 field_type=self.is_trailer and L_("trailer") or L_("header"),
             )
-            handler.finish(self.message, field_add_note)
+            handler.finish(field_add_note)
             self.parsed[handler.norm_name] = handler.value
 
 

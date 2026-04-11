@@ -7,7 +7,6 @@ from httplint.field.tests import FieldTest
 from httplint.note import Note, categories, levels
 from httplint.types import (
     AddNoteMethodType,
-    LinterProtocol,
     NoteClassListType,
     ResponseLinterProtocol,
     SFItemType,
@@ -62,7 +61,7 @@ resources that don't explicitly grant the document permission (using CORP or COR
                 report_only=self.report_only_string,
             )
 
-    def post_check(self, message: LinterProtocol, add_note: AddNoteMethodType) -> None:
+    def post_check(self, add_note: AddNoteMethodType) -> None:
 
         # self.value is (item, params)
         params = self.value[1]
@@ -70,7 +69,7 @@ resources that don't explicitly grant the document permission (using CORP or COR
         if not report_to:
             return
 
-        reporting_endpoints_field = message.headers.parsed.get("reporting-endpoints")
+        reporting_endpoints_field = self.message.headers.parsed.get("reporting-endpoints")
         reporting_endpoints = (
             list(reporting_endpoints_field.keys()) if reporting_endpoints_field else []
         )

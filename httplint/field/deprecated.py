@@ -213,14 +213,14 @@ It is safe to remove it from this message. For more information, see [here]({sel
     def parse(self, field_value: str, add_note: AddNoteMethodType) -> None:
         return
 
-    def pre_check(self, message: LinterProtocol, add_note: AddNoteMethodType) -> bool:
+    def pre_check(self, add_note: AddNoteMethodType) -> bool:
         """
         Override pre_check to use the specific note category.
         """
         # We can't call super().pre_check() directly because it would emit
         # the generic FIELD_DEPRECATED note; so, we temporarily disable it.
         self.deprecated = False
-        result = super().pre_check(message, add_note)
+        result = super().pre_check(add_note)
         self.deprecated = True
 
         if not result:

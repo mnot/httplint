@@ -24,12 +24,12 @@ class BrokenField(HttpField[TMessage], Generic[TMessage]):
     def handle_input(self, field_value: str, add_note: AddNoteMethodType, offset: int) -> None:
         self.raw_values.append((field_value, offset))
 
-    def finish(self, message: TMessage, add_note: AddNoteMethodType) -> None:
+    def finish(self, add_note: AddNoteMethodType) -> None:
         parsed_values = []
         for raw_value, offset in self.raw_values:
             # override add_note's subject to be offset-based
             offset_add_note = partial(
-                message.notes.add,
+                self.message.notes.add,
                 f"offset-{offset}",
                 field_name=self.canonical_name,
             )

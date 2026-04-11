@@ -111,7 +111,7 @@ class HttpField(ABC, Generic[TMessage]):
         field's values.
         """
 
-    def post_check(self, message: TMessage, add_note: AddNoteMethodType) -> None:
+    def post_check(self, add_note: AddNoteMethodType) -> None:
         """
         Called after the message is complete and other processing has occurred.
         """
@@ -122,7 +122,7 @@ class HttpField(ABC, Generic[TMessage]):
         Basic input processing on a new field value.
         """
 
-    def pre_check(self, message: TMessage, add_note: AddNoteMethodType) -> bool:
+    def pre_check(self, add_note: AddNoteMethodType) -> bool:
         """
         Called before parsing or evaluating the field.
         If False is returned, processing is aborted.
@@ -150,7 +150,7 @@ class HttpField(ABC, Generic[TMessage]):
 
         return True
 
-    def finish(self, message: TMessage, add_note: AddNoteMethodType) -> None:
+    def finish(self, add_note: AddNoteMethodType) -> None:
         """
         Called when all field lines in the section are available.
         """

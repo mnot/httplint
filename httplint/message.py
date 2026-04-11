@@ -156,7 +156,7 @@ class HttpMessageLinter:
                     field_type=section.is_trailer and L_("trailer") or L_("header"),
                 )
                 if handler.value is not None:
-                    handler.post_check(self, field_add_note)
+                    handler.post_check(field_add_note)
 
     def can_have_content(self) -> bool:
         "Say whether this message can have content."

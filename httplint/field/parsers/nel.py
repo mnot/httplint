@@ -3,7 +3,6 @@ from httplint.field.tests import FieldTest
 from httplint.note import Note, categories, levels
 from httplint.types import (
     AddNoteMethodType,
-    LinterProtocol,
     NoteClassListType,
     ResponseLinterProtocol,
 )
@@ -67,11 +66,11 @@ It allows websites to declare that they want to receive reports about network er
                         details="it must be between 0.0 and 1.0",
                     )
 
-    def post_check(self, message: LinterProtocol, add_note: AddNoteMethodType) -> None:
+    def post_check(self, add_note: AddNoteMethodType) -> None:
         if not self.value:
             return
 
-        reporting_endpoints_field = message.headers.parsed.get("reporting-endpoints")
+        reporting_endpoints_field = self.message.headers.parsed.get("reporting-endpoints")
         reporting_endpoints = (
             list(reporting_endpoints_field.keys()) if reporting_endpoints_field else []
         )

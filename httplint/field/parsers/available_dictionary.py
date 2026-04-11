@@ -5,7 +5,6 @@ from httplint.field.tests import FieldTest
 from httplint.note import Note, categories, levels
 from httplint.types import (
     AddNoteMethodType,
-    LinterProtocol,
     NoteClassListType,
     RequestLinterProtocol,
     SFItemType,
@@ -29,11 +28,11 @@ dictionary available for use in compressing the response."""
         if not isinstance(self.value[0], bytes):
             add_note(AVAILABLE_DICTIONARY_BAD_TYPE, got=type(self.value[0]).__name__)
 
-    def post_check(self, message: LinterProtocol, add_note: AddNoteMethodType) -> None:
-        if message.message_type != "request":
+    def post_check(self, add_note: AddNoteMethodType) -> None:
+        if self.message.message_type != "request":
             return
 
-        ae_values = message.headers.parsed.get("accept-encoding", [])
+        ae_values = self.message.headers.parsed.get("accept-encoding", [])
         has_dictionary_support = False
         for enc, _params in ae_values:
             if enc in ["dcb", "dcz"]:
