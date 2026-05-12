@@ -198,7 +198,7 @@ but doesn't conform to it. See [the field's ABNF](%(ref_uri)s) for more informat
 This error may or may not prevent recipients from parsing the field; fixing it will
 improve interoperability.
 
-%(problem)s"""
+`%(problem)s`"""
 
 
 class REQUEST_HDR_IN_RESPONSE(Note):
@@ -206,7 +206,7 @@ class REQUEST_HDR_IN_RESPONSE(Note):
     level = levels.BAD
     _summary = '"%(field_name)s" isn\'t valid in a response.'
     _text = """\
-The %(field_name)s field only has meaning in requests. Sending it a response
+The `%(field_name)s` field only has meaning in requests. Sending it a response
 doesn't do anything. REDbot (and most recipients) will ignore it."""
 
 
@@ -215,7 +215,7 @@ class RESPONSE_HDR_IN_REQUEST(Note):
     level = levels.BAD
     _summary = '"%(field_name)s" isn\'t valid in a request.'
     _text = """\
-The %(field_name)s field only has meaning in responses. Sending it in a request
+The `%(field_name)s` field only has meaning in responses. Sending it in a request
 doesn't do anything. REDbot (and most recipients) will ignore it."""
 
 
