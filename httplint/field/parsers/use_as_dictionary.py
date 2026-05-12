@@ -1,12 +1,17 @@
-from typing import List, Union
+from typing import Any, List, Union
 
 from httplint.field.structured_field import StructuredField
 from httplint.field.tests import FieldTest
 from httplint.note import Note, categories, levels
-from httplint.types import AddNoteMethodType
+from httplint.types import (
+    AddNoteMethodType,
+    NoteClassListType,
+    ResponseLinterProtocol,
+    SFDictionaryType,
+)
 
 
-class use_as_dictionary(StructuredField):
+class use_as_dictionary(StructuredField[ResponseLinterProtocol]):
     canonical_name = "Use-As-Dictionary"
     description = """\
 The `Use-As-Dictionary` header field is used by a server to indicate that the response can be used
@@ -15,9 +20,8 @@ as a compression dictionary for future requests."""
     syntax = False  # Structured Field
     category = categories.CONNEG
     deprecated = False
-    valid_in_requests = False
-    valid_in_responses = True
     sf_type = "dictionary"
+    value: SFDictionaryType
 
     def evaluate(self, add_note: AddNoteMethodType) -> None:
         for key, val in self.value.items():
@@ -26,15 +30,15 @@ as a compression dictionary for future requests."""
             elif key == "match-dest":
                 # Can be a String or Inner List of Strings
                 is_valid = False
-                if isinstance(val, tuple) and isinstance(val[0], str):
+                if isinstance(val[0], str):
                     is_valid = True
-                elif isinstance(val, list):
+                elif isinstance(val[0], list):
                     # Inner List: list of (value, params)
-                    if all(isinstance(i[0], str) for i in val):
+                    if all(isinstance(i, tuple) and isinstance(i[0], str) for i in val[0]):
                         is_valid = True
 
                 if not is_valid:
-                    add_note(USE_AS_DICTIONARY_BAD_MATCH_DEST, got=type(val).__name__)
+                    add_note(USE_AS_DICTIONARY_BAD_MATCH_DEST, got=type(val[0]).__name__)
 
             elif key == "id":
                 self._check_value_type(val, str, add_note)
@@ -45,7 +49,7 @@ as a compression dictionary for future requests."""
 
     def _check_value_type(
         self,
-        val: Union[tuple, List],
+        val: Union[tuple[Any, Any], List[Any]],
         expected_type: type,
         add_note: AddNoteMethodType,
     ) -> None:
@@ -87,15 +91,15 @@ class USE_AS_DICTIONARY_BAD_MATCH_DEST(Note):
 The `match-dest` parameter must be a String or a list of Strings."""
 
 
-class UseAsDictionaryTest(FieldTest):
+class UseAsDictionaryTest(FieldTest[ResponseLinterProtocol]):
     name = "Use-As-Dictionary"
     inputs = [b'match="/foo/*", ttl=123']
     expected_out = {"match": ("/foo/*", {}), "ttl": (123, {})}
-    expected_notes = []
+    expected_notes: NoteClassListType = []
 
 
-class UseAsDictionaryBadParamTest(FieldTest):
+class UseAsDictionaryBadParamTest(FieldTest[ResponseLinterProtocol]):
     name = "Use-As-Dictionary"
     inputs = [b'match=123, ttl="abc"']
     expected_out = {"match": (123, {}), "ttl": ("abc", {})}
-    expected_notes = [USE_AS_DICTIONARY_BAD_TYPE, USE_AS_DICTIONARY_BAD_TYPE]
+    expected_notes: NoteClassListType = [USE_AS_DICTIONARY_BAD_TYPE, USE_AS_DICTIONARY_BAD_TYPE]

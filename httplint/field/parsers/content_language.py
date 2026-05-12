@@ -1,11 +1,15 @@
 from httplint.field.list_field import HttpListField
 from httplint.field.tests import FieldTest
-from httplint.syntax import rfc9110
 from httplint.note import Note, categories, levels
-from httplint.types import AddNoteMethodType
+from httplint.syntax import rfc9110
+from httplint.types import (
+    AddNoteMethodType,
+    AnyMessageLinterProtocol,
+    NoteClassListType,
+)
 
 
-class content_language(HttpListField):
+class content_language(HttpListField[AnyMessageLinterProtocol]):
     canonical_name = "Content-Language"
     description = """\
 The `Content-Language` header describes the natural language(s) of the intended audience for the
@@ -14,8 +18,6 @@ messsage. Note that this might not convey all of the languages used."""
     syntax = rfc9110.Content_Language
     category = categories.CONNEG
     deprecated = False
-    valid_in_requests = True
-    valid_in_responses = True
 
     def parse(self, field_value: str, add_note: AddNoteMethodType) -> str:
         return field_value.lower()
@@ -43,20 +45,20 @@ The `%(lang)s` language tag is used more than once in the `Content-Language` hea
 Recipients will likely ignore duplicates."""
 
 
-class ContentLanguageTest(FieldTest):
+class ContentLanguageTest(FieldTest[AnyMessageLinterProtocol]):
     name = "Content-Language"
     inputs = [b"en-US"]
     expected_out = ["en-us"]
 
 
-class ContentLanguageListTest(FieldTest):
+class ContentLanguageListTest(FieldTest[AnyMessageLinterProtocol]):
     name = "Content-Language"
     inputs = [b"en-US, fr"]
     expected_out = ["en-us", "fr"]
 
 
-class ContentLanguageDupTest(FieldTest):
+class ContentLanguageDupTest(FieldTest[AnyMessageLinterProtocol]):
     name = "Content-Language"
     inputs = [b"en-US, en-US"]
     expected_out = ["en-us", "en-us"]
-    expected_notes = [CONTENT_LANGUAGE_DUP]
+    expected_notes: NoteClassListType = [CONTENT_LANGUAGE_DUP]

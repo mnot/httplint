@@ -7,22 +7,19 @@ authors = [
 description = "Lint for HTTP messages."
 readme = "README.md"
 requires-python = ">=3.10"
-license = {file = "LICENSE.md"}
+license = "MIT"
+license-files = ["LICENSE.md"]
 classifiers = [
     "Operating System :: OS Independent",
-    "Development Status :: 4 - Beta",
-    "License :: OSI Approved :: MIT License",
-    "Intended Audience :: Developers",
-    "Intended Audience :: System Administrators",
-    "Topic :: Internet :: WWW/HTTP",
-    "Topic :: Software Development :: Testing"
+    "Development Status :: 4 - Beta"
 ]
+
 dependencies = [
     "Markdown",
     "MarkupSafe",
     "thor",
     "typing_extensions",
-    "http-sf>=1.1.1",
+    "http-sf>=1.2.0",
     "sniffpy==1.0.0",
     "Babel",
     "Brotli",
@@ -32,6 +29,7 @@ dependencies = [
 dev = [
     "mypy",
     "black",
+    "isort",
     "pylint",
     "pytest",
     "pytest-md",
@@ -39,9 +37,11 @@ dev = [
     "build",
     "twine",
     "types-Markdown",
+    "brotli-stubs",
+]
+i18n = [
     "llm",
     "llm-mlx",
-    "brotli-stubs",
 ]
 
 [project.urls]
@@ -62,6 +62,9 @@ version = {attr = "httplint.__version__"}
 
 [tool.setuptools.packages.find]
 where = ["."]
+include = ["httplint", "httplint.*"]
+exclude = ["build", "test", "tools"]
+namespaces = false
 
 [tool.setuptools]
 include-package-data = true
@@ -70,19 +73,14 @@ include-package-data = true
 httplint = ["py.typed", "translations/**/*"]
 
 [tool.mypy]
-follow_imports = "normal"
-incremental = true
-disallow_untyped_defs = true
-disallow_untyped_calls = true
-disallow_incomplete_defs = true
-warn_redundant_casts = true
-warn_unused_ignores = true
-warn_return_any = true
-warn_unreachable = true
-strict_optional = true
+strict = true
 show_error_codes = true
-enable_incomplete_feature = ["Unpack"]
+warn_unreachable = true
+enable_error_code = ["ignore-without-code", "redundant-expr", "truthy-bool"]
 
+[[tool.mypy.overrides]]
+module = "sniffpy"
+ignore_missing_imports = true
 
 [tool.pylint.basic]
 function-rgx = "[a-z_][a-z0-9_]{1,30}$"
@@ -121,3 +119,6 @@ python_files = ["message.py", "util.py", "field/parsers/*.py", "content_type.py"
 
 [tool.black]
 line-length = 100
+
+[tool.isort]
+profile = "black"

@@ -1,14 +1,18 @@
-from typing import Tuple, Optional
+from typing import Optional, Tuple
 
+from httplint.field import FIELD_DEPRECATED
 from httplint.field.list_field import HttpListField
 from httplint.field.tests import FieldTest
-from httplint.syntax import rfc9110
-from httplint.types import AddNoteMethodType
 from httplint.field.utils import unquote_string
-from httplint.field import FIELD_DEPRECATED
+from httplint.syntax import rfc9110
+from httplint.types import (
+    AddNoteMethodType,
+    AnyMessageLinterProtocol,
+    NoteClassListType,
+)
 
 
-class keep_alive(HttpListField):
+class keep_alive(HttpListField[AnyMessageLinterProtocol]):
     canonical_name = "Keep-Alive"
     description = """\
 The `Keep-Alive` header is completely optional; it is defined primarily because the `keep-alive`
@@ -22,8 +26,6 @@ It's safe to remove this header if you wish to save a few bytes."""
     reference = "https://www.rfc-editor.org/rfc/rfc2068.html#section-19.7.1"
     syntax = rfc9110.list_rule(rfc9110.parameter)
     deprecated = True
-    valid_in_requests = True
-    valid_in_responses = True
 
     def parse(self, field_value: str, add_note: AddNoteMethodType) -> Tuple[str, Optional[str]]:
         try:
@@ -35,14 +37,14 @@ It's safe to remove this header if you wish to save a few bytes."""
         return (attr.lower(), attr_val)
 
 
-class KeepAliveTest(FieldTest):
+class KeepAliveTest(FieldTest[AnyMessageLinterProtocol]):
     name = "Keep-Alive"
     inputs = [b"timeout=30"]
     expected_out = [("timeout", "30")]
-    expected_notes = [FIELD_DEPRECATED]
+    expected_notes: NoteClassListType = [FIELD_DEPRECATED]
 
 
-class EmptyKeepAliveTest(FieldTest):
+class EmptyKeepAliveTest(FieldTest[AnyMessageLinterProtocol]):
     name = "Keep-Alive"
     inputs = [b""]
-    expected_notes = [FIELD_DEPRECATED]
+    expected_notes: NoteClassListType = [FIELD_DEPRECATED]

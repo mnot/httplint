@@ -1,9 +1,13 @@
+from httplint.field import FIELD_DEPRECATED
 from httplint.field.singleton_field import SingletonField
 from httplint.field.tests import FieldTest
-from httplint.field import FIELD_DEPRECATED
+from httplint.types import (
+    AnyMessageLinterProtocol,
+    NoteClassListType,
+)
 
 
-class content_md5(SingletonField):
+class content_md5(SingletonField[AnyMessageLinterProtocol]):
     canonical_name = "Content-MD5"
     description = """\
 The `Content-MD5` header is an MD5 digest of the content, and provides an end-to-end message
@@ -14,12 +18,10 @@ not proof against malicious attacks."""
     reference = "https://www.rfc-editor.org/rfc/rfc1864"
     syntax = r"(?: [A-Za-z0-9+/]{22} ={2} )"
     deprecated = True
-    valid_in_requests = True
-    valid_in_responses = True
 
 
-class ContentMD5Test(FieldTest):
+class ContentMD5Test(FieldTest[AnyMessageLinterProtocol]):
     name = "Content-MD5"
     inputs = [b"Q2hlY2sgSW50ZWdyaXR5IQ=="]
     expected_out = "Q2hlY2sgSW50ZWdyaXR5IQ=="
-    expected_notes = [FIELD_DEPRECATED]
+    expected_notes: NoteClassListType = [FIELD_DEPRECATED]

@@ -1,23 +1,20 @@
-from typing import TYPE_CHECKING
-
-from httplint.field.json_field import JsonField, BAD_JSON
+from httplint.field.json_field import BAD_JSON, JsonField
 from httplint.field.tests import FieldTest
 from httplint.note import Note, categories, levels
-from httplint.types import AddNoteMethodType
+from httplint.types import (
+    AddNoteMethodType,
+    NoteClassListType,
+    ResponseLinterProtocol,
+)
 
-if TYPE_CHECKING:
-    from httplint.message import HttpMessageLinter
 
-
-class nel(JsonField):
+class nel(JsonField[ResponseLinterProtocol]):
     canonical_name = "NEL"
     description = """\
 The `NEL` header field configures Network Error Logging policies. 
 It allows websites to declare that they want to receive reports about network errors."""
     reference = "https://w3c.github.io/network-error-logging/#nel-header-field"
     deprecated = False
-    valid_in_requests = False
-    valid_in_responses = True
 
     def evaluate(self, add_note: AddNoteMethodType) -> None:
         if self.value is None:
@@ -69,11 +66,11 @@ It allows websites to declare that they want to receive reports about network er
                         details="it must be between 0.0 and 1.0",
                     )
 
-    def post_check(self, message: "HttpMessageLinter", add_note: AddNoteMethodType) -> None:
+    def post_check(self, add_note: AddNoteMethodType) -> None:
         if not self.value:
             return
 
-        reporting_endpoints_field = message.headers.parsed.get("reporting-endpoints")
+        reporting_endpoints_field = self.message.headers.parsed.get("reporting-endpoints")
         reporting_endpoints = (
             list(reporting_endpoints_field.keys()) if reporting_endpoints_field else []
         )
@@ -132,7 +129,7 @@ policy specifies a reporting endpoint, but no matching endpoint refers to it in 
 `Reporting-Endpoints` header."""
 
 
-class NelTest(FieldTest):
+class NelTest(FieldTest[ResponseLinterProtocol]):
     name = "NEL"
     inputs = [
         b'{"report_to": "group1", "max_age": 2592000, "include_subdomains": true, '
@@ -146,13 +143,13 @@ class NelTest(FieldTest):
             "success_fraction": 0.5,
         }
     ]
-    expected_notes = []
+    expected_notes: NoteClassListType = []
 
-    def set_context(self, message: "HttpMessageLinter") -> None:
+    def set_response_context(self, message: ResponseLinterProtocol) -> None:
         message.headers.process([(b"Reporting-Endpoints", b'group1="https://example.com/reports"')])
 
 
-class NelMultiLineTest(FieldTest):
+class NelMultiLineTest(FieldTest[ResponseLinterProtocol]):
     name = "NEL"
     inputs = [
         b'{"report_to": "group1", "max_age": 2592000}',
@@ -162,9 +159,9 @@ class NelMultiLineTest(FieldTest):
         {"report_to": "group1", "max_age": 2592000},
         {"report_to": "group2", "max_age": 3600},
     ]
-    expected_notes = []
+    expected_notes: NoteClassListType = []
 
-    def set_context(self, message: "HttpMessageLinter") -> None:
+    def set_response_context(self, message: ResponseLinterProtocol) -> None:
         message.headers.process(
             [
                 (
@@ -175,43 +172,43 @@ class NelMultiLineTest(FieldTest):
         )
 
 
-class NelMissingReportToTest(FieldTest):
+class NelMissingReportToTest(FieldTest[ResponseLinterProtocol]):
     name = "NEL"
     inputs = [b'{"max_age": 100}']
     expected_out = [{"max_age": 100}]
-    expected_notes = [NEL_MISSING_KEY]
+    expected_notes: NoteClassListType = [NEL_MISSING_KEY]
 
 
-class NelBadFractionTest(FieldTest):
+class NelBadFractionTest(FieldTest[ResponseLinterProtocol]):
     name = "NEL"
     inputs = [b'{"report_to": "a", "max_age": 1, "success_fraction": 1.5}']
     expected_out = [{"report_to": "a", "max_age": 1, "success_fraction": 1.5}]
-    expected_notes = [NEL_BAD_VALUE]
+    expected_notes: NoteClassListType = [NEL_BAD_VALUE]
 
-    def set_context(self, message: "HttpMessageLinter") -> None:
+    def set_response_context(self, message: ResponseLinterProtocol) -> None:
         message.headers.process([(b"Reporting-Endpoints", b'a="https://example.com/reports"')])
 
 
-class NelBadJsonTest(FieldTest):
+class NelBadJsonTest(FieldTest[ResponseLinterProtocol]):
     name = "NEL"
     inputs = [b"{unquoted: key}"]
     expected_out = None
     expected_out = None
-    expected_notes = [BAD_JSON]
+    expected_notes: NoteClassListType = [BAD_JSON]
 
 
-class NelReportToTest(FieldTest):
+class NelReportToTest(FieldTest[ResponseLinterProtocol]):
     name = "NEL"
     inputs = [b'{"report_to": "group1", "max_age": 100}']
     expected_out = [{"report_to": "group1", "max_age": 100}]
-    expected_notes = []
+    expected_notes: NoteClassListType = []
 
-    def set_context(self, message: "HttpMessageLinter") -> None:
+    def set_response_context(self, message: ResponseLinterProtocol) -> None:
         message.headers.process([(b"Reporting-Endpoints", b'group1="https://example.com/reports"')])
 
 
-class NelReportToMissingTest(FieldTest):
+class NelReportToMissingTest(FieldTest[ResponseLinterProtocol]):
     name = "NEL"
     inputs = [b'{"report_to": "group1", "max_age": 100}']
     expected_out = [{"report_to": "group1", "max_age": 100}]
-    expected_notes = [NEL_REPORT_TO_MISSING]
+    expected_notes: NoteClassListType = [NEL_REPORT_TO_MISSING]

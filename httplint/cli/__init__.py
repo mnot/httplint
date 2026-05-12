@@ -1,6 +1,6 @@
-from argparse import ArgumentParser, Namespace
 import sys
 import time
+from argparse import ArgumentParser, Namespace
 
 from httplint.cli.http_parser import HttpCliParser, modes
 from httplint.i18n import set_locale

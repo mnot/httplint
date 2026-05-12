@@ -1,12 +1,16 @@
+from httplint.field import FIELD_DEPRECATED
 from httplint.field.list_field import HttpListField
 from httplint.field.tests import FieldTest
 from httplint.note import Note, categories, levels
 from httplint.syntax import rfc9111
-from httplint.types import AddNoteMethodType
-from httplint.field import FIELD_DEPRECATED
+from httplint.types import (
+    AddNoteMethodType,
+    NoteClassListType,
+    RequestLinterProtocol,
+)
 
 
-class pragma(HttpListField):
+class pragma(HttpListField[RequestLinterProtocol]):
     canonical_name = "Pragma"
     description = """\
 The `Pragma` header is used to include implementation-specific directives that might apply to any
@@ -17,8 +21,6 @@ This header is deprecated, in favour of `Cache-Control`."""
     syntax = rfc9111.Pragma
     category = categories.CACHING
     deprecated = True
-    valid_in_requests = True
-    valid_in_responses = False
 
     def parse(self, field_value: str, add_note: AddNoteMethodType) -> str:
         return field_value.lower()
@@ -36,8 +38,8 @@ class PRAGMA_OTHER(Note):
     _text = """HTTP only defines `Pragma: no-cache`; other uses of this header are deprecated."""
 
 
-class PragmaTest(FieldTest):
+class PragmaTest(FieldTest[RequestLinterProtocol]):
     name = "Pragma"
     inputs = [b"no-cache"]
     expected_out = ["no-cache"]
-    expected_notes = [FIELD_DEPRECATED]
+    expected_notes: NoteClassListType = [FIELD_DEPRECATED]

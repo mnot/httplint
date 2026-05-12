@@ -1,16 +1,21 @@
 from typing import Tuple
 
+from httplint.field import BAD_SYNTAX
 from httplint.field.list_field import HttpListField
-from httplint.field.tests import FieldTest, FakeRequestLinter
+from httplint.field.tests import FakeRequestLinter, FieldTest
+from httplint.field.utils import parse_params
 from httplint.note import Note, categories, levels
 from httplint.syntax import rfc9112
-from httplint.types import AddNoteMethodType, ParamDictType
-from httplint.field.utils import parse_params
-from httplint.field import BAD_SYNTAX
-from httplint.message import HttpResponseLinter, HttpRequestLinter, HttpMessageLinter
+from httplint.types import (
+    AddNoteMethodType,
+    AnyMessageLinterProtocol,
+    NoteClassListType,
+    ParamDictType,
+    ResponseLinterProtocol,
+)
 
 
-class transfer_encoding(HttpListField):
+class transfer_encoding(HttpListField[AnyMessageLinterProtocol]):
     canonical_name = "Transfer-Encoding"
     description = """\
 The `Transfer-Encoding` header indicates what (if any) type of transformation has been applied to
@@ -28,8 +33,6 @@ Transfer codings can only be used in HTTP/1; HTTP/2 and HTTP/3 do not support th
     reference = f"{rfc9112.SPEC_URL}#field.transfer-encoding"
     syntax = rfc9112.Transfer_Encoding
     deprecated = False
-    valid_in_requests = True
-    valid_in_responses = True
 
     def parse(self, field_value: str, add_note: AddNoteMethodType) -> Tuple[str, ParamDictType]:
         try:
@@ -46,10 +49,13 @@ Transfer codings can only be used in HTTP/1; HTTP/2 and HTTP/3 do not support th
         unwanted = {c[0] for c in self.value if c[0] not in ["chunked", "identity"]}
         if unwanted:
             # check to see if the client asked for it
-            if isinstance(self.message, HttpResponseLinter) and isinstance(
-                self.message.related, HttpRequestLinter
+            if (
+                (response := self.message.as_response)
+                and response.request
+                and response.request.message_type == "request"
             ):
-                te = [t[0] for t in self.message.related.headers.parsed.get("te", [])]
+                request = response.request
+                te = [t[0] for t in request.headers.parsed.get("te", [])]
                 unwanted = {c for c in unwanted if c not in te}
 
         if unwanted:
@@ -94,66 +100,66 @@ This message has encodings with such parameters; although they're technically al
 cause interoperability problems. They should be removed."""
 
 
-class TransferEncodingTest(FieldTest):
+class TransferEncodingTest(FieldTest[AnyMessageLinterProtocol]):
     name = "Transfer-Encoding"
     inputs = [b"chunked"]
     expected_out = [("chunked", {})]
 
 
-class TransferEncodingParamTest(FieldTest):
+class TransferEncodingParamTest(FieldTest[AnyMessageLinterProtocol]):
     name = "Transfer-Encoding"
     inputs = [b"chunked; foo=bar"]
     expected_out = [("chunked", {"foo": "bar"})]
-    expected_notes = [TRANSFER_CODING_PARAM]
+    expected_notes: NoteClassListType = [TRANSFER_CODING_PARAM]
 
 
-class BadTransferEncodingTest(FieldTest):
+class BadTransferEncodingTest(FieldTest[AnyMessageLinterProtocol]):
     name = "Transfer-Encoding"
     inputs = [b"chunked=foo"]
     expected_out = [("chunked=foo", {})]
-    expected_notes = [BAD_SYNTAX, TRANSFER_CODING_UNWANTED]
+    expected_notes: NoteClassListType = [BAD_SYNTAX, TRANSFER_CODING_UNWANTED]
 
 
-class TransferEncodingCaseTest(FieldTest):
+class TransferEncodingCaseTest(FieldTest[AnyMessageLinterProtocol]):
     name = "Transfer-Encoding"
     inputs = [b"chUNked"]
     expected_out = [("chunked", {})]
 
 
-class TransferEncodingIdentityTest(FieldTest):
+class TransferEncodingIdentityTest(FieldTest[AnyMessageLinterProtocol]):
     name = "Transfer-Encoding"
     inputs = [b"identity"]
     expected_out = [("identity", {})]
-    expected_notes = [TRANSFER_CODING_IDENTITY]
+    expected_notes: NoteClassListType = [TRANSFER_CODING_IDENTITY]
 
 
-class TransferEncodingUnwantedTest(FieldTest):
+class TransferEncodingUnwantedTest(FieldTest[AnyMessageLinterProtocol]):
     name = "Transfer-Encoding"
     inputs = [b"foo"]
     expected_out = [("foo", {})]
-    expected_notes = [TRANSFER_CODING_UNWANTED]
+    expected_notes: NoteClassListType = [TRANSFER_CODING_UNWANTED]
 
 
-class TransferEncodingMultTest(FieldTest):
+class TransferEncodingMultTest(FieldTest[AnyMessageLinterProtocol]):
     name = "Transfer-Encoding"
     inputs = [b"chunked", b"identity"]
     expected_out = [("chunked", {}), ("identity", {})]
-    expected_notes = [TRANSFER_CODING_IDENTITY]
+    expected_notes: NoteClassListType = [TRANSFER_CODING_IDENTITY]
 
 
-class TransferEncodingMultUnwantedTest(FieldTest):
+class TransferEncodingMultUnwantedTest(FieldTest[AnyMessageLinterProtocol]):
     name = "Transfer-Encoding"
     inputs = [b"chunked", b"foo", b"bar"]
     expected_out = [("chunked", {}), ("foo", {}), ("bar", {})]
-    expected_notes = [TRANSFER_CODING_UNWANTED]
+    expected_notes: NoteClassListType = [TRANSFER_CODING_UNWANTED]
 
 
-class TransferEncodingWantedTest(FieldTest):
+class TransferEncodingWantedTest(FieldTest[AnyMessageLinterProtocol]):
     name = "Transfer-Encoding"
     inputs = [b"foo"]
     expected_out = [("foo", {})]
 
-    def set_context(self, message: HttpMessageLinter) -> None:
+    def set_response_context(self, message: ResponseLinterProtocol) -> None:
         request = FakeRequestLinter()
         request.headers.process([(b"te", b"foo")])
-        message.related = request
+        message.request = request

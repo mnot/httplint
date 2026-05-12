@@ -1,8 +1,11 @@
 from httplint.field.singleton_field import SingletonField
-from httplint.field.tests import FieldTest, FakeRequestLinter
-from httplint.syntax import rfc9110
-from httplint.types import AddNoteMethodType
+from httplint.field.tests import FakeRequestLinter, FieldTest
 from httplint.note import Note, categories, levels
+from httplint.syntax import rfc9110
+from httplint.types import (
+    AddNoteMethodType,
+    RequestLinterProtocol,
+)
 
 
 class MAX_FORWARDS_IGNORED(Note):
@@ -14,7 +17,7 @@ The `Max-Forwards` header is only defined for `TRACE` and `OPTIONS` requests; fo
 is likely to be ignored."""
 
 
-class max_forwards(SingletonField):
+class max_forwards(SingletonField[RequestLinterProtocol]):
     canonical_name = "Max-Forwards"
     description = """\
 The `Max-Forwards` header field provides a mechanism to limit
@@ -22,15 +25,13 @@ the number of times that the request is forwarded by intermediaries."""
     reference = f"{rfc9110.SPEC_URL}#field.max-forwards"
     syntax = rfc9110.Max_Forwards
     deprecated = False
-    valid_in_requests = True
-    valid_in_responses = False
 
     def evaluate(self, add_note: AddNoteMethodType) -> None:
         if getattr(self.message, "method", None) not in ["TRACE", "OPTIONS"]:
             add_note(MAX_FORWARDS_IGNORED)
 
 
-class MaxForwardsTest(FieldTest):
+class MaxForwardsTest(FieldTest[RequestLinterProtocol]):
     name = "Max-Forwards"
     inputs = [b"5"]
     expected_out = "5"

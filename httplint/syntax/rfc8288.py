@@ -12,7 +12,7 @@ They should be processed with re.VERBOSE.
 
 
 from .rfc3986 import URI_reference
-from .rfc9110 import list_rule, OWS, quoted_string, token
+from .rfc9110 import OWS, list_rule, quoted_string, token
 
 SPEC_URL = "http://httpwg.org/specs/rfc8288"
 

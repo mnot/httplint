@@ -1,16 +1,19 @@
 from typing import Tuple
 
-from httplint.field.singleton_field import SingletonField
+from httplint.field.singleton_field import SINGLE_HEADER_REPEAT, SingletonField
 from httplint.field.tests import FieldTest
+from httplint.field.utils import PARAM_STAR_QUOTED, parse_params
 from httplint.note import Note, categories, levels
 from httplint.syntax import rfc9110
-from httplint.types import AddNoteMethodType, ParamDictType
-from httplint.field.utils import parse_params
-from httplint.field.singleton_field import SINGLE_HEADER_REPEAT
-from httplint.field.utils import PARAM_STAR_QUOTED
+from httplint.types import (
+    AddNoteMethodType,
+    AnyMessageLinterProtocol,
+    NoteClassListType,
+    ParamDictType,
+)
 
 
-class content_disposition(SingletonField):
+class content_disposition(SingletonField[AnyMessageLinterProtocol]):
     canonical_name = "Content-Disposition"
     description = """\
 The `Content-Disposition` header suggests a name to use when saving the file.
@@ -20,8 +23,6 @@ the file, rather than display it."""
     reference = "https://www.rfc-editor.org/rfc/rfc6266.html"
     syntax = rf"(?:{rfc9110.token}(?:\s*;\s*{rfc9110.parameter})*)"
     deprecated = False
-    valid_in_requests = True
-    valid_in_responses = True
 
     def parse(self, field_value: str, add_note: AddNoteMethodType) -> Tuple[str, ParamDictType]:
         try:
@@ -101,53 +102,53 @@ system directory), browsers will usually ignore these parameters, or remove path
 You should remove these characters."""
 
 
-class QuotedCDTest(FieldTest):
+class QuotedCDTest(FieldTest[AnyMessageLinterProtocol]):
     name = "Content-Disposition"
     inputs = [b'attachment; filename="foo.txt"']
     expected_out = ("attachment", {"filename": "foo.txt"})
 
 
-class TokenCDTest(FieldTest):
+class TokenCDTest(FieldTest[AnyMessageLinterProtocol]):
     name = "Content-Disposition"
     inputs = [b"attachment; filename=foo.txt"]
     expected_out = ("attachment", {"filename": "foo.txt"})
 
 
-class InlineCDTest(FieldTest):
+class InlineCDTest(FieldTest[AnyMessageLinterProtocol]):
     name = "Content-Disposition"
     inputs = [b"inline; filename=foo.txt"]
     expected_out = ("inline", {"filename": "foo.txt"})
 
 
-class RepeatCDTest(FieldTest):
+class RepeatCDTest(FieldTest[AnyMessageLinterProtocol]):
     name = "Content-Disposition"
     inputs = [b"attachment; filename=foo.txt", b"inline; filename=bar.txt"]
     expected_out = ("attachment", {"filename": "foo.txt"})
-    expected_notes = [SINGLE_HEADER_REPEAT]
+    expected_notes: NoteClassListType = [SINGLE_HEADER_REPEAT]
 
 
-class FilenameStarCDTest(FieldTest):
+class FilenameStarCDTest(FieldTest[AnyMessageLinterProtocol]):
     name = "Content-Disposition"
     inputs = [b"attachment; filename=foo.txt; filename*=UTF-8''a%cc%88.txt"]
     expected_out = ("attachment", {"filename": "foo.txt", "filename*": "a\u0308.txt"})
 
 
-class FilenameStarQuotedCDTest(FieldTest):
+class FilenameStarQuotedCDTest(FieldTest[AnyMessageLinterProtocol]):
     name = "Content-Disposition"
     inputs = [b"attachment; filename=foo.txt; filename*=\"UTF-8''a%cc%88.txt\""]
     expected_out = ("attachment", {"filename": "foo.txt", "filename*": "a\u0308.txt"})
-    expected_notes = [PARAM_STAR_QUOTED]
+    expected_notes: NoteClassListType = [PARAM_STAR_QUOTED]
 
 
-class FilenamePercentCDTest(FieldTest):
+class FilenamePercentCDTest(FieldTest[AnyMessageLinterProtocol]):
     name = "Content-Disposition"
     inputs = [b"attachment; filename=fo%22o.txt"]
     expected_out = ("attachment", {"filename": "fo%22o.txt"})
-    expected_notes = [DISPOSITION_FILENAME_PERCENT]
+    expected_notes: NoteClassListType = [DISPOSITION_FILENAME_PERCENT]
 
 
-class FilenamePathCharCDTest(FieldTest):
+class FilenamePathCharCDTest(FieldTest[AnyMessageLinterProtocol]):
     name = "Content-Disposition"
     inputs = [b'attachment; filename="/foo.txt"']
     expected_out = ("attachment", {"filename": "/foo.txt"})
-    expected_notes = [DISPOSITION_FILENAME_PATH_CHAR]
+    expected_notes: NoteClassListType = [DISPOSITION_FILENAME_PATH_CHAR]

@@ -1,12 +1,15 @@
-from typing import Any, Dict, List, Tuple
+from typing import Dict, List
 
 from httplint.field.list_field import HttpListField
 from httplint.field.tests import FieldTest
-from httplint.message import HttpMessageLinter
 from httplint.note import Note, categories, levels
 from httplint.syntax import rfc9110
-from httplint.types import AddNoteMethodType
-
+from httplint.types import (
+    AddNoteMethodType,
+    NoteArgsType,
+    NoteClassListType,
+    ResponseLinterProtocol,
+)
 
 # directive-name = 1*( ALPHA / DIGIT / "-" )
 DIRECTIVE_NAME = r"[a-zA-Z0-9-]+"
@@ -17,7 +20,7 @@ DIRECTIVE_VALUE = r"[ \t\x21-\x2B\x2D-\x3A\x3C-\x7E]*"
 csp_directive = rf"(?: {DIRECTIVE_NAME} (?: {rfc9110.RWS} {DIRECTIVE_VALUE} )? )"
 
 
-class content_security_policy(HttpListField):
+class content_security_policy(HttpListField[ResponseLinterProtocol]):
     canonical_name = "Content-Security-Policy"
     description = """\
 The `Content-Security-Policy` response header allows web site administrators to declare approved
@@ -27,14 +30,12 @@ sources of content that browsers are allowed to load on a page."""
     syntax = rf"(?: {csp_directive} (?: {rfc9110.OWS} ; (?: {rfc9110.OWS} {csp_directive} )? )* )"
     category = categories.SECURITY
     deprecated = False
-    valid_in_requests = False
-    valid_in_responses = True
     report_only_string = ""
     report_only_text = ""
 
-    def __init__(self, wire_name: str, message: "HttpMessageLinter") -> None:
+    def __init__(self, wire_name: str, message: ResponseLinterProtocol) -> None:
         super().__init__(wire_name, message)
-        self._deferred_notes: List[Tuple[Any, Dict[str, Any]]] = []
+        self._deferred_notes: List[NoteArgsType] = []
 
     def parse(self, field_value: str, add_note: AddNoteMethodType) -> Dict[str, str]:
         parsed_directives: Dict[str, str] = {}
@@ -134,11 +135,11 @@ sources of content that browsers are allowed to load on a page."""
                 report_only_text=self.report_only_text,
             )
 
-    def post_check(self, message: "HttpMessageLinter", add_note: AddNoteMethodType) -> None:
+    def post_check(self, add_note: AddNoteMethodType) -> None:
         if not self.value:
             return
 
-        reporting_endpoints_field = message.headers.parsed.get("reporting-endpoints")
+        reporting_endpoints_field = self.message.headers.parsed.get("reporting-endpoints")
         reporting_endpoints = (
             list(reporting_endpoints_field.keys()) if reporting_endpoints_field else []
         )
@@ -154,7 +155,7 @@ sources of content that browsers are allowed to load on a page."""
 
                 # Find the parent note
                 parent_note = None
-                for note in message.notes:
+                for note in self.message.notes:
                     if isinstance(note, CONTENT_SECURITY_POLICY):
                         parent_note = note
                         break
@@ -275,72 +276,72 @@ specifies a reporting endpoint, but no matching endpoint refers to it in the
 `Reporting-Endpoints` header.%(report_only_text)s"""
 
 
-class CSPTest(FieldTest):
+class CSPTest(FieldTest[ResponseLinterProtocol]):
     name = "Content-Security-Policy"
     inputs = [b"default-src 'self'; script-src 'unsafe-inline'"]
     expected_out = [{"default-src": "'self'", "script-src": "'unsafe-inline'"}]
-    expected_notes = [CONTENT_SECURITY_POLICY, CSP_UNSAFE_INLINE]
+    expected_notes: NoteClassListType = [CONTENT_SECURITY_POLICY, CSP_UNSAFE_INLINE]
 
 
-class CSPMultipleTest(FieldTest):
+class CSPMultipleTest(FieldTest[ResponseLinterProtocol]):
     name = "Content-Security-Policy"
     inputs = [b"default-src 'self'", b"script-src 'unsafe-eval'"]
     expected_out = [{"default-src": "'self'"}, {"script-src": "'unsafe-eval'"}]
-    expected_notes = [CONTENT_SECURITY_POLICY, CSP_UNSAFE_EVAL]
+    expected_notes: NoteClassListType = [CONTENT_SECURITY_POLICY, CSP_UNSAFE_EVAL]
 
 
-class CSPDuplicateTest(FieldTest):
+class CSPDuplicateTest(FieldTest[ResponseLinterProtocol]):
     name = "Content-Security-Policy"
     inputs = [b"default-src 'self'; default-src 'none'"]
     expected_out = [{"default-src": "'self'"}]
-    expected_notes = [CONTENT_SECURITY_POLICY, CSP_DUPLICATE_DIRECTIVE]
+    expected_notes: NoteClassListType = [CONTENT_SECURITY_POLICY, CSP_DUPLICATE_DIRECTIVE]
 
 
-class CSPReportUriTest(FieldTest):
+class CSPReportUriTest(FieldTest[ResponseLinterProtocol]):
     name = "Content-Security-Policy"
     inputs = [b"report-uri /csp-report"]
     expected_out = [{"report-uri": "/csp-report"}]
-    expected_notes = [CONTENT_SECURITY_POLICY, CSP_DEPRECATED_REPORT_URI]
+    expected_notes: NoteClassListType = [CONTENT_SECURITY_POLICY, CSP_DEPRECATED_REPORT_URI]
 
 
-class CSPWideOpenTest(FieldTest):
+class CSPWideOpenTest(FieldTest[ResponseLinterProtocol]):
     name = "Content-Security-Policy"
     inputs = [b"script-src *"]
     expected_out = [{"script-src": "*"}]
-    expected_notes = [CONTENT_SECURITY_POLICY, CSP_WIDE_OPEN]
+    expected_notes: NoteClassListType = [CONTENT_SECURITY_POLICY, CSP_WIDE_OPEN]
 
 
-class CSPTrailingSemiTest(FieldTest):
+class CSPTrailingSemiTest(FieldTest[ResponseLinterProtocol]):
     name = "Content-Security-Policy"
     inputs = [b"default-src 'self'; script-src 'self';"]
     expected_out = [{"default-src": "'self'", "script-src": "'self'"}]
-    expected_notes = [CONTENT_SECURITY_POLICY]
+    expected_notes: NoteClassListType = [CONTENT_SECURITY_POLICY]
 
 
-class CSPReportToTest(FieldTest):
+class CSPReportToTest(FieldTest[ResponseLinterProtocol]):
     name = "Content-Security-Policy"
     inputs = [b"sort-src 'self'; report-to endpoint"]
     expected_out = [{"sort-src": "'self'", "report-to": "endpoint"}]
-    expected_notes = [CONTENT_SECURITY_POLICY]
+    expected_notes: NoteClassListType = [CONTENT_SECURITY_POLICY]
 
-    def set_context(self, message: "HttpMessageLinter") -> None:
+    def set_response_context(self, message: ResponseLinterProtocol) -> None:
         message.headers.process(
             [(b"Reporting-Endpoints", b'endpoint="https://example.com/reports"')]
         )
 
 
-class CSPReportToMissingTest(FieldTest):
+class CSPReportToMissingTest(FieldTest[ResponseLinterProtocol]):
     name = "Content-Security-Policy"
     inputs = [b"script-src 'self'; report-to endpoint"]
     expected_out = [{"script-src": "'self'", "report-to": "endpoint"}]
-    expected_notes = [CONTENT_SECURITY_POLICY, CSP_REPORT_TO_MISSING]
+    expected_notes: NoteClassListType = [CONTENT_SECURITY_POLICY, CSP_REPORT_TO_MISSING]
 
 
-class CSPReportToMismatchTest(FieldTest):
+class CSPReportToMismatchTest(FieldTest[ResponseLinterProtocol]):
     name = "Content-Security-Policy"
     inputs = [b"script-src 'self'; report-to endpoint"]
     expected_out = [{"script-src": "'self'", "report-to": "endpoint"}]
-    expected_notes = [CONTENT_SECURITY_POLICY, CSP_REPORT_TO_MISSING]
+    expected_notes: NoteClassListType = [CONTENT_SECURITY_POLICY, CSP_REPORT_TO_MISSING]
 
-    def set_context(self, message: "HttpMessageLinter") -> None:
+    def set_response_context(self, message: ResponseLinterProtocol) -> None:
         message.headers.process([(b"Reporting-Endpoints", b'endpoint-2="https://example.com"')])

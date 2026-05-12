@@ -76,15 +76,38 @@ If your field name doesn't work with this convention, please raise an issue.
 
 The easiest way to get started is to copy `httplint/field/parsers/field.tpl` to your new file.
 
-class vary(HttpListField):
+~~~ python
+from httplint.field import HttpListField
+from httplint.note import categories
+from httplint.syntax import rfc9110
+from httplint.types import ResponseLinterProtocol
+
+class vary(HttpListField[ResponseLinterProtocol]):
     canonical_name = "Vary"
     description = """..."""
     reference = f"{rfc9110.SPEC_URL}#field.vary"
     syntax = rfc9110.Vary
     category = categories.CONNEG
-    valid_in_requests = False
-    valid_in_responses = True
 ~~~
+
+
+#### Protocol Specialization
+
+All field classes and their tests should be specialized with the appropriate message protocol from `httplint.types`. 
+
+When you specialize a field handler, it **automatically** sets the `valid_in_requests` and `valid_in_responses` properties for you:
+
+*   **`RequestLinterProtocol`**: `valid_in_requests` is True, `valid_in_responses` is False.
+*   **`ResponseLinterProtocol`**: `valid_in_requests` is False, `valid_in_responses` is True.
+*   **`AnyMessageLinterProtocol`**: Both are True.
+
+These are exposed as instance properties to ensure they are only used during a linting pass. Do not access them on the class itself.
+
+Example import:
+~~~ python
+from httplint.types import AddNoteMethodType, RequestLinterProtocol
+~~~
+
 
 #### The _HttpListField_ Class
 
@@ -113,7 +136,11 @@ When using `SingletonField`:
 For example, a `SingletonField` like `Age` starts with:
 
 ~~~ python
-class age(SingletonField):
+from httplint.field.singleton_field import SingletonField
+from httplint.syntax import rfc9111
+from httplint.types import ResponseLinterProtocol
+
+class age(SingletonField[ResponseLinterProtocol]):
     canonical_name = "Age"
     description = """\
 The `Age` response header conveys the sender's estimate of the amount of time since the response
@@ -121,8 +148,6 @@ The `Age` response header conveys the sender's estimate of the amount of time si
     reference = f"{rfc9111.SPEC_URL}#field.age"
     syntax = False  # rfc9111.Age
     deprecated = False
-    valid_in_requests = False
-    valid_in_responses = True
 ~~~
 
 #### The _StructuredField_ Class
@@ -138,12 +163,13 @@ When using `StructuredField`, you do not need to provide a `syntax` regex or imp
 For example, a `StructuredField` like `Cache-Status` starts with:
 
 ~~~ python
-class cache_status(StructuredField):
+from httplint.field.structured_field import StructuredField
+from httplint.types import ResponseLinterProtocol
+
+class cache_status(StructuredField[ResponseLinterProtocol]):
     canonical_name = "Cache-Status"
     reference = "https://www.rfc-editor.org/rfc/rfc9211.html"
     description = """..."""
-    valid_in_requests = False
-    valid_in_responses = True
     sf_type = "list"
 ~~~
 
@@ -170,20 +196,10 @@ When using `HttpListField`, _parse_ will be called for each _item_ in the list, 
 
 Note that `syntax` is checked against each item before _parse_ is called in a `HttpListField`.
 
-communicate something about the field_value. It returns the created _Note_ instance.
-
-_parse_ should return the parsed value corresponding to the `field_value`. If there is an error and
-the value shouldn't be remembered, raise `ValueError`.
-
 
 #### The _evaluate_ method
 
-_evaluate_ is called with one argument, `add_note`. As above, it allows setting _Note_s about the
-complete field.
-
-_evaluate_ is called once all of the field lines are processed, to enable the entire set of the
-field's values to be considered. To access the parsed value(s), use the _value_ instance
-variable.
+_evaluate_ is called with one argument, `add_note`. It allows setting _Note_s about the complete field.
 
 _evaluate_ is called once all of the field lines are processed, to enable the entire set of the
 field's values to be considered. To access the parsed value(s), use the _value_ instance
@@ -194,11 +210,16 @@ When using `HttpListField`, _value_ is a list of the results of calling _parse_.
 
 #### The _post_check_ method
 
-_post_check_ is called with two arguments, `message` (the message linter instance) and `add_note`.
+_post_check_ is called with one argument, `add_note`.
 
-It is called after the entire message has been processed, including the body and other post-parsing steps (like checking for cacheability). This is the appropriate place for checks that rely on the state of the message derived from other fields or the body.
+It is called after the entire message has been processed, including the body and other post-parsing steps (like checking for cacheability). This is the appropriate place for checks that rely on the state of the message derived from other fields or the body. Use `self.message` to access message state.
 
-Note that if `message.no_content` is set, the body will not be processed, so checks relying on it should be skipped.
+Note that if `self.message.no_content` is set, the body will not be processed, so checks relying on it should be skipped.
+
+
+#### The _pre_check_ method
+
+_pre_check_ is called with one argument, `add_note`. It is called before parsing or evaluating the field. If it returns `False`, processing for that field is aborted. This is useful for checking if a field is valid in the current context (e.g., request vs. response) before doing expensive parsing.
 
 
 #### The _message_ instance variable
@@ -230,10 +251,9 @@ parent_note.add_child(MY_SUB_NOTE)
 ~~~
 
 
-#### Writing Tests
+Each field definition should also include tests, as subclasses of `httplint.field.tests.FieldTest`, which should be specialized with the appropriate message protocol.
 
-Each field definition should also include tests, as subclasses of
-`httplint.field.tests.FieldTest`. It expects the following class properties:
+It expects the following class properties:
 
 * `name` - the field field-name
 * `inputs` - a list of field field-values, one item per line.
@@ -242,6 +262,15 @@ Each field definition should also include tests, as subclasses of
     the inputs
 * `expected_notes` - a list of `httplint.note.Note` classes that are expected
     to be set with `add_note` when parsing the inputs
+
+Example:
+~~~ python
+from httplint.field.tests import FieldTest
+from httplint.types import ResponseLinterProtocol
+
+class YourFieldTest(FieldTest[ResponseLinterProtocol]):
+    ...
+~~~
 
 You can create any number of tests this way; they will be run automatically when
 _tests/test\_fields.py_ is run.

@@ -1,15 +1,20 @@
-from typing import Any, cast
 from types import SimpleNamespace
+from typing import cast
 
 from httplint.field.list_field import HttpListField
-from httplint.field.tests import FieldTest, FakeRequestLinter, FakeResponseLinter
-from httplint.message import HttpRequestLinter, HttpResponseLinter, HttpMessageLinter
+from httplint.field.tests import FakeRequestLinter, FieldTest
 from httplint.note import Note, categories, levels
 from httplint.syntax import rfc9110
-from httplint.types import AddNoteMethodType
+from httplint.types import (
+    AddNoteMethodType,
+    AnyMessageLinterProtocol,
+    CachingProtocol,
+    NoteClassListType,
+    ResponseLinterProtocol,
+)
 
 
-class content_encoding(HttpListField):
+class content_encoding(HttpListField[AnyMessageLinterProtocol]):
     canonical_name = "Content-Encoding"
     description = """\
 The `Content-Encoding` header's value indicates what content codings have
@@ -22,32 +27,32 @@ of its underlying media type; e.g., `gzip` and `deflate`."""
     syntax = rfc9110.Content_Encoding
     category = categories.CONNEG
     deprecated = False
-    valid_in_requests = True
-    valid_in_responses = True
 
     def parse(self, field_value: str, add_note: AddNoteMethodType) -> str:
         # check to see if there are any non-gzip encodings, because
         # that's the only one we ask for.
-        if isinstance(self.message, HttpResponseLinter) and isinstance(
-            self.message.related, HttpRequestLinter
+        if (
+            (response := self.message.as_response)
+            and response.request
+            and response.request.message_type == "request"
         ):
             accept_encoding = [
-                a[0] for a in self.message.related.headers.parsed.get("accept-encoding", [])
+                a[0] for a in response.request.headers.parsed.get("accept-encoding", [])
             ]
             if field_value.lower() not in accept_encoding:
                 add_note(ENCODING_UNWANTED, coding=field_value)
         return field_value.lower()
 
-    def post_check(self, message: "HttpMessageLinter", add_note: AddNoteMethodType) -> None:
-        if not isinstance(message, HttpResponseLinter):
+    def post_check(self, add_note: AddNoteMethodType) -> None:
+        if not self.message.as_response:
             return
 
-        ce_values = message.headers.parsed.get("content-encoding", [])
+        ce_values = self.message.headers.parsed.get("content-encoding", [])
         if any(enc in ["dcb", "dcz"] for enc in ce_values):
-            if hasattr(message, "caching") and (
-                message.caching.store_shared or message.caching.store_private
+            if hasattr(self.message, "caching") and (
+                self.message.caching.store_shared or self.message.caching.store_private
             ):
-                vary_values = message.headers.parsed.get("vary", set())
+                vary_values = self.message.headers.parsed.get("vary", set())
                 if "available-dictionary" not in vary_values:
                     add_note(DICTIONARY_COMPRESSED_MISSING_VARY)
 
@@ -80,46 +85,49 @@ Normally, clients ask for the encodings they want in the `Accept-Encoding` reque
 encodings that the client doesn't explicitly request can lead to interoperability problems."""
 
 
-class ContentEncodingTest(FieldTest):
+class ContentEncodingTest(FieldTest[AnyMessageLinterProtocol]):
     name = "Content-Encoding"
     inputs = [b"gzip"]
     expected_out = ["gzip"]
 
-    def set_context(self, message: HttpMessageLinter) -> None:
-        message.related.headers.process([(b"accept-encoding", b"gzip")])  # type: ignore
+    def set_response_context(self, message: ResponseLinterProtocol) -> None:
+        assert message.request is not None
+        message.request.headers.process([(b"accept-encoding", b"gzip")])
 
 
-class ContentEncodingCaseTest(FieldTest):
+class ContentEncodingCaseTest(FieldTest[AnyMessageLinterProtocol]):
     name = "Content-Encoding"
     inputs = [b"GZip"]
     expected_out = ["gzip"]
 
-    def set_context(self, message: HttpMessageLinter) -> None:
-        message.related.headers.process([(b"accept-encoding", b"gzip")])  # type: ignore
+    def set_response_context(self, message: ResponseLinterProtocol) -> None:
+        assert message.request is not None
+        message.request.headers.process([(b"accept-encoding", b"gzip")])
 
 
-class UnwantedContentEncodingTest(FieldTest):
+class ContentEncodingUnwantedTest(FieldTest[AnyMessageLinterProtocol]):
     name = "Content-Encoding"
-    inputs = [b"gzip", b"foo"]
+    inputs = [b"gzip, foo"]
     expected_out = ["gzip", "foo"]
-    expected_notes = [ENCODING_UNWANTED]
+    expected_notes: NoteClassListType = [ENCODING_UNWANTED]
 
-    def set_context(self, message: HttpMessageLinter) -> None:
+    def set_response_context(self, message: ResponseLinterProtocol) -> None:
         request = FakeRequestLinter()
         request.headers.process([(b"accept-encoding", b"gzip")])
-        message.related = request
+        message.request = request
 
 
-class ContentEncodingMissingVaryTest(FieldTest):
+class DictionaryCompressedMissingVaryTest(FieldTest[AnyMessageLinterProtocol]):
     name = "Content-Encoding"
     inputs = [b"dcb"]
     expected_out = ["dcb"]
-    expected_notes = [DICTIONARY_COMPRESSED_MISSING_VARY]
+    expected_notes: NoteClassListType = [DICTIONARY_COMPRESSED_MISSING_VARY]
 
-    def set_context(self, message: "HttpMessageLinter") -> None:
-        message = cast(FakeResponseLinter, message)
-        assert message.related is not None
-        message.related.headers.process([(b"accept-encoding", b"dcb")])
-        message.caching = cast(Any, SimpleNamespace(store_shared=True, store_private=True))
+    def set_response_context(self, message: ResponseLinterProtocol) -> None:
+        assert message.request is not None
+        message.request.headers.process([(b"accept-encoding", b"dcb")])
+        message.caching = cast(
+            CachingProtocol, SimpleNamespace(store_shared=True, store_private=True)
+        )
         # Vary missing 'Available-Dictionary'
         message.headers.parsed["vary"] = set()

@@ -1,8 +1,12 @@
-from httplint.field.tests import FieldTest
 from httplint.field.parsers.content_security_policy import (
-    content_security_policy,
     CONTENT_SECURITY_POLICY,
     CSP_UNSAFE_INLINE,
+    content_security_policy,
+)
+from httplint.field.tests import FieldTest
+from httplint.types import (
+    NoteClassListType,
+    ResponseLinterProtocol,
 )
 
 
@@ -13,14 +17,12 @@ The `Content-Security-Policy-Report-Only` response header allows web site admini
 the effects of a content security policy without enforcing it."""
     reference = "https://www.w3.org/TR/CSP3/"
     deprecated = False
-    valid_in_requests = False
-    valid_in_responses = True
     report_only_string = " for reporting only"
     report_only_text = "\n\nBrowsers will only report violations of this policy, not enforce it."
 
 
-class CSPROTest(FieldTest):
+class CSPROTest(FieldTest[ResponseLinterProtocol]):
     name = "Content-Security-Policy-Report-Only"
     inputs = [b"default-src 'self'; script-src 'unsafe-inline'"]
     expected_out = [{"default-src": "'self'", "script-src": "'unsafe-inline'"}]
-    expected_notes = [CONTENT_SECURITY_POLICY, CSP_UNSAFE_INLINE]
+    expected_notes: NoteClassListType = [CONTENT_SECURITY_POLICY, CSP_UNSAFE_INLINE]

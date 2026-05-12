@@ -1,13 +1,18 @@
 from dataclasses import dataclass
 from typing import Optional
 
+from httplint.field import BAD_SYNTAX
 from httplint.field.list_field import HttpListField
 from httplint.field.tests import FieldTest
-from httplint.field import BAD_SYNTAX
 from httplint.field.utils import parse_params
-from httplint.syntax import rfc9110
-from httplint.types import AddNoteMethodType, ParamDictType
 from httplint.note import Note, categories, levels
+from httplint.syntax import rfc9110
+from httplint.types import (
+    AddNoteMethodType,
+    NoteClassListType,
+    ParamDictType,
+    RequestLinterProtocol,
+)
 
 
 @dataclass
@@ -17,7 +22,7 @@ class AcceptValue:
     q: Optional[float]
 
 
-class accept(HttpListField):
+class accept(HttpListField[RequestLinterProtocol]):
     canonical_name = "Accept"
     description = """\
 The `Accept` header field can be used by user agents to specify response media types that are
@@ -26,8 +31,6 @@ acceptable in responses."""
     syntax = rfc9110.Accept
     category = categories.CONNEG
     deprecated = False
-    valid_in_requests = True
-    valid_in_responses = False
 
     def parse(self, field_value: str, add_note: AddNoteMethodType) -> AcceptValue:
         try:
@@ -82,7 +85,7 @@ The value for this field doesn't conform to its specified syntax; see [its
 definition](%(ref_uri)s) for more information."""
 
 
-class AcceptTest(FieldTest):
+class AcceptTest(FieldTest[RequestLinterProtocol]):
     name = "Accept"
     inputs = [b"audio/*; q=0.2, audio/basic"]
     expected_out = [
@@ -91,21 +94,21 @@ class AcceptTest(FieldTest):
     ]
 
 
-class AcceptComplexTest(FieldTest):
+class AcceptComplexTest(FieldTest[RequestLinterProtocol]):
     name = "Accept"
     inputs = [b"text/html; level=1; q=0.5"]
     expected_out = [AcceptValue("text/html", {"level": "1"}, 0.5)]
 
 
-class AcceptBadQTest(FieldTest):
+class AcceptBadQTest(FieldTest[RequestLinterProtocol]):
     name = "Accept"
     inputs = [b"text/html; q=1.001"]
     expected_out = [AcceptValue("text/html", {}, None)]
-    expected_notes = [BAD_Q_VALUE]
+    expected_notes: NoteClassListType = [BAD_Q_VALUE]
 
 
-class AcceptBadTypeTest(FieldTest):
+class AcceptBadTypeTest(FieldTest[RequestLinterProtocol]):
     name = "Accept"
     inputs = [b"invalid"]
     expected_out = [AcceptValue("invalid", {}, None)]
-    expected_notes = [ACCEPT_BAD_SYNTAX, BAD_SYNTAX]
+    expected_notes: NoteClassListType = [ACCEPT_BAD_SYNTAX, BAD_SYNTAX]

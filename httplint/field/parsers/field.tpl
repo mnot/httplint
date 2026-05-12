@@ -3,9 +3,10 @@
 from httplint.field.list_field import HttpListField
 from httplint.field.tests import FieldTest
 from httplint.note import Note, categories, levels
-from httplint.types import AddNoteMethodType
+from httplint.types import AddNoteMethodType, ResponseLinterProtocol
 
-class SHORT_NAME(HttpListField):
+
+class SHORT_NAME(HttpListField[ResponseLinterProtocol]):
     canonical_name = "SHORT_NAME"
     description = """\
 FIXME
@@ -14,8 +15,6 @@ FIXME
     syntax = False
     structured_field_type = FIXME
     deprecated = False
-    valid_in_requests = False
-    valid_in_responses = True
 
     def parse(self, field_value: str, add_note: AddNoteMethodType) -> ...:
         return field_value
@@ -32,7 +31,7 @@ class SHORT_NAME_NOTE(Note):
 FIXME"""
 
 
-class SHORT_NAMETest(FieldTest):
+class SHORT_NAMETest(FieldTest[ResponseLinterProtocol]):
     name = 'SHORT_NAME'
     inputs = ['FIXME']
     expected_out = ('FIXME')

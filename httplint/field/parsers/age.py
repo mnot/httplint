@@ -1,12 +1,15 @@
-from httplint.field.singleton_field import SingletonField
+from httplint.field.singleton_field import SINGLE_HEADER_REPEAT, SingletonField
 from httplint.field.tests import FieldTest
 from httplint.note import Note, categories, levels
 from httplint.syntax import rfc9111
-from httplint.types import AddNoteMethodType
-from httplint.field.singleton_field import SINGLE_HEADER_REPEAT
+from httplint.types import (
+    AddNoteMethodType,
+    NoteClassListType,
+    ResponseLinterProtocol,
+)
 
 
-class age(SingletonField):
+class age(SingletonField[ResponseLinterProtocol]):
     canonical_name = "Age"
     description = """\
 The `Age` response header conveys the sender's estimate of the amount of time since the response
@@ -16,8 +19,6 @@ The `Age` response header conveys the sender's estimate of the amount of time si
     report_syntax = False
     category = categories.CACHING
     deprecated = False
-    valid_in_requests = False
-    valid_in_responses = True
 
     def parse(self, field_value: str, add_note: AddNoteMethodType) -> int:
         try:
@@ -61,35 +62,35 @@ using that value (which is over 68 years).
 """
 
 
-class AgeTest(FieldTest):
+class AgeTest(FieldTest[ResponseLinterProtocol]):
     name = "Age"
     inputs = [b"10"]
     expected_out = 10
 
 
-class MultipleAgeTest(FieldTest):
+class MultipleAgeTest(FieldTest[ResponseLinterProtocol]):
     name = "Age"
     inputs = [b"20", b"10"]
     expected_out = 20
-    expected_notes = [SINGLE_HEADER_REPEAT]
+    expected_notes: NoteClassListType = [SINGLE_HEADER_REPEAT]
 
 
-class CharAgeTest(FieldTest):
+class CharAgeTest(FieldTest[ResponseLinterProtocol]):
     name = "Age"
     inputs = [b"foo"]
     expected_out = None
-    expected_notes = [AGE_NOT_INT]
+    expected_notes: NoteClassListType = [AGE_NOT_INT]
 
 
-class NegAgeTest(FieldTest):
+class NegAgeTest(FieldTest[ResponseLinterProtocol]):
     name = "Age"
     inputs = [b"-20"]
     expected_out = None
-    expected_notes = [AGE_NEGATIVE]
+    expected_notes: NoteClassListType = [AGE_NEGATIVE]
 
 
-class BigAgeTest(FieldTest):
+class BigAgeTest(FieldTest[ResponseLinterProtocol]):
     name = "Age"
     inputs = [b"2147483649"]
     expected_out = 2147483649
-    expected_notes = [AGE_LARGE]
+    expected_notes: NoteClassListType = [AGE_LARGE]

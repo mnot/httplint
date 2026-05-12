@@ -3,13 +3,15 @@ from urllib.parse import urljoin
 
 from httplint.field.singleton_field import SingletonField
 from httplint.field.tests import FieldTest
-from httplint.message import HttpMessageLinter, HttpResponseLinter
 from httplint.note import Note, categories, levels
-from httplint.syntax import rfc9110, rfc3986
-from httplint.types import AddNoteMethodType
+from httplint.syntax import rfc3986, rfc9110
+from httplint.types import (
+    AddNoteMethodType,
+    ResponseLinterProtocol,
+)
 
 
-class location(SingletonField):
+class location(SingletonField[ResponseLinterProtocol]):
     canonical_name = "Location"
     description = """\
 The `Location` response header is used in `3xx` responses to redirect the recipient to a different location
@@ -19,21 +21,21 @@ In `201` (Created) responses, it identifies a newly created resource."""
     reference = f"{rfc9110.SPEC_URL}#field.location"
     syntax = rfc9110.Location
     deprecated = False
-    valid_in_requests = False
-    valid_in_responses = True
 
     def parse(self, field_value: str, add_note: AddNoteMethodType) -> str:
-        if isinstance(self.message, HttpResponseLinter) and self.message.status_code not in [
-            201,
-            300,
-            301,
-            302,
-            303,
-            305,
-            307,
-            308,
-        ]:
-            add_note(LOCATION_UNDEFINED)
+        if getattr(self.message, "message_type", None) == "response":
+            response = self.message
+            if response.status_code not in [
+                201,
+                300,
+                301,
+                302,
+                303,
+                305,
+                307,
+                308,
+            ]:
+                add_note(LOCATION_UNDEFINED)
         if not re.match(rf"^\s*{rfc3986.URI}\s*$", field_value, re.VERBOSE):
             add_note(
                 LOCATION_NOT_ABSOLUTE,
@@ -69,10 +71,10 @@ It is in the process of being updated, and most clients will work around this.
 The correct absolute URI is (probably): `%(full_uri)s`"""
 
 
-class LocationTest(FieldTest):
+class LocationTest(FieldTest[ResponseLinterProtocol]):
     name = "Location"
     inputs = [b"http://other.example.com/foo"]
     expected_out = "http://other.example.com/foo"
 
-    def set_context(self, message: HttpMessageLinter) -> None:
-        message.status_code = 300  # type: ignore
+    def set_response_context(self, message: ResponseLinterProtocol) -> None:
+        message.status_code = 300

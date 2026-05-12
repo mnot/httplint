@@ -1,12 +1,16 @@
-from httplint.field.list_field import HttpListField
 from httplint.field.cors import CORS_PREFLIGHT_ONLY
+from httplint.field.list_field import HttpListField
 from httplint.field.tests import FieldTest
-from httplint.syntax import rfc9110
 from httplint.note import categories
-from httplint.types import AddNoteMethodType
+from httplint.syntax import rfc9110
+from httplint.types import (
+    AddNoteMethodType,
+    NoteClassListType,
+    ResponseLinterProtocol,
+)
 
 
-class access_control_allow_headers(HttpListField):
+class access_control_allow_headers(HttpListField[ResponseLinterProtocol]):
     canonical_name = "Access-Control-Allow-Headers"
     description = """\
 The `Access-Control-Allow-Headers` response header is used in response to a CORS preflight
@@ -15,15 +19,13 @@ request to indicate which HTTP headers can be used during the actual request."""
     syntax = rfc9110.token
     category = categories.CORS
     deprecated = False
-    valid_in_requests = False
-    valid_in_responses = True
 
-    def parse(self, field_value: str, add_note: "AddNoteMethodType") -> str:
+    def parse(self, field_value: str, add_note: AddNoteMethodType) -> str:
         return field_value.lower()
 
 
-class AccessControlAllowHeadersTest(FieldTest):
+class AccessControlAllowHeadersTest(FieldTest[ResponseLinterProtocol]):
     name = "Access-Control-Allow-Headers"
     inputs = [b"a, b"]
     expected_out = ["a", "b"]
-    expected_notes = [CORS_PREFLIGHT_ONLY]
+    expected_notes: NoteClassListType = [CORS_PREFLIGHT_ONLY]

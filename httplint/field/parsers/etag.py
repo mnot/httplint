@@ -1,15 +1,19 @@
 from typing import Tuple
 
+from httplint.field import BAD_SYNTAX
 from httplint.field.singleton_field import SingletonField
 from httplint.field.tests import FieldTest
-from httplint.syntax import rfc9110
-from httplint.types import AddNoteMethodType
 from httplint.field.utils import unquote_string
-from httplint.field import BAD_SYNTAX
 from httplint.note import categories
+from httplint.syntax import rfc9110
+from httplint.types import (
+    AddNoteMethodType,
+    AnyMessageLinterProtocol,
+    NoteClassListType,
+)
 
 
-class etag(SingletonField):
+class etag(SingletonField[AnyMessageLinterProtocol]):
     canonical_name = "ETag"
     description = """\
 The `ETag` header provides an opaque identifier for the representation."""
@@ -17,8 +21,6 @@ The `ETag` header provides an opaque identifier for the representation."""
     syntax = rfc9110.ETag
     category = categories.CACHING
     deprecated = False
-    valid_in_requests = True
-    valid_in_responses = True
 
     def parse(self, field_value: str, add_note: AddNoteMethodType) -> Tuple[bool, str]:
         if field_value[:2] == "W/":
@@ -26,20 +28,20 @@ The `ETag` header provides an opaque identifier for the representation."""
         return (False, unquote_string(field_value))
 
 
-class ETagTest(FieldTest):
+class ETagTest(FieldTest[AnyMessageLinterProtocol]):
     name = "ETag"
     inputs = [b'"foo"']
     expected_out = (False, "foo")
 
 
-class WeakETagTest(FieldTest):
+class WeakETagTest(FieldTest[AnyMessageLinterProtocol]):
     name = "ETag"
     inputs = [b'W/"foo"']
     expected_out = (True, "foo")
 
 
-class UnquotedETagTest(FieldTest):
+class UnquotedETagTest(FieldTest[AnyMessageLinterProtocol]):
     name = "ETag"
     inputs = [b"foo"]
     expected_out = (False, "foo")
-    expected_notes = [BAD_SYNTAX]
+    expected_notes: NoteClassListType = [BAD_SYNTAX]

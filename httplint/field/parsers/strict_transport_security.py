@@ -1,17 +1,20 @@
 from typing import Any
 
-from httplint.field.singleton_field import SingletonField, SINGLE_HEADER_REPEAT
+from httplint.field.singleton_field import SINGLE_HEADER_REPEAT, SingletonField
 from httplint.field.tests import FieldTest
-from httplint.message import HttpMessageLinter
 from httplint.note import Note, categories, levels
 from httplint.syntax import rfc9110
-from httplint.types import AddNoteMethodType
-
+from httplint.types import (
+    AddNoteMethodType,
+    NoteArgsType,
+    NoteClassListType,
+    ResponseLinterProtocol,
+)
 
 sts_dir = rf"(?: {rfc9110.token} (?: {rfc9110.BWS} = {rfc9110.BWS} {rfc9110.parameter_value} )? )"
 
 
-class strict_transport_security(SingletonField):
+class strict_transport_security(SingletonField[ResponseLinterProtocol]):
     canonical_name = "Strict-Transport-Security"
     description = """\
 The `Strict-Transport-Security` response header (often abbreviated as HSTS) lets a web site tell
@@ -22,12 +25,10 @@ browsers that it should only be communicated with using HTTPS, instead of using 
     )
     category = categories.SECURITY
     deprecated = False
-    valid_in_requests = False
-    valid_in_responses = True
 
-    def __init__(self, wire_name: str, message: "HttpMessageLinter") -> None:
+    def __init__(self, wire_name: str, message: ResponseLinterProtocol) -> None:
         super().__init__(wire_name, message)
-        self._deferred_notes: list[tuple[type[Note], dict[str, Any]]] = []
+        self._deferred_notes: list[NoteArgsType] = []
 
     def parse(self, field_value: str, add_note: AddNoteMethodType) -> dict[str, Any]:
         parsed: dict[str, Any] = {
@@ -53,7 +54,10 @@ browsers that it should only be communicated with using HTTPS, instead of using 
 
             if name == "max-age":
                 try:
-                    parsed["max-age"] = int(value)  # type: ignore
+                    if value is not None:
+                        parsed["max-age"] = int(value)
+                    else:
+                        raise ValueError
                 except (ValueError, TypeError):
                     self._deferred_notes.append((HSTS_BAD_MAX_AGE, {"max_age": str(value)}))
             elif name == "includesubdomains":
@@ -113,9 +117,11 @@ browsers that it should only be communicated with using HTTPS, instead of using 
             notes_to_add.append(HSTS_NO_SUBDOMAINS)
 
         if self.message.base_uri and self.message.base_uri.startswith("http:"):
-            if hasattr(self.message, "status_code") and self.message.status_code != 301:
-                notes_to_add.append(HSTS_OVER_HTTP)
-                is_valid = False
+            if getattr(self.message, "message_type", None) == "response":
+                response = self.message
+                if response.status_code != 301:
+                    notes_to_add.append(HSTS_OVER_HTTP)
+                    is_valid = False
 
         invalidating_notes = (
             HSTS_DUPLICATE_DIRECTIVE,
@@ -283,7 +289,7 @@ class HSTS_BAD_MAX_AGE(Note):
     _summary = "The max-age directive in the HSTS header is invalid."
     _text = """\
 The `max-age` directive in the `Strict-Transport-Security` header must be a non-negative
-integer. The value "%(max_age)s" is not valid."""
+integer. The value `%(max_age)s` is not valid."""
 
 
 class HSTS_VALUE_NOT_ALLOWED(Note):
@@ -295,171 +301,181 @@ The `%(directive)s` directive in the `Strict-Transport-Security` header is a val
 directive. It should not have an associated value."""
 
 
-class HSTSTest(FieldTest):
+class HSTSTest(FieldTest[ResponseLinterProtocol]):
     name = "Strict-Transport-Security"
     inputs = [b"max-age=31536000; includeSubDomains"]
     expected_out = {"max-age": 31536000, "includesubdomains": True, "preload": False}
-    expected_notes = [HSTS_SUBDOMAINS, HSTS_NO_PRELOAD, HSTS_VALID]
+    expected_notes: NoteClassListType = [HSTS_SUBDOMAINS, HSTS_NO_PRELOAD, HSTS_VALID]
 
-    def set_context(self, message: HttpMessageLinter) -> None:
+    def set_response_context(self, message: ResponseLinterProtocol) -> None:
         message.base_uri = "https://www.example.com/"
 
 
-class HSTSValidTest(FieldTest):
+class HSTSValidTest(FieldTest[ResponseLinterProtocol]):
     name = "Strict-Transport-Security"
     inputs = [b"max-age=31536000; includeSubDomains; preload"]
     expected_out = {"max-age": 31536000, "includesubdomains": True, "preload": True}
-    expected_notes = [HSTS_SUBDOMAINS, HSTS_PRELOAD, HSTS_VALID]
+    expected_notes: NoteClassListType = [HSTS_SUBDOMAINS, HSTS_PRELOAD, HSTS_VALID]
 
-    def set_context(self, message: HttpMessageLinter) -> None:
+    def set_response_context(self, message: ResponseLinterProtocol) -> None:
         message.base_uri = "https://www.example.com/"
 
 
-class HSTSHttpTest(FieldTest):
+class HSTSHttpTest(FieldTest[ResponseLinterProtocol]):
     name = "Strict-Transport-Security"
     inputs = [b"max-age=31536000"]
     expected_out = {"max-age": 31536000, "includesubdomains": False, "preload": False}
-    expected_notes = [HSTS_OVER_HTTP, HSTS_NO_SUBDOMAINS, HSTS_NO_PRELOAD, HSTS_INVALID]
+    expected_notes: NoteClassListType = [
+        HSTS_OVER_HTTP,
+        HSTS_NO_SUBDOMAINS,
+        HSTS_NO_PRELOAD,
+        HSTS_INVALID,
+    ]
 
-    def set_context(self, message: HttpMessageLinter) -> None:
+    def set_response_context(self, message: ResponseLinterProtocol) -> None:
         message.base_uri = "http://www.example.com/"
 
 
-class HSTSDuplicateTest(FieldTest):
+class HSTSDuplicateTest(FieldTest[ResponseLinterProtocol]):
     name = "Strict-Transport-Security"
     inputs = [b"max-age=31536000; max-age=100"]
     expected_out = {"max-age": 31536000, "includesubdomains": False, "preload": False}
-    expected_notes = [
+    expected_notes: NoteClassListType = [
         HSTS_DUPLICATE_DIRECTIVE,
         HSTS_NO_SUBDOMAINS,
         HSTS_NO_PRELOAD,
         HSTS_INVALID,
     ]
 
-    def set_context(self, message: HttpMessageLinter) -> None:
+    def set_response_context(self, message: ResponseLinterProtocol) -> None:
         message.base_uri = "https://www.example.com/"
 
 
-class HSTSTripleDuplicateTest(FieldTest):
+class HSTSTripleDuplicateTest(FieldTest[ResponseLinterProtocol]):
     name = "Strict-Transport-Security"
     inputs = [b"max-age=31536000; max-age=100; max-age=200"]
     expected_out = {"max-age": 31536000, "includesubdomains": False, "preload": False}
-    expected_notes = [
+    expected_notes: NoteClassListType = [
         HSTS_DUPLICATE_DIRECTIVE,
         HSTS_NO_SUBDOMAINS,
         HSTS_NO_PRELOAD,
         HSTS_INVALID,
     ]
 
-    def set_context(self, message: HttpMessageLinter) -> None:
+    def set_response_context(self, message: ResponseLinterProtocol) -> None:
         message.base_uri = "https://www.example.com/"
 
 
-class HSTSMultipleHeadersTest(FieldTest):
+class HSTSMultipleHeadersTest(FieldTest[ResponseLinterProtocol]):
     name = "Strict-Transport-Security"
     inputs = [b"max-age=31536000", b"max-age=0"]
     expected_out = {"max-age": 31536000, "includesubdomains": False, "preload": False}
-    expected_notes = [
+    expected_notes: NoteClassListType = [
         SINGLE_HEADER_REPEAT,
         HSTS_NO_SUBDOMAINS,
         HSTS_NO_PRELOAD,
         HSTS_VALID,
     ]
 
-    def set_context(self, message: HttpMessageLinter) -> None:
+    def set_response_context(self, message: ResponseLinterProtocol) -> None:
         message.base_uri = "https://www.example.com/"
 
 
-class HSTSPreloadNotSuitableTest(FieldTest):
+class HSTSPreloadNotSuitableTest(FieldTest[ResponseLinterProtocol]):
     name = "Strict-Transport-Security"
     inputs = [b"max-age=100; includeSubDomains; preload"]
     expected_out = {"max-age": 100, "includesubdomains": True, "preload": True}
-    expected_notes = [
+    expected_notes: NoteClassListType = [
         HSTS_SUBDOMAINS,
         HSTS_PRELOAD_NOT_SUITABLE,
         HSTS_SHORT_MAX_AGE,
         HSTS_VALID,
     ]
 
-    def set_context(self, message: HttpMessageLinter) -> None:
+    def set_response_context(self, message: ResponseLinterProtocol) -> None:
         message.base_uri = "https://www.example.com/"
 
 
-class HSTSShortMaxAgeTest(FieldTest):
+class HSTSShortMaxAgeTest(FieldTest[ResponseLinterProtocol]):
     name = "Strict-Transport-Security"
     inputs = [b"max-age=100"]
     expected_out = {"max-age": 100, "includesubdomains": False, "preload": False}
-    expected_notes = [
+    expected_notes: NoteClassListType = [
         HSTS_NO_SUBDOMAINS,
         HSTS_NO_PRELOAD,
         HSTS_SHORT_MAX_AGE,
         HSTS_VALID,
     ]
 
-    def set_context(self, message: HttpMessageLinter) -> None:
+    def set_response_context(self, message: ResponseLinterProtocol) -> None:
         message.base_uri = "https://www.example.com/"
 
 
-class HSTSMaxAgeZeroTest(FieldTest):
+class HSTSMaxAgeZeroTest(FieldTest[ResponseLinterProtocol]):
     name = "Strict-Transport-Security"
     inputs = [b"max-age=0"]
     expected_out = {"max-age": 0, "includesubdomains": False, "preload": False}
-    expected_notes = [
+    expected_notes: NoteClassListType = [
         HSTS_NO_SUBDOMAINS,
         HSTS_NO_PRELOAD,
         HSTS_MAX_AGE_ZERO,
         HSTS_VALID,
     ]
 
-    def set_context(self, message: HttpMessageLinter) -> None:
+    def set_response_context(self, message: ResponseLinterProtocol) -> None:
         message.base_uri = "https://www.example.com/"
 
 
-class HSTSNoSubdomainsTest(FieldTest):
+class HSTSNoSubdomainsTest(FieldTest[ResponseLinterProtocol]):
     name = "Strict-Transport-Security"
     inputs = [b"max-age=31536000"]
     expected_out = {"max-age": 31536000, "includesubdomains": False, "preload": False}
-    expected_notes = [HSTS_NO_SUBDOMAINS, HSTS_NO_PRELOAD, HSTS_VALID]
+    expected_notes: NoteClassListType = [HSTS_NO_SUBDOMAINS, HSTS_NO_PRELOAD, HSTS_VALID]
 
-    def set_context(self, message: HttpMessageLinter) -> None:
+    def set_response_context(self, message: ResponseLinterProtocol) -> None:
         message.base_uri = "https://www.example.com/"
 
 
-class HSTSPreloadMissingMaxAgeTest(FieldTest):
+class HSTSPreloadMissingMaxAgeTest(FieldTest[ResponseLinterProtocol]):
     name = "Strict-Transport-Security"
     inputs = [b"includeSubDomains; preload"]
     expected_out = {"max-age": None, "includesubdomains": True, "preload": True}
-    expected_notes = [
+    expected_notes: NoteClassListType = [
         HSTS_PRELOAD_NOT_SUITABLE,
         HSTS_NO_MAX_AGE,
         HSTS_SUBDOMAINS,
         HSTS_INVALID,
     ]
 
-    def set_context(self, message: HttpMessageLinter) -> None:
+    def set_response_context(self, message: ResponseLinterProtocol) -> None:
         message.base_uri = "https://www.example.com/"
 
 
-class HSTSBadMaxAgeValueTest(FieldTest):
+class HSTSBadMaxAgeValueTest(FieldTest[ResponseLinterProtocol]):
     name = "Strict-Transport-Security"
     inputs = [b"max-age=foo"]
     expected_out = {"max-age": None, "includesubdomains": False, "preload": False}
-    expected_notes = [
+    expected_notes: NoteClassListType = [
         HSTS_BAD_MAX_AGE,
         HSTS_NO_SUBDOMAINS,
         HSTS_NO_PRELOAD,
         HSTS_INVALID,
     ]
 
-    def set_context(self, message: HttpMessageLinter) -> None:
+    def set_response_context(self, message: ResponseLinterProtocol) -> None:
         message.base_uri = "https://www.example.com/"
 
 
-class HSTSTrailingSemicolonTest(FieldTest):
+class HSTSTrailingSemicolonTest(FieldTest[ResponseLinterProtocol]):
     name = "Strict-Transport-Security"
     inputs = [b"max-age=31536000;includeSubdomains;"]
     expected_out = {"max-age": 31536000, "includesubdomains": True, "preload": False}
-    expected_notes = [HSTS_SUBDOMAINS, HSTS_NO_PRELOAD, HSTS_VALID, HSTS_TRAILING_SEMICOLON]
+    expected_notes: NoteClassListType = [
+        HSTS_SUBDOMAINS,
+        HSTS_NO_PRELOAD,
+        HSTS_VALID,
+        HSTS_TRAILING_SEMICOLON,
+    ]
 
-    def set_context(self, message: HttpMessageLinter) -> None:
+    def set_response_context(self, message: ResponseLinterProtocol) -> None:
         message.base_uri = "https://www.example.com/"

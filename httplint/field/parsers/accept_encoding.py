@@ -2,13 +2,17 @@ from typing import Tuple
 
 from httplint.field.list_field import HttpListField
 from httplint.field.tests import FieldTest
-from httplint.syntax import rfc9110
-from httplint.types import AddNoteMethodType, ParamDictType
 from httplint.field.utils import parse_params
 from httplint.note import categories
+from httplint.syntax import rfc9110
+from httplint.types import (
+    AddNoteMethodType,
+    ParamDictType,
+    RequestLinterProtocol,
+)
 
 
-class accept_encoding(HttpListField):
+class accept_encoding(HttpListField[RequestLinterProtocol]):
     canonical_name = "Accept-Encoding"
     description = """\
 The `Accept-Encoding` header field can be used by user agents to indicate what response content-codings are
@@ -17,8 +21,6 @@ acceptable in the response."""
     syntax = rfc9110.Accept_Encoding
     category = categories.CONNEG
     deprecated = False
-    valid_in_requests = True
-    valid_in_responses = False
 
     def parse(self, field_value: str, add_note: AddNoteMethodType) -> Tuple[str, ParamDictType]:
         try:
@@ -33,7 +35,7 @@ acceptable in the response."""
         pass
 
 
-class AcceptEncodingTest(FieldTest):
+class AcceptEncodingTest(FieldTest[RequestLinterProtocol]):
     name = "Accept-Encoding"
     inputs = [b"gzip, identity; q=0.5, *;q=0"]
     expected_out = [

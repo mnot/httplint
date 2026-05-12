@@ -1,14 +1,9 @@
-from typing import TYPE_CHECKING, Tuple, Dict
+from typing import Any, Dict, Tuple
 
-
-from httplint.field.list_field import HttpListField
 from httplint.field import FIELD_DEPRECATED
+from httplint.field.list_field import HttpListField
 from httplint.note import categories
-from httplint.types import AddNoteMethodType
-
-if TYPE_CHECKING:
-    from httplint.message import HttpMessageLinter
-
+from httplint.types import AddNoteMethodType, LinterProtocol
 
 # pylint: disable=line-too-long
 DEPRECATED_FIELDS: Dict[str, Tuple[categories, str]] = {
@@ -166,12 +161,12 @@ OBSOLETED_FIELDS: Dict[str, Tuple[categories, str]] = {
     ),
     "X-Content-Security-Policy": (
         categories.SECURITY,
-        "https://cheatsheetseries.owasp.org/cheatsheets/Content_Security_Policy_Cheat_Sheet.html#warning"
+        "https://cheatsheetseries.owasp.org/cheatsheets/Content_Security_Policy_Cheat_Sheet.html#warning",
     ),
     "X-Webkit-CSP": (
         categories.SECURITY,
-        "https://cheatsheetseries.owasp.org/cheatsheets/Content_Security_Policy_Cheat_Sheet.html#warning"
-    )
+        "https://cheatsheetseries.owasp.org/cheatsheets/Content_Security_Policy_Cheat_Sheet.html#warning",
+    ),
 }
 
 UNREGISGTERED_DEPRECATED_FIELDS: Dict[str, Tuple[categories, str]] = {
@@ -200,15 +195,13 @@ fields.update(OBSOLETED_FIELDS)
 field_lookup = {k.lower(): k for k in fields}
 
 
-class DeprecatedField(HttpListField):
+class DeprecatedField(HttpListField[Any]):
     syntax = False
     list_header = False
     deprecated = True
     no_coverage = True
-    valid_in_requests = True
-    valid_in_responses = True  # dont' want to complain about these
 
-    def __init__(self, wire_name: str, message: "HttpMessageLinter") -> None:
+    def __init__(self, wire_name: str, message: LinterProtocol) -> None:
         HttpListField.__init__(self, wire_name, message)
         assert self.norm_name in field_lookup
         self.canonical_name = field_lookup[self.norm_name]
@@ -220,32 +213,14 @@ It is safe to remove it from this message. For more information, see [here]({sel
     def parse(self, field_value: str, add_note: AddNoteMethodType) -> None:
         return
 
-    def pre_check(self, message: "HttpMessageLinter", add_note: AddNoteMethodType) -> bool:
-        # Override pre_check to use the specific note category
-        # First, standard checks (copied from HttpField.pre_check, excluding deprecated check)
-
-        # check whether we're in the right message type
-        # We can't call super().pre_check() because it would emit the generic FIELD_DEPRECATED note
-
-        if self.message.message_type == "request":
-            if not self.valid_in_requests:
-                # We can import these from the base class module or assume availability?
-                # They are imported in __init__.py but not exposed directly.
-                # We need to import them here or change imports.
-                pass  # Relying on HttpField logic for this part is tricky if we want to avoid double notes.
-        else:
-            if not self.valid_in_responses:
-                pass
-
-        # Let's see... HttpField.pre_check does request/response check, then syntax check, then deprecated check.
-        # If we want to replace ONLY the deprecated check, we would ideally just set deprecated=False on self
-        # but semantically we want it True.
-
-        # Actually... if we set self.deprecated = False just before calling super().pre_check(),
-        # then set it back?
-
+    def pre_check(self, add_note: AddNoteMethodType) -> bool:
+        """
+        Override pre_check to use the specific note category.
+        """
+        # We can't call super().pre_check() directly because it would emit
+        # the generic FIELD_DEPRECATED note; so, we temporarily disable it.
         self.deprecated = False
-        result = super().pre_check(message, add_note)
+        result = super().pre_check(add_note)
         self.deprecated = True
 
         if not result:

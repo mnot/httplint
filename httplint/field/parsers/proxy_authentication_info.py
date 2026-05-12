@@ -1,10 +1,10 @@
 from httplint.field.list_field import HttpListField
 from httplint.field.tests import FieldTest
 from httplint.syntax import rfc9110
-from httplint.types import AddNoteMethodType
+from httplint.types import AddNoteMethodType, ResponseLinterProtocol
 
 
-class proxy_authentication_info(HttpListField):
+class proxy_authentication_info(HttpListField[ResponseLinterProtocol]):
     canonical_name = "Proxy-Authentication-Info"
     description = """\
 The `Proxy-Authentication-Info` header field is used to communicate information after
@@ -12,14 +12,12 @@ the client's authentication credentials have been accepted by a proxy."""
     reference = f"{rfc9110.SPEC_URL}#field.proxy-authentication-info"
     syntax = rfc9110.Proxy_Authentication_Info
     deprecated = False
-    valid_in_requests = False
-    valid_in_responses = True
 
     def evaluate(self, add_note: AddNoteMethodType) -> None:
         pass
 
 
-class ProxyAuthenticationInfoTest(FieldTest):
+class ProxyAuthenticationInfoTest(FieldTest[ResponseLinterProtocol]):
     name = "Proxy-Authentication-Info"
     inputs = [
         b'nextnonce="5Yg8-VL198_7ulNinj-Vfs4567-32n3-84333", '

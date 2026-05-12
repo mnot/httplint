@@ -1,9 +1,10 @@
 from httplint.field.list_field import HttpListField
 from httplint.field.tests import FieldTest
 from httplint.syntax import rfc9110
+from httplint.types import AnyMessageLinterProtocol, NoteClassListType
 
 
-class upgrade(HttpListField):
+class upgrade(HttpListField[AnyMessageLinterProtocol]):
     canonical_name = "Upgrade"
     description = """\
 The `Upgrade` header allows the client to specify what additional communication
@@ -16,12 +17,10 @@ protocol.
     reference = f"{rfc9110.SPEC_URL}#field.upgrade"
     syntax = rfc9110.Upgrade
     deprecated = False
-    valid_in_requests = True
-    valid_in_responses = True
 
 
-class UpgradeTest(FieldTest):
+class UpgradeTest(FieldTest[AnyMessageLinterProtocol]):
     name = "Upgrade"
     inputs = [b"HTTP/2.0, SHTTP/1.3, IRC/6.9, RTA/x11", b"websocket"]
     expected_out = ["HTTP/2.0", "SHTTP/1.3", "IRC/6.9", "RTA/x11", "websocket"]
-    expected_notes = []
+    expected_notes: NoteClassListType = []

@@ -1,14 +1,19 @@
 from typing import Any
+
 from http_sf import Token
 
-from httplint.field.tests import FieldTest
 from httplint.field.parsers.cross_origin_opener_policy import (
-    cross_origin_opener_policy,
     COOP_SAME_ORIGIN,
     CROSS_ORIGIN_OPENER_POLICY_BAD_VALUE,
+    cross_origin_opener_policy,
 )
+from httplint.field.tests import FieldTest
 from httplint.note import Note, categories, levels
-from httplint.types import AddNoteMethodType
+from httplint.types import (
+    AddNoteMethodType,
+    NoteClassListType,
+    ResponseLinterProtocol,
+)
 
 
 class cross_origin_opener_policy_report_only(cross_origin_opener_policy):
@@ -35,15 +40,15 @@ A response should not have both `Cross-Origin-Opener-Policy` and
 `Cross-Origin-Opener-Policy-Report-Only` headers. The report-only header will be ignored."""
 
 
-class CrossOriginOpenerPolicyReportOnlySameOriginTest(FieldTest):
+class CrossOriginOpenerPolicyReportOnlySameOriginTest(FieldTest[ResponseLinterProtocol]):
     name = "Cross-Origin-Opener-Policy-Report-Only"
     inputs = [b"same-origin"]
     expected_out: Any = (Token("same-origin"), {})
-    expected_notes = [COOP_SAME_ORIGIN]
+    expected_notes: NoteClassListType = [COOP_SAME_ORIGIN]
 
 
-class CrossOriginOpenerPolicyReportOnlyBadValueTest(FieldTest):
+class CrossOriginOpenerPolicyReportOnlyBadValueTest(FieldTest[ResponseLinterProtocol]):
     name = "Cross-Origin-Opener-Policy-Report-Only"
     inputs = [b"foo"]
     expected_out: Any = (Token("foo"), {})
-    expected_notes = [CROSS_ORIGIN_OPENER_POLICY_BAD_VALUE]
+    expected_notes: NoteClassListType = [CROSS_ORIGIN_OPENER_POLICY_BAD_VALUE]

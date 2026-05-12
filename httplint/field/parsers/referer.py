@@ -1,17 +1,16 @@
-from typing import cast, TYPE_CHECKING
 from urllib.parse import urlparse
 
 from httplint.field.singleton_field import SingletonField
 from httplint.field.tests import FieldTest
-from httplint.syntax import rfc9110
-from httplint.types import AddNoteMethodType
 from httplint.note import Note, categories, levels
+from httplint.syntax import rfc9110
+from httplint.types import (
+    AddNoteMethodType,
+    RequestLinterProtocol,
+)
 
-if TYPE_CHECKING:
-    from httplint.message import HttpRequestLinter
 
-
-class referer(SingletonField):
+class referer(SingletonField[RequestLinterProtocol]):
     canonical_name = "Referer"
     description = """\
 The `Referer` [sic] header field allows the user agent to specify a URI Reference for the
@@ -19,15 +18,13 @@ resource from which the target URI was obtained (i.e., the "referrer")."""
     reference = f"{rfc9110.SPEC_URL}#field.referer"
     syntax = rfc9110.Referer
     deprecated = False
-    valid_in_requests = True
-    valid_in_responses = False
 
     def evaluate(self, add_note: AddNoteMethodType) -> None:
         if getattr(self.message, "message_type", None) != "request":
             return
 
         referer_uri = self.value
-        request_uri = cast("HttpRequestLinter", self.message).uri
+        request_uri = self.message.uri
 
         if not referer_uri or not request_uri:
             return
@@ -74,7 +71,7 @@ See [RFC 9110 Section 10.1.3](https://www.rfc-editor.org/rfc/rfc9110.html#sectio
 for details."""
 
 
-class RefererTest(FieldTest):
+class RefererTest(FieldTest[RequestLinterProtocol]):
     name = "Referer"
     inputs = [b"http://www.example.org/hypertext/Overview.html"]
     expected_out = "http://www.example.org/hypertext/Overview.html"

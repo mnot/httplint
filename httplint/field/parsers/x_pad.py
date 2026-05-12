@@ -1,7 +1,8 @@
 from httplint.field.singleton_field import SingletonField
+from httplint.types import ResponseLinterProtocol
 
 
-class x_pad(SingletonField):
+class x_pad(SingletonField[ResponseLinterProtocol]):
     canonical_name = "X-Pad"
     description = """\
     The `%(field_name)s` response header is used to "pad" the size of the response's headers.
@@ -14,6 +15,4 @@ class x_pad(SingletonField):
     reference = "https://www.oreilly.com/library/view/http-the-definitive/1565925092/re61.html"
     syntax = False
     deprecated = True
-    valid_in_requests = False
-    valid_in_responses = True
     no_coverage = True

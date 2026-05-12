@@ -2,10 +2,13 @@ from httplint.field.list_field import HttpListField
 from httplint.field.tests import FieldTest
 from httplint.note import categories
 from httplint.syntax import rfc9110
-from httplint.types import AddNoteMethodType
+from httplint.types import (
+    AddNoteMethodType,
+    ResponseLinterProtocol,
+)
 
 
-class authentication_info(HttpListField):
+class authentication_info(HttpListField[ResponseLinterProtocol]):
     canonical_name = "Authentication-Info"
     description = """\
 The `Authentication-Info` header field is used to communicate information after 
@@ -14,14 +17,12 @@ the client's authentication credentials have been accepted."""
     syntax = rfc9110.Authentication_Info
     category = categories.SECURITY
     deprecated = False
-    valid_in_requests = False
-    valid_in_responses = True
 
     def evaluate(self, add_note: AddNoteMethodType) -> None:
         pass
 
 
-class AuthenticationInfoTest(FieldTest):
+class AuthenticationInfoTest(FieldTest[ResponseLinterProtocol]):
     name = "Authentication-Info"
     inputs = [
         b'nextnonce="5Yg8-VL198_7ulNinj-Vfs4567-32n3-84333", '

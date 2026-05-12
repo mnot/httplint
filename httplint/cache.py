@@ -1,13 +1,9 @@
 # pylint: disable=too-many-branches,too-many-statements
 
-from typing import TYPE_CHECKING, cast
 
 from httplint.note import Note, categories, levels
+from httplint.types import ResponseLinterProtocol
 from httplint.util import relative_time
-
-if TYPE_CHECKING:
-    from httplint.message import HttpRequestLinter, HttpResponseLinter
-
 
 ### configuration
 CACHEABLE_METHODS = ["GET", "HEAD"]
@@ -15,9 +11,9 @@ HEURISTIC_CACHEABLE_STATUS = [200, 203, 206, 300, 301, 410]
 
 
 class ResponseCacheChecker:
-    def __init__(self, response: "HttpResponseLinter") -> None:
+    def __init__(self, response: ResponseLinterProtocol) -> None:
         self._response = response
-        self._request = cast("HttpRequestLinter", response.related)
+        self._request = response.request
         self.notes = response.notes
         self.age: int = 0
         self.store_private = True
@@ -34,7 +30,7 @@ class ResponseCacheChecker:
         self.cc_value = response.headers.parsed.get("cache-control", [])
         self.cc_dict = dict(self.cc_value)
 
-        if self._request:
+        if self._request is not None:
             self.request_time = self._request.start_time
         else:
             self.request_time = None
@@ -68,7 +64,11 @@ class ResponseCacheChecker:
 
     def check_storable(self) -> bool:
         # method
-        if self._request and self._request.method and self._request.method not in CACHEABLE_METHODS:
+        if (
+            self._request is not None
+            and self._request.method
+            and self._request.method not in CACHEABLE_METHODS
+        ):
             self.store_shared = self.store_private = False
             self._request.notes.add("method", STORE_METHOD_UNCACHEABLE, method=self._request.method)
             return False
@@ -88,7 +88,7 @@ class ResponseCacheChecker:
                 self.notes.add("field-cache-control", STORE_PRIVATE_PUBLIC_CONFLICT)
 
         # authorization
-        elif self._request and "authorization" in [
+        elif self._request is not None and "authorization" in [
             k.lower() for k, v in self._request.headers.text
         ]:
             if "public" in self.cc_dict:
