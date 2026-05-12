@@ -10,6 +10,8 @@ from httplint.note import Note, categories, levels
 from httplint.types import LinterProtocol
 from httplint.util import display_bytes, f_num
 
+MAX_DECOMPRESSED_BYTES = 100 * 1024 * 1024  # 100MB
+
 
 class ContentEncodingProcessor:
     def __init__(self, message: LinterProtocol) -> None:
@@ -81,6 +83,7 @@ class GzipProcessor:
         self._gzip_processor = zlib.decompressobj(-zlib.MAX_WBITS)
         self._in_gzip = False
         self._gzip_header_buffer = b""
+        self._decompressed = 0
         self.ok = True
 
     def __call__(self, chunk: bytes) -> None:
@@ -113,12 +116,22 @@ class GzipProcessor:
         try:
             decompressed = self._gzip_processor.decompress(chunk, max_chunk_size)
             if decompressed:
+                self._decompressed += len(decompressed)
+                if self._decompressed > MAX_DECOMPRESSED_BYTES:
+                    self.message.notes.add("field-content-encoding", DECOMPRESSION_LIMIT)
+                    self.ok = False
+                    return
                 self.next_processor(decompressed)
 
             while self._gzip_processor.unconsumed_tail:
                 tail = self._gzip_processor.unconsumed_tail
                 decompressed = self._gzip_processor.decompress(tail, max_chunk_size)
                 if decompressed:
+                    self._decompressed += len(decompressed)
+                    if self._decompressed > MAX_DECOMPRESSED_BYTES:
+                        self.message.notes.add("field-content-encoding", DECOMPRESSION_LIMIT)
+                        self.ok = False
+                        return
                     self.next_processor(decompressed)
                 else:
                     break
@@ -199,6 +212,7 @@ class BrotliProcessor:
         self.message = message
         self.next_processor = next_processor
         self._brotli_processor = brotli.Decompressor()
+        self._decompressed = 0
         self.ok = True
 
     def __call__(self, chunk: bytes) -> None:
@@ -208,6 +222,11 @@ class BrotliProcessor:
         try:
             chunk = self._brotli_processor.process(chunk)
             if chunk:
+                self._decompressed += len(chunk)
+                if self._decompressed > MAX_DECOMPRESSED_BYTES:
+                    self.message.notes.add("field-content-encoding", DECOMPRESSION_LIMIT)
+                    self.ok = False
+                    return
                 self.next_processor(chunk)
         except brotli.error as brotli_error:
             self.message.notes.add(
@@ -218,6 +237,15 @@ class BrotliProcessor:
                 chunk_sample=display_bytes(chunk),
             )
             self.ok = False
+
+
+class DECOMPRESSION_LIMIT(Note):
+    category = categories.CONNEG
+    level = levels.BAD
+    _summary = "This message was truncated because it decompressed to more than 100MB."
+    _text = """\
+httplint limits decompressed content to 100MB to avoid resource exhaustion. This message
+exceeded that limit and was not fully decoded."""
 
 
 class BAD_GZIP(Note):
