@@ -289,7 +289,7 @@ class HSTS_BAD_MAX_AGE(Note):
     _summary = "The max-age directive in the HSTS header is invalid."
     _text = """\
 The `max-age` directive in the `Strict-Transport-Security` header must be a non-negative
-integer. The value "%(max_age)s" is not valid."""
+integer. The value `%(max_age)s` is not valid."""
 
 
 class HSTS_VALUE_NOT_ALLOWED(Note):

@@ -225,7 +225,7 @@ class CORS_ORIGIN_MATCH(Note):
     level = levels.INFO
     _summary = "The Access-Control-Allow-Origin header allows the requesting origin."
     _text = """\
-The `Access-Control-Allow-Origin` header matches the `Origin` header in the request (%(origin)s).
+The `Access-Control-Allow-Origin` header matches the `Origin` header in the request (`%(origin)s`).
 
 This means that the browser will let the requesting site access the response."""
 
@@ -235,8 +235,8 @@ class CORS_ORIGIN_MISMATCH(Note):
     level = levels.INFO
     _summary = "The Access-Control-Allow-Origin header does not allow the requesting origin."
     _text = """\
-The `Access-Control-Allow-Origin` header (%(acao_value)s) does not match the `Origin` header
-in the request (%(origin)s).
+The `Access-Control-Allow-Origin` header (`%(acao_value)s`) does not match the `Origin` header
+in the request (`%(origin)s`).
 
 This means that the browser will **not** let the requesting site access the response."""
 
