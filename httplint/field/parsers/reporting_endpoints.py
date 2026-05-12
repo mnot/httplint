@@ -54,7 +54,8 @@ class BAD_REPORTING_ENDPOINT_SYNTAX(Note):
     level = levels.BAD
     _summary = "The %(name)s reporting endpoint is invalid."
     _text = """\
-The reporting endpoint `%(name)s` must be a string URL. Found: `%(value)s` (type `%(found_type)s`)."""
+The reporting endpoint `%(name)s` must be a string URL.
+Found: `%(value)s` (type `%(found_type)s`)."""
 
 
 class ReportingEndpointsTest(FieldTest[ResponseLinterProtocol]):
