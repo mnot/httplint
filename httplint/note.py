@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from collections import UserList
 from enum import Enum
+from threading import local
 from typing import Any, Dict, MutableMapping, Optional, Type
 
 from markdown import Markdown
@@ -9,6 +10,15 @@ from markupsafe import Markup, escape
 
 from httplint.i18n import L_, translate
 from httplint.types import NoteListType, VariableType
+
+_md_local = local()
+
+
+def _get_markdown() -> Markdown:
+    """Return a per-thread Markdown instance, creating it on first use."""
+    if not hasattr(_md_local, "md"):
+        _md_local.md = Markdown(output_format="html")
+    return _md_local.md
 
 
 class categories(Enum):
@@ -74,7 +84,6 @@ class Note:
     level: levels
     _summary = ""
     _text = ""
-    _markdown = Markdown(output_format="html")
 
     def __init__(self, subject: str, **vrs: VariableType) -> None:
         self.subject = subject
@@ -114,9 +123,9 @@ class Note:
         The resulting string is already HTML-encoded.
         """
         return Markup(
-            self._markdown.reset().convert(
-                translate(self._text) % {k: escape(v) for k, v in self.vars.items()}
-            )
+            _get_markdown()
+            .reset()
+            .convert(translate(self._text) % {k: escape(v) for k, v in self.vars.items()})
         )
 
     summary = property(_get_summary)
