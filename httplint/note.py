@@ -11,7 +11,12 @@ from markupsafe import Markup
 from httplint.i18n import L_, translate
 from httplint.types import NoteListType, VariableType
 
-_md_local = local()
+
+class _MdLocal(local):
+    md: Markdown
+
+
+_md_local = _MdLocal()
 
 
 def _get_markdown() -> Markdown:
@@ -129,6 +134,7 @@ class Note:
             _get_markdown()
             .reset()
             .convert(translate(self._text) % {k: str(v) for k, v in self.vars.items()})
+        )
 
     summary = property(_get_summary)
     detail = property(_get_detail)
