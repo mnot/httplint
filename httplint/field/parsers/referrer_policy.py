@@ -2,10 +2,10 @@ from httplint.field.list_field import HttpListField
 from httplint.field.tests import FieldTest
 from httplint.note import Note, categories, levels
 from httplint.syntax import rfc9110
-from httplint.types import AddNoteMethodType
+from httplint.types import AddNoteMethodType, NoteClassListType, ResponseLinterProtocol
 
 
-class referrer_policy(HttpListField):
+class referrer_policy(HttpListField[ResponseLinterProtocol]):
     canonical_name = "Referrer-Policy"
     description = """\
 The `Referrer-Policy` response header controls how much referrer information (sent via the `Referer`
@@ -14,8 +14,6 @@ header) should be included with requests."""
     syntax = rfc9110.token
     category = categories.SECURITY
     deprecated = False
-    valid_in_requests = False
-    valid_in_responses = True
 
     def parse(self, field_value: str, add_note: AddNoteMethodType) -> str:
         return field_value.lower()
@@ -89,22 +87,22 @@ VALID_REFERRER_POLICIES = [
 ]
 
 
-class ReferrerPolicyTest(FieldTest):
+class ReferrerPolicyTest(FieldTest[ResponseLinterProtocol]):
     name = "Referrer-Policy"
     inputs = [b"no-referrer", b"unsafe-url"]
     expected_out = ["no-referrer", "unsafe-url"]
-    expected_notes = [REFERRER_POLICY_UNSAFE, REFERRER_POLICY_MULTIPLE]
+    expected_notes: NoteClassListType = [REFERRER_POLICY_UNSAFE, REFERRER_POLICY_MULTIPLE]
 
 
-class ReferrerPolicyUnknownTest(FieldTest):
+class ReferrerPolicyUnknownTest(FieldTest[ResponseLinterProtocol]):
     name = "Referrer-Policy"
     inputs = [b"unknown-value"]
     expected_out = ["unknown-value"]
-    expected_notes = [REFERRER_POLICY_UNKNOWN, REFERRER_POLICY_EMPTY]
+    expected_notes: NoteClassListType = [REFERRER_POLICY_UNKNOWN, REFERRER_POLICY_EMPTY]
 
 
-class ReferrerPolicyOverrideTest(FieldTest):
+class ReferrerPolicyOverrideTest(FieldTest[ResponseLinterProtocol]):
     name = "Referrer-Policy"
     inputs = [b"unsafe-url, no-referrer"]
     expected_out = ["unsafe-url", "no-referrer"]
-    expected_notes = [REFERRER_POLICY_MULTIPLE]
+    expected_notes: NoteClassListType = [REFERRER_POLICY_MULTIPLE]

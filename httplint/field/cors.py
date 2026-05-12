@@ -1,12 +1,8 @@
-from typing import cast, TYPE_CHECKING
-
 from httplint.note import Note, categories, levels
-
-if TYPE_CHECKING:
-    from httplint.message import HttpResponseLinter, HttpRequestLinter
+from httplint.types import RequestLinterProtocol, ResponseLinterProtocol
 
 
-def is_cors_preflight_request(message: "HttpRequestLinter") -> bool:
+def is_cors_preflight_request(message: RequestLinterProtocol) -> bool:
     """
     Check if the message is a CORS preflight request.
     """
@@ -17,7 +13,7 @@ def is_cors_preflight_request(message: "HttpRequestLinter") -> bool:
     )
 
 
-def check_preflight_request(message: "HttpRequestLinter") -> None:
+def check_preflight_request(message: RequestLinterProtocol) -> None:
     """
     Check if the message is a CORS preflight request.
     """
@@ -52,14 +48,13 @@ def check_preflight_request(message: "HttpRequestLinter") -> None:
             )
 
 
-def check_preflight_response(message: "HttpResponseLinter") -> None:
+def check_preflight_response(message: ResponseLinterProtocol) -> None:
     """
     Check if the message is a CORS preflight response.
     """
     is_preflight = False
-    if message.related:
-        request = cast("HttpRequestLinter", message.related)
-        is_preflight = is_cors_preflight_request(request)
+    if message.request:
+        is_preflight = is_cors_preflight_request(message.request)
 
     if is_preflight:
         message.notes.add("", CORS_PREFLIGHT_RESPONSE)
@@ -89,18 +84,14 @@ def check_preflight_response(message: "HttpResponseLinter") -> None:
                 message.notes.add("header-access-control-allow-origin", ACAO_MULTIPLE_VALUES)
 
 
-def check_access_control_allow_origin(acao_value: str, message: "HttpResponseLinter") -> None:
+def check_access_control_allow_origin(acao_value: str, message: ResponseLinterProtocol) -> None:
     """
     Check the Access-Control-Allow-Origin header against the request origin.
     """
-    if not message.related:
+    if message.request is None or "origin" not in message.request.headers.parsed:
         return
 
-    request = cast("HttpRequestLinter", message.related)
-    if "origin" not in request.headers.parsed:
-        return
-
-    request_origin = request.headers.parsed["origin"]
+    request_origin = message.request.headers.parsed["origin"]
     if request_origin is None:
         # it's a "null" origin
         request_origin_str = "null"
@@ -234,7 +225,7 @@ class CORS_ORIGIN_MATCH(Note):
     level = levels.INFO
     _summary = "The Access-Control-Allow-Origin header allows the requesting origin."
     _text = """\
-The `Access-Control-Allow-Origin` header matches the `Origin` header in the request (%(origin)s).
+The `Access-Control-Allow-Origin` header matches the `Origin` header in the request (`%(origin)s`).
 
 This means that the browser will let the requesting site access the response."""
 
@@ -244,8 +235,8 @@ class CORS_ORIGIN_MISMATCH(Note):
     level = levels.INFO
     _summary = "The Access-Control-Allow-Origin header does not allow the requesting origin."
     _text = """\
-The `Access-Control-Allow-Origin` header (%(acao_value)s) does not match the `Origin` header
-in the request (%(origin)s).
+The `Access-Control-Allow-Origin` header (`%(acao_value)s`) does not match the `Origin` header
+in the request (`%(origin)s`).
 
 This means that the browser will **not** let the requesting site access the response."""
 

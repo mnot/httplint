@@ -1,14 +1,19 @@
 from http_sf import Token
 
-from httplint.field.structured_field import StructuredField
-from httplint.field.tests import FieldTest, FakeRequestLinter
-from httplint.field.parsers.cache_control import KNOWN_CC
-from httplint.types import AddNoteMethodType
-from httplint.note import Note, categories, levels
 from httplint.field import RESPONSE_HDR_IN_REQUEST
+from httplint.field.parsers.cache_control import KNOWN_CC
+from httplint.field.structured_field import StructuredField
+from httplint.field.tests import FakeRequestLinter, FieldTest
+from httplint.note import Note, categories, levels
+from httplint.types import (
+    AddNoteMethodType,
+    NoteClassListType,
+    ResponseLinterProtocol,
+    SFDictionaryType,
+)
 
 
-class cdn_cache_control(StructuredField):
+class cdn_cache_control(StructuredField[ResponseLinterProtocol]):
     canonical_name = "CDN-Cache-Control"
     description = """\
 The `CDN-Cache-Control` header field targets cache directives to Content Delivery Networks."""
@@ -16,9 +21,8 @@ The `CDN-Cache-Control` header field targets cache directives to Content Deliver
     syntax = False  # SF
     category = categories.CACHING
     deprecated = False
-    valid_in_requests = False
-    valid_in_responses = True
     sf_type = "dictionary"
+    value: SFDictionaryType
 
     def evaluate(self, add_note: AddNoteMethodType) -> None:
         add_note(CDN_CACHE_CONTROL_PRESENT)
@@ -36,7 +40,7 @@ The `CDN-Cache-Control` header field targets cache directives to Content Deliver
                     # Expecting no value (boolean True in SF)
                     if directive_val is not True:
                         add_note(
-                            BAD_CDN_CC_SYNTAX,
+                            BAD_CDN_CC_TYPE,
                             bad_directive=directive_name,
                             expected_type="no value",
                         )
@@ -44,7 +48,7 @@ The `CDN-Cache-Control` header field targets cache directives to Content Deliver
                     # Expecting integer
                     if not isinstance(directive_val, int):
                         add_note(
-                            BAD_CDN_CC_SYNTAX,
+                            BAD_CDN_CC_TYPE,
                             bad_directive=directive_name,
                             expected_type=value_type_str,
                         )
@@ -60,17 +64,17 @@ The `CDN-Cache-Control` header field targets cache directives to Content Deliver
                             pass
                         else:
                             add_note(
-                                BAD_CDN_CC_SYNTAX,
+                                BAD_CDN_CC_TYPE,
                                 bad_directive=directive_name,
                                 expected_type="a string",
                             )
 
 
-class BAD_CDN_CC_SYNTAX(Note):
+class BAD_CDN_CC_TYPE(Note):
     category = categories.CACHING
     level = levels.BAD
-    _summary = "The %(bad_directive)s CDN cache directive's syntax is incorrect."
-    _text = "This value must be %(expected_type)s."
+    _summary = "The %(bad_directive)s CDN cache directive's value is incorrect."
+    _text = "The value for this directive must be %(expected_type)s."
 
 
 class CDN_CACHE_CONTROL_PRESENT(Note):
@@ -83,32 +87,32 @@ Content Delivery Network (CDN) caches, separately from the `Cache-Control` heade
 applies to all caches)."""
 
 
-class CDNCacheControlTest(FieldTest):
+class CDNCacheControlTest(FieldTest[ResponseLinterProtocol]):
     name = "CDN-Cache-Control"
     inputs = [b"max-age=60, no-store"]
     expected_out = {"max-age": (60, {}), "no-store": (True, {})}
-    expected_notes = [CDN_CACHE_CONTROL_PRESENT]
+    expected_notes: NoteClassListType = [CDN_CACHE_CONTROL_PRESENT]
 
 
-class CDNCacheControlBadSyntaxTest(FieldTest):
+class CDNCacheControlBadSyntaxTest(FieldTest[ResponseLinterProtocol]):
     name = "CDN-Cache-Control"
     inputs = [b"max-age=foo"]
-    expected_notes = [CDN_CACHE_CONTROL_PRESENT, BAD_CDN_CC_SYNTAX]
+    expected_notes: NoteClassListType = [CDN_CACHE_CONTROL_PRESENT, BAD_CDN_CC_TYPE]
     expected_out = {"max-age": (Token("foo"), {})}
 
 
-class CDNCacheControlCaseTest(FieldTest):
+class CDNCacheControlCaseTest(FieldTest[ResponseLinterProtocol]):
     name = "CDN-Cache-Control"
     inputs = [b"no-store"]
     expected_out = {"no-store": (True, {})}
     # Changed input to lowercase because Uppercase keys are invalid in SF Dictionary.
     # Test confirms logic works for valid input.
-    expected_notes = [CDN_CACHE_CONTROL_PRESENT]
+    expected_notes: NoteClassListType = [CDN_CACHE_CONTROL_PRESENT]
 
 
-class CDNCacheControlRequestTest(FieldTest):
+class CDNCacheControlRequestTest(FieldTest[ResponseLinterProtocol]):
     name = "CDN-Cache-Control"
     inputs = [b"max-age=60"]
     linter_class = FakeRequestLinter
     expected_out = None
-    expected_notes = [RESPONSE_HDR_IN_REQUEST]
+    expected_notes: NoteClassListType = [RESPONSE_HDR_IN_REQUEST]

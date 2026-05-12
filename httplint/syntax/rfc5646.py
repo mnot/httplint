@@ -9,8 +9,7 @@ They should be processed with re.VERBOSE.
 # pylint: disable=invalid-name
 
 
-from .rfc5234 import DIGIT, ALPHA
-
+from .rfc5234 import ALPHA, DIGIT
 
 # alphanum      = (ALPHA / DIGIT)     ; letters and numbers
 

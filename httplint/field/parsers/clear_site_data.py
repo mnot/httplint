@@ -1,13 +1,16 @@
+from httplint.field import BAD_SYNTAX
 from httplint.field.list_field import HttpListField
 from httplint.field.tests import FieldTest
 from httplint.note import Note, categories, levels
 from httplint.syntax.rfc9110 import list_rule, quoted_string
-from httplint.types import AddNoteMethodType
-from httplint.field import BAD_SYNTAX
-from httplint.message import HttpMessageLinter
+from httplint.types import (
+    AddNoteMethodType,
+    NoteClassListType,
+    ResponseLinterProtocol,
+)
 
 
-class clear_site_data(HttpListField):
+class clear_site_data(HttpListField[ResponseLinterProtocol]):
     canonical_name = "Clear-Site-Data"
     description = """\
 The `Clear-Site-Data` header clears the data associated with the requesting website in the user's
@@ -16,12 +19,10 @@ origin."""
     reference = "https://www.w3.org/TR/clear-site-data/#field-clear-site-data"
     syntax = list_rule(quoted_string, 1)
     deprecated = False
-    valid_in_requests = False
-    valid_in_responses = True
 
     KNOWN_VALUES = {"cache", "cookies", "storage", "executionContexts", "*"}
 
-    def __init__(self, wire_name: str, message: "HttpMessageLinter") -> None:
+    def __init__(self, wire_name: str, message: ResponseLinterProtocol) -> None:
         super().__init__(wire_name, message)
         self._unquoted_values: list[str] = []
 
@@ -75,58 +76,58 @@ class CSD_UNQUOTED(Note):
     _text = """\
 Values in the `Clear-Site-Data` header must be quoted; unquoted values will be ignored. 
 
-The following values were found unquoted: %(values)s."""
+The following values were found unquoted: `%(values)s`."""
 
 
-class ClearSiteDataTest(FieldTest):
+class ClearSiteDataTest(FieldTest[ResponseLinterProtocol]):
     name = "Clear-Site-Data"
     inputs = [b'"cache", "cookies"']
     expected_out = ["cache", "cookies"]
 
 
-class ClearSiteDataWildcardTest(FieldTest):
+class ClearSiteDataWildcardTest(FieldTest[ResponseLinterProtocol]):
     name = "Clear-Site-Data"
     inputs = [b'"*"']
     expected_out = ["*"]
 
 
-class ClearSiteDataUnknownTest(FieldTest):
+class ClearSiteDataUnknownTest(FieldTest[ResponseLinterProtocol]):
     name = "Clear-Site-Data"
     inputs = [b'"foo"']
     expected_out = ["foo"]
-    expected_notes = [CSD_UNKNOWN_VALUE]
+    expected_notes: NoteClassListType = [CSD_UNKNOWN_VALUE]
 
 
-class ClearSiteDataEmptyTest(FieldTest):
+class ClearSiteDataEmptyTest(FieldTest[ResponseLinterProtocol]):
     name = "Clear-Site-Data"
     inputs = [b'""']
     expected_out = [""]
-    expected_notes = [CSD_EMPTY]
+    expected_notes: NoteClassListType = [CSD_EMPTY]
 
 
-class ClearSiteDataTrulyEmptyTest(FieldTest):
+class ClearSiteDataTrulyEmptyTest(FieldTest[ResponseLinterProtocol]):
     name = "Clear-Site-Data"
     inputs = [b""]
     expected_out = []
-    expected_notes = [CSD_EMPTY]
+    expected_notes: NoteClassListType = [CSD_EMPTY]
 
 
-class ClearSiteDataBadSyntaxTest(FieldTest):
+class ClearSiteDataBadSyntaxTest(FieldTest[ResponseLinterProtocol]):
     name = "Clear-Site-Data"
     inputs = [b"foo"]
     expected_out = ["foo"]
-    expected_notes = [BAD_SYNTAX, CSD_UNKNOWN_VALUE]
+    expected_notes: NoteClassListType = [BAD_SYNTAX, CSD_UNKNOWN_VALUE]
 
 
-class ClearSiteDataUnquotedTest(FieldTest):
+class ClearSiteDataUnquotedTest(FieldTest[ResponseLinterProtocol]):
     name = "Clear-Site-Data"
     inputs = [b"cache"]
     expected_out = ["cache"]
-    expected_notes = [BAD_SYNTAX, CSD_UNQUOTED]
+    expected_notes: NoteClassListType = [BAD_SYNTAX, CSD_UNQUOTED]
 
 
-class ClearSiteDataMultipleUnquotedTest(FieldTest):
+class ClearSiteDataMultipleUnquotedTest(FieldTest[ResponseLinterProtocol]):
     name = "Clear-Site-Data"
     inputs = [b"cache, cookies"]
     expected_out = ["cache", "cookies"]
-    expected_notes = [BAD_SYNTAX, CSD_UNQUOTED]
+    expected_notes: NoteClassListType = [BAD_SYNTAX, CSD_UNQUOTED]

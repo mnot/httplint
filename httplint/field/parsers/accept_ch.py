@@ -1,18 +1,21 @@
-from typing import TYPE_CHECKING, cast, Any
 from types import SimpleNamespace
+from typing import cast
 
 from http_sf import Token
+
 from httplint.field.structured_field import StructuredField
-from httplint.field.tests import FieldTest, FakeResponseLinter, FakeRequestLinter
+from httplint.field.tests import FakeRequestLinter, FieldTest
 from httplint.note import Note, categories, levels
-from httplint.types import AddNoteMethodType
-from httplint.message import HttpResponseLinter, HttpRequestLinter
+from httplint.types import (
+    AddNoteMethodType,
+    CachingProtocol,
+    NoteClassListType,
+    ResponseLinterProtocol,
+    SFListType,
+)
 
-if TYPE_CHECKING:
-    from httplint.message import HttpMessageLinter
 
-
-class accept_ch(StructuredField):
+class accept_ch(StructuredField[ResponseLinterProtocol]):
     canonical_name = "Accept-CH"
     description = """\
 The `Accept-CH` response header field allows servers to indicate the Client Hints that they are
@@ -21,34 +24,32 @@ willing to process."""
     syntax = False  # SF
     category = categories.CONNEG
     deprecated = False
-    valid_in_requests = False
-    valid_in_responses = True
     sf_type = "list"
+    value: SFListType
 
     def evaluate(self, add_note: AddNoteMethodType) -> None:
         # Check for valid syntax (must be Tokens)
         for item in self.value:
             if not isinstance(item[0], Token):
                 add_note(
-                    ACCEPT_CH_BAD_SYNTAX,
+                    ACCEPT_CH_BAD_TYPE,
                     ref_uri=self.reference,
                 )
                 return
 
-    def post_check(self, message: "HttpMessageLinter", add_note: AddNoteMethodType) -> None:
+    def post_check(self, add_note: AddNoteMethodType) -> None:
         # Warn if the request URI scheme is http
-        request = self.message.related
-        if request and isinstance(request, HttpRequestLinter) and request.uri:
-            if request.uri.lower().startswith("http:"):
+        request = self.message.request
+        if request:
+            if request.uri and request.uri.lower().startswith("http:"):
                 add_note(ACCEPT_CH_IN_PLAIN_HTTP)
 
         # Check if every field name in Accept-CH is also present in the Vary header
         # if the response is cacheable.
-        message = cast(HttpResponseLinter, message)
-        if hasattr(message, "caching") and (
-            message.caching.store_shared or message.caching.store_private
+        if hasattr(self.message, "caching") and (
+            self.message.caching.store_shared or self.message.caching.store_private
         ):
-            vary_header = message.headers.parsed.get("vary", [])
+            vary_header = self.message.headers.parsed.get("vary", [])
             missing_vary = []
             for item in self.value:
                 # item is (value, params)
@@ -85,51 +86,53 @@ Because these fields can affect the response content, they should be included in
 that caches store separate responses for different client hints."""
 
 
-class ACCEPT_CH_BAD_SYNTAX(Note):
+class ACCEPT_CH_BAD_TYPE(Note):
     category = categories.CONNEG
     level = levels.BAD
     _summary = "The Accept-CH header isn't a List of Tokens."
     _text = """\
-The value for this field doesn't conform to its specified syntax; it will likely be ignored
-by browsers.
+The value for this field is legally formatted as a
+[Structured Field](https://www.rfc-editor.org/rfc/rfc8941.html), but it isn't a list of Tokens.
+As a result, it will likely be ignored by browsers.
 
 See [its definition](%(ref_uri)s) for more information."""
 
 
-class AcceptCHTest(FieldTest):
+class AcceptCHTest(FieldTest[ResponseLinterProtocol]):
     name = "Accept-CH"
     inputs = [b"Sec-CH-Example, Sec-CH-Example-2"]
     expected_out = [(Token("Sec-CH-Example"), {}), (Token("Sec-CH-Example-2"), {})]
-    expected_notes = []
+    expected_notes: NoteClassListType = []
 
 
-class AcceptCHBadSyntaxTest(FieldTest):
+class AcceptCHBadSyntaxTest(FieldTest[ResponseLinterProtocol]):
     name = "Accept-CH"
     inputs = [b'"foo"']
     expected_out = [("foo", {})]
-    expected_notes = [
-        ACCEPT_CH_BAD_SYNTAX,
+    expected_notes: NoteClassListType = [
+        ACCEPT_CH_BAD_TYPE,
     ]
 
 
-class AcceptCHHTTPTest(FieldTest):
+class AcceptCHHTTPTest(FieldTest[ResponseLinterProtocol]):
     name = "Accept-CH"
     inputs = [b"Sec-CH-Example"]
     expected_out = [(Token("Sec-CH-Example"), {})]
     expected_notes = [ACCEPT_CH_IN_PLAIN_HTTP]
 
-    def set_context(self, message: "HttpMessageLinter") -> None:
-        message = cast(FakeResponseLinter, message)
-        message.related = FakeRequestLinter()
-        message.related.uri = "http://example.com/"
+    def set_response_context(self, message: ResponseLinterProtocol) -> None:
+        request = FakeRequestLinter()
+        request.uri = "http://example.com/"
+        message.request = request
 
 
-class AcceptCHMissingVaryTest(FieldTest):
+class AcceptCHMissingVaryTest(FieldTest[ResponseLinterProtocol]):
     name = "Accept-CH"
     inputs = [b"Sec-CH-Example"]
     expected_out = [(Token("Sec-CH-Example"), {})]
     expected_notes = [ACCEPT_CH_MISSING_VARY]
 
-    def set_context(self, message: "HttpMessageLinter") -> None:
-        message = cast(FakeResponseLinter, message)
-        message.caching = cast(Any, SimpleNamespace(store_shared=True, store_private=True))
+    def set_response_context(self, message: ResponseLinterProtocol) -> None:
+        message.caching = cast(
+            CachingProtocol, SimpleNamespace(store_shared=True, store_private=True)
+        )

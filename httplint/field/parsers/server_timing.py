@@ -2,13 +2,18 @@ from typing import Tuple
 
 from httplint.field.list_field import HttpListField
 from httplint.field.tests import FieldTest
-from httplint.syntax import rfc9110
-from httplint.note import Note, categories, levels
-from httplint.types import AddNoteMethodType, ParamDictType
 from httplint.field.utils import parse_params
+from httplint.note import Note, categories, levels
+from httplint.syntax import rfc9110
+from httplint.types import (
+    AddNoteMethodType,
+    NoteClassListType,
+    ParamDictType,
+    ResponseLinterProtocol,
+)
 
 
-class server_timing(HttpListField):
+class server_timing(HttpListField[ResponseLinterProtocol]):
     canonical_name = "Server-Timing"
     description = """\
 The `Server-Timing` header field communicates one or more metrics and descriptions for the given
@@ -18,8 +23,6 @@ consumer of Server-Timing."""
     reference = "https://w3c.github.io/server-timing/#the-server-timing-header-field"
     syntax = rfc9110.list_rule(rf"{rfc9110.token} {rfc9110.parameters}")
     deprecated = False
-    valid_in_requests = False
-    valid_in_responses = True
     structured_field = False
 
     def parse(self, field_value: str, add_note: AddNoteMethodType) -> Tuple[str, ParamDictType]:
@@ -87,11 +90,11 @@ Descriptions can help contextualise a metric when displayed.
 """
 
 
-class ServerTimingTest(FieldTest):
+class ServerTimingTest(FieldTest[ResponseLinterProtocol]):
     name = "Server-Timing"
     inputs = [b"miss, db;dur=53, app;dur=47.2"]
     expected_out = [("miss", {}), ("db", {"dur": "53"}), ("app", {"dur": "47.2"})]
-    expected_notes = [
+    expected_notes: NoteClassListType = [
         SERVER_TIMING_MISSING_DUR,
         SERVER_TIMING_MISSING_DESC,  # miss
         SERVER_TIMING_MISSING_DESC,  # db
@@ -99,20 +102,20 @@ class ServerTimingTest(FieldTest):
     ]
 
 
-class ServerTimingDescTest(FieldTest):
+class ServerTimingDescTest(FieldTest[ResponseLinterProtocol]):
     name = "Server-Timing"
     inputs = [b'cache;desc="Cache Read", db;dur=50;desc="Database"']
     expected_out = [
         ("cache", {"desc": "Cache Read"}),
         ("db", {"dur": "50", "desc": "Database"}),
     ]
-    expected_notes = [
+    expected_notes: NoteClassListType = [
         SERVER_TIMING_MISSING_DUR,  # cache
     ]
 
 
-class ServerTimingBadDurTest(FieldTest):
+class ServerTimingBadDurTest(FieldTest[ResponseLinterProtocol]):
     name = "Server-Timing"
     inputs = [b"db;dur=foo"]
     expected_out = [("db", {"dur": "foo"})]
-    expected_notes = [SERVER_TIMING_BAD_PARAM, SERVER_TIMING_MISSING_DESC]
+    expected_notes: NoteClassListType = [SERVER_TIMING_BAD_PARAM, SERVER_TIMING_MISSING_DESC]

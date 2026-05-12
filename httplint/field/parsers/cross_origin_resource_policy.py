@@ -3,10 +3,14 @@ from typing import Any
 from httplint.field.singleton_field import SingletonField
 from httplint.field.tests import FieldTest
 from httplint.note import Note, categories, levels
-from httplint.types import AddNoteMethodType
+from httplint.types import (
+    AddNoteMethodType,
+    NoteClassListType,
+    ResponseLinterProtocol,
+)
 
 
-class cross_origin_resource_policy(SingletonField):
+class cross_origin_resource_policy(SingletonField[ResponseLinterProtocol]):
     canonical_name = "Cross-Origin-Resource-Policy"
     description = """\
 The `Cross-Origin-Resource-Policy` header field allows a resource to indicate whether it can be
@@ -15,8 +19,6 @@ loaded by a cross-origin document."""
     syntax = False  # Not a Structured Field in the strict sense, but uses token
     category = categories.SECURITY
     deprecated = False
-    valid_in_requests = False
-    valid_in_responses = True
     structured_field = False  # It's a simple string/token
 
     report_only_text = ""
@@ -78,29 +80,29 @@ it must be one of `same-origin`, `same-site`, or `cross-origin`.
 """
 
 
-class CrossOriginResourcePolicySameOriginTest(FieldTest):
+class CrossOriginResourcePolicySameOriginTest(FieldTest[ResponseLinterProtocol]):
     name = "Cross-Origin-Resource-Policy"
     inputs = [b"same-origin"]
     expected_out = "same-origin"
-    expected_notes = [CORP_SAME_ORIGIN]
+    expected_notes: NoteClassListType = [CORP_SAME_ORIGIN]
 
 
-class CrossOriginResourcePolicySameSiteTest(FieldTest):
+class CrossOriginResourcePolicySameSiteTest(FieldTest[ResponseLinterProtocol]):
     name = "Cross-Origin-Resource-Policy"
     inputs = [b"same-site"]
     expected_out = "same-site"
-    expected_notes = [CORP_SAME_SITE]
+    expected_notes: NoteClassListType = [CORP_SAME_SITE]
 
 
-class CrossOriginResourcePolicyCrossOriginTest(FieldTest):
+class CrossOriginResourcePolicyCrossOriginTest(FieldTest[ResponseLinterProtocol]):
     name = "Cross-Origin-Resource-Policy"
     inputs = [b"cross-origin"]
     expected_out = "cross-origin"
-    expected_notes = [CORP_CROSS_ORIGIN]
+    expected_notes: NoteClassListType = [CORP_CROSS_ORIGIN]
 
 
-class CrossOriginResourcePolicyBadValueTest(FieldTest):
+class CrossOriginResourcePolicyBadValueTest(FieldTest[ResponseLinterProtocol]):
     name = "Cross-Origin-Resource-Policy"
     inputs = [b"foo"]
     expected_out = "foo"
-    expected_notes = [CROSS_ORIGIN_RESOURCE_POLICY_BAD_VALUE]
+    expected_notes: NoteClassListType = [CROSS_ORIGIN_RESOURCE_POLICY_BAD_VALUE]

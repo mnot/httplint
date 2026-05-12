@@ -1,12 +1,16 @@
+import re
 from dataclasses import dataclass
 from typing import Union
-import re
 
 from httplint.field.singleton_field import SingletonField
 from httplint.field.tests import FieldTest
-from httplint.syntax import rfc3986
-from httplint.types import AddNoteMethodType
 from httplint.note import Note, categories, levels
+from httplint.syntax import rfc3986
+from httplint.types import (
+    AddNoteMethodType,
+    NoteClassListType,
+    RequestLinterProtocol,
+)
 
 
 @dataclass
@@ -16,7 +20,7 @@ class OriginValue:
     port: Union[int, None]
 
 
-class origin(SingletonField):
+class origin(SingletonField[RequestLinterProtocol]):
     canonical_name = "Origin"
     description = """\
 The `Origin` header field indicates where a fetch originates from. It is used to prevent Cross-Site
@@ -25,8 +29,6 @@ Request Forgery (CSRF) and in Cross-Origin Resource Sharing (CORS)."""
     category = categories.CORS
     syntax = False
     deprecated = False
-    valid_in_requests = True
-    valid_in_responses = False
 
     # serialized-origin = scheme "://" host [ ":" port ]
     serialized_origin_re = re.compile(
@@ -73,27 +75,27 @@ The `Origin` header should only contain a single value. Any values after the fir
 will be ignored."""
 
 
-class OriginBasicTest(FieldTest):
+class OriginBasicTest(FieldTest[RequestLinterProtocol]):
     name = "Origin"
     inputs = [b"https://example.com"]
     expected_out: Union[None, OriginValue] = OriginValue("https", "example.com", None)
 
 
-class OriginNullTest(FieldTest):
+class OriginNullTest(FieldTest[RequestLinterProtocol]):
     name = "Origin"
     inputs = [b"null"]
     expected_out = None
 
 
-class OriginMultipleTest(FieldTest):
+class OriginMultipleTest(FieldTest[RequestLinterProtocol]):
     name = "Origin"
     inputs = [b"https://example.com http://example.org:8080"]
     expected_out = OriginValue("https", "example.com", None)
-    expected_notes = [ORIGIN_MULTIPLE_VALUES]
+    expected_notes: NoteClassListType = [ORIGIN_MULTIPLE_VALUES]
 
 
-class OriginBadSyntaxTest(FieldTest):
+class OriginBadSyntaxTest(FieldTest[RequestLinterProtocol]):
     name = "Origin"
     inputs = [b"https://example.com/foo"]
-    expected_notes = [BAD_ORIGIN_SYNTAX]
+    expected_notes: NoteClassListType = [BAD_ORIGIN_SYNTAX]
     expected_out = None

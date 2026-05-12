@@ -1,12 +1,29 @@
+from __future__ import annotations
+
 from collections import UserList
 from enum import Enum
-from typing import Any, MutableMapping, Dict, Type, List, Optional
+from threading import local
+from typing import Any, Dict, MutableMapping, Optional, Type
 
-from markupsafe import Markup, escape
 from markdown import Markdown
+from markupsafe import Markup
 
-from httplint.types import VariableType
-from httplint.i18n import translate, L_
+from httplint.i18n import L_, translate
+from httplint.types import NoteListType, VariableType
+
+
+class _MdLocal(local):
+    md: Markdown
+
+
+_md_local = _MdLocal()
+
+
+def _get_markdown() -> Markdown:
+    """Return a per-thread Markdown instance, creating it on first use."""
+    if not hasattr(_md_local, "md"):
+        _md_local.md = Markdown(output_format="html")
+    return _md_local.md
 
 
 class categories(Enum):
@@ -32,7 +49,7 @@ class levels(Enum):
     INFO = "info"
 
 
-class Notes(UserList):
+class Notes(UserList[Any]):
     """
     A list of notes.
     """
@@ -44,10 +61,10 @@ class Notes(UserList):
     def add(
         self,
         subject: str,
-        note: Type["Note"],
+        note: Type[Note],
         category: Optional[categories] = None,
         **vrs: VariableType,
-    ) -> "Note":
+    ) -> Note:
         tmp_vars: MutableMapping[str, VariableType] = self._default_vars.copy()
         tmp_vars.update(vrs)
         new_note = note(subject, **tmp_vars)
@@ -72,14 +89,13 @@ class Note:
     level: levels
     _summary = ""
     _text = ""
-    _markdown = Markdown(output_format="html")
 
     def __init__(self, subject: str, **vrs: VariableType) -> None:
         self.subject = subject
         self.vars = vrs or {}
-        self.subnotes: List["Note"] = []
+        self.subnotes: NoteListType = []
 
-    def add_child(self, note: Type["Note"], **vrs: VariableType) -> "Note":
+    def add_child(self, note: Type[Note], **vrs: VariableType) -> Note:
         tmp_vars = self.vars.copy()
         tmp_vars.update(vrs)
         new_note = note(self.subject, **tmp_vars)
@@ -96,25 +112,28 @@ class Note:
             and self.subject == other.subject
         )
 
-    def _get_summary(self) -> Markup:
+    def _get_summary(self) -> str:
         """
-        Output a textual summary of the message as a Unicode string.
+        Output a textual summary of the message as a plain-text string.
 
-        Note that if it is displayed in an environment that needs
-        encoding (e.g., HTML), that is *NOT* done.
+        The value is NOT HTML-escaped.  Consumers are responsible for escaping
+        before embedding in HTML.
         """
-        return Markup(translate(self._summary) % self.vars)
+        return translate(self._summary) % self.vars
 
     def _get_detail(self) -> Markup:
         """
         Show the HTML text for the message as a Unicode string.
 
-        The resulting string is already HTML-encoded.
+        The resulting string is already HTML-encoded.  Variable values are
+        passed as plain strings; the Markdown renderer handles escaping.
+        Template authors must wrap user-controlled vars in backtick code
+        spans (or indented code blocks) so Markdown escapes them correctly.
         """
         return Markup(
-            self._markdown.reset().convert(
-                translate(self._text) % {k: escape(v) for k, v in self.vars.items()}
-            )
+            _get_markdown()
+            .reset()
+            .convert(translate(self._text) % {k: str(v) for k, v in self.vars.items()})
         )
 
     summary = property(_get_summary)

@@ -2,12 +2,16 @@ from typing import Tuple
 
 from httplint.field.singleton_field import SingletonField
 from httplint.field.tests import FieldTest
-from httplint.syntax import rfc9110
-from httplint.types import AddNoteMethodType, ParamDictType
 from httplint.field.utils import parse_params
+from httplint.syntax import rfc9110
+from httplint.types import (
+    AddNoteMethodType,
+    AnyMessageLinterProtocol,
+    ParamDictType,
+)
 
 
-class content_type(SingletonField):
+class content_type(SingletonField[AnyMessageLinterProtocol]):
     canonical_name = "Content-Type"
     description = """\
 The `Content-Type` header indicates the media type of the content sent to the recipient or, in the
@@ -16,8 +20,6 @@ a GET."""
     reference = f"{rfc9110.SPEC_URL}#field.content-type"
     syntax = rfc9110.Content_Type
     deprecated = False
-    valid_in_requests = True
-    valid_in_responses = True
 
     def parse(self, field_value: str, add_note: AddNoteMethodType) -> Tuple[str, ParamDictType]:
         try:
@@ -29,7 +31,7 @@ a GET."""
         return media_type, param_dict
 
 
-class BasicCTTest(FieldTest):
+class BasicCTTest(FieldTest[AnyMessageLinterProtocol]):
     name = "Content-Type"
     inputs = [b"text/plain; charset=utf-8"]
     expected_out = ("text/plain", {"charset": "utf-8"})

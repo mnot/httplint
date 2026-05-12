@@ -1,4 +1,4 @@
-from .rfc5234 import VCHAR, WSP, CRLF, ALPHA, DIGIT
+from .rfc5234 import ALPHA, CRLF, DIGIT, VCHAR, WSP
 
 # pylint: disable=invalid-name
 

@@ -2,9 +2,10 @@ import os
 from contextlib import contextmanager
 from contextvars import ContextVar
 from datetime import timedelta
-from typing import Optional, Generator, Dict, Any
-from babel.support import Translations, NullTranslations
+from typing import Any, Dict, Generator, Optional
+
 from babel.dates import format_timedelta as babel_format_timedelta
+from babel.support import NullTranslations, Translations
 
 _translations_cache: Dict[str, NullTranslations] = {}
 _locale_var: ContextVar[str] = ContextVar("locale", default="en")

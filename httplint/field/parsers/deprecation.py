@@ -3,26 +3,26 @@ from typing import Any
 
 from httplint.field.structured_field import StructuredField
 from httplint.field.tests import FieldTest
-from httplint.message import HttpMessageLinter
 from httplint.note import Note, categories, levels
-from httplint.types import AddNoteMethodType
+from httplint.types import (
+    AddNoteMethodType,
+    NoteClassListType,
+    ResponseLinterProtocol,
+    SFItemType,
+)
 
 
-class deprecation(StructuredField):
+class deprecation(StructuredField[ResponseLinterProtocol]):
     canonical_name = "Deprecation"
     description = """\
 The `Deprecation` header field allows a server to communicate to a client that the resource is or
 will be deprecated."""
     reference = "https://www.rfc-editor.org/rfc/rfc9651.html"
     deprecated = False
-    valid_in_requests = False
-    valid_in_responses = True
     sf_type = "item"
+    value: SFItemType
 
     def evaluate(self, add_note: AddNoteMethodType) -> None:
-        if not self.value:
-            return
-
         # self.value is (item, params) for Item
         item = self.value[0]
 
@@ -37,9 +37,9 @@ will be deprecated."""
             if item is True:
                 add_note(DEPRECATION_TRUE)
             else:
-                add_note(BAD_DEPRECATION_SYNTAX, item_type="Boolean False")
+                add_note(DEPRECATION_BAD_TYPE, item_type="Boolean False")
         else:
-            add_note(BAD_DEPRECATION_SYNTAX, item_type=type(item).__name__)
+            add_note(DEPRECATION_BAD_TYPE, item_type=type(item).__name__)
 
 
 class DEPRECATION_PAST(Note):
@@ -66,40 +66,41 @@ class DEPRECATION_TRUE(Note):
 The `Deprecation` header indicates that this resource is deprecated."""
 
 
-class BAD_DEPRECATION_SYNTAX(Note):
+class DEPRECATION_BAD_TYPE(Note):
     category = categories.GENERAL
     level = levels.BAD
-    _summary = "The Deprecation header has an invalid type."
+    _summary = "The Deprecation header value is invalid."
     _text = """\
-The `Deprecation` header value must be a Date or a Boolean True. Found: %(item_type)s."""
+The `Deprecation` [Structured Field](https://www.rfc-editor.org/rfc/rfc8941.html)
+header must be a Date or a Boolean. Found: %(item_type)s."""
 
 
-class DeprecationDateTest(FieldTest):
+class DeprecationDateTest(FieldTest[ResponseLinterProtocol]):
     name = "Deprecation"
     inputs = [b"@1672531199"]
     expected_out: Any = (datetime.fromtimestamp(1672531199), {})
-    expected_notes = [DEPRECATION_PAST]
+    expected_notes: NoteClassListType = [DEPRECATION_PAST]
 
-    def set_context(self, message: "HttpMessageLinter") -> None:
+    def set_response_context(self, message: ResponseLinterProtocol) -> None:
         message.start_time = 2000000000
 
 
-class DeprecationBoolTest(FieldTest):
+class DeprecationBoolTest(FieldTest[ResponseLinterProtocol]):
     name = "Deprecation"
     inputs = [b"?1"]
     expected_out: Any = (True, {})
-    expected_notes = [DEPRECATION_TRUE]
+    expected_notes: NoteClassListType = [DEPRECATION_TRUE]
 
 
-class DeprecationFalseTest(FieldTest):
+class DeprecationFalseTest(FieldTest[ResponseLinterProtocol]):
     name = "Deprecation"
     inputs = [b"?0"]
     expected_out: Any = (False, {})
-    expected_notes = [BAD_DEPRECATION_SYNTAX]
+    expected_notes: NoteClassListType = [DEPRECATION_BAD_TYPE]
 
 
-class DeprecationInvalidTest(FieldTest):
+class DeprecationInvalidTest(FieldTest[ResponseLinterProtocol]):
     name = "Deprecation"
-    inputs = [b"123"]
-    expected_out: Any = (123, {})
-    expected_notes = [BAD_DEPRECATION_SYNTAX]
+    inputs = [b'""']
+    expected_out: Any = ("", {})
+    expected_notes: NoteClassListType = [DEPRECATION_BAD_TYPE]

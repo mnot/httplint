@@ -1,12 +1,18 @@
 from dataclasses import dataclass
-from typing import Optional, Tuple
+from typing import (
+    Optional,
+    Tuple,
+)
 
 from httplint.field.singleton_field import SingletonField
 from httplint.field.tests import FieldTest
-from httplint.message import HttpMessageLinter, HttpResponseLinter
 from httplint.note import Note, categories, levels
 from httplint.syntax import rfc9110
-from httplint.types import AddNoteMethodType
+from httplint.types import (
+    AddNoteMethodType,
+    NoteClassListType,
+    ResponseLinterProtocol,
+)
 
 
 @dataclass
@@ -17,7 +23,7 @@ class ContentRangeValue:
     complete_length: Optional[int]
 
 
-class content_range(SingletonField):
+class content_range(SingletonField[ResponseLinterProtocol]):
     canonical_name = "Content-Range"
     description = """\
 The `Content-Range` response header is sent in a `206` (Partial Content) response to indicate
@@ -27,8 +33,6 @@ in `416` (Requested Range Not Satisfiable) responses."""
     syntax = rfc9110.Content_Range
     report_syntax = False
     deprecated = False
-    valid_in_requests = False
-    valid_in_responses = True
 
     def parse(self, field_value: str, add_note: AddNoteMethodType) -> Optional[ContentRangeValue]:
         self._check_status(add_note)
@@ -61,14 +65,16 @@ in `416` (Requested Range Not Satisfiable) responses."""
         # We need to distinguish between "*" (valid for unsatisfiable) and error.
 
         if rng == "*":
-            if isinstance(self.message, HttpResponseLinter) and self.message.status_code == 206:
-                add_note(CONTENT_RANGE_UNSATISFIED_BAD_SC)
+            if getattr(self.message, "message_type", None) == "response":
+                response = self.message
+                if response.status_code == 206:
+                    add_note(CONTENT_RANGE_UNSATISFIED_BAD_SC)
         elif first_byte_pos is None:
             # Error in range parsing; already noted
             raise ValueError
         else:
             # We have a valid range tuple
-            if first_byte_pos is not None and last_byte_pos is not None:
+            if last_byte_pos is not None:
                 if first_byte_pos > last_byte_pos:
                     add_note(RANGE_INVALID)
                 if complete_length is not None and last_byte_pos >= complete_length:
@@ -77,11 +83,10 @@ in `416` (Requested Range Not Satisfiable) responses."""
         return ContentRangeValue(unit, first_byte_pos, last_byte_pos, complete_length)
 
     def _check_status(self, add_note: AddNoteMethodType) -> None:
-        if isinstance(self.message, HttpResponseLinter) and self.message.status_code not in [
-            206,
-            416,
-        ]:
-            add_note(CONTENT_RANGE_MEANINGLESS)
+        if getattr(self.message, "message_type", None) == "response":
+            response = self.message
+            if response.status_code not in [206, 416]:
+                add_note(CONTENT_RANGE_MEANINGLESS)
 
     def _parse_length(self, len_str: str, add_note: AddNoteMethodType) -> Optional[int]:
         if len_str == "*":
@@ -130,7 +135,7 @@ class CONTENT_RANGE_MISSING_UNIT(Note):
     level = levels.BAD
     _summary = "The Content-Range header is missing a unit (e.g., 'bytes')."
     _text = """\
-The `Content-Range` header is missing a range unit at the start; it should 
+The `Content-Range` header is missing a range unit at the start; it should
 almost always be `bytes`.
 
 For example:
@@ -209,109 +214,109 @@ The `Content-Range` header uses `*` for the instance length, indicating that the
 the resource is unknown."""
 
 
-class ContentRangeTest(FieldTest):
+class ContentRangeTest(FieldTest[ResponseLinterProtocol]):
     name = "Content-Range"
     inputs = [b"bytes 1-100/200"]
     expected_out = ContentRangeValue("bytes", 1, 100, 200)
 
-    def set_context(self, message: HttpMessageLinter) -> None:
-        message.status_code = 206  # type: ignore
+    def set_response_context(self, message: ResponseLinterProtocol) -> None:
+        message.status_code = 206
 
 
-class ContentRangeUnsatisfiedTest(FieldTest):
+class ContentRangeUnsatisfiedTest(FieldTest[ResponseLinterProtocol]):
     name = "Content-Range"
     inputs = [b"bytes */1234"]
     expected_out = ContentRangeValue("bytes", None, None, 1234)
 
-    def set_context(self, message: HttpMessageLinter) -> None:
-        message.status_code = 416  # type: ignore
+    def set_response_context(self, message: ResponseLinterProtocol) -> None:
+        message.status_code = 416
 
 
-class ContentRangeUnknownLengthTest(FieldTest):
+class ContentRangeUnknownLengthTest(FieldTest[ResponseLinterProtocol]):
     name = "Content-Range"
     inputs = [b"bytes 42-1233/*"]
     expected_out = ContentRangeValue("bytes", 42, 1233, None)
-    expected_notes = [CONTENT_RANGE_UNKNOWN_LENGTH]
+    expected_notes: NoteClassListType = [CONTENT_RANGE_UNKNOWN_LENGTH]
 
-    def set_context(self, message: HttpMessageLinter) -> None:
-        message.status_code = 206  # type: ignore
+    def set_response_context(self, message: ResponseLinterProtocol) -> None:
+        message.status_code = 206
 
 
-class ContentRangeInvalidOrderTest(FieldTest):
+class ContentRangeInvalidOrderTest(FieldTest[ResponseLinterProtocol]):
     name = "Content-Range"
     inputs = [b"bytes 100-50/200"]
     expected_out = ContentRangeValue("bytes", 100, 50, 200)
-    expected_notes = [RANGE_INVALID]
+    expected_notes: NoteClassListType = [RANGE_INVALID]
 
-    def set_context(self, message: HttpMessageLinter) -> None:
-        message.status_code = 206  # type: ignore
+    def set_response_context(self, message: ResponseLinterProtocol) -> None:
+        message.status_code = 206
 
 
-class ContentRangeInvalidLengthTest(FieldTest):
+class ContentRangeInvalidLengthTest(FieldTest[ResponseLinterProtocol]):
     name = "Content-Range"
     inputs = [b"bytes 100-200/50"]
     expected_out = ContentRangeValue("bytes", 100, 200, 50)
-    expected_notes = [RANGE_INVALID]
+    expected_notes: NoteClassListType = [RANGE_INVALID]
 
-    def set_context(self, message: HttpMessageLinter) -> None:
-        message.status_code = 206  # type: ignore
+    def set_response_context(self, message: ResponseLinterProtocol) -> None:
+        message.status_code = 206
 
 
-class ContentRangeSyntaxErrorTest(FieldTest):
+class ContentRangeSyntaxErrorTest(FieldTest[ResponseLinterProtocol]):
     name = "Content-Range"
     inputs = [b"bytes */*"]
     expected_out = None
-    expected_notes = [CONTENT_RANGE_INVALID_ASTERISK]
+    expected_notes: NoteClassListType = [CONTENT_RANGE_INVALID_ASTERISK]
 
-    def set_context(self, message: HttpMessageLinter) -> None:
-        message.status_code = 416  # type: ignore
+    def set_response_context(self, message: ResponseLinterProtocol) -> None:
+        message.status_code = 416
 
 
-class ContentRangeMissingUnit(FieldTest):
+class ContentRangeMissingUnit(FieldTest[ResponseLinterProtocol]):
     name = "Content-Range"
     inputs = [b"1-100/200"]
     expected_out = None
-    expected_notes = [CONTENT_RANGE_MISSING_UNIT]
+    expected_notes: NoteClassListType = [CONTENT_RANGE_MISSING_UNIT]
 
-    def set_context(self, message: HttpMessageLinter) -> None:
-        message.status_code = 206  # type: ignore
+    def set_response_context(self, message: ResponseLinterProtocol) -> None:
+        message.status_code = 206
 
 
-class ContentRangeMissingHyphenTest(FieldTest):
+class ContentRangeMissingHyphenTest(FieldTest[ResponseLinterProtocol]):
     name = "Content-Range"
     inputs = [b"bytes 100/200"]
     expected_out = None
-    expected_notes = [RANGE_MISSING_HYPHEN]
+    expected_notes: NoteClassListType = [RANGE_MISSING_HYPHEN]
 
-    def set_context(self, message: HttpMessageLinter) -> None:
-        message.status_code = 206  # type: ignore
+    def set_response_context(self, message: ResponseLinterProtocol) -> None:
+        message.status_code = 206
 
 
-class ContentRangeInvalidIntegerTest(FieldTest):
+class ContentRangeInvalidIntegerTest(FieldTest[ResponseLinterProtocol]):
     name = "Content-Range"
     inputs = [b"bytes 100-foo/200"]
     expected_out = None
-    expected_notes = [RANGE_INVALID_INTEGER]
+    expected_notes: NoteClassListType = [RANGE_INVALID_INTEGER]
 
-    def set_context(self, message: HttpMessageLinter) -> None:
-        message.status_code = 206  # type: ignore
+    def set_response_context(self, message: ResponseLinterProtocol) -> None:
+        message.status_code = 206
 
 
-class ContentRangeUnsatisfiedBadSCTest(FieldTest):
+class ContentRangeUnsatisfiedBadSCTest(FieldTest[ResponseLinterProtocol]):
     name = "Content-Range"
     inputs = [b"bytes */100"]
     expected_out = ContentRangeValue("bytes", None, None, 100)
-    expected_notes = [CONTENT_RANGE_UNSATISFIED_BAD_SC]
+    expected_notes: NoteClassListType = [CONTENT_RANGE_UNSATISFIED_BAD_SC]
 
-    def set_context(self, message: HttpMessageLinter) -> None:
-        message.status_code = 206  # type: ignore
+    def set_response_context(self, message: ResponseLinterProtocol) -> None:
+        message.status_code = 206
 
 
-class ContentRangeMissingSlashTest(FieldTest):
+class ContentRangeMissingSlashTest(FieldTest[ResponseLinterProtocol]):
     name = "Content-Range"
     inputs = [b"bytes 1-100 200"]
     expected_out = None
-    expected_notes = [CONTENT_RANGE_MISSING_SLASH]
+    expected_notes: NoteClassListType = [CONTENT_RANGE_MISSING_SLASH]
 
-    def set_context(self, message: HttpMessageLinter) -> None:
-        message.status_code = 206  # type: ignore
+    def set_response_context(self, message: ResponseLinterProtocol) -> None:
+        message.status_code = 206

@@ -1,27 +1,36 @@
-from functools import partial
 import codecs
 import hashlib
 import re
 import weakref
-from typing import Optional, Any, Dict, TypedDict, cast
-from typing_extensions import Unpack, NotRequired
+from functools import partial
+from typing import Any, Dict, Optional, TypedDict, cast
+
+from typing_extensions import NotRequired, Unpack
 
 from httplint.cache import ResponseCacheChecker
 from httplint.content_encoding import ContentEncodingProcessor
-from httplint.field.section import FieldSection
-from httplint.note import Notes, Note, levels, categories
-from httplint.syntax import rfc3986
-from httplint.types import RawFieldListType
-from httplint.util import iri_to_uri, f_num
-from httplint.status import StatusChecker
 from httplint.content_type import verify_content_type
-from httplint.i18n import L_, translate
 from httplint.field.cors import check_preflight_request, check_preflight_response
+from httplint.field.section import FieldSection
+from httplint.i18n import L_, translate
+from httplint.note import Note, Notes, categories, levels
+from httplint.status import StatusChecker
+from httplint.syntax import rfc3986
+from httplint.types import (
+    CachingProtocol,
+    LinterProtocol,
+    NotesProtocol,
+    RawFieldListType,
+    RequestLinterProtocol,
+    ResponseLinterProtocol,
+    SectionProtocol,
+)
+from httplint.util import f_num, iri_to_uri
 
 
 class HttpMessageParams(TypedDict):
     start_time: NotRequired[Optional[float]]
-    related: NotRequired["HttpMessageLinter"]
+    _related: NotRequired[Optional[LinterProtocol]]
     no_content: NotRequired[bool]
 
 
@@ -32,22 +41,34 @@ class HttpMessageLinter:
 
     message_type = L_("message")
 
+    @property
+    def as_request(self) -> Optional[RequestLinterProtocol]:
+        if self.message_type == "request":
+            return cast(RequestLinterProtocol, self)
+        return None
+
+    @property
+    def as_response(self) -> Optional[ResponseLinterProtocol]:
+        if self.message_type == "response":
+            return cast(ResponseLinterProtocol, self)
+        return None
+
     def __init__(
         self,
         start_time: Optional[float] = None,
-        related: Optional["HttpMessageLinter"] = None,
+        _related: Optional[LinterProtocol] = None,
         no_content: bool = False,
     ) -> None:
-        self.notes = Notes({"message_type": translate(self.message_type)})
-        self.related = related
+        self.notes: NotesProtocol = Notes({"message_type": translate(self.message_type)})
+        self._related = _related
         self.start_time = start_time
         self.finish_time: Optional[float] = None
         self.no_content = no_content
 
         self.version: str = ""
         self.base_uri: str = ""
-        self.headers = FieldSection(self)
-        self.trailers = FieldSection(self, is_trailer=True)
+        self.headers: SectionProtocol = FieldSection(self)
+        self.trailers: SectionProtocol = FieldSection(self, is_trailer=True)
 
         self.content_length: int = 0
         self.content_hash: Optional[bytes] = None
@@ -134,7 +155,8 @@ class HttpMessageLinter:
                     field_name=handler.canonical_name,
                     field_type=section.is_trailer and L_("trailer") or L_("header"),
                 )
-                handler.post_check(self, field_add_note)
+                if handler.value is not None:
+                    handler.post_check(field_add_note)
 
     def can_have_content(self) -> bool:
         "Say whether this message can have content."
@@ -205,6 +227,14 @@ class HttpRequestLinter(HttpMessageLinter):
     def can_have_content(self) -> bool:
         return True
 
+    @property
+    def response(self) -> Optional[ResponseLinterProtocol]:
+        return cast(Optional[ResponseLinterProtocol], self._related)
+
+    @response.setter
+    def response(self, value: Optional[ResponseLinterProtocol]) -> None:
+        self._related = value
+
     def post_checks(self) -> None:
         check_preflight_request(self)
         if "user-agent" not in self.headers.parsed:
@@ -238,7 +268,15 @@ class HttpResponseLinter(HttpMessageLinter):
         self.status_code: Optional[int] = None
         self.status_phrase: Optional[str] = None
         self.is_head_response = False
-        self.caching: ResponseCacheChecker
+        self.caching: CachingProtocol
+
+    @property
+    def request(self) -> Optional[RequestLinterProtocol]:
+        return cast(Optional[RequestLinterProtocol], self._related)
+
+    @request.setter
+    def request(self, value: Optional[RequestLinterProtocol]) -> None:
+        self._related = value
 
     def process_response_topline(
         self, version: bytes, status_code: bytes, status_phrase: Optional[bytes] = None
@@ -266,7 +304,7 @@ class HttpResponseLinter(HttpMessageLinter):
     def post_checks(self) -> None:
         check_preflight_response(self)
         self.caching = ResponseCacheChecker(self)
-        StatusChecker(self, cast(Optional[HttpRequestLinter], self.related))
+        StatusChecker(self, self.request)
         if not self.no_content:
             verify_content_type(self)
 

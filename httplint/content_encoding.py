@@ -1,21 +1,18 @@
 import binascii
 import hashlib
-from typing import List, Dict, Any, Callable, Optional, TYPE_CHECKING
 import weakref
 import zlib
+from typing import Any, Callable, Dict, List, Optional
 
 import brotli
 
-
-from httplint.note import Note, levels, categories
-from httplint.util import f_num, display_bytes
-
-if TYPE_CHECKING:
-    from httplint.message import HttpMessageLinter
+from httplint.note import Note, categories, levels
+from httplint.types import LinterProtocol
+from httplint.util import display_bytes, f_num
 
 
 class ContentEncodingProcessor:
-    def __init__(self, message: "HttpMessageLinter") -> None:
+    def __init__(self, message: LinterProtocol) -> None:
         self.message = weakref.proxy(message)
         self.processors: List[Callable[[bytes], None]] = []
 
@@ -23,7 +20,7 @@ class ContentEncodingProcessor:
         self.hash: Optional[bytes] = None
         self._hash_processor = hashlib.new("md5")
 
-        self.decode_ok: bool = True  # turn False if we have a problem
+        self.decode_ok: bool = True
 
         # Pipeline is built lazily to ensure headers are parsed
         self.pipeline: Optional[Callable[[bytes], None]] = None
@@ -53,8 +50,7 @@ class ContentEncodingProcessor:
 
         content_codings = self.message.headers.parsed.get("content-encoding", [])
 
-        # We iterate forward regarding processing order.
-        # See init comments in previous version.
+        # Iterate forward regarding processing order.
 
         for coding in content_codings:
             if coding in ["gzip", "x-gzip"]:
@@ -70,7 +66,6 @@ class ContentEncodingProcessor:
         for processor in self.processors:
             processor(chunk)
 
-
     def __getstate__(self) -> Dict[str, Any]:
         state: Dict[str, Any] = self.__dict__.copy()
         for key in ["_hash_processor", "pipeline", "processors"]:
@@ -80,9 +75,7 @@ class ContentEncodingProcessor:
 
 
 class GzipProcessor:
-    def __init__(
-        self, message: "HttpMessageLinter", next_processor: Callable[[bytes], None]
-    ) -> None:
+    def __init__(self, message: LinterProtocol, next_processor: Callable[[bytes], None]) -> None:
         self.message = message
         self.next_processor = next_processor
         self._gzip_processor = zlib.decompressobj(-zlib.MAX_WBITS)
@@ -202,9 +195,7 @@ class GzipProcessor:
 
 
 class BrotliProcessor:
-    def __init__(
-        self, message: "HttpMessageLinter", next_processor: Callable[[bytes], None]
-    ) -> None:
+    def __init__(self, message: LinterProtocol, next_processor: Callable[[bytes], None]) -> None:
         self.message = message
         self.next_processor = next_processor
         self._brotli_processor = brotli.Decompressor()

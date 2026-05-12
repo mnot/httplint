@@ -1,16 +1,19 @@
 from httplint.field.singleton_field import SingletonField
 from httplint.field.tests import FieldTest
-from httplint.syntax import rfc9110
-from httplint.types import AddNoteMethodType
-from httplint.util import relative_time
+from httplint.field.utils import BAD_DATE_SYNTAX, parse_http_date
 from httplint.note import Note, categories, levels
-from httplint.field.utils import BAD_DATE_SYNTAX
-from httplint.field.utils import parse_http_date
+from httplint.syntax import rfc9110
+from httplint.types import (
+    AddNoteMethodType,
+    AnyMessageLinterProtocol,
+    NoteClassListType,
+)
+from httplint.util import relative_time
 
 MAX_CLOCK_SKEW = 5  # seconds
 
 
-class date(SingletonField):
+class date(SingletonField[AnyMessageLinterProtocol]):
     canonical_name = "Date"
     description = """\
 The `Date` header represents the time when the message was generated, regardless of caching that
@@ -20,8 +23,6 @@ It is used by caches as input to expiration calculations, and to detect clock dr
     reference = f"{rfc9110.SPEC_URL}#field.date"
     syntax = False  # rfc9110.Date
     deprecated = False
-    valid_in_requests = True
-    valid_in_responses = True
 
     def parse(self, field_value: str, add_note: AddNoteMethodType) -> int:
         return parse_http_date(field_value, add_note, category=self.category)
@@ -85,21 +86,21 @@ See [this paper](https://www.usenix.org/legacy/events/usits01/full_papers/cohen/
 for more information."""
 
 
-class BasicDateTest(FieldTest):
+class BasicDateTest(FieldTest[AnyMessageLinterProtocol]):
     name = "Date"
     inputs = [b"Mon, 04 Jul 2011 09:08:06 GMT"]
     expected_out = 1309770486
 
 
-class BadDateTest(FieldTest):
+class BadDateTest(FieldTest[AnyMessageLinterProtocol]):
     name = "Date"
     inputs = [b"0"]
     expected_out = None
-    expected_notes = [BAD_DATE_SYNTAX]
+    expected_notes: NoteClassListType = [BAD_DATE_SYNTAX]
 
 
-class BlankDateTest(FieldTest):
+class BlankDateTest(FieldTest[AnyMessageLinterProtocol]):
     name = "Date"
     inputs = [b""]
     expected_out = None
-    expected_notes = [BAD_DATE_SYNTAX]
+    expected_notes: NoteClassListType = [BAD_DATE_SYNTAX]

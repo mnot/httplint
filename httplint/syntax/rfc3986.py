@@ -13,8 +13,7 @@ They should be processed with re.VERBOSE.
 
 # pylint: disable=invalid-name
 
-from .rfc5234 import DIGIT, ALPHA, HEXDIG
-
+from .rfc5234 import ALPHA, DIGIT, HEXDIG
 
 #   pct-encoded   = "%" HEXDIG HEXDIG
 pct_encoded = rf" % {HEXDIG} {HEXDIG}"

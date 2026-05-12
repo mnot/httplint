@@ -1,14 +1,17 @@
 from httplint.field.singleton_field import SingletonField
 from httplint.field.tests import FieldTest
-from httplint.syntax import rfc9110
-from httplint.types import AddNoteMethodType
-from httplint.util import relative_time
+from httplint.field.utils import BAD_DATE_SYNTAX, parse_http_date
 from httplint.note import Note, categories, levels
-from httplint.field.utils import BAD_DATE_SYNTAX
-from httplint.field.utils import parse_http_date
+from httplint.syntax import rfc9110
+from httplint.types import (
+    AddNoteMethodType,
+    NoteClassListType,
+    ResponseLinterProtocol,
+)
+from httplint.util import relative_time
 
 
-class last_modified(SingletonField):
+class last_modified(SingletonField[ResponseLinterProtocol]):
     canonical_name = "Last-Modified"
     description = """\
 The `Last-Modified` response header indicates the time that the origin server believes the
@@ -17,8 +20,6 @@ representation was last modified."""
     syntax = False  # rfc9110.Last_Modified
     category = categories.CACHING
     deprecated = False
-    valid_in_requests = False
-    valid_in_responses = True
 
     def parse(self, field_value: str, add_note: AddNoteMethodType) -> int:
         return parse_http_date(field_value, add_note, category=self.category)
@@ -29,7 +30,7 @@ representation was last modified."""
         if lm_value:
             serv_date = date_value or self.message.start_time
             if not serv_date:
-                return  # we don't know
+                return  # cannot determine relative time without a server timestamp
             if lm_value > serv_date:
                 add_note(LM_FUTURE)
             else:
@@ -60,21 +61,21 @@ used in HTTP for validating cached responses, and for calculating heuristic fres
 This resource last changed %(last_modified_string)s."""
 
 
-class BasicLMTest(FieldTest):
+class BasicLMTest(FieldTest[ResponseLinterProtocol]):
     name = "Last-Modified"
     inputs = [b"Mon, 04 Jul 2011 09:08:06 GMT"]
     expected_out = 1309770486
 
 
-class BadLMTest(FieldTest):
+class BadLMTest(FieldTest[ResponseLinterProtocol]):
     name = "Last-Modified"
     inputs = [b"0"]
     expected_out = None
-    expected_notes = [BAD_DATE_SYNTAX]
+    expected_notes: NoteClassListType = [BAD_DATE_SYNTAX]
 
 
-class BlankLMTest(FieldTest):
+class BlankLMTest(FieldTest[ResponseLinterProtocol]):
     name = "Last-Modified"
     inputs = [b""]
     expected_out = None
-    expected_notes = [BAD_DATE_SYNTAX]
+    expected_notes: NoteClassListType = [BAD_DATE_SYNTAX]

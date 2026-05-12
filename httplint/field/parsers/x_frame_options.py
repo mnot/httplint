@@ -1,10 +1,9 @@
+from httplint.field import BAD_SYNTAX
 from httplint.field.singleton_field import SingletonField
 from httplint.field.tests import FieldTest
 from httplint.note import Note, categories, levels
 from httplint.syntax import rfc3986, rfc9110
-from httplint.types import AddNoteMethodType
-from httplint.field import BAD_SYNTAX
-
+from httplint.types import AddNoteMethodType, NoteClassListType, ResponseLinterProtocol
 
 # X-Frame-Options = "DENY"
 #          / "SAMEORIGIN"
@@ -22,7 +21,7 @@ X_Frame_Options = rf"""(?:
 )"""
 
 
-class x_frame_options(SingletonField):
+class x_frame_options(SingletonField[ResponseLinterProtocol]):
     canonical_name = "X-Frame-Options"
     reference = "https://www.rfc-editor.org/rfc/rfc7034"
     description = """
@@ -32,8 +31,6 @@ the transmitted content in frames that are part of other web pages.
     syntax = X_Frame_Options
     category = categories.SECURITY
     deprecated = False
-    valid_in_requests = False
-    valid_in_responses = True
 
     def parse(self, field_value: str, add_note: AddNoteMethodType) -> str:
         return field_value.upper()
@@ -95,29 +92,29 @@ See [MDN](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-Frame-Opti
 """
 
 
-class DenyXFOTest(FieldTest):
+class DenyXFOTest(FieldTest[ResponseLinterProtocol]):
     name = "X-Frame-Options"
     inputs = [b"DENY"]
     expected_out = "DENY"
-    expected_notes = [FRAME_OPTIONS_DENY]
+    expected_notes: NoteClassListType = [FRAME_OPTIONS_DENY]
 
 
-class DenyXFOCaseTest(FieldTest):
+class DenyXFOCaseTest(FieldTest[ResponseLinterProtocol]):
     name = "X-Frame-Options"
     inputs = [b"deny"]
     expected_out = "DENY"
-    expected_notes = [FRAME_OPTIONS_DENY]
+    expected_notes: NoteClassListType = [FRAME_OPTIONS_DENY]
 
 
-class SameOriginXFOTest(FieldTest):
+class SameOriginXFOTest(FieldTest[ResponseLinterProtocol]):
     name = "X-Frame-Options"
     inputs = [b"SAMEORIGIN"]
     expected_out = "SAMEORIGIN"
-    expected_notes = [FRAME_OPTIONS_SAMEORIGIN]
+    expected_notes: NoteClassListType = [FRAME_OPTIONS_SAMEORIGIN]
 
 
-class UnknownXFOTest(FieldTest):
+class UnknownXFOTest(FieldTest[ResponseLinterProtocol]):
     name = "X-Frame-Options"
     inputs = [b"foO"]
     expected_out = "FOO"
-    expected_notes = [BAD_SYNTAX, FRAME_OPTIONS_UNKNOWN]
+    expected_notes: NoteClassListType = [BAD_SYNTAX, FRAME_OPTIONS_UNKNOWN]

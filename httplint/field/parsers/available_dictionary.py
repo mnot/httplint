@@ -1,16 +1,17 @@
-from typing import TYPE_CHECKING, cast
+from typing import Any
 
 from httplint.field.structured_field import StructuredField
-from httplint.field.tests import FieldTest, FakeRequestLinter
+from httplint.field.tests import FieldTest
 from httplint.note import Note, categories, levels
-from httplint.types import AddNoteMethodType
-from httplint.message import HttpRequestLinter
+from httplint.types import (
+    AddNoteMethodType,
+    NoteClassListType,
+    RequestLinterProtocol,
+    SFItemType,
+)
 
-if TYPE_CHECKING:
-    from httplint.message import HttpMessageLinter
 
-
-class available_dictionary(StructuredField):
+class available_dictionary(StructuredField[RequestLinterProtocol]):
     canonical_name = "Available-Dictionary"
     description = """\
 The `Available-Dictionary` header field is used by a client to indicate that it has a matching
@@ -19,20 +20,19 @@ dictionary available for use in compressing the response."""
     syntax = False  # Structured Field
     category = categories.CONNEG
     deprecated = False
-    valid_in_requests = True
-    valid_in_responses = False
     sf_type = "item"
+    value: SFItemType
 
     def evaluate(self, add_note: AddNoteMethodType) -> None:
         # self.value is (item, params) for sf_type="item"
         if not isinstance(self.value[0], bytes):
             add_note(AVAILABLE_DICTIONARY_BAD_TYPE, got=type(self.value[0]).__name__)
 
-    def post_check(self, message: "HttpMessageLinter", add_note: AddNoteMethodType) -> None:
-        if not isinstance(message, HttpRequestLinter):
+    def post_check(self, add_note: AddNoteMethodType) -> None:
+        if self.message.message_type != "request":
             return
 
-        ae_values = message.headers.parsed.get("accept-encoding", [])
+        ae_values = self.message.headers.parsed.get("accept-encoding", [])
         has_dictionary_support = False
         for enc, _params in ae_values:
             if enc in ["dcb", "dcz"]:
@@ -64,43 +64,40 @@ class AVAILABLE_DICTIONARY_BAD_TYPE(Note):
 The `Available-Dictionary` header value must be a Byte Sequence. Found `%(got)s`."""
 
 
-class AvailableDictionaryTest(FieldTest):
+class AvailableDictionaryTest(FieldTest[RequestLinterProtocol]):
     name = "Available-Dictionary"
     inputs = [b":pZGm1Av0IEBKARczz7exkNYsZb8LzaMrV7J32a2fFG4=:"]
-    expected_out: tuple[bytes, dict] = (
+    expected_out: tuple[bytes, dict[str, Any]] = (
         b"\xa5\x91\xa6\xd4\x0b\xf4 @J\x01\x173\xcf\xb7\xb1\x90\xd6,e\xbf\x0b\xcd\xa3"
         b"+W\xb2w\xd9\xad\x9f\x14n",
         {},
     )
-    expected_notes = []
+    expected_notes: NoteClassListType = []
 
-    def set_context(self, message: "HttpMessageLinter") -> None:
-        message = cast(FakeRequestLinter, message)
+    def set_request_context(self, message: RequestLinterProtocol) -> None:
         message.headers.parsed["accept-encoding"] = [("dcb", {})]
 
 
-class AvailableDictionaryBadTypeTest(FieldTest):
+class AvailableDictionaryBadTypeTest(FieldTest[RequestLinterProtocol]):
     name = "Available-Dictionary"
     inputs = [b'"not-binary"']
-    expected_out: tuple[str, dict] = ("not-binary", {})
-    expected_notes = [AVAILABLE_DICTIONARY_BAD_TYPE]
+    expected_out: tuple[str, dict[str, Any]] = ("not-binary", {})
+    expected_notes: NoteClassListType = [AVAILABLE_DICTIONARY_BAD_TYPE]
 
-    def set_context(self, message: "HttpMessageLinter") -> None:
-        message = cast(FakeRequestLinter, message)
+    def set_request_context(self, message: RequestLinterProtocol) -> None:
         message.headers.parsed["accept-encoding"] = [("dcb", {})]
 
 
-class AvailableDictionaryMissingAETest(FieldTest):
+class AvailableDictionaryMissingAETest(FieldTest[RequestLinterProtocol]):
     name = "Available-Dictionary"
     inputs = [b":pZGm1Av0IEBKARczz7exkNYsZb8LzaMrV7J32a2fFG4=:"]
-    expected_out: tuple[bytes, dict] = (
+    expected_out: tuple[bytes, dict[str, Any]] = (
         b"\xa5\x91\xa6\xd4\x0b\xf4 @J\x01\x173\xcf\xb7\xb1\x90\xd6,e\xbf\x0b\xcd\xa3"
         b"+W\xb2w\xd9\xad\x9f\x14n",
         {},
     )
-    expected_notes = [AVAILABLE_DICTIONARY_MISSING_AE]
+    expected_notes: NoteClassListType = [AVAILABLE_DICTIONARY_MISSING_AE]
 
-    def set_context(self, message: "HttpMessageLinter") -> None:
-        message = cast(FakeRequestLinter, message)
+    def set_request_context(self, message: RequestLinterProtocol) -> None:
         # Accept-Encoding missing 'dcb' or 'dcz'
         message.headers.parsed["accept-encoding"] = [("gzip", {})]

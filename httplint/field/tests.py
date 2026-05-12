@@ -1,11 +1,18 @@
-from typing import Any, List, Tuple, Type, Iterable
-from functools import partial
 import unittest
+from functools import partial
+from typing import Any, Generic, Iterable, List, Tuple, Type, cast
 
-from httplint.i18n import L_
-from httplint.note import Note
 from httplint.field.cors import check_preflight_request, check_preflight_response
-from httplint.message import HttpResponseLinter, HttpMessageLinter, HttpRequestLinter
+from httplint.i18n import L_
+from httplint.message import HttpMessageLinter, HttpRequestLinter, HttpResponseLinter
+from httplint.note import Note
+from httplint.types import (
+    LinterProtocol,
+    NoteClassListType,
+    RequestLinterProtocol,
+    ResponseLinterProtocol,
+    TMessage,
+)
 
 
 class FakeResponseLinter(HttpResponseLinter):
@@ -17,10 +24,10 @@ class FakeResponseLinter(HttpResponseLinter):
         HttpResponseLinter.__init__(self)
         self.base_uri = "http://example.com/foo/bar"
         self.status_phrase = ""
-        self.related = FakeRequestLinter()
+        self.request = FakeRequestLinter()
 
     def post_checks(self) -> None:
-        if self.related and not hasattr(self.related, "headers"):
+        if self.request is not None and not hasattr(self.request, "headers"):
             return
         check_preflight_response(self)
 
@@ -50,7 +57,16 @@ class FakeRequest:
         self.method = "GET"
 
 
-class FieldTest(unittest.TestCase):
+class FakeCaching:
+    def __init__(self) -> None:
+        self.age = 0
+        self.store_private = False
+        self.freshness_lifetime_private = 0
+        self.store_shared = False
+        self.freshness_lifetime_shared = 0
+
+
+class FieldTest(unittest.TestCase, Generic[TMessage]):
     """
     Testing machinery for headers.
     """
@@ -58,8 +74,8 @@ class FieldTest(unittest.TestCase):
     name: str = ""
     inputs: List[bytes] = []
     expected_out: Any = []
-    expected_notes: List[Type[Note]] = []
-    message: HttpMessageLinter
+    expected_notes: NoteClassListType = []
+    message: TMessage
 
     linter_class: Type[HttpMessageLinter] = FakeResponseLinter
 
@@ -67,11 +83,17 @@ class FieldTest(unittest.TestCase):
         "Test setup."
         if self.name:
             # pylint: disable=protected-access
-            handler = self.linter_class().headers._finder.find_handler(self.name)
+            headers = self.linter_class().headers
+            handler = headers._finder.find_handler(self.name)
             if handler.valid_in_requests and not handler.valid_in_responses:
                 self.linter_class = FakeRequestLinter
-        self.message = self.linter_class()
-        self.set_context(self.message)
+        self.message = cast(TMessage, self.linter_class())
+        if isinstance(self.message, HttpRequestLinter):
+            self.set_request_context(self.message)
+        elif isinstance(self.message, HttpResponseLinter):
+            self.set_response_context(self.message)
+        else:
+            self.set_context(self.message)
 
     def test_header(self) -> Any:
         "Test the header."
@@ -88,7 +110,7 @@ class FieldTest(unittest.TestCase):
                 field_name=handler.canonical_name,
                 field_type=L_("header"),
             )
-            handler.post_check(self.message, field_add_note)
+            handler.post_check(field_add_note)
 
         out = self.message.headers.parsed.get(self.name.lower(), "HEADER HANDLER NOT FOUND")
         self.assertEqual(self.expected_out, out)
@@ -124,7 +146,13 @@ class FieldTest(unittest.TestCase):
         self.assertEqual(len(diff), 0, f"Mismatched notes: {diff}")
         return None
 
-    def set_context(self, message: "HttpMessageLinter") -> None:
+    def set_context(self, message: LinterProtocol) -> None:
+        pass
+
+    def set_request_context(self, message: RequestLinterProtocol) -> None:
+        pass
+
+    def set_response_context(self, message: ResponseLinterProtocol) -> None:
         pass
 
     def assert_note(self, input_bytes: bytes, note: Type[Note], expected_out: Any = None) -> None:
