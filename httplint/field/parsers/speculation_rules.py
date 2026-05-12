@@ -56,7 +56,7 @@ class SPECULATION_RULES_BAD_TYPE(Note):
     _text = """\
 The speculation rule is a
 [Structured Field](https://www.rfc-editor.org/rfc/rfc8941.html) list of Items, where
-each item must be a string URL. Found: %(value)s (type `%(found_type)s`)."""
+each item must be a string URL. Found: `%(value)s` (type `%(found_type)s`)."""
 
 
 class SpeculationRulesTest(FieldTest[ResponseLinterProtocol]):

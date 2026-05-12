@@ -217,7 +217,7 @@ class PARAM_REPEATS(Note):
     level = levels.WARN
     _summary = "The '%(param)s' parameter repeats in the %(field_name)s header."
     _text = """\
-Parameters on the %(field_name)s field should not repeat; implementations may handle them
+Parameters on the `%(field_name)s` field should not repeat; implementations may handle them
 differently."""
 
 
@@ -226,7 +226,7 @@ class PARAM_SINGLE_QUOTED(Note):
     level = levels.WARN
     _summary = "The '%(param)s' parameter on the %(field_name)s header is single-quoted."
     _text = """\
-The `%(param)s`'s value on the %(field_name)s field starts and ends with a single quote (').
+The `%(param)s`'s value on the `%(field_name)s` field starts and ends with a single quote (').
 However, single quotes don't mean anything there.
 
 This means that the value will be interpreted as `%(param_val)s`, **not**

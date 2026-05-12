@@ -76,7 +76,7 @@ class CSD_UNQUOTED(Note):
     _text = """\
 Values in the `Clear-Site-Data` header must be quoted; unquoted values will be ignored. 
 
-The following values were found unquoted: %(values)s."""
+The following values were found unquoted: `%(values)s`."""
 
 
 class ClearSiteDataTest(FieldTest[ResponseLinterProtocol]):

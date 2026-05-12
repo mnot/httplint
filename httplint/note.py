@@ -6,7 +6,7 @@ from threading import local
 from typing import Any, Dict, MutableMapping, Optional, Type
 
 from markdown import Markdown
-from markupsafe import Markup, escape
+from markupsafe import Markup
 
 from httplint.i18n import L_, translate
 from httplint.types import NoteListType, VariableType
@@ -107,26 +107,28 @@ class Note:
             and self.subject == other.subject
         )
 
-    def _get_summary(self) -> Markup:
+    def _get_summary(self) -> str:
         """
-        Output a textual summary of the message as a Unicode string.
+        Output a textual summary of the message as a plain-text string.
 
-        Note that if it is displayed in an environment that needs
-        encoding (e.g., HTML), that is *NOT* done.
+        The value is NOT HTML-escaped.  Consumers are responsible for escaping
+        before embedding in HTML.
         """
-        return Markup(translate(self._summary) % self.vars)
+        return translate(self._summary) % self.vars
 
     def _get_detail(self) -> Markup:
         """
         Show the HTML text for the message as a Unicode string.
 
-        The resulting string is already HTML-encoded.
+        The resulting string is already HTML-encoded.  Variable values are
+        passed as plain strings; the Markdown renderer handles escaping.
+        Template authors must wrap user-controlled vars in backtick code
+        spans (or indented code blocks) so Markdown escapes them correctly.
         """
         return Markup(
             _get_markdown()
             .reset()
-            .convert(translate(self._text) % {k: escape(v) for k, v in self.vars.items()})
-        )
+            .convert(translate(self._text) % {k: str(v) for k, v in self.vars.items()})
 
     summary = property(_get_summary)
     detail = property(_get_detail)

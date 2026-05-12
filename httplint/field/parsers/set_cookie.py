@@ -459,7 +459,7 @@ class SET_COOKIE_UNKNOWN_ATTRIBUTE(Note):
     level = levels.WARN
     _summary = "The %(cookie_name)s cookie has an unknown attribute, '%(attribute)s'."
     _text = """\
-This cookie has an extra parameter, "%(attribute)s".
+This cookie has an extra parameter, `%(attribute)s`.
 
 Browsers will ignore it."""
 
@@ -492,7 +492,7 @@ class SET_COOKIE_UNKNOWN_ATTRIBUTE_VALUE(Note):
     level = levels.WARN
     _summary = "The %(cookie_name)s cookie has an unknown '%(attribute_name)s' attribute value."
     _text = """\
-This `Set-Cookie` header has an unknown "%(attribute_name)s" attribute value, "%(attribute_value)s".
+This `Set-Cookie` header has an unknown `%(attribute_name)s` attribute value, `%(attribute_value)s`.
 
 Browsers will probably ignore it as a result."""
 
@@ -594,7 +594,7 @@ class SET_COOKIE_NAME_DUP(Note):
     level = levels.WARN
     _summary = "This response sets duplicate cookies."
     _text = """\
-The following cookies are set more than once in this response: %(cookie_names)s.
+The following cookies are set more than once in this response: `%(cookie_names)s`.
 
 Browsers will likely accept all of them, but the order of application
 may vary or be confusing."""
