@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any
 
 from httplint.field.structured_field import StructuredField
@@ -78,7 +78,7 @@ header must be a Date or a Boolean. Found: %(item_type)s."""
 class DeprecationDateTest(FieldTest[ResponseLinterProtocol]):
     name = "Deprecation"
     inputs = [b"@1672531199"]
-    expected_out: Any = (datetime.fromtimestamp(1672531199), {})
+    expected_out: Any = (datetime.fromtimestamp(1672531199, tz=timezone.utc), {})
     expected_notes: NoteClassListType = [DEPRECATION_PAST]
 
     def set_response_context(self, message: ResponseLinterProtocol) -> None:
