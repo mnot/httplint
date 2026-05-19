@@ -58,9 +58,11 @@ requests to the server."""
 
         hardened = [name for name, _, attrs in self.value if _is_hardened(attrs)]
         if hardened:
+            # Strip backticks so attacker-controlled cookie names cannot escape
+            # the surrounding code span and inject raw HTML via Markdown.
             add_note(
                 SET_COOKIE_HARDENED,
-                cookie_names=", ".join(f"`{n}`" for n in hardened),
+                cookie_names=", ".join(f"`{n.replace('`', '')}`" for n in hardened),
             )
 
         for note_adder, note, category, kwargs in self._deferred_notes:

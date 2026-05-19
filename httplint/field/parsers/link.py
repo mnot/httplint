@@ -70,10 +70,17 @@ statement of the form "[context IRI] has a [relation type] resource at [target I
         present = {k: v for k, v in hints.items() if v}
         if present:
             hints_plain = ", ".join(present)
-            detail_lines = "\n".join(
-                f"- `{k}`: {', '.join(f'`{t}`' for t in targets)}" for k, targets in present.items()
+            # Strip backticks so attacker-controlled link targets cannot escape
+            # the surrounding code span and inject raw HTML via Markdown.
+            lines = []
+            for rel_name, targets in present.items():
+                safe = [t.replace("`", "") for t in targets]
+                lines.append(f"- `{rel_name}`: {', '.join(f'`{t}`' for t in safe)}")
+            add_note(
+                LINK_RESOURCE_HINTS,
+                hints=hints_plain,
+                detail_lines="\n".join(lines),
             )
-            add_note(LINK_RESOURCE_HINTS, hints=hints_plain, detail_lines=detail_lines)
 
 
 class LINK_RESOURCE_HINTS(Note):
