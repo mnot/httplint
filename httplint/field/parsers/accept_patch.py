@@ -33,9 +33,10 @@ PATCH request."""
 class ACCEPT_PATCH_BAD_SYNTAX(Note):
     category = categories.GENERAL
     level = levels.BAD
-    _summary = "The Accept-Patch header isn't valid."
+    _summary = "The Accept-Patch header contains a value that is not a media type."
     _text = """\
-The value for this field doesn't conform to its specified syntax; see [its
+`%(value)s` is not a valid media type. `Accept-Patch` is a list of media types
+(e.g., `application/json-patch+json`) accepted in a PATCH request; see [its
 definition](%(ref_uri)s) for more information."""
 
 

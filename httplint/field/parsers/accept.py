@@ -74,10 +74,11 @@ The `q` parameter must be a decimal number between 0 and 1, with at most 3 digit
 class ACCEPT_BAD_SYNTAX(Note):
     category = categories.CONNEG
     level = levels.BAD
-    _summary = "The Accept header isn't valid."
+    _summary = "The Accept header contains a value that is not a media range."
     _text = """\
-The value for this field doesn't conform to its specified syntax; see [its
-definition](%(ref_uri)s) for more information."""
+`%(value)s` is not a valid media range. `Accept` is a list of media ranges
+(e.g., `text/html`, `image/*`, `*/*`) that the client prefers in the response;
+see [its definition](%(ref_uri)s) for more information."""
 
 
 class AcceptTest(FieldTest[RequestLinterProtocol]):

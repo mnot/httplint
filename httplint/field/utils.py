@@ -35,10 +35,10 @@ def parse_media_type(
     media_type = media_type.strip().lower()
     if "/" not in media_type and not (allow_wildcard and media_type == "*"):
         if bad_syntax_note is not None:
+            kwargs: Dict[str, Any] = {"value": media_type}
             if ref_uri is not None:
-                add_note(bad_syntax_note, ref_uri=ref_uri)
-            else:
-                add_note(bad_syntax_note)
+                kwargs["ref_uri"] = ref_uri
+            add_note(bad_syntax_note, **kwargs)
     param_dict = parse_params(param_str, add_note, nostar)
     return media_type, param_dict
 

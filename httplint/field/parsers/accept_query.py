@@ -36,10 +36,11 @@ content of a QUERY request."""
 class ACCEPT_QUERY_BAD_SYNTAX(Note):
     category = categories.GENERAL
     level = levels.BAD
-    _summary = "The Accept-Query header isn't valid."
+    _summary = "The Accept-Query header contains a value that is not a media type."
     _text = """\
-The value for this field doesn't conform to its specified syntax; see [its
-definition](%(ref_uri)s) for more information."""
+`%(value)s` is not a valid media type. `Accept-Query` is a list of media types
+(e.g., `application/sparql-query`) accepted in the content of a QUERY request;
+see [its definition](%(ref_uri)s) for more information."""
 
 
 class AcceptQueryTest(FieldTest[ResponseLinterProtocol]):

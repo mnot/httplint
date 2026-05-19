@@ -37,10 +37,11 @@ POST request."""
 class ACCEPT_POST_BAD_SYNTAX(Note):
     category = categories.GENERAL
     level = levels.BAD
-    _summary = "The Accept-Post header isn't valid."
+    _summary = "The Accept-Post header contains a value that is not a media type."
     _text = """\
-The value for this field doesn't conform to its specified syntax; see [its
-definition](%(ref_uri)s) for more information."""
+`%(value)s` is not a valid media type. `Accept-Post` is a list of media types
+(e.g., `text/turtle`) accepted in a POST request; see [its definition](%(ref_uri)s)
+for more information."""
 
 
 class AcceptPostTest(FieldTest[ResponseLinterProtocol]):
