@@ -39,7 +39,7 @@ loaded by a cross-origin document."""
 
 class CORP_SAME_ORIGIN(Note):
     category = categories.SECURITY
-    level = levels.INFO
+    level = levels.GOOD
     _summary = "This response is only available for reading to requests from the same origin."
     _text = """\
 The `same-origin`
@@ -50,7 +50,7 @@ in supporting browsers.%(report_only_text)s"""
 
 class CORP_SAME_SITE(Note):
     category = categories.SECURITY
-    level = levels.INFO
+    level = levels.GOOD
     _summary = "This response is available for reading to requests from the same site."
     _text = """\
 The `same-site`

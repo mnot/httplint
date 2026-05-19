@@ -56,8 +56,22 @@ requests to the server."""
                 seen.add(name)
             add_note(SET_COOKIE_NAME_DUP, cookie_names=", ".join(sorted(duplicates)))
 
+        hardened = [name for name, _, attrs in self.value if _is_hardened(attrs)]
+        if hardened:
+            add_note(
+                SET_COOKIE_HARDENED,
+                cookie_names=", ".join(f"`{n}`" for n in hardened),
+            )
+
         for note_adder, note, category, kwargs in self._deferred_notes:
             note_adder(note, category=category, **kwargs)
+
+
+def _is_hardened(attrs: List[Tuple[str, Union[str, int]]]) -> bool:
+    has_secure = ("Secure", "") in attrs
+    has_httponly = ("HttpOnly", "") in attrs
+    has_safe_samesite = any(k == "SameSite" and v in ("Strict", "Lax") for k, v in attrs)
+    return has_secure and has_httponly and has_safe_samesite
 
 
 def loose_parse(  # pylint: disable=too-many-branches
@@ -589,6 +603,18 @@ The `%(attribute)s` attribute appears more than once in this `Set-Cookie` header
 Browsers will only use the last occurrence."""
 
 
+class SET_COOKIE_HARDENED(Note):
+    category = categories.COOKIES
+    level = levels.GOOD
+    _summary = "This response sets cookies restricted with Secure, HttpOnly, and SameSite."
+    _text = """\
+The following cookies set `Secure` (only sent over HTTPS), `HttpOnly` (inaccessible to
+JavaScript), and a non-`None` `SameSite` value (limiting cross-site sending): %(cookie_names)s.
+
+Together, these attributes substantially reduce a cookie's exposure to common attacks such as
+theft over plaintext connections, cross-site scripting, and cross-site request forgery."""
+
+
 class SET_COOKIE_NAME_DUP(Note):
     category = categories.COOKIES
     level = levels.WARN
@@ -773,6 +799,23 @@ class SetCookiePriorityTest(FieldTest[ResponseLinterProtocol]):
     inputs = [b"a=1; Priority=High"]
     expected_out = [("a", "1", [])]
     expected_notes: NoteClassListType = [SET_COOKIE_PRIORITY]
+
+
+class HardenedSCTest(FieldTest[ResponseLinterProtocol]):
+    name = "Set-Cookie"
+    inputs = [b"SID=abc; Secure; HttpOnly; SameSite=Lax"]
+    expected_out = [
+        ("SID", "abc", [("Secure", ""), ("HttpOnly", ""), ("SameSite", "Lax")]),
+    ]
+    expected_notes: NoteClassListType = [SET_COOKIE_HARDENED]
+
+
+class HardenedSameSiteNoneSCTest(FieldTest[ResponseLinterProtocol]):
+    name = "Set-Cookie"
+    inputs = [b"SID=abc; Secure; HttpOnly; SameSite=None"]
+    expected_out = [
+        ("SID", "abc", [("Secure", ""), ("HttpOnly", ""), ("SameSite", "None")]),
+    ]
 
 
 class SetCookieVersionTest(FieldTest[ResponseLinterProtocol]):

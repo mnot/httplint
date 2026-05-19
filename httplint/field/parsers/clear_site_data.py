@@ -50,6 +50,22 @@ origin."""
             add_note(CSD_UNQUOTED, values=", ".join(self._unquoted_values))
         if not self.value:
             add_note(CSD_EMPTY)
+            return
+        valid = [v for v in self.value if v in self.KNOWN_VALUES and v not in self._unquoted_values]
+        if valid:
+            add_note(CSD_PRESENT, values=", ".join(f"`{v}`" for v in valid))
+
+
+class CSD_PRESENT(Note):
+    category = categories.SECURITY
+    level = levels.GOOD
+    _summary = "This response clears browser-side data for this origin."
+    _text = """\
+The `Clear-Site-Data` header instructs the browser to clear the following data for this origin:
+%(values)s.
+
+This is useful for actions such as logout, account switching, or session termination, where
+locally-stored data should not persist."""
 
 
 class CSD_UNKNOWN_VALUE(Note):
@@ -83,12 +99,14 @@ class ClearSiteDataTest(FieldTest[ResponseLinterProtocol]):
     name = "Clear-Site-Data"
     inputs = [b'"cache", "cookies"']
     expected_out = ["cache", "cookies"]
+    expected_notes: NoteClassListType = [CSD_PRESENT]
 
 
 class ClearSiteDataWildcardTest(FieldTest[ResponseLinterProtocol]):
     name = "Clear-Site-Data"
     inputs = [b'"*"']
     expected_out = ["*"]
+    expected_notes: NoteClassListType = [CSD_PRESENT]
 
 
 class ClearSiteDataUnknownTest(FieldTest[ResponseLinterProtocol]):

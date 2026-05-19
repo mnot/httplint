@@ -36,6 +36,18 @@ header) should be included with requests."""
         effective_policy = valid_policies[-1]
         if effective_policy == "unsafe-url":
             add_note(REFERRER_POLICY_UNSAFE)
+        elif effective_policy in STRICT_REFERRER_POLICIES:
+            add_note(REFERRER_POLICY_STRICT, policy=effective_policy)
+
+
+class REFERRER_POLICY_STRICT(Note):
+    category = categories.SECURITY
+    level = levels.GOOD
+    _summary = "This response's Referrer-Policy ('%(policy)s') restricts referrer leakage."
+    _text = """\
+The `Referrer-Policy` value `%(policy)s` prevents the full URL from being sent as a referrer to
+less-secure or cross-origin destinations, reducing the risk of leaking sensitive information in
+the `Referer` request header."""
 
 
 class REFERRER_POLICY_UNSAFE(Note):
@@ -75,6 +87,14 @@ The `Referrer-Policy` header contains multiple valid policies. Browsers will onl
 valid policy found, which is `%(effective)s`. Earlier values are ignored."""
 
 
+STRICT_REFERRER_POLICIES = {
+    "no-referrer",
+    "same-origin",
+    "strict-origin",
+    "strict-origin-when-cross-origin",
+}
+
+
 VALID_REFERRER_POLICIES = [
     "no-referrer",
     "no-referrer-when-downgrade",
@@ -94,6 +114,13 @@ class ReferrerPolicyTest(FieldTest[ResponseLinterProtocol]):
     expected_notes: NoteClassListType = [REFERRER_POLICY_UNSAFE, REFERRER_POLICY_MULTIPLE]
 
 
+class ReferrerPolicyStrictTest(FieldTest[ResponseLinterProtocol]):
+    name = "Referrer-Policy"
+    inputs = [b"strict-origin-when-cross-origin"]
+    expected_out = ["strict-origin-when-cross-origin"]
+    expected_notes: NoteClassListType = [REFERRER_POLICY_STRICT]
+
+
 class ReferrerPolicyUnknownTest(FieldTest[ResponseLinterProtocol]):
     name = "Referrer-Policy"
     inputs = [b"unknown-value"]
@@ -105,4 +132,4 @@ class ReferrerPolicyOverrideTest(FieldTest[ResponseLinterProtocol]):
     name = "Referrer-Policy"
     inputs = [b"unsafe-url, no-referrer"]
     expected_out = ["unsafe-url", "no-referrer"]
-    expected_notes: NoteClassListType = [REFERRER_POLICY_MULTIPLE]
+    expected_notes: NoteClassListType = [REFERRER_POLICY_MULTIPLE, REFERRER_POLICY_STRICT]
