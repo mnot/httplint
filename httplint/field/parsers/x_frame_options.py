@@ -46,14 +46,16 @@ the transmitted content in frames that are part of other web pages.
 
 class FRAME_OPTIONS_DENY(Note):
     category = categories.SECURITY
-    level = levels.INFO
-    _summary = "This response prevents some browsers from rendering it within a frame."
-    # Original URL:
-    # http://blogs.msdn.com/b/ie/archive/2009/01/27/ie8-security-part-vii-clickjacking-defenses.aspx
+    level = levels.GOOD
+    _summary = "This response prevents browsers from rendering it within a frame."
     _text = """\
-The `X-Frame-Options` response header controls how IE8 handles HTML frames; the `DENY` value
-prevents this content from being rendered within a frame, which defends against certain types of
-attacks.
+The `DENY` value of `X-Frame-Options` prevents this content from being rendered within a frame,
+defending against clickjacking-style attacks.
+
+Note that `X-Frame-Options` has been superseded by the
+[`frame-ancestors`](https://www.w3.org/TR/CSP3/#directive-frame-ancestors) directive of
+`Content-Security-Policy`, which offers finer-grained control and is the modern equivalent.
+If both are present, browsers that support CSP will use `frame-ancestors` and ignore this header.
 
 See [MDN](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-Frame-Options) for more information.
 """
@@ -61,18 +63,16 @@ See [MDN](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-Frame-Opti
 
 class FRAME_OPTIONS_SAMEORIGIN(Note):
     category = categories.SECURITY
-    level = levels.INFO
-    _summary = (
-        "This response prevents some browsers from rendering it within a frame on another site."
-    )
-    # Original URL:
-    # http://blogs.msdn.com/b/ie/archive/2009/01/27/ie8-security-part-vii-clickjacking-defenses.aspx
+    level = levels.GOOD
+    _summary = "This response prevents browsers from rendering it within a frame on another site."
     _text = """\
-The `X-Frame-Options` response header controls how IE8 handles HTML frames; the `DENY` value
-prevents this content from being rendered within a frame on another site, which defends against
-certain types of attacks.
+The `SAMEORIGIN` value of `X-Frame-Options` prevents this content from being rendered within a
+frame on a different origin, defending against clickjacking-style attacks.
 
-Currently this is supported by IE8 and Safari 4.
+Note that `X-Frame-Options` has been superseded by the
+[`frame-ancestors`](https://www.w3.org/TR/CSP3/#directive-frame-ancestors) directive of
+`Content-Security-Policy`, which offers finer-grained control and is the modern equivalent.
+If both are present, browsers that support CSP will use `frame-ancestors` and ignore this header.
 
 See [MDN](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-Frame-Options) for more information.
 """

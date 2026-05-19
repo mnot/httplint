@@ -1,5 +1,6 @@
 import re
 from typing import Tuple
+from urllib.parse import urljoin, urlsplit
 
 from httplint.field import BAD_SYNTAX
 from httplint.field.list_field import HttpListField
@@ -45,6 +46,66 @@ statement of the form "[context IRI] has a [relation type] resource at [target I
             if not re.match(rf"^\s*{rfc9110.media_type}\s*$", param_dict["type"], re.VERBOSE):
                 add_note(LINK_BAD_TYPE, link=link_value, type=param_dict["type"])
         return link_value, param_dict
+
+    def evaluate(self, add_note: AddNoteMethodType) -> None:
+        hints: dict[str, list[str]] = {"preload": [], "preconnect": [], "dns-prefetch": []}
+        bad_targets: list[Tuple[str, str, str]] = []  # (rel, link, scheme)
+        base_uri = getattr(self.message, "base_uri", "") or ""
+        for link_value, params in self.value:
+            rel = params.get("rel")
+            if not isinstance(rel, str):
+                continue
+            for token in rel.lower().split():
+                if token not in hints:
+                    continue
+                scheme = urlsplit(urljoin(base_uri, link_value)).scheme.lower()
+                if scheme and scheme not in ("http", "https"):
+                    bad_targets.append((token, link_value, scheme))
+                else:
+                    hints[token].append(link_value)
+
+        for rel_name, link_value, scheme in bad_targets:
+            add_note(LINK_BAD_HINT_TARGET, rel=rel_name, link=link_value, scheme=scheme)
+
+        present = {k: v for k, v in hints.items() if v}
+        if present:
+            hints_plain = ", ".join(present)
+            # Strip backticks so attacker-controlled link targets cannot escape
+            # the surrounding code span and inject raw HTML via Markdown.
+            lines = []
+            for rel_name, targets in present.items():
+                safe = [t.replace("`", "") for t in targets]
+                lines.append(f"- `{rel_name}`: {', '.join(f'`{t}`' for t in safe)}")
+            add_note(
+                LINK_RESOURCE_HINTS,
+                hints=hints_plain,
+                detail_lines="\n".join(lines),
+            )
+
+
+class LINK_RESOURCE_HINTS(Note):
+    category = categories.GENERAL
+    level = levels.GOOD
+    _summary = "This response provides resource hints (%(hints)s)."
+    _text = """\
+The `Link` header advertises the following
+[resource hints](https://www.w3.org/TR/resource-hints/), allowing the client to begin work on
+related resources before the current response is fully processed:
+
+%(detail_lines)s
+
+`preload` triggers the browser to fetch a resource needed for the current page; `preconnect`
+opens a connection (DNS + TCP + TLS) to an origin in advance; `dns-prefetch` performs a DNS
+lookup only. Used appropriately, these hints can reduce critical-path latency."""
+
+
+class LINK_BAD_HINT_TARGET(Note):
+    category = categories.GENERAL
+    level = levels.WARN
+    _summary = "The %(rel)s Link target uses an unsupported scheme."
+    _text = """\
+The `Link` header advertises a `%(rel)s` resource hint for `%(link)s`, but its scheme
+(`%(scheme)s`) is not `http` or `https`. Browsers will ignore this hint."""
 
 
 class LINK_REV(Note):
@@ -132,3 +193,71 @@ class BadTypeLinkTest(FieldTest[AnyMessageLinterProtocol]):
     inputs = [b'</foo>; rel="bar"; type="{blah}"']
     expected_out = [("/foo", {"rel": "bar", "type": "{blah}"})]
     expected_notes: NoteClassListType = [LINK_BAD_TYPE]
+
+
+class PreloadLinkTest(FieldTest[AnyMessageLinterProtocol]):
+    name = "Link"
+    inputs = [b'</main.css>; rel="preload"; as="style"']
+    expected_out = [("/main.css", {"rel": "preload", "as": "style"})]
+    expected_notes: NoteClassListType = [LINK_RESOURCE_HINTS]
+
+
+class PreconnectLinkTest(FieldTest[AnyMessageLinterProtocol]):
+    name = "Link"
+    inputs = [b'<https://cdn.example.com>; rel="preconnect"']
+    expected_out = [("https://cdn.example.com", {"rel": "preconnect"})]
+    expected_notes: NoteClassListType = [LINK_RESOURCE_HINTS]
+
+
+class DnsPrefetchLinkTest(FieldTest[AnyMessageLinterProtocol]):
+    name = "Link"
+    inputs = [b'<https://cdn.example.com>; rel="dns-prefetch"']
+    expected_out = [("https://cdn.example.com", {"rel": "dns-prefetch"})]
+    expected_notes: NoteClassListType = [LINK_RESOURCE_HINTS]
+
+
+class MultipleHintsLinkTest(FieldTest[AnyMessageLinterProtocol]):
+    name = "Link"
+    inputs = [
+        b'</main.css>; rel="preload"; as="style"',
+        b'<https://cdn.example.com>; rel="preconnect"',
+    ]
+    expected_out = [
+        ("/main.css", {"rel": "preload", "as": "style"}),
+        ("https://cdn.example.com", {"rel": "preconnect"}),
+    ]
+    expected_notes: NoteClassListType = [LINK_RESOURCE_HINTS]
+
+
+class CombinedRelHintLinkTest(FieldTest[AnyMessageLinterProtocol]):
+    name = "Link"
+    inputs = [b'<https://cdn.example.com>; rel="preconnect dns-prefetch"']
+    expected_out = [("https://cdn.example.com", {"rel": "preconnect dns-prefetch"})]
+    expected_notes: NoteClassListType = [LINK_RESOURCE_HINTS]
+
+
+class NonHintLinkTest(FieldTest[AnyMessageLinterProtocol]):
+    name = "Link"
+    inputs = [b'</style.css>; rel="stylesheet"']
+    expected_out = [("/style.css", {"rel": "stylesheet"})]
+    expected_notes: NoteClassListType = []
+
+
+class BadHintTargetLinkTest(FieldTest[AnyMessageLinterProtocol]):
+    name = "Link"
+    inputs = [b'<javascript:alert(1)>; rel="preload"']
+    expected_out = [("javascript:alert(1)", {"rel": "preload"})]
+    expected_notes: NoteClassListType = [LINK_BAD_HINT_TARGET]
+
+
+class MixedHintTargetsLinkTest(FieldTest[AnyMessageLinterProtocol]):
+    name = "Link"
+    inputs = [
+        b'<https://cdn.example.com>; rel="preconnect"',
+        b'<ftp://example.com/x>; rel="preload"',
+    ]
+    expected_out = [
+        ("https://cdn.example.com", {"rel": "preconnect"}),
+        ("ftp://example.com/x", {"rel": "preload"}),
+    ]
+    expected_notes: NoteClassListType = [LINK_RESOURCE_HINTS, LINK_BAD_HINT_TARGET]

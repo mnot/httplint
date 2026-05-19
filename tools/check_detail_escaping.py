@@ -81,6 +81,21 @@ KNOWN_SAFE_VARS: frozenset[str] = frozenset(
         "conflicts",
         "directives_list",
         "headers",
+        # Clear-Site-Data directive names: closed set ({cache, cookies, storage,
+        # executionContexts, *}); each item is wrapped in a backtick span.
+        "values",
+        # Reporting-Endpoints names: SF dictionary keys (same alphabet as `key`);
+        # each item is wrapped in a backtick span.
+        "endpoints",
+        # Set-Cookie cookie-name: attacker-controlled (loose_parse does not enforce
+        # tchar). Library strips backticks before wrapping each name in a span; the
+        # markdown renderer HTML-escapes <, >, & inside code spans, so the value
+        # cannot escape the span.
+        "cookie_names",
+        # Link resource-hint markdown list: rel tokens are from a closed set; link
+        # targets are attacker-controlled, but library strips backticks before
+        # wrapping each target in a code span (see cookie_names justification).
+        "detail_lines",
         # SF-constrained: missing Vary fields come from Accept-CH Tokens
         "missing_fields",
         # SF dict keys: [a-z0-9_\-.*] only, no HTML special chars
