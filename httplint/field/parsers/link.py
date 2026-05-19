@@ -6,7 +6,7 @@ from httplint.field import BAD_SYNTAX
 from httplint.field.list_field import HttpListField
 from httplint.field.tests import FieldTest
 from httplint.field.utils import PARAM_REPEATS, parse_params
-from httplint.note import Note, categories, levels
+from httplint.note import MarkdownSafe, Note, categories, levels
 from httplint.syntax import rfc3986, rfc8288, rfc9110
 from httplint.types import (
     AddNoteMethodType,
@@ -70,8 +70,6 @@ statement of the form "[context IRI] has a [relation type] resource at [target I
         present = {k: v for k, v in hints.items() if v}
         if present:
             hints_plain = ", ".join(present)
-            # Strip backticks so attacker-controlled link targets cannot escape
-            # the surrounding code span and inject raw HTML via Markdown.
             lines = []
             for rel_name, targets in present.items():
                 safe = [t.replace("`", "") for t in targets]
@@ -79,7 +77,7 @@ statement of the form "[context IRI] has a [relation type] resource at [target I
             add_note(
                 LINK_RESOURCE_HINTS,
                 hints=hints_plain,
-                detail_lines="\n".join(lines),
+                detail_lines=MarkdownSafe("\n".join(lines)),
             )
 
 

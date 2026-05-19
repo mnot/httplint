@@ -2,7 +2,7 @@ from typing import Dict, List
 
 from httplint.field.list_field import HttpListField
 from httplint.field.tests import FieldTest
-from httplint.note import Note, categories, levels
+from httplint.note import MarkdownSafe, Note, categories, levels
 from httplint.syntax import rfc9110
 from httplint.types import (
     AddNoteMethodType,
@@ -174,8 +174,9 @@ sources of content that browsers are allowed to load on a page."""
                         report_only_text=self.report_only_text,
                     )
 
-    def _make_list(self, items: list[str]) -> str:
-        return "\n".join([f"* `{item}`" for item in items])
+    def _make_list(self, items: list[str]) -> MarkdownSafe:
+        safe = [item.replace("`", "") for item in items]
+        return MarkdownSafe("\n".join(f"* `{item}`" for item in safe))
 
 
 class CONTENT_SECURITY_POLICY(Note):

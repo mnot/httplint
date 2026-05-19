@@ -8,6 +8,7 @@ from urllib.parse import quote as urlquote
 from urllib.parse import urlsplit, urlunsplit
 
 from httplint.i18n import format_timedelta, translate
+from httplint.note import MarkdownSafe
 
 
 def iri_to_uri(iri: str) -> str:
@@ -57,11 +58,16 @@ def display_bytes(inbytes: bytes, encoding: str = "utf-8", truncate: int = 40) -
     return "".join(out)
 
 
-def markdown_list(inlist: List[str], markup: str = "") -> str:
+def markdown_list(inlist: List[str], markup: str = "") -> MarkdownSafe:
     """
-    Format a list of strings into markdown.
+    Format a list of strings into Markdown.
+
+    Each item has backticks stripped so wire-supplied content cannot
+    close the surrounding `markup` span. The result is MarkdownSafe so
+    Note._get_detail preserves the structural markup on interpolation.
     """
-    return "\n".join([f"- {markup}{i}{markup}" for i in inlist])
+    safe = [i.replace("`", "") for i in inlist]
+    return MarkdownSafe("\n".join(f"- {markup}{i}{markup}" for i in safe))
 
 
 class RelativeTime:

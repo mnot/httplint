@@ -4,6 +4,7 @@ from functools import partial
 from typing import List, Optional
 
 from httplint.note import Note, categories, levels
+from httplint.util import markdown_list
 from httplint.types import (
     RequestLinterProtocol,
     ResponseLinterProtocol,
@@ -135,7 +136,7 @@ class StatusChecker:
             self.add_note(
                 "field-content-type",
                 HEADER_SHOULD_NOT_BE_IN_304,
-                headers="\n".join([f"* `{h}`" for h in prohibited_headers]),
+                headers=markdown_list(prohibited_headers, markup="`"),
             )
 
     def status305(self) -> None:  # Use Proxy

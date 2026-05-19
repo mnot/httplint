@@ -19,6 +19,18 @@ class _MdLocal(local):
 _md_local = _MdLocal()
 
 
+class MarkdownSafe(str):
+    """
+    Marker for var values that are pre-composed Markdown.
+
+    Note._get_detail strips backticks from interpolated var values so
+    wire-supplied data cannot close a code span and inject raw HTML.
+    Wrap a value in MarkdownSafe(...) when the backticks (or other
+    Markdown syntax) in the value were produced by library code and
+    must survive interpolation intact.
+    """
+
+
 def _get_markdown() -> Markdown:
     """Return a per-thread Markdown instance, creating it on first use."""
     if not hasattr(_md_local, "md"):
@@ -129,11 +141,22 @@ class Note:
         passed as plain strings; the Markdown renderer handles escaping.
         Template authors must wrap user-controlled vars in backtick code
         spans (or indented code blocks) so Markdown escapes them correctly.
+
+        As defense-in-depth, backticks are stripped from each interpolated
+        value so a wire-supplied backtick cannot close the surrounding
+        code span and let the rest of the value render as raw HTML.
+        Values that are pre-composed Markdown produced by library code
+        (e.g. a joined list of code spans) should be wrapped in
+        MarkdownSafe to opt out of this stripping.
         """
+        def _coerce(v: Any) -> str:
+            if isinstance(v, MarkdownSafe):
+                return str(v)
+            return str(v).replace("`", "")
+
+        safe_vars = {k: _coerce(v) for k, v in self.vars.items()}
         return Markup(
-            _get_markdown()
-            .reset()
-            .convert(translate(self._text) % {k: str(v) for k, v in self.vars.items()})
+            _get_markdown().reset().convert(translate(self._text) % safe_vars)
         )
 
     summary = property(_get_summary)
