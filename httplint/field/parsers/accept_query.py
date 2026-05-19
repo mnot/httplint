@@ -17,7 +17,10 @@ class accept_query(HttpListField[ResponseLinterProtocol]):
     description = """\
 The `Accept-Query` response header advertises which media types are accepted by the server in the
 content of a QUERY request."""
-    reference = "https://datatracker.ietf.org/doc/html/draft-ietf-httpbis-safe-method-w-body#section-3"
+    reference = (
+        "https://datatracker.ietf.org/doc/html/"
+        "draft-ietf-httpbis-safe-method-w-body#section-3"
+    )
     syntax = False
     category = categories.GENERAL
     deprecated = False
