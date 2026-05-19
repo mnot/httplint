@@ -1,7 +1,7 @@
 import calendar
 import re
 from email.utils import parsedate as lib_parsedate
-from typing import Any, Dict, List, Optional, Type, Union
+from typing import Any, Dict, List, Optional, Tuple, Type, Union
 from urllib.parse import unquote as urlunquote
 
 from http_sf import Token
@@ -9,6 +9,38 @@ from http_sf import Token
 from httplint.note import Note, categories, levels
 from httplint.syntax import rfc9110
 from httplint.types import AddNoteMethodType, ParamDictType
+
+
+def parse_media_type(
+    field_value: str,
+    add_note: AddNoteMethodType,
+    bad_syntax_note: Optional[Type[Note]] = None,
+    ref_uri: Optional[str] = None,
+    allow_wildcard: bool = False,
+    nostar: Optional[Union[List[str], bool]] = None,
+) -> Tuple[str, ParamDictType]:
+    """
+    Parse a media-type with optional parameters (e.g. ``text/html;charset=utf-8``).
+
+    Returns a tuple of the lowercased media-type and its parameter dict. If
+    ``bad_syntax_note`` is provided, it is emitted (with ``ref_uri`` if given)
+    when the media-type lacks a ``/``. When ``allow_wildcard`` is true, a bare
+    ``*`` is accepted without a note. ``nostar`` is passed through to
+    ``parse_params`` to flag RFC 5987-style ``param*`` keys.
+    """
+    try:
+        media_type, param_str = field_value.split(";", 1)
+    except ValueError:
+        media_type, param_str = field_value, ""
+    media_type = media_type.strip().lower()
+    if "/" not in media_type and not (allow_wildcard and media_type == "*"):
+        if bad_syntax_note is not None:
+            kwargs: Dict[str, Any] = {"value": media_type}
+            if ref_uri is not None:
+                kwargs["ref_uri"] = ref_uri
+            add_note(bad_syntax_note, **kwargs)
+    param_dict = parse_params(param_str, add_note, nostar)
+    return media_type, param_dict
 
 RE_FLAGS = re.VERBOSE | re.IGNORECASE
 
