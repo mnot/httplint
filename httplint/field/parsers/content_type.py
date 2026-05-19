@@ -2,7 +2,7 @@ from typing import Tuple
 
 from httplint.field.singleton_field import SingletonField
 from httplint.field.tests import FieldTest
-from httplint.field.utils import parse_params
+from httplint.field.utils import parse_media_type
 from httplint.syntax import rfc9110
 from httplint.types import (
     AddNoteMethodType,
@@ -22,13 +22,7 @@ a GET."""
     deprecated = False
 
     def parse(self, field_value: str, add_note: AddNoteMethodType) -> Tuple[str, ParamDictType]:
-        try:
-            media_type, param_str = field_value.split(";", 1)
-        except ValueError:
-            media_type, param_str = field_value, ""
-        media_type = media_type.lower()
-        param_dict = parse_params(param_str, add_note, ["charset"])
-        return media_type, param_dict
+        return parse_media_type(field_value, add_note, nostar=["charset"])
 
 
 class BasicCTTest(FieldTest[AnyMessageLinterProtocol]):

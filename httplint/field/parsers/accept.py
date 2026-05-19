@@ -4,7 +4,7 @@ from typing import Optional
 from httplint.field import BAD_SYNTAX
 from httplint.field.list_field import HttpListField
 from httplint.field.tests import FieldTest
-from httplint.field.utils import parse_params
+from httplint.field.utils import parse_media_type
 from httplint.note import Note, categories, levels
 from httplint.syntax import rfc9110
 from httplint.types import (
@@ -33,19 +33,14 @@ acceptable in responses."""
     deprecated = False
 
     def parse(self, field_value: str, add_note: AddNoteMethodType) -> AcceptValue:
-        try:
-            media_type, param_str = field_value.split(";", 1)
-        except ValueError:
-            media_type, param_str = field_value, ""
-
-        media_type = media_type.lower()
-        # check media type syntax?
-        # rfc9110.media_range is ( "*/*" / ( type "/*" ) / ( type "/" subtype ) )
-        # We assume regex pre-check might handle some, but simple split is safer.
-        if "/" not in media_type and media_type != "*":
-            add_note(ACCEPT_BAD_SYNTAX, ref_uri=self.reference)
-
-        param_dict = parse_params(param_str, add_note, ["q"], delim=";")
+        media_type, param_dict = parse_media_type(
+            field_value,
+            add_note,
+            ACCEPT_BAD_SYNTAX,
+            self.reference,
+            allow_wildcard=True,
+            nostar=["q"],
+        )
 
         q_val: Optional[float] = None
         if "q" in param_dict:
