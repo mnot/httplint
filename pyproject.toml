@@ -23,6 +23,7 @@ dependencies = [
     "sniffpy==1.0.0",
     "Babel",
     "Brotli",
+    "chardet",
 ]
 
 [project.optional-dependencies]
