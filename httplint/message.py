@@ -8,6 +8,7 @@ from typing import Any, Dict, Optional, TypedDict, cast
 from typing_extensions import NotRequired, Unpack
 
 from httplint.cache import ResponseCacheChecker
+from httplint.charset import verify_charset
 from httplint.content_encoding import ContentEncodingProcessor
 from httplint.content_type import verify_content_type
 from httplint.field.cors import check_preflight_request, check_preflight_response
@@ -165,12 +166,14 @@ class HttpMessageLinter:
     def post_checks(self) -> None:
         "Post-parsing checks to perform."
 
+    content_sample_size = 8192
+
     def _content_sample_processor(self, chunk: bytes) -> None:
         """
         Capture a sample of the decoded content.
         """
-        if len(self.content_sample) < 1024:
-            self.content_sample += chunk[: 1024 - len(self.content_sample)]
+        if len(self.content_sample) < self.content_sample_size:
+            self.content_sample += chunk[: self.content_sample_size - len(self.content_sample)]
 
     def __repr__(self) -> str:
         status = [self.__class__.__module__ + "." + self.__class__.__name__]
@@ -307,6 +310,7 @@ class HttpResponseLinter(HttpMessageLinter):
         StatusChecker(self, self.request)
         if not self.no_content:
             verify_content_type(self)
+            verify_charset(self)
 
 
 class CL_CORRECT(Note):
