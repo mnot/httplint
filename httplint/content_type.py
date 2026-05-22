@@ -1,4 +1,4 @@
-import sniffpy
+import sniffpy  # type: ignore[import-untyped]
 
 from httplint.note import Note, categories, levels
 from httplint.types import LinterProtocol
