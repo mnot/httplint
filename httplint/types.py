@@ -24,7 +24,7 @@ from http_sf.types import (
 if TYPE_CHECKING:
     from httplint.note import Note
 else:
-    Note = Any
+    Note = Any  # pylint: disable=invalid-name
 
 # General types
 JsonDict = Dict[str, Any]
