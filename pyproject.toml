@@ -73,46 +73,9 @@ include-package-data = true
 [tool.setuptools.package-data]
 httplint = ["py.typed", "translations/**/*"]
 
-[tool.mypy]
-strict = true
-show_error_codes = true
-warn_unreachable = true
-enable_error_code = ["ignore-without-code", "redundant-expr", "truthy-bool"]
-
 [[tool.mypy.overrides]]
 module = "sniffpy"
 ignore_missing_imports = true
-
-[tool.pylint.basic]
-function-rgx = "[a-z_][a-z0-9_]{1,30}$"
-variable-rgx = "[a-z_][a-z0-9_]{1,30}$"
-attr-rgx = "[a-z_][a-z0-9_]{1,30}$"
-argument-rgx = "[a-z_][a-z0-9_]{1,30}$"
-class-attribute-rgx = "([A-Za-z_][A-Za-z0-9_]{1,30}|(__.*__))$"
-method-rgx = "[a-z_][a-z0-9_]{1,30}$"
-class-rgx = "[a-zA-Z0-9_]+$"
-
-[tool.pylint.messages_control]
-disable = "C0114,C0103,C0115,C0116,W0613,W0707,R0903"
-
-[tool.pylint.reports]
-reports = false
-
-[tool.pylint.variables]
-dummy-variables-rgx = "_"
-
-[tool.pylint.design]
-max-args=10
-max-positional-arguments=10
-max-locals=35
-max-branches=25
-max-statements=100
-max-attributes=40
-max-returns=8
-min-public-methods=1
-
-[tool.pylint.similarities]
-min-similarity-lines = 20
 
 [tool.pytest.ini_options]
 python_classes = "*Test"
@@ -121,5 +84,3 @@ python_files = ["message.py", "util.py", "field/parsers/*.py", "content_type.py"
 [tool.black]
 line-length = 100
 
-[tool.isort]
-profile = "black"

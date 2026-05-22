@@ -1,3 +1,4 @@
+# DO NOT EDIT outside marked project regions — managed by https://github.com/mnot/pyproject-tmpl
 name: Test
 
 on:
@@ -9,14 +10,18 @@ on:
 
 jobs:
   test:
-    name: Tests on ${{ matrix.python-version }}
     runs-on: ubuntu-latest
     strategy:
+      max-parallel: 2
       matrix:
         python-version: ["3.10", "3.11", "3.12", "3.13", "3.14"]
     steps:
     - uses: actions/checkout@v6
-    - name: Set up Python
+      with:
+        submodules: 'true'
+    # === pyproject-tmpl: start "pre-test" ===
+    # === pyproject-tmpl: end "pre-test" ===
+    - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v6
       with:
         python-version: ${{ matrix.python-version }}
@@ -33,3 +38,6 @@ jobs:
       run: make lint
     - name: Test
       run: make test
+    # === pyproject-tmpl: start "post-test" ===
+    # === pyproject-tmpl: end "post-test" ===
+
