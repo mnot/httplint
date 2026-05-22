@@ -9,6 +9,7 @@ from httplint.types import AddNoteMethodType, NoteClassListType, ResponseLinterP
 #          / "SAMEORIGIN"
 #          / ( "ALLOW-FROM" RWS SERIALIZED-ORIGIN )
 
+# pylint: disable=invalid-name  # names mirror ABNF rule names
 serialized_origin = rf"""(?:
 {rfc3986.scheme} :// {rfc3986.host} (?: : {rfc3986.port} )?
 )
@@ -19,6 +20,7 @@ X_Frame_Options = rf"""(?:
     | SAMEORIGIN
     | (?: ALLOW-FROM {rfc9110.RWS} {serialized_origin} )
 )"""
+# pylint: enable=invalid-name
 
 
 class x_frame_options(SingletonField[ResponseLinterProtocol]):

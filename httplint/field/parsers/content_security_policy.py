@@ -17,7 +17,7 @@ DIRECTIVE_NAME = r"[a-zA-Z0-9-]+"
 DIRECTIVE_VALUE = r"[ \t\x21-\x2B\x2D-\x3A\x3C-\x7E]*"
 
 
-csp_directive = rf"(?: {DIRECTIVE_NAME} (?: {rfc9110.RWS} {DIRECTIVE_VALUE} )? )"
+csp_directive = rf"(?: {DIRECTIVE_NAME} (?: {rfc9110.RWS} {DIRECTIVE_VALUE} )? )"  # pylint: disable=invalid-name
 
 
 class content_security_policy(HttpListField[ResponseLinterProtocol]):

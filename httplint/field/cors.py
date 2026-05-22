@@ -84,7 +84,9 @@ def check_preflight_response(message: ResponseLinterProtocol) -> None:
                 message.notes.add("header-access-control-allow-origin", ACAO_MULTIPLE_VALUES)
 
 
-def check_access_control_allow_origin(acao_value: str, message: ResponseLinterProtocol) -> None:
+def check_access_control_allow_origin(  # pylint: disable=invalid-name
+    acao_value: str, message: ResponseLinterProtocol
+) -> None:
     """
     Check the Access-Control-Allow-Origin header against the request origin.
     """

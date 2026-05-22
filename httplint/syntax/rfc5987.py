@@ -10,6 +10,8 @@ Well, not really; it's:
 They should be processed with re.VERBOSE.
 """
 
+# pylint: disable=invalid-name  # names mirror ABNF rule names
+
 from .rfc5234 import ALPHA, DIGIT, HEXDIG
 from .rfc5646 import Language_Tag
 

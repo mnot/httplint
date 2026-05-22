@@ -132,11 +132,11 @@ def _encodings_compatible(declared: str, detected: str, sample: bytes) -> bool:
     identical under both.
     """
     try:
-        a = sample.decode(declared, errors="strict")
-        b = sample.decode(detected, errors="strict")
+        declared_text = sample.decode(declared, errors="strict")
+        detected_text = sample.decode(detected, errors="strict")
     except (UnicodeDecodeError, LookupError):
         return False
-    return a == b
+    return declared_text == detected_text
 
 
 class CHARSET_MISMATCH(Note):

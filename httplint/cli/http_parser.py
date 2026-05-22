@@ -84,7 +84,7 @@ class HttpCliParser(HttpMessageHandler):
             version = version.rsplit(b"/", 1)[1]
         except (ValueError, IndexError):
             self.input_error(HttpVersionError(top_line.decode("utf-8", "replace")))
-            raise ValueError
+            raise ValueError from None
         return method, uri, version
 
     def response_topline(self, top_line: bytes) -> Tuple[bytes, bytes, bytes]:
@@ -93,7 +93,7 @@ class HttpCliParser(HttpMessageHandler):
             proto, version = proto_version.rsplit(b"/", 1)
         except (ValueError, IndexError):
             self.input_error(StartLineError(top_line.decode("utf-8", "replace")), True)
-            raise ValueError
+            raise ValueError from None
         if proto != b"HTTP" or version not in [b"1.0", b"1.1", b"2"]:
             self.input_error(HttpVersionError(version.decode("utf-8", "replace")), True)
             raise ValueError

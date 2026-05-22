@@ -1,3 +1,4 @@
+# pylint: disable=duplicate-code
 from typing import Any
 
 from http_sf import Token

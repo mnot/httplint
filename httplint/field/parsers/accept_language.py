@@ -17,7 +17,7 @@ from httplint.types import (
 @dataclass
 class AcceptLanguageValue:
     language: str
-    q: Optional[float]
+    q: Optional[float]  # pylint: disable=invalid-name  # RFC 9110 q-value
 
 
 class accept_language(HttpListField[RequestLinterProtocol]):

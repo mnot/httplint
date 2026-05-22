@@ -19,7 +19,7 @@ from httplint.types import (
 class AcceptValue:
     media_type: str
     parameters: ParamDictType
-    q: Optional[float]
+    q: Optional[float]  # pylint: disable=invalid-name  # RFC 9110 q-value
 
 
 class accept(HttpListField[RequestLinterProtocol]):

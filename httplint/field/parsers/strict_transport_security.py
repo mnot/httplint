@@ -11,7 +11,7 @@ from httplint.types import (
     ResponseLinterProtocol,
 )
 
-sts_dir = rf"(?: {rfc9110.token} (?: {rfc9110.BWS} = {rfc9110.BWS} {rfc9110.parameter_value} )? )"
+sts_dir = rf"(?: {rfc9110.token} (?: {rfc9110.BWS} = {rfc9110.BWS} {rfc9110.parameter_value} )? )"  # pylint: disable=invalid-name
 
 
 class strict_transport_security(SingletonField[ResponseLinterProtocol]):

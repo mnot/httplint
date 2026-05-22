@@ -35,20 +35,20 @@ def translate(message: str) -> str:
     """
     Translate a message.
     """
-    t = get_translations()
-    if t:
-        return t.gettext(message)
+    translations = get_translations()
+    if translations:
+        return translations.gettext(message)
     return message
 
 
-def ngettext(singular: str, plural: str, n: int) -> str:
+def ngettext(singular: str, plural: str, count: int) -> str:
     """
     Translate a message with pluralization.
     """
-    t = get_translations()
-    if t:
-        return t.ngettext(singular, plural, n)
-    return singular if n == 1 else plural
+    translations = get_translations()
+    if translations:
+        return translations.ngettext(singular, plural, count)
+    return singular if count == 1 else plural
 
 
 def format_timedelta(delta: timedelta | int, **kwargs: Any) -> str:
@@ -59,7 +59,7 @@ def format_timedelta(delta: timedelta | int, **kwargs: Any) -> str:
     return babel_format_timedelta(delta, locale=locale, **kwargs)
 
 
-def L_(message: str) -> str:
+def L_(message: str) -> str:  # pylint: disable=invalid-name
     """
     Lazy marker for string extraction.
     """

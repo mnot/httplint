@@ -149,10 +149,10 @@ class Note:
         (e.g. a joined list of code spans) should be wrapped in
         MarkdownSafe to opt out of this stripping.
         """
-        def _coerce(v: Any) -> str:
-            if isinstance(v, MarkdownSafe):
-                return str(v)
-            return str(v).replace("`", "")
+        def _coerce(val: Any) -> str:
+            if isinstance(val, MarkdownSafe):
+                return str(val)
+            return str(val).replace("`", "")
 
         safe_vars = {k: _coerce(v) for k, v in self.vars.items()}
         return Markup(

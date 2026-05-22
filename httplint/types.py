@@ -50,7 +50,7 @@ DeferredNoteType = Tuple[AddNoteMethodType, Type[Note], Optional[Any], Dict[str,
 NoteArgsType = Tuple[Type[Note], Dict[str, VariableType]]
 
 
-TMessage = TypeVar("TMessage", bound="LinterProtocol")
+TMessage = TypeVar("TMessage", bound="LinterProtocol")  # pylint: disable=invalid-name
 
 
 # Linter Protocols
