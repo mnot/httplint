@@ -27,21 +27,29 @@ content of a QUERY request."""
     value: SFListType
 
     def evaluate(self, add_note: AddNoteMethodType) -> None:
+        normalised: SFListType = []
         for item in self.value:
             # SF List items are (value, parameters) tuples
-            val = item[0]
+            val, params = item
             if not isinstance(val, (Token, str)):
                 add_note(ACCEPT_QUERY_BAD_TYPE, value=str(val))
+                normalised.append(item)
                 continue
             # Media type parameters are carried as SF parameters, so the item
-            # value is the media range on its own.
+            # value is the media range on its own. Media ranges are
+            # case-insensitive, so store them lowercased, as the other
+            # media-type fields do.
+            media_range = str(val).lower()
             check_media_type(
-                str(val).lower(),
+                media_range,
                 add_note,
                 ACCEPT_QUERY_BAD_SYNTAX,
                 self.reference,
                 allow_wildcard=True,
+                check_token=True,  # no syntax check on a Structured Field
             )
+            normalised.append((type(val)(media_range), params))
+        self.value = normalised
 
 
 class ACCEPT_QUERY_BAD_TYPE(Note):
@@ -90,10 +98,34 @@ class AcceptQueryWildcardTest(FieldTest[ResponseLinterProtocol]):
     expected_out = [("*/*", {}), ("text/*", {})]
 
 
+class AcceptQueryCaseTest(FieldTest[ResponseLinterProtocol]):
+    name = "Accept-Query"
+    inputs = [b'APPLICATION/SQL, "TEXT/Plain"']
+    expected_out = [("application/sql", {}), ("text/plain", {})]
+
+
 class AcceptQueryBadTest(FieldTest[ResponseLinterProtocol]):
     name = "Accept-Query"
     inputs = [b"invalid"]
     expected_out = [("invalid", {})]
+    expected_notes: NoteClassListType = [ACCEPT_QUERY_BAD_SYNTAX]
+
+
+class AcceptQueryBadStringTest(FieldTest[ResponseLinterProtocol]):
+    "A String member can carry a name that isn't a valid HTTP token."
+
+    name = "Accept-Query"
+    inputs = [b'"text/pl in"']
+    expected_out = [("text/pl in", {})]
+    expected_notes: NoteClassListType = [ACCEPT_QUERY_BAD_SYNTAX]
+
+
+class AcceptQueryBareStarTest(FieldTest[ResponseLinterProtocol]):
+    "Only */* and type/* are permitted, not a bare *."
+
+    name = "Accept-Query"
+    inputs = [b"*"]
+    expected_out = [("*", {})]
     expected_notes: NoteClassListType = [ACCEPT_QUERY_BAD_SYNTAX]
 
 

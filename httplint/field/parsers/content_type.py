@@ -51,6 +51,15 @@ class CTBadNameTest(FieldTest[AnyMessageLinterProtocol]):
     expected_notes: NoteClassListType = [MEDIA_TYPE_BAD_NAME]
 
 
+class CTBadTypeNameTest(FieldTest[AnyMessageLinterProtocol]):
+    "The type half is checked as well as the subtype half."
+
+    name = "Content-Type"
+    inputs = [b"~text/plain"]
+    expected_out: Any = ("~text/plain", {})
+    expected_notes: NoteClassListType = [MEDIA_TYPE_BAD_NAME]
+
+
 class CTBadNameFirstTest(FieldTest[AnyMessageLinterProtocol]):
     "RFC 6838 names have to start with a letter or a digit."
 

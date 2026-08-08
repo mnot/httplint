@@ -16,7 +16,9 @@ RE_FLAGS = re.VERBOSE | re.IGNORECASE
 # over-long names are reported as MEDIA_TYPE_LONG_NAME instead of being lumped in
 # with character errors.
 
-RESTRICTED_NAME_CHARS = rf"(?: {rfc6838.restricted_name_first} {rfc6838.restricted_name_chars}* )"
+RESTRICTED_NAME_UNBOUNDED = (
+    rf"(?: {rfc6838.restricted_name_first} {rfc6838.restricted_name_chars}* )"
+)
 
 
 def parse_media_type(
@@ -50,6 +52,7 @@ def check_media_type(
     bad_syntax_note: Optional[Type[Note]] = None,
     ref_uri: Optional[str] = None,
     allow_wildcard: bool = False,
+    check_token: bool = False,
 ) -> None:
     """
     Check a media-type against the shape HTTP gives it and the naming rules in
@@ -57,8 +60,13 @@ def check_media_type(
 
     If ``bad_syntax_note`` is provided, it is emitted (with ``ref_uri`` if given)
     when the value isn't shaped like a media-type at all. When ``allow_wildcard``
-    is true the value is treated as a media range, so ``*``, ``*/*`` and
-    ``type/*`` are accepted; otherwise a ``*`` in either position is an error.
+    is true the value is treated as a media range, so ``*/*`` and ``type/*`` are
+    accepted; otherwise a ``*`` in either position is an error.
+
+    Names that aren't valid HTTP tokens are normally left to the field's own
+    syntax check. Callers without one -- Structured Fields, whose members can
+    carry any string -- should set ``check_token`` so that they're reported here
+    instead.
     """
 
     def bad_syntax() -> None:
@@ -68,9 +76,6 @@ def check_media_type(
         if ref_uri is not None:
             kwargs["ref_uri"] = ref_uri
         add_note(bad_syntax_note, **kwargs)
-
-    if allow_wildcard and media_type == "*":
-        return
 
     type_name, slash, subtype_name = media_type.partition("/")
     if not (slash and type_name and subtype_name) or "/" in subtype_name:
@@ -85,13 +90,18 @@ def check_media_type(
             return
         names = [name for name in names if name != "*"]
 
-    # Names that aren't valid HTTP tokens are already reported by the field's own
-    # syntax check; RFC 6838 only adds information for the ones that are.
-    names = [name for name in names if re.match(rf"^{rfc9110.token}$", name, RE_FLAGS)]
+    tokens = [name for name in names if re.match(rf"^{rfc9110.token}$", name, RE_FLAGS)]
+    if len(tokens) != len(names):
+        if check_token:
+            bad_syntax()
+            return
+        # Otherwise the field's own syntax check reports it, and RFC 6838 has
+        # nothing to add.
+        names = tokens
 
     if any(len(name) > rfc6838.RESTRICTED_NAME_MAX_LEN for name in names):
         add_note(MEDIA_TYPE_LONG_NAME, value=media_type)
-    if any(not re.match(rf"^{RESTRICTED_NAME_CHARS}$", name, RE_FLAGS) for name in names):
+    if any(not re.match(rf"^{RESTRICTED_NAME_UNBOUNDED}$", name, RE_FLAGS) for name in names):
         add_note(MEDIA_TYPE_BAD_NAME, value=media_type)
 
 
