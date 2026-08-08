@@ -1,9 +1,11 @@
 from typing import Tuple
 
+from httplint.field import BAD_SYNTAX
 from httplint.field.list_field import HttpListField
 from httplint.field.tests import FieldTest
 from httplint.field.utils import parse_media_type
 from httplint.note import Note, categories, levels
+from httplint.syntax import rfc9110
 from httplint.types import (
     AddNoteMethodType,
     NoteClassListType,
@@ -18,13 +20,12 @@ class accept_post(HttpListField[ResponseLinterProtocol]):
 The `Accept-Post` response header advertises which media types are accepted by the server in a
 POST request."""
     reference = "https://www.w3.org/TR/ldp/#header-accept-post"
-    syntax = False
+    # LDP defines this as #media-range, not #media-type; wildcards are allowed.
+    syntax = rfc9110.list_rule(rfc9110.media_range)
     category = categories.GENERAL
     deprecated = False
 
-    def parse(
-        self, field_value: str, add_note: AddNoteMethodType
-    ) -> Tuple[str, ParamDictType]:
+    def parse(self, field_value: str, add_note: AddNoteMethodType) -> Tuple[str, ParamDictType]:
         return parse_media_type(
             field_value,
             add_note,
@@ -60,4 +61,4 @@ class AcceptPostBadTest(FieldTest[ResponseLinterProtocol]):
     name = "Accept-Post"
     inputs = [b"invalid"]
     expected_out = [("invalid", {})]
-    expected_notes: NoteClassListType = [ACCEPT_POST_BAD_SYNTAX]
+    expected_notes: NoteClassListType = [ACCEPT_POST_BAD_SYNTAX, BAD_SYNTAX]

@@ -11,26 +11,21 @@ from httplint.types import (
     ResponseLinterProtocol,
 )
 
+SPEC_URL = "https://datatracker.ietf.org/doc/html/draft-ietf-httpbis-safe-method-w-body"
+
 
 class accept_query(HttpListField[ResponseLinterProtocol]):
     canonical_name = "Accept-Query"
     description = """\
 The `Accept-Query` response header advertises which media types are accepted by the server in the
 content of a QUERY request."""
-    reference = (
-        "https://datatracker.ietf.org/doc/html/"
-        "draft-ietf-httpbis-safe-method-w-body#section-3"
-    )
-    syntax = False
+    reference = f"{SPEC_URL}#section-3"
+    syntax = False  # Structured Field
     category = categories.GENERAL
     deprecated = False
 
-    def parse(
-        self, field_value: str, add_note: AddNoteMethodType
-    ) -> Tuple[str, ParamDictType]:
-        return parse_media_type(
-            field_value, add_note, ACCEPT_QUERY_BAD_SYNTAX, self.reference
-        )
+    def parse(self, field_value: str, add_note: AddNoteMethodType) -> Tuple[str, ParamDictType]:
+        return parse_media_type(field_value, add_note, ACCEPT_QUERY_BAD_SYNTAX, self.reference)
 
 
 class ACCEPT_QUERY_BAD_SYNTAX(Note):
