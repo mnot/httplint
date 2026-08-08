@@ -7,8 +7,18 @@ from urllib.parse import unquote as urlunquote
 from http_sf import Token
 
 from httplint.note import Note, categories, levels
-from httplint.syntax import rfc9110
+from httplint.syntax import rfc6838, rfc9110
 from httplint.types import AddNoteMethodType, ParamDictType
+
+RE_FLAGS = re.VERBOSE | re.IGNORECASE
+
+# restricted-name (RFC 6838, Section 4.2) without its 126-character bound, so that
+# over-long names are reported as MEDIA_TYPE_LONG_NAME instead of being lumped in
+# with character errors.
+
+RESTRICTED_NAME_UNBOUNDED = (
+    rf"(?: {rfc6838.restricted_name_first} {rfc6838.restricted_name_chars}* )"
+)
 
 
 def parse_media_type(
@@ -22,27 +32,77 @@ def parse_media_type(
     """
     Parse a media-type with optional parameters (e.g. ``text/html;charset=utf-8``).
 
-    Returns a tuple of the lowercased media-type and its parameter dict. If
-    ``bad_syntax_note`` is provided, it is emitted (with ``ref_uri`` if given)
-    when the media-type lacks a ``/``. When ``allow_wildcard`` is true, a bare
-    ``*`` is accepted without a note. ``nostar`` is passed through to
-    ``parse_params`` to flag RFC 5987-style ``param*`` keys.
+    Returns a tuple of the lowercased media-type and its parameter dict; see
+    ``check_media_type`` for the checks applied along the way. ``nostar`` is passed
+    through to ``parse_params`` to flag RFC 5987-style ``param*`` keys.
     """
     try:
         media_type, param_str = field_value.split(";", 1)
     except ValueError:
         media_type, param_str = field_value, ""
     media_type = media_type.strip().lower()
-    if "/" not in media_type and not (allow_wildcard and media_type == "*"):
-        if bad_syntax_note is not None:
-            kwargs: Dict[str, Any] = {"value": media_type}
-            if ref_uri is not None:
-                kwargs["ref_uri"] = ref_uri
-            add_note(bad_syntax_note, **kwargs)
+    check_media_type(media_type, add_note, bad_syntax_note, ref_uri, allow_wildcard)
     param_dict = parse_params(param_str, add_note, nostar)
     return media_type, param_dict
 
-RE_FLAGS = re.VERBOSE | re.IGNORECASE
+
+def check_media_type(
+    media_type: str,
+    add_note: AddNoteMethodType,
+    bad_syntax_note: Optional[Type[Note]] = None,
+    ref_uri: Optional[str] = None,
+    allow_wildcard: bool = False,
+    check_token: bool = False,
+) -> None:
+    """
+    Check a media-type against the shape HTTP gives it and the naming rules in
+    RFC 6838, Section 4.2.
+
+    If ``bad_syntax_note`` is provided, it is emitted (with ``ref_uri`` if given)
+    when the value isn't shaped like a media-type at all. When ``allow_wildcard``
+    is true the value is treated as a media range, so ``*/*`` and ``type/*`` are
+    accepted; otherwise a ``*`` in either position is an error.
+
+    Names that aren't valid HTTP tokens are normally left to the field's own
+    syntax check. Callers without one -- Structured Fields, whose members can
+    carry any string -- should set ``check_token`` so that they're reported here
+    instead.
+    """
+
+    def bad_syntax() -> None:
+        if bad_syntax_note is None:
+            return
+        kwargs: Dict[str, Any] = {"value": media_type}
+        if ref_uri is not None:
+            kwargs["ref_uri"] = ref_uri
+        add_note(bad_syntax_note, **kwargs)
+
+    type_name, slash, subtype_name = media_type.partition("/")
+    if not (slash and type_name and subtype_name) or "/" in subtype_name:
+        bad_syntax()
+        return
+
+    names = [type_name, subtype_name]
+    if "*" in names:
+        # "*/*" and "type/*" are media ranges; "*/subtype" isn't anything.
+        if not allow_wildcard or (type_name == "*" and subtype_name != "*"):
+            bad_syntax()
+            return
+        names = [name for name in names if name != "*"]
+
+    tokens = [name for name in names if re.match(rf"^{rfc9110.token}$", name, RE_FLAGS)]
+    if len(tokens) != len(names):
+        if check_token:
+            bad_syntax()
+            return
+        # Otherwise the field's own syntax check reports it, and RFC 6838 has
+        # nothing to add.
+        names = tokens
+
+    if any(len(name) > rfc6838.RESTRICTED_NAME_MAX_LEN for name in names):
+        add_note(MEDIA_TYPE_LONG_NAME, value=media_type)
+    if any(not re.match(rf"^{RESTRICTED_NAME_UNBOUNDED}$", name, RE_FLAGS) for name in names):
+        add_note(MEDIA_TYPE_BAD_NAME, value=media_type)
 
 
 def parse_http_date(
@@ -101,14 +161,17 @@ def split_string(instr: str, item: str, split: str) -> List[str]:
 def split_list_field(field_value: str) -> List[str]:
     "Split a field field value on commas. needs to conform to the #rule."
     return [
-        f.strip()
-        for f in re.findall(
-            r'((?:[^",]|%s)+)(?=%s|\s*$)' % (rfc9110.quoted_string, r"(?:\s*(?:,\s*)+)"),
-            field_value,
-            RE_FLAGS,
+        stripped
+        for stripped in (
+            f.strip()
+            for f in re.findall(
+                r'((?:[^",]|%s)+)(?=%s|\s*$)' % (rfc9110.quoted_string, r"(?:\s*(?:,\s*)+)"),
+                field_value,
+                RE_FLAGS,
+            )
         )
-        if f
-    ] or []
+        if stripped
+    ]
 
 
 def parse_params(
@@ -242,6 +305,32 @@ def check_sf_item_token(
             add_note(invalid_note, value=val, **kwargs)
     else:
         add_note(invalid_note, value=field_value, **kwargs)
+
+
+class MEDIA_TYPE_BAD_NAME(Note):
+    category = categories.GENERAL
+    level = levels.WARN
+    _summary = "The %(field_name)s field's media type name isn't registrable."
+    _text = """\
+[RFC6838](https://www.rfc-editor.org/rfc/rfc6838.html#section-4.2) requires the type and
+subtype names in a media type to start with a letter or a digit, and to use only letters,
+digits and the characters `!`, `#`, `$`, `&`, `-`, `^`, `_`, `.` and `+`. `%(value)s`
+uses something else.
+
+HTTP's own syntax for media types is more permissive, so recipients are likely to accept
+this; however, a media type named this way can't be registered with IANA."""
+
+
+class MEDIA_TYPE_LONG_NAME(Note):
+    category = categories.GENERAL
+    level = levels.WARN
+    _summary = "The %(field_name)s field's media type name is too long."
+    _text = """\
+[RFC6838](https://www.rfc-editor.org/rfc/rfc6838.html#section-4.2) limits the type and
+subtype names in a media type to 127 characters each; `%(value)s` is longer than that.
+
+It also recommends keeping them to 64 characters, because longer names run into
+implementation limits."""
 
 
 class PARAM_REPEATS(Note):

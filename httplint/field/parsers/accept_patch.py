@@ -1,9 +1,11 @@
 from typing import Tuple
 
+from httplint.field import BAD_SYNTAX
 from httplint.field.list_field import HttpListField
 from httplint.field.tests import FieldTest
 from httplint.field.utils import parse_media_type
 from httplint.note import Note, categories, levels
+from httplint.syntax import rfc9110
 from httplint.types import (
     AddNoteMethodType,
     NoteClassListType,
@@ -18,16 +20,12 @@ class accept_patch(HttpListField[ResponseLinterProtocol]):
 The `Accept-Patch` response header advertises which media types are accepted by the server in a
 PATCH request."""
     reference = "https://www.rfc-editor.org/rfc/rfc5789.html#section-3.1"
-    syntax = False
+    syntax = rfc9110.list_rule(rfc9110.media_type, 1)
     category = categories.GENERAL
     deprecated = False
 
-    def parse(
-        self, field_value: str, add_note: AddNoteMethodType
-    ) -> Tuple[str, ParamDictType]:
-        return parse_media_type(
-            field_value, add_note, ACCEPT_PATCH_BAD_SYNTAX, self.reference
-        )
+    def parse(self, field_value: str, add_note: AddNoteMethodType) -> Tuple[str, ParamDictType]:
+        return parse_media_type(field_value, add_note, ACCEPT_PATCH_BAD_SYNTAX, self.reference)
 
 
 class ACCEPT_PATCH_BAD_SYNTAX(Note):
@@ -59,4 +57,13 @@ class AcceptPatchBadTest(FieldTest[ResponseLinterProtocol]):
     name = "Accept-Patch"
     inputs = [b"invalid"]
     expected_out = [("invalid", {})]
+    expected_notes: NoteClassListType = [ACCEPT_PATCH_BAD_SYNTAX, BAD_SYNTAX]
+
+
+class AcceptPatchWildcardTest(FieldTest[ResponseLinterProtocol]):
+    "Accept-Patch lists media types, not media ranges."
+
+    name = "Accept-Patch"
+    inputs = [b"*/*"]
+    expected_out = [("*/*", {})]
     expected_notes: NoteClassListType = [ACCEPT_PATCH_BAD_SYNTAX]
