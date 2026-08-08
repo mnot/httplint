@@ -66,7 +66,7 @@ acceptable in responses."""
 class BAD_Q_VALUE(Note):
     category = categories.CONNEG
     level = levels.WARN
-    _summary = "The q value on '{media_type}' is invalid."
+    _summary = "The q value on '%(media_type)s' is invalid."
     _text = """\
 The `q` parameter must be a decimal number between 0 and 1, with at most 3 digits of precision."""
 
