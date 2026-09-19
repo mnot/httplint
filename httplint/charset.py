@@ -32,6 +32,22 @@ def _canonical(name: str) -> Optional[str]:
         return None
 
 
+def _decode_tolerant(sample: bytes, encoding: str, truncated: bool) -> Optional[str]:
+    """
+    Decode `sample` as `encoding`. If `truncated` is True, `sample` was cut
+    off at a fixed byte count and so may end mid-character even when the
+    full content is well-formed; in that case a trailing incomplete
+    multi-byte sequence is tolerated rather than misreported as
+    undecodable. Returns the decoded text, or None if decoding fails.
+    """
+    try:
+        if truncated:
+            return codecs.getincrementaldecoder(encoding)().decode(sample, final=False)
+        return sample.decode(encoding, errors="strict")
+    except (UnicodeDecodeError, LookupError):
+        return None
+
+
 def verify_charset(linter: LinterProtocol) -> None:  # pylint: disable=too-many-return-statements
     """
     Verify that the content's character encoding matches what was declared
@@ -81,11 +97,8 @@ def verify_charset(linter: LinterProtocol) -> None:  # pylint: disable=too-many-
         return
 
     # Primary check: does the declared encoding actually decode the content?
-    try:
-        sample.decode(effective_charset_raw, errors="strict")
-        decodes = True
-    except (UnicodeDecodeError, LookupError):
-        decodes = False
+    truncated = linter.content_sample_truncated
+    decodes = _decode_tolerant(sample, effective_charset_raw, truncated) is not None
 
     detection = chardet.detect(sample)
     detected_raw = detection.get("encoding")
@@ -105,7 +118,7 @@ def verify_charset(linter: LinterProtocol) -> None:  # pylint: disable=too-many-
         detected_canonical
         and detected_canonical != declared_canonical
         and confidence >= CHARDET_CONFIDENCE_THRESHOLD
-        and not _encodings_compatible(declared_canonical, detected_canonical, sample)
+        and not _encodings_compatible(declared_canonical, detected_canonical, sample, truncated)
     ):
         if is_implicit:
             linter.notes.add(
@@ -124,17 +137,16 @@ def verify_charset(linter: LinterProtocol) -> None:  # pylint: disable=too-many-
             )
 
 
-def _encodings_compatible(declared: str, detected: str, sample: bytes) -> bool:
+def _encodings_compatible(declared: str, detected: str, sample: bytes, truncated: bool) -> bool:
     """
     Return True if decoding `sample` with `declared` and with `detected`
     yields the same text. This catches cases where chardet picks a
     different name (e.g. windows-1252 vs iso-8859-1) for content that is
     identical under both.
     """
-    try:
-        declared_text = sample.decode(declared, errors="strict")
-        detected_text = sample.decode(detected, errors="strict")
-    except (UnicodeDecodeError, LookupError):
+    declared_text = _decode_tolerant(sample, declared, truncated)
+    detected_text = _decode_tolerant(sample, detected, truncated)
+    if declared_text is None or detected_text is None:
         return False
     return declared_text == detected_text
 

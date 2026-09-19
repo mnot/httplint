@@ -87,6 +87,31 @@ class CharsetTest(unittest.TestCase):
         linter = _run([(b"Content-Type", b"application/vnd.api+json")], body)
         self.assertTrue(_has_note(linter.notes, CHARSET_UNDECODABLE))
 
+    def test_multibyte_char_split_at_sample_boundary(self):
+        # Regression for #155: a multi-byte character straddling the fixed
+        # 8192-byte content_sample cutoff must not be reported as
+        # undecodable when the full content is valid.
+        body = ("Café naïve résumé привет " * 400).encode("utf-8")
+        self.assertTrue(len(body) > 8192)
+        linter = _run(
+            [(b"Content-Type", b"text/plain; charset=utf-8")],
+            body,
+        )
+        self.assertTrue(linter.content_sample_truncated)
+        self.assertFalse(_has_note(linter.notes, CHARSET_UNDECODABLE))
+
+    def test_genuinely_truncated_content_still_flagged(self):
+        # A body that is short enough to fit entirely in content_sample,
+        # but genuinely ends mid-character, should still be flagged: this
+        # isn't a sampling artifact.
+        body = "Café".encode("utf-8")[:-1]
+        linter = _run(
+            [(b"Content-Type", b"text/plain; charset=utf-8")],
+            body,
+        )
+        self.assertFalse(linter.content_sample_truncated)
+        self.assertTrue(_has_note(linter.notes, CHARSET_UNDECODABLE))
+
 
 if __name__ == "__main__":
     unittest.main()
