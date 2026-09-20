@@ -10,9 +10,12 @@ Contract:
 """
 
 import unittest
+from unittest import mock
 
 from markupsafe import Markup
 
+from httplint.field.parsers.accept_query import ACCEPT_QUERY_BAD_SYNTAX
+from httplint.field.utils import MEDIA_TYPE_BAD_NAME
 from httplint.message import HttpRequestLinter, HttpResponseLinter
 from httplint.note import Note, Notes, categories, levels
 
@@ -41,6 +44,14 @@ class NOTE_WITH_PREESCAPED_CONTEXT(Note):
     level = levels.BAD
     _summary = "Parse error in %(field_name)s."
     _text = "Parse error:\n\n%(context)s"
+
+
+class NOTE_WITH_TWO_VALUES(Note):
+    """Two independent wire-supplied vars, for placeholder-collision tests."""
+    category = categories.GENERAL
+    level = levels.WARN
+    _summary = "Two values: '%(a)s' and '%(b)s'."
+    _text = "%(a)s | %(b)s"
 
 
 # ---------------------------------------------------------------------------
@@ -183,6 +194,72 @@ class IntegrationXSSTest(unittest.TestCase):
             detail = str(note.detail)
             self.assertNotIn("<img", detail,
                 msg=f"Unescaped HTML in detail of {note.__class__.__name__}: {detail!r}")
+
+
+# ---------------------------------------------------------------------------
+# Regression tests for #158: wire-supplied values render literally
+# (HTML-escaped) in Note.detail, instead of having backticks stripped.
+# ---------------------------------------------------------------------------
+
+def _response_notes(headers: list) -> list:
+    linter = HttpResponseLinter()
+    linter.process_response_topline(b"HTTP/1.1", b"200", b"OK")
+    linter.process_headers(headers)
+    linter.finish_content(True)
+    return list(linter.notes)
+
+
+class WireValueMarkdownInjectionTest(unittest.TestCase):
+    """A wire value is never parsed as Markdown, so it can't lose or smuggle
+    characters -- it just shows up literally, HTML-escaped."""
+
+    def test_media_type_bad_name_preserves_backtick(self):
+        """A backtick in the offending media type must be visible, not stripped."""
+        notes = _response_notes([(b"Content-Type", b"te`xt/plain")])
+        bad_name_notes = [n for n in notes if isinstance(n, MEDIA_TYPE_BAD_NAME)]
+        self.assertTrue(bad_name_notes, "MEDIA_TYPE_BAD_NAME was not raised")
+        detail = str(bad_name_notes[0].detail)
+        self.assertIn("te`xt/plain", detail)
+
+    def test_accept_query_bad_syntax_escapes_backtick_html_payload(self):
+        """A media range combining a backtick with raw HTML renders fully escaped."""
+        payload = b'"text/`</code>-<img src=x onerror=alert(1)>"'
+        notes = _response_notes([(b"Accept-Query", payload)])
+        bad_syntax_notes = [n for n in notes if isinstance(n, ACCEPT_QUERY_BAD_SYNTAX)]
+        self.assertTrue(bad_syntax_notes, "ACCEPT_QUERY_BAD_SYNTAX was not raised")
+        detail = str(bad_syntax_notes[0].detail)
+        self.assertIn("text/`", detail)
+        self.assertNotIn("<img", detail)
+        self.assertIn("&lt;img", detail)
+
+    def test_accept_query_bad_syntax_escapes_script_payload(self):
+        """A media range containing a script tag renders fully escaped."""
+        payload = b'"text/pl in<script>alert(1)</script>"'
+        notes = _response_notes([(b"Accept-Query", payload)])
+        bad_syntax_notes = [n for n in notes if isinstance(n, ACCEPT_QUERY_BAD_SYNTAX)]
+        self.assertTrue(bad_syntax_notes, "ACCEPT_QUERY_BAD_SYNTAX was not raised")
+        detail = str(bad_syntax_notes[0].detail)
+        self.assertNotIn("<script>", detail)
+        self.assertIn("&lt;script&gt;", detail)
+
+
+class PlaceholderSubstitutionTest(unittest.TestCase):
+    """A wire value that mimics a placeholder token must not confuse the
+    post-render substitution in Note._get_detail."""
+
+    def _make(self, **vars):
+        notes = Notes({"field_name": "X-Test"})
+        return notes.add("test", NOTE_WITH_TWO_VALUES, **vars)
+
+    def test_value_containing_another_vars_placeholder_is_not_resubstituted(self):
+        fixed_nonce = "deadbeef" * 4
+        a_placeholder = f"{fixed_nonce}:a"
+        with mock.patch("httplint.note.secrets.token_hex", return_value=fixed_nonce):
+            note = self._make(a="innocuous", b=f"before {a_placeholder} after")
+            detail = str(note.detail)
+        self.assertIn("innocuous", detail)
+        self.assertIn(f"before {a_placeholder} after", detail)
+        self.assertNotIn("before innocuous after", detail)
 
 
 if __name__ == "__main__":
