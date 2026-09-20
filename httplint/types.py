@@ -99,6 +99,7 @@ class LinterProtocol(Protocol):
     content_length: int
     content_hash: Optional[bytes]
     content_sample: bytes
+    content_sample_truncated: bool
     complete: bool
 
     @property

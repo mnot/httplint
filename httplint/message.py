@@ -76,6 +76,7 @@ class HttpMessageLinter:
         self._hash_processor = hashlib.new("md5")
         self.character_encoding: Optional[str] = None
         self.content_sample: bytes = b""
+        self.content_sample_truncated: bool = False
 
         self.transfer_length: int = 0
         self.complete: bool = False
@@ -170,10 +171,17 @@ class HttpMessageLinter:
 
     def _content_sample_processor(self, chunk: bytes) -> None:
         """
-        Capture a sample of the decoded content.
+        Capture a sample of the decoded content, noting whether it had to
+        be cut short so charset checks know it may end mid-character even
+        when the full content doesn't.
         """
-        if len(self.content_sample) < self.content_sample_size:
-            self.content_sample += chunk[: self.content_sample_size - len(self.content_sample)]
+        room = self.content_sample_size - len(self.content_sample)
+        if room > 0:
+            self.content_sample += chunk[:room]
+            if len(chunk) > room:
+                self.content_sample_truncated = True
+        elif chunk:
+            self.content_sample_truncated = True
 
     def __repr__(self) -> str:
         status = [self.__class__.__module__ + "." + self.__class__.__name__]

@@ -3,6 +3,7 @@ from typing import Optional
 
 import chardet
 
+from httplint.content_encoding import BAD_BROTLI, BAD_GZIP, BAD_ZLIB
 from httplint.note import Note, categories, levels
 from httplint.types import LinterProtocol
 
@@ -11,6 +12,23 @@ from httplint.types import LinterProtocol
 # _encodings_compatible check below filters out cases where the
 # different name still decodes to the same text.
 CHARDET_CONFIDENCE_THRESHOLD = 0.5
+
+# content_sample can fall short of "the end of the content" for three
+# reasons: it hit content_sample_size's fixed byte cap, the message
+# itself wasn't fully received, or content-encoding decoding aborted
+# partway through. In each case a multi-byte character may be split at
+# the cutoff point, so charset checks need to tolerate that rather than
+# reporting genuinely valid content as undecodable.
+_DECODE_FAILURE_NOTES = (BAD_GZIP, BAD_ZLIB, BAD_BROTLI)
+
+# Bytes trimmed from the end of a truncated content_sample before the
+# declared-vs-detected comparison runs, so a multi-byte character split
+# by the cutoff can't make the two decodes diverge only because of where
+# the cut landed. Comfortably covers UTF-8/UTF-16/UTF-32 (max 4
+# bytes/character) and legacy multi-byte encodings, with margin to
+# spare -- content_sample is already a bounded, best-effort sample, so
+# trimming a few more bytes off it costs nothing.
+TRUNCATION_SAFETY_MARGIN = 8
 
 
 def _requires_utf8(media_type: str) -> bool:
@@ -30,6 +48,44 @@ def _canonical(name: str) -> Optional[str]:
         return codecs.lookup(name).name
     except (LookupError, TypeError):
         return None
+
+
+def _sample_is_truncated(linter: LinterProtocol) -> bool:
+    """
+    True if `content_sample` may not represent the actual end of the
+    content: it hit the fixed byte cap, the message wasn't fully
+    received, or content-encoding decoding stopped early after an error.
+    """
+    if linter.content_sample_truncated or not linter.complete:
+        return True
+    return any(isinstance(note, _DECODE_FAILURE_NOTES) for note in linter.notes)
+
+
+def _decode_declared(sample: bytes, encoding: str, truncated: bool) -> Optional[str]:
+    """
+    Decode `sample` as `encoding` for the primary "does this decode at
+    all" check. A genuinely invalid or non-text encoding name (e.g.
+    "hex", "rot13") always fails here via LookupError before any
+    incremental decoding is attempted, so it can never reach
+    `codecs.getincrementaldecoder`, which has no such guard and would
+    otherwise raise a codec-specific exception instead of a catchable
+    one. If `truncated`, a trailing incomplete multi-byte sequence is
+    tolerated -- of any length, since a message cut short by a dropped
+    connection may leave a sample far smaller than
+    TRUNCATION_SAFETY_MARGIN. Returns the decoded text, or None if
+    decoding fails.
+    """
+    try:
+        return sample.decode(encoding, errors="strict")
+    except LookupError:
+        return None
+    except UnicodeDecodeError:
+        if not truncated:
+            return None
+        try:
+            return codecs.getincrementaldecoder(encoding)().decode(sample, final=False)
+        except UnicodeDecodeError:
+            return None
 
 
 def verify_charset(linter: LinterProtocol) -> None:  # pylint: disable=too-many-return-statements
@@ -81,11 +137,8 @@ def verify_charset(linter: LinterProtocol) -> None:  # pylint: disable=too-many-
         return
 
     # Primary check: does the declared encoding actually decode the content?
-    try:
-        sample.decode(effective_charset_raw, errors="strict")
-        decodes = True
-    except (UnicodeDecodeError, LookupError):
-        decodes = False
+    truncated = _sample_is_truncated(linter)
+    decodes = _decode_declared(sample, effective_charset_raw, truncated) is not None
 
     detection = chardet.detect(sample)
     detected_raw = detection.get("encoding")
@@ -105,7 +158,7 @@ def verify_charset(linter: LinterProtocol) -> None:  # pylint: disable=too-many-
         detected_canonical
         and detected_canonical != declared_canonical
         and confidence >= CHARDET_CONFIDENCE_THRESHOLD
-        and not _encodings_compatible(declared_canonical, detected_canonical, sample)
+        and not _encodings_compatible(declared_canonical, detected_canonical, sample, truncated)
     ):
         if is_implicit:
             linter.notes.add(
@@ -124,13 +177,26 @@ def verify_charset(linter: LinterProtocol) -> None:  # pylint: disable=too-many-
             )
 
 
-def _encodings_compatible(declared: str, detected: str, sample: bytes) -> bool:
+def _encodings_compatible(declared: str, detected: str, sample: bytes, truncated: bool) -> bool:
     """
     Return True if decoding `sample` with `declared` and with `detected`
     yields the same text. This catches cases where chardet picks a
     different name (e.g. windows-1252 vs iso-8859-1) for content that is
     identical under both.
+
+    If `sample` may be truncated, its tail is trimmed by a safety margin
+    first: declared and detected encodings can have different maximum
+    sequence lengths, so a split multi-byte character at the very end can
+    make one decode "swallow" the incomplete tail while the other reads
+    it as one or more extra characters -- a spurious divergence that has
+    nothing to do with whether the encodings actually agree. If there
+    isn't enough sample left to trim safely, the comparison is skipped
+    (treated as compatible) rather than risking that false divergence.
     """
+    if truncated:
+        if len(sample) <= TRUNCATION_SAFETY_MARGIN:
+            return True
+        sample = sample[:-TRUNCATION_SAFETY_MARGIN]
     try:
         declared_text = sample.decode(declared, errors="strict")
         detected_text = sample.decode(detected, errors="strict")
