@@ -611,7 +611,9 @@ class SET_COOKIE_HARDENED(Note):
     _summary = "This response sets cookies restricted with Secure, HttpOnly, and SameSite."
     _text = """\
 The following cookies set `Secure` (only sent over HTTPS), `HttpOnly` (inaccessible to
-JavaScript), and a non-`None` `SameSite` value (limiting cross-site sending): %(cookie_names)s.
+JavaScript), and a non-`None` `SameSite` value (limiting cross-site sending):
+
+%(cookie_names)s.
 
 Together, these attributes substantially reduce a cookie's exposure to common attacks such as
 theft over plaintext connections, cross-site scripting, and cross-site request forgery."""

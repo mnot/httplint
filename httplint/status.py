@@ -372,7 +372,7 @@ class CREATED_SAFE_METHOD(Note):
     _text = """\
 The `201 (Created)` status code indicates that the request created a new resource.
 
-However, the request method used (%(method)s) is defined as a "safe" method; that is, it
+However, the request method used (`%(method)s`) is defined as a "safe" method; that is, it
 should not have any side effects.
 
 Creating resources as a side effect of a safe method can have unintended consequences; for example,

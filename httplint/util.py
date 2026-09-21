@@ -70,6 +70,23 @@ def markdown_list(inlist: List[str], markup: str = "") -> MarkdownSafe:
     return MarkdownSafe("\n".join(f"- {markup}{i}{markup}" for i in safe))
 
 
+def markdown_context(text: str, index: int, context_chars: int = 20) -> MarkdownSafe:
+    """
+    Format an excerpt of text around a character index as an indented
+    Markdown code block, with a pointer line underneath marking the index.
+
+    The excerpt is delimited by indentation, not backticks, so embedded
+    backticks in wire-supplied text can't break out of it; Note._get_detail
+    still HTML-escapes its content via Markdown's own indented-block
+    handling on interpolation.
+    """
+    start = max(0, index - context_chars)
+    end = min(len(text), index + context_chars)
+    excerpt = text[start:end]
+    pointer = " " * (index - start) + "^"
+    return MarkdownSafe(f"\n\n    {excerpt}\n    {pointer}")
+
+
 class RelativeTime:
     def __init__(self, utime: float, now: float, show_sign: int = 1) -> None:
         self.utime = utime

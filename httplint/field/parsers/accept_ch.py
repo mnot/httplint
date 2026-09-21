@@ -80,7 +80,7 @@ class ACCEPT_CH_MISSING_VARY(Note):
     _summary = "Accept-CH lists fields that are missing from Vary."
     _text = """\
 The following fields appear in `Accept-CH` but are not listed in the `Vary` header:
-%(missing_fields)s, even though the response is cacheable.
+`%(missing_fields)s`, even though the response is cacheable.
 
 Because these fields can affect the response content, they should be included in `Vary` to ensure
 that caches store separate responses for different client hints."""

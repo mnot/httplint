@@ -14,7 +14,12 @@ from unittest import mock
 
 from markupsafe import Markup
 
+from httplint.field import BAD_SYNTAX_DETAILED
+from httplint.field.parsers.accept_ch import ACCEPT_CH_MISSING_VARY
 from httplint.field.parsers.accept_query import ACCEPT_QUERY_BAD_SYNTAX
+from httplint.field.parsers.cache_status import CACHE_STATUS
+from httplint.field.parsers.clear_site_data import CSD_PRESENT
+from httplint.field.structured_field import STRUCTURED_FIELD_PARSE_ERROR
 from httplint.field.utils import MEDIA_TYPE_BAD_NAME
 from httplint.message import HttpRequestLinter, HttpResponseLinter
 from httplint.note import Note, Notes, categories, levels
@@ -209,6 +214,14 @@ def _response_notes(headers: list) -> list:
     return list(linter.notes)
 
 
+def _request_notes(headers: list) -> list:
+    linter = HttpRequestLinter()
+    linter.process_request_topline(b"GET", b"/", b"HTTP/1.1")
+    linter.process_headers(headers)
+    linter.finish_content(True)
+    return list(linter.notes)
+
+
 class WireValueMarkdownInjectionTest(unittest.TestCase):
     """A wire value is never parsed as Markdown, so it can't lose or smuggle
     characters -- it just shows up literally, HTML-escaped."""
@@ -241,6 +254,99 @@ class WireValueMarkdownInjectionTest(unittest.TestCase):
         detail = str(bad_syntax_notes[0].detail)
         self.assertNotIn("<script>", detail)
         self.assertIn("&lt;script&gt;", detail)
+
+
+class BareProseVarTest(unittest.TestCase):
+    """The core invariant behind dropping KNOWN_SAFE_VARS: a var need not be
+    wrapped in a code span for Note.detail to escape it. Before this fix,
+    Note._get_detail() only escaped values that landed in a Markdown code
+    span or indented block; a var interpolated into bare prose had its raw
+    HTML passed straight through, because Markdown treats inline `<...>`
+    as literal passthrough HTML by default."""
+
+    class NOTE_WITH_BARE_VALUE(Note):
+        category = categories.GENERAL
+        level = levels.WARN
+        _summary = "Bare value '%(value)s'."
+        _text = "The value %(value)s is not recognised."  # deliberately unwrapped
+
+    def test_bare_prose_value_is_escaped(self):
+        notes = Notes({"field_name": "X-Test"})
+        note = notes.add("test", self.NOTE_WITH_BARE_VALUE, value="<script>alert(1)</script>")
+        detail = str(note.detail)
+        self.assertNotIn("<script>", detail)
+        self.assertIn("&lt;script&gt;", detail)
+
+
+class FormerlyMisclassifiedVarsTest(unittest.TestCase):
+    """Regression tests for vars that KNOWN_SAFE_VARS wrongly exempted from
+    escaping (method, missing_fields) or wrongly let lose their intended
+    Markdown structure (context, in both STRUCTURED_FIELD_PARSE_ERROR and
+    BAD_SYNTAX_DETAILED). Dropping KNOWN_SAFE_VARS in favor of MarkdownSafe
+    fixes both classes of bug."""
+
+    def test_accept_ch_missing_vary_escapes_injected_field_name(self):
+        """Accept-CH lets an SF String bypass its Token type check, reaching
+        `missing_fields` (formerly wrongly marked SF-Token-constrained)."""
+        payload = b'"evil</script><script>alert(1)</script>", Sec-CH-UA'
+        notes = _response_notes([(b"Accept-CH", payload), (b"Vary", b"Accept")])
+        missing_vary_notes = [n for n in notes if isinstance(n, ACCEPT_CH_MISSING_VARY)]
+        self.assertTrue(missing_vary_notes, "ACCEPT_CH_MISSING_VARY was not raised")
+        detail = str(missing_vary_notes[0].detail)
+        self.assertNotIn("<script>", detail)
+        self.assertIn("&lt;script&gt;", detail)
+
+    def test_cache_status_escapes_injected_target_name(self):
+        """The Cache-Status cache name (formerly hand-spliced, unescaped, into
+        a bare **bold** marker) must render escaped."""
+        payload = b'"Evil</script><script>alert(1)</script>"; hit'
+        notes = _response_notes([(b"Cache-Status", payload)])
+        cache_status_notes = [n for n in notes if isinstance(n, CACHE_STATUS)]
+        self.assertTrue(cache_status_notes, "CACHE_STATUS was not raised")
+        detail = str(cache_status_notes[0].detail)
+        self.assertNotIn("<script>", detail)
+        self.assertIn("&lt;script&gt;", detail)
+
+    def test_cache_status_param_value_backtick_does_not_break_span(self):
+        """A cache-key param value containing a backtick must not close the
+        hand-built code span check_sf_params() wraps it in."""
+        payload = b'ExampleCache; key="a`b<script>alert(1)</script>"'
+        notes = _response_notes([(b"Cache-Status", payload)])
+        cache_status_notes = [n for n in notes if isinstance(n, CACHE_STATUS)]
+        self.assertTrue(cache_status_notes, "CACHE_STATUS was not raised")
+        detail = str(cache_status_notes[0].detail)
+        self.assertNotIn("<script>", detail)
+        self.assertIn("&lt;script&gt;", detail)
+
+    def test_structured_field_parse_error_context_preserves_backtick(self):
+        """The wire excerpt around a Structured Field parse error must show
+        an embedded backtick literally, and still escape HTML."""
+        notes = _response_notes([(b"Accept-CH", b'"unterm`inated<script>x')])
+        parse_error_notes = [n for n in notes if isinstance(n, STRUCTURED_FIELD_PARSE_ERROR)]
+        self.assertTrue(parse_error_notes, "STRUCTURED_FIELD_PARSE_ERROR was not raised")
+        detail = str(parse_error_notes[0].detail)
+        self.assertIn("`", detail)
+        self.assertNotIn("<script>", detail)
+
+    def test_bad_syntax_detailed_context_preserves_backtick(self):
+        """The wire excerpt around a list-field syntax error must show an
+        embedded backtick literally, and still escape HTML."""
+        notes = _request_notes([(b"Trailer", b"abc`def@ghi<script>alert(1)</script>")])
+        detailed_notes = [n for n in notes if isinstance(n, BAD_SYNTAX_DETAILED)]
+        self.assertTrue(detailed_notes, "BAD_SYNTAX_DETAILED was not raised")
+        detail = str(detailed_notes[0].detail)
+        self.assertIn("`", detail)
+        self.assertNotIn("<script>", detail)
+
+    def test_csd_present_keeps_code_span_formatting(self):
+        """CSD_PRESENT's values are a closed vocabulary; MarkdownSafe-wrapping
+        them must keep each one as its own code span, not plain-text prose."""
+        notes = _response_notes([(b"Clear-Site-Data", b'"cache", "cookies"')])
+        present_notes = [n for n in notes if isinstance(n, CSD_PRESENT)]
+        self.assertTrue(present_notes, "CSD_PRESENT was not raised")
+        detail = str(present_notes[0].detail)
+        self.assertIn("<code>cache</code>", detail)
+        self.assertIn("<code>cookies</code>", detail)
 
 
 class PlaceholderSubstitutionTest(unittest.TestCase):

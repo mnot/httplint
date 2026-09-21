@@ -1,14 +1,29 @@
 """
-Scan all Note subclasses and report _text templates where user-controlled
-vars appear in plain paragraph text (not protected by a backtick code span
-or a 4-space indented code block).
+Scan all Note subclasses and report _text templates where a var appears
+inline, mixed into a sentence of plain prose, without being protected by a
+backtick code span or a 4-space indented code block.
 
-Note._get_detail() renders every var not in KNOWN_SAFE_VARS as an opaque,
-HTML-escaped placeholder, whether or not it's wrapped in a code span, so
-this is no longer a security gate — an unprotected var is inert, just
-unstyled. It remains a readability check: a wire value rendered as running
-prose, indistinguishable from the template's own words, is worth flagging
-even when it's safe.
+This is a readability check, not a security gate. Note._get_detail() (in
+httplint/note.py) treats every var as opaque, HTML-escaped wire data unless
+its value is wrapped in MarkdownSafe -- so an unwrapped var can't produce
+unescaped HTML, whether or not it's flagged here. What it CAN do is read as
+running prose, indistinguishable from the template's own words; wrapping it
+in backticks is worth doing for clarity even though it's optional for
+safety.
+
+There's no allowlist of "safe" var names to maintain. A var whose whole
+line is just that one placeholder (plus, say, a trailing period) is a
+block reference: it's standing in for a var whose value is a MarkdownSafe
+block built by library code -- a bulleted list, an indented excerpt -- and
+is *meant* to sit unwrapped, since the value supplies its own markup. That
+shape is visible directly in the template text, so it doesn't need a name
+on a list to recognize; only a var interpolated inline, alongside other
+prose on its line, gets flagged.
+
+Not run as part of `make test`: with no allowlist, it flags every
+inline var that predates this check, including ones nobody's going to
+rewrap just to silence a style nit. Run it by hand when touching a
+template, or to survey the backlog.
 
 Usage:
     PYTHONPATH=. python tools/check_detail_escaping.py
@@ -21,7 +36,6 @@ import re
 import sys
 
 import httplint
-from httplint.note import KNOWN_SAFE_VARS
 
 
 # ---------------------------------------------------------------------------
@@ -40,10 +54,24 @@ def _strip_protected(text: str) -> str:
     return text
 
 
+def _is_block_reference(line: str) -> bool:
+    """True if a template line is nothing but a single var reference (plus,
+    maybe, trailing punctuation) -- the structural signature of a var whose
+    value is meant to be its own Markdown block, not prose."""
+    return bool(re.fullmatch(r"\s*%\(\w+\)s[.,:;]?\s*", line))
+
+
 def _vars_in_plain_text(template: str) -> list[str]:
-    """Return var names that appear outside protected regions."""
+    """Return var names that appear outside protected regions, interpolated
+    inline within a line of other prose rather than standing alone as a
+    block reference."""
     unprotected = _strip_protected(template)
-    return re.findall(r"%\((\w+)\)s", unprotected)
+    risky = []
+    for line in unprotected.splitlines():
+        if _is_block_reference(line):
+            continue
+        risky.extend(re.findall(r"%\((\w+)\)s", line))
+    return risky
 
 
 # ---------------------------------------------------------------------------
@@ -94,8 +122,7 @@ def main() -> int:
         if not template:
             continue
 
-        plain_vars = _vars_in_plain_text(template)
-        unwrapped = [v for v in plain_vars if v not in KNOWN_SAFE_VARS]
+        unwrapped = _vars_in_plain_text(template)
 
         if unwrapped:
             mod_name = module.__name__ if module else "<unknown>"

@@ -6,6 +6,7 @@ import http_sf
 from httplint.field import HttpField
 from httplint.note import Note, categories, levels
 from httplint.types import AddNoteMethodType, TMessage
+from httplint.util import markdown_context
 
 RE_FLAGS = re.VERBOSE | re.IGNORECASE
 CONTEXT_CHARS = 35
@@ -48,14 +49,9 @@ class StructuredField(HttpField[TMessage], Generic[TMessage]):
             )
         except http_sf.StructuredFieldError as why:
             problem = str(why)
-            context = ""
+            context: str = ""
             if hasattr(why, "position") and why.position is not None:
-                bad_char_index = why.position
-                context_start = max(0, bad_char_index - CONTEXT_CHARS)
-                context_end = min(len(combined_value), bad_char_index + CONTEXT_CHARS)
-                context_str = combined_value[context_start:context_end]
-                pointer = " " * (bad_char_index - context_start) + "^"
-                context = f"\n\n    {context_str}\n    {pointer}"
+                context = markdown_context(combined_value, why.position, CONTEXT_CHARS)
             add_note(
                 STRUCTURED_FIELD_PARSE_ERROR,
                 problem=problem,
