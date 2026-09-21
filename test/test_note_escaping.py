@@ -554,7 +554,9 @@ class NoteTranslateHookTest(unittest.TestCase):
 class FormatErrorDiagnosticsTest(unittest.TestCase):
     """A bad %-directive (e.g. from a mistranslated catalog entry) must raise
     a TypeError naming the Note subclass, active locale, original error and
-    vars -- not a bare, context-free TypeError."""
+    vars -- not a bare, context-free error. Covers every exception type the
+    %-operator can raise against a mistranslated template: TypeError,
+    ValueError, KeyError, OverflowError."""
 
     class NOTE_WITH_BAD_INT_SPEC(Note):
         category = categories.GENERAL
@@ -562,31 +564,119 @@ class FormatErrorDiagnosticsTest(unittest.TestCase):
         _summary = "count: %(count)d"
         _text = "count: %(count)d"
 
+    class NOTE_WITH_BAD_CONVERSION(Note):
+        category = categories.GENERAL
+        level = levels.WARN
+        _summary = "bad conversion: %(x)y"
+        _text = "bad conversion: %(x)y"
+
+    class NOTE_WITH_MISSING_VAR(Note):
+        category = categories.GENERAL
+        level = levels.WARN
+        _summary = "missing: %(missing)s"
+        _text = "missing: %(missing)s"
+
+    class NOTE_WITH_CHAR_SPEC(Note):
+        category = categories.GENERAL
+        level = levels.WARN
+        _summary = "char: %(n)c"
+        _text = "char: %(n)c"
+
     def _make(self, note_cls, **vars):
         notes = Notes({"field_name": "X-Test"})
         return notes.add("test", note_cls, **vars)
 
-    def test_summary_format_error_is_wrapped_with_diagnostics(self):
+    def _assert_wrapped(self, note, attr, kind):
+        with self.assertRaises(TypeError) as ctx:
+            getattr(note, attr)
+        message = str(ctx.exception)
+        self.assertIn(f"{kind} formatting error", message)
+        self.assertIn(note.__class__.__name__, message)
+        self.assertIn("locale:", message)
+        return ctx.exception
+
+    def test_summary_type_error_is_wrapped_with_diagnostics(self):
         note = self._make(self.NOTE_WITH_BAD_INT_SPEC, count="not-a-number")
+        err = self._assert_wrapped(note, "summary", "Summary")
+        self.assertIn("not-a-number", str(err))
+        self.assertIsInstance(err.__cause__, TypeError)
+
+    def test_detail_type_error_is_wrapped_with_diagnostics(self):
+        note = self._make(self.NOTE_WITH_BAD_INT_SPEC, count="not-a-number")
+        err = self._assert_wrapped(note, "detail", "Detail")
+        self.assertIn("not-a-number", str(err))
+        self.assertIsInstance(err.__cause__, TypeError)
+
+    def test_summary_value_error_is_wrapped_with_diagnostics(self):
+        """A conversion character _DIRECTIVE_RE doesn't recognise (so
+        _get_detail's placeholder mechanism never touches it) still reaches
+        the raw %-operator in both summary and detail."""
+        note = self._make(self.NOTE_WITH_BAD_CONVERSION, x=MarkdownSafe("val"))
+        err = self._assert_wrapped(note, "summary", "Summary")
+        self.assertIsInstance(err.__cause__, ValueError)
+
+    def test_detail_value_error_is_wrapped_with_diagnostics(self):
+        note = self._make(self.NOTE_WITH_BAD_CONVERSION, x=MarkdownSafe("val"))
+        err = self._assert_wrapped(note, "detail", "Detail")
+        self.assertIsInstance(err.__cause__, ValueError)
+
+    def test_summary_key_error_is_wrapped_with_diagnostics(self):
+        note = self._make(self.NOTE_WITH_MISSING_VAR)
+        err = self._assert_wrapped(note, "summary", "Summary")
+        self.assertIsInstance(err.__cause__, KeyError)
+
+    def test_detail_key_error_is_wrapped_with_diagnostics(self):
+        note = self._make(self.NOTE_WITH_MISSING_VAR)
+        err = self._assert_wrapped(note, "detail", "Detail")
+        self.assertIsInstance(err.__cause__, KeyError)
+
+    def test_summary_overflow_error_is_wrapped_with_diagnostics(self):
+        """%(n)c with a value outside range(0x110000) raises OverflowError,
+        not TypeError."""
+        note = self._make(self.NOTE_WITH_CHAR_SPEC, n=0x110000)
+        err = self._assert_wrapped(note, "summary", "Summary")
+        self.assertIsInstance(err.__cause__, OverflowError)
+
+    def test_detail_overflow_error_is_wrapped_with_diagnostics(self):
+        note = self._make(self.NOTE_WITH_CHAR_SPEC, n=0x110000)
+        err = self._assert_wrapped(note, "detail", "Detail")
+        self.assertIsInstance(err.__cause__, OverflowError)
+
+    def test_vars_repr_failure_does_not_swallow_diagnostic(self):
+        """A var whose __repr__ raises must not destroy the diagnostic
+        message -- the wrapper falls back to a placeholder instead of
+        letting the repr() failure replace the real formatting error."""
+
+        class Unrepresentable:
+            def __repr__(self):
+                raise RuntimeError("boom")
+
+        note = self._make(self.NOTE_WITH_BAD_INT_SPEC, count=Unrepresentable())
+        err = self._assert_wrapped(note, "summary", "Summary")
+        self.assertIn("repr(vars) failed", str(err))
+        self.assertIsInstance(err.__cause__, TypeError)
+
+    def test_translate_override_error_is_not_mislabeled_as_formatting_error(self):
+        """An unrelated error raised by an overridden _translate() must
+        propagate as-is, not get relabeled as a formatting error -- the try
+        block only covers the %-operator calls, not the translation step."""
+
+        class BROKEN_TRANSLATE_NOTE(Note):
+            category = categories.GENERAL
+            level = levels.WARN
+            _summary = "x"
+            _text = "x"
+
+            def _translate(self, message):
+                raise TypeError("can only concatenate str (not int) to str")
+
+        note = self._make(BROKEN_TRANSLATE_NOTE)
         with self.assertRaises(TypeError) as ctx:
             note.summary  # pylint: disable=pointless-statement
-        message = str(ctx.exception)
-        self.assertIn("Summary formatting error", message)
-        self.assertIn("NOTE_WITH_BAD_INT_SPEC", message)
-        self.assertIn("locale:", message)
-        self.assertIn("not-a-number", message)
-        self.assertIsInstance(ctx.exception.__cause__, TypeError)
-
-    def test_detail_format_error_is_wrapped_with_diagnostics(self):
-        note = self._make(self.NOTE_WITH_BAD_INT_SPEC, count="not-a-number")
-        with self.assertRaises(TypeError) as ctx:
+        self.assertNotIn("formatting error", str(ctx.exception))
+        with self.assertRaises(TypeError) as ctx2:
             note.detail  # pylint: disable=pointless-statement
-        message = str(ctx.exception)
-        self.assertIn("Detail formatting error", message)
-        self.assertIn("NOTE_WITH_BAD_INT_SPEC", message)
-        self.assertIn("locale:", message)
-        self.assertIn("not-a-number", message)
-        self.assertIsInstance(ctx.exception.__cause__, TypeError)
+        self.assertNotIn("formatting error", str(ctx2.exception))
 
 
 if __name__ == "__main__":

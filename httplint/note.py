@@ -50,6 +50,13 @@ def _get_markdown() -> Markdown:
 # needs no key and is left for the final %-operator pass to collapse.
 _DIRECTIVE_RE = re.compile(r"%\((\w+)\)([-+ #0]*\d*(?:\.\d+)?[diouxXeEfFgGcrsa])")
 
+# Exceptions the %-operator can raise against a mistranslated template:
+# TypeError (value doesn't match the directive, e.g. %d on a str), ValueError
+# (a malformed directive, e.g. a stray literal "%"), KeyError (the template
+# names a var missing from self.vars), OverflowError (%c with an int outside
+# range(0x110000)).
+_FORMAT_ERRORS = (TypeError, ValueError, KeyError, OverflowError)
+
 
 class categories(Enum):
     "Note classifications."
@@ -145,6 +152,25 @@ class Note:
         """
         return translate(message)
 
+    def _format_error(self, kind: str, err: Exception) -> TypeError:
+        """
+        Build a diagnostic TypeError for a failed %-format of this note's
+        template: names the failing Note subclass, the active locale, the
+        original error, and the vars being interpolated (via repr, so it's
+        reproducible). The original exception is not chained here -- callers
+        do that with `from err` -- but repr(self.vars) is guarded, since a
+        var whose __repr__ raises would otherwise destroy the diagnostic
+        it's meant to produce.
+        """
+        try:
+            vars_repr = repr(self.vars)
+        except Exception:  # pylint: disable=broad-except
+            vars_repr = "<repr(vars) failed>"
+        return TypeError(
+            f"{kind} formatting error in {self.__class__.__name__} "
+            f"(locale: {get_locale()}): {err} (vars: {vars_repr})"
+        )
+
     def _get_summary(self) -> str:
         """
         Output a textual summary of the message as a plain-text string.
@@ -152,13 +178,11 @@ class Note:
         The value is NOT HTML-escaped.  Consumers are responsible for escaping
         before embedding in HTML.
         """
+        translated = self._translate(self._summary)
         try:
-            return self._translate(self._summary) % self.vars
-        except TypeError as err:
-            raise TypeError(
-                f"Summary formatting error in {self.__class__.__name__} "
-                f"(locale: {get_locale()}): {err} (vars: {self.vars!r})"
-            ) from err
+            return translated % self.vars
+        except _FORMAT_ERRORS as err:
+            raise self._format_error("Summary", err) from err
 
     def _get_detail(self) -> Markup:
         """
@@ -208,15 +232,14 @@ class Note:
             placeholders[token] = formatted
             return token
 
+        translated_text = self._translate(self._text)
+        safe_vars = {n: str(v) for n, v in self.vars.items() if isinstance(v, MarkdownSafe)}
         try:
-            templated = _DIRECTIVE_RE.sub(_substitute_directive, self._translate(self._text))
-            safe_vars = {n: str(v) for n, v in self.vars.items() if isinstance(v, MarkdownSafe)}
-            html = _get_markdown().reset().convert(templated % safe_vars)
-        except TypeError as err:
-            raise TypeError(
-                f"Detail formatting error in {self.__class__.__name__} "
-                f"(locale: {get_locale()}): {err} (vars: {self.vars!r})"
-            ) from err
+            templated = _DIRECTIVE_RE.sub(_substitute_directive, translated_text)
+            substituted = templated % safe_vars
+        except _FORMAT_ERRORS as err:
+            raise self._format_error("Detail", err) from err
+        html = _get_markdown().reset().convert(substituted)
         if placeholders:
             pattern = re.compile("|".join(re.escape(token) for token in placeholders))
             html = pattern.sub(lambda m: str(escape(placeholders[m.group(0)])), html)
