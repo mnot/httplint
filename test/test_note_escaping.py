@@ -22,7 +22,7 @@ from httplint.field.parsers.clear_site_data import CSD_PRESENT
 from httplint.field.structured_field import STRUCTURED_FIELD_PARSE_ERROR
 from httplint.field.utils import MEDIA_TYPE_BAD_NAME
 from httplint.message import HttpRequestLinter, HttpResponseLinter
-from httplint.note import Note, Notes, categories, levels
+from httplint.note import MarkdownSafe, Note, Notes, categories, levels
 
 
 # ---------------------------------------------------------------------------
@@ -447,6 +447,70 @@ class CheckSfParamsFalsyBooleanTest(unittest.TestCase):
         self.assertTrue(cache_status_notes, "CACHE_STATUS was not raised")
         detail = str(cache_status_notes[0].detail)
         self.assertNotIn("hit", detail.lower().split("examplecache")[-1])
+
+
+class FormatSpecOnRealValueTest(unittest.TestCase):
+    """A %(name)... directive with a width/precision must apply that spec
+    to the real value, not to the opaque placeholder standing in for it.
+
+    Found via a side-by-side port of this fix to redbot: the placeholder
+    (a random nonce plus a counter) is long enough that a plausible
+    precision spec, e.g. %(name).40s, could slice through it before its
+    closing delimiter. That corrupts the token so the post-render
+    substitution can no longer find it -- the real value is silently
+    dropped, and a fragment of the placeholder leaks into the note
+    instead. No template in this repo does this today, but the mechanism
+    must handle it correctly regardless.
+    """
+
+    class NOTE_WITH_PRECISION(Note):
+        category = categories.GENERAL
+        level = levels.WARN
+        _summary = "x"
+        _text = "sample starts with: %(chunk_sample).40s"
+
+    def test_precision_spec_truncates_the_real_value_not_the_placeholder(self):
+        notes = Notes({"field_name": "X-Test"})
+        note = notes.add("test", self.NOTE_WITH_PRECISION, chunk_sample="A" * 145)
+        detail = str(note.detail)
+        self.assertIn("A" * 40, detail)
+        self.assertNotIn("A" * 41, detail)
+        # A dropped/corrupted value would leak a hex nonce fragment instead.
+        self.assertNotIn("chunk_sample", detail)
+
+    def test_precision_spec_still_escapes_html(self):
+        notes = Notes({"field_name": "X-Test"})
+        note = notes.add(
+            "test", self.NOTE_WITH_PRECISION, chunk_sample="<script>alert(1)</script>" * 3
+        )
+        detail = str(note.detail)
+        self.assertNotIn("<script>", detail)
+
+    def test_integer_spec_formats_the_real_int(self):
+        class NOTE_WITH_INT_SPEC(Note):
+            category = categories.GENERAL
+            level = levels.WARN
+            _summary = "x"
+            _text = "count: %(n)05d"
+
+        notes = Notes({"field_name": "X-Test"})
+        note = notes.add("test", NOTE_WITH_INT_SPEC, n=42)
+        self.assertIn("00042", str(note.detail))
+
+    def test_markdown_safe_value_with_bare_directive_is_unaffected(self):
+        class NOTE_WITH_SAFE_LIST(Note):
+            category = categories.GENERAL
+            level = levels.WARN
+            _summary = "x"
+            _text = "list:\n\n%(items)s"
+
+        notes = Notes({"field_name": "X-Test"})
+        note = notes.add(
+            "test", NOTE_WITH_SAFE_LIST, items=MarkdownSafe("- `a`\n- `b`")
+        )
+        detail = str(note.detail)
+        self.assertIn("<code>a</code>", detail)
+        self.assertIn("<code>b</code>", detail)
 
 
 if __name__ == "__main__":

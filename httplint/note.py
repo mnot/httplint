@@ -45,6 +45,12 @@ def _get_markdown() -> Markdown:
     return _md_local.md
 
 
+# Matches a single %-format directive with a named key, e.g. %(name)s,
+# %(name).40s, %(name)5d -- everything but the bare "%%" escape, which
+# needs no key and is left for the final %-operator pass to collapse.
+_DIRECTIVE_RE = re.compile(r"%\((\w+)\)([-+ #0]*\d*(?:\.\d+)?[diouxXeEfFgGcrsa])")
+
+
 class categories(Enum):
     "Note classifications."
 
@@ -151,35 +157,46 @@ class Note:
         code that composed it (see MarkdownSafe).
 
         Every other var is wire-supplied: it is rendered as an opaque
-        placeholder, and only substituted — HTML-escaped — into the
+        placeholder, and only substituted -- HTML-escaped -- into the
         rendered HTML afterwards. Such a value is therefore never parsed as
         Markdown, so backticks and other Markdown syntax in it survive and
         display literally, instead of being stripped or able to break out
         of a code span.
+
+        A directive's width/precision (e.g. %(name).40s) is applied to the
+        real value before it's hidden behind a placeholder, not to the
+        placeholder itself -- the placeholder is long enough (a random
+        nonce plus a counter) that a plausible width spec could otherwise
+        slice through it, corrupting it so the post-render substitution
+        below can no longer find it: the real value would be silently
+        dropped and a fragment of the placeholder would leak into the
+        rendered note instead.
         """
         nonce = secrets.token_hex(16)
         placeholders: Dict[str, str] = {}
-        render_vars: Dict[str, str] = {}
-        for name, val in self.vars.items():
-            if isinstance(val, MarkdownSafe):
-                render_vars[name] = str(val)
-            else:
-                str_val = str(val)
-                if not str_val:
-                    # Nothing to protect, and substituting a placeholder
-                    # for it would give Markdown non-empty text to wrap in
-                    # a stray <p></p> once the (empty) value replaces it.
-                    render_vars[name] = ""
-                    continue
-                # \ue000 (Private Use Area) delimits each end so one var's
-                # token can never be a prefix of another's (e.g. "param" vs
-                # "param_val") -- do not remove these escapes, even though
-                # they look like nothing changed in a diff or editor.
-                token = f"\ue000{nonce}:{name}\ue000"
-                placeholders[token] = str_val
-                render_vars[name] = token
 
-        html = _get_markdown().reset().convert(translate(self._text) % render_vars)
+        def _substitute_directive(directive: "re.Match[str]") -> str:
+            name, spec = directive.group(1), directive.group(2)
+            val = self.vars[name]
+            if isinstance(val, MarkdownSafe):
+                return directive.group(0)  # left for the % pass below
+            formatted = ("%" + spec) % (val,)
+            if not formatted:
+                # Nothing to protect, and substituting a placeholder for
+                # it would give Markdown non-empty text to wrap in a
+                # stray <p></p> once the (empty) value replaces it.
+                return ""
+            # \ue000 (Private Use Area) delimits each end so one
+            # directive's token can never be a prefix of another's -- do
+            # not remove these escapes, even though they look like
+            # nothing changed in a diff or editor.
+            token = f"\ue000{nonce}:{len(placeholders)}\ue000"
+            placeholders[token] = formatted
+            return token
+
+        templated = _DIRECTIVE_RE.sub(_substitute_directive, translate(self._text))
+        safe_vars = {n: str(v) for n, v in self.vars.items() if isinstance(v, MarkdownSafe)}
+        html = _get_markdown().reset().convert(templated % safe_vars)
         if placeholders:
             pattern = re.compile("|".join(re.escape(token) for token in placeholders))
             html = pattern.sub(lambda m: str(escape(placeholders[m.group(0)])), html)
