@@ -64,13 +64,16 @@ def _is_block_reference(line: str) -> bool:
 def _vars_in_plain_text(template: str) -> list[str]:
     """Return var names that appear outside protected regions, interpolated
     inline within a line of other prose rather than standing alone as a
-    block reference."""
+    block reference. Each name is reported once, even if it's repeated on
+    the same line or across several unwrapped lines."""
     unprotected = _strip_protected(template)
-    risky = []
+    risky: list[str] = []
     for line in unprotected.splitlines():
         if _is_block_reference(line):
             continue
-        risky.extend(re.findall(r"%\((\w+)\)s", line))
+        for name in re.findall(r"%\((\w+)\)s", line):
+            if name not in risky:
+                risky.append(name)
     return risky
 
 

@@ -367,6 +367,87 @@ class PlaceholderSubstitutionTest(unittest.TestCase):
         self.assertIn(f"before {a_placeholder} after", detail)
         self.assertNotIn("before innocuous after", detail)
 
+    def test_var_name_is_never_confused_with_a_prefix_of_another(self):
+        """One var's name being a prefix of another's (e.g. "param" and
+        "param_val") must not let the shorter name's placeholder match
+        inside the longer name's placeholder text."""
+
+        class NOTE_WITH_PREFIX_VARS(Note):
+            category = categories.GENERAL
+            level = levels.WARN
+            _summary = "prefix collision test"
+            _text = "%(param)s | %(param_val)s"
+
+        notes = Notes({"field_name": "X-Test"})
+        note = notes.add("test", NOTE_WITH_PREFIX_VARS, param="short", param_val="long-value")
+        detail = str(note.detail)
+        self.assertIn("short", detail)
+        self.assertIn("long-value", detail)
+        self.assertNotIn("short-value", detail)
+
+    def test_empty_value_does_not_leave_a_stray_paragraph(self):
+        """A wire-supplied var that's the empty string has nothing to
+        protect, and shouldn't give Markdown placeholder text to wrap in
+        a paragraph that becomes empty once the real (empty) value lands."""
+        note = self._make(a="", b="")
+        detail = str(note.detail)
+        self.assertNotIn("<p></p>", detail)
+
+
+# ---------------------------------------------------------------------------
+# Regression tests from a follow-up multi-agent review of this branch
+# (see PR #160 comments): markdown_context() only indented the first line
+# of a wire excerpt, so an excerpt containing its own raw newline (e.g.
+# from a decoded Structured Field Byte Sequence) broke out of the indented
+# block early and let raw HTML reach ordinary, unescaped paragraph text.
+# check_sf_params() crashed outright on a valid false-valued boolean param
+# whose description has no %s to fill.
+# ---------------------------------------------------------------------------
+
+class EmbeddedNewlineTest(unittest.TestCase):
+    """A wire value containing a raw newline must not break out of the
+    indented block or inline span it's meant to be confined to."""
+
+    def test_structured_field_parse_error_excerpt_with_newline_is_escaped(self):
+        payload = b'"unterm\n<script>alert(1)</script>inated'
+        notes = _response_notes([(b"Accept-CH", payload)])
+        parse_error_notes = [n for n in notes if isinstance(n, STRUCTURED_FIELD_PARSE_ERROR)]
+        self.assertTrue(parse_error_notes, "STRUCTURED_FIELD_PARSE_ERROR was not raised")
+        detail = str(parse_error_notes[0].detail)
+        self.assertNotIn("<script>", detail)
+        self.assertIn("&lt;script&gt;", detail)
+
+    def test_bad_syntax_detailed_excerpt_with_newline_is_escaped(self):
+        notes = _request_notes([(b"Trailer", b"abc\n<script>alert(1)</script>@ghi")])
+        detailed_notes = [n for n in notes if isinstance(n, BAD_SYNTAX_DETAILED)]
+        self.assertTrue(detailed_notes, "BAD_SYNTAX_DETAILED was not raised")
+        detail = str(detailed_notes[0].detail)
+        self.assertNotIn("<script>", detail)
+
+    def test_cache_status_byte_sequence_target_with_newline_is_escaped(self):
+        """A Structured Field Byte Sequence target decodes to arbitrary
+        bytes, including raw newlines -- not just backticks."""
+        # base64 of "evil\n\n<script>alert(1)</script>"
+        payload = b":ZXZpbAoKPHNjcmlwdD5hbGVydCgxKTwvc2NyaXB0Pg==:; hit"
+        notes = _response_notes([(b"Cache-Status", payload)])
+        cache_status_notes = [n for n in notes if isinstance(n, CACHE_STATUS)]
+        self.assertTrue(cache_status_notes, "CACHE_STATUS was not raised")
+        detail = str(cache_status_notes[0].detail)
+        self.assertNotIn("<script>", detail)
+        self.assertIn("&lt;script&gt;", detail)
+
+
+class CheckSfParamsFalsyBooleanTest(unittest.TestCase):
+    """A valid, falsy Structured Field boolean param (e.g. hit=?0) for a
+    param whose desc has no %s must not crash string formatting."""
+
+    def test_cache_status_false_boolean_param_does_not_crash(self):
+        notes = _response_notes([(b"Cache-Status", b"ExampleCache; hit=?0")])
+        cache_status_notes = [n for n in notes if isinstance(n, CACHE_STATUS)]
+        self.assertTrue(cache_status_notes, "CACHE_STATUS was not raised")
+        detail = str(cache_status_notes[0].detail)
+        self.assertNotIn("hit", detail.lower().split("examplecache")[-1])
+
 
 if __name__ == "__main__":
     unittest.main()

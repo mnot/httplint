@@ -280,10 +280,15 @@ def check_sf_params(
                 else:
                     param_list.append(f"* `{param_name}`: `{safe_value}`")
             elif "desc" in known_params[param_name]:
-                if param_value is True:
-                    param_list.append(f"* {known_params[param_name]['desc']}")
-                else:
-                    param_list.append(f"* {known_params[param_name]['desc'] % f'`{safe_value}`'}")
+                desc = known_params[param_name]["desc"]
+                if "%s" in desc:
+                    wrapped = f"`{safe_value}`" if safe_value else ""
+                    param_list.append(f"* {desc % wrapped}")
+                elif param_value:
+                    # A static desc with no %s is a flag-style description,
+                    # meant for a truthy value; a falsy one (e.g. hit=?0)
+                    # has nothing to report.
+                    param_list.append(f"* {desc}")
             else:
                 if param_value is True:
                     param_list.append(f"* `{param_name}`")

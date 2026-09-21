@@ -13,6 +13,7 @@ from httplint.types import (
     ResponseLinterProtocol,
     SFListType,
 )
+from httplint.util import inline_safe
 
 
 class proxy_status(StructuredField[ResponseLinterProtocol]):
@@ -29,9 +30,9 @@ The `Proxy-Status` header field indicates how intermediaries have handled the re
         status_list = []
         for target, params in self.value:
 
-            target_str = (
+            target_str = inline_safe(
                 target.decode("ascii", "replace") if isinstance(target, bytes) else str(target)
-            ).replace("`", "")
+            )
             param_str = check_sf_params(
                 params,
                 KNOWN_PARAMS,

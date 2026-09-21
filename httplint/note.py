@@ -164,8 +164,19 @@ class Note:
             if isinstance(val, MarkdownSafe):
                 render_vars[name] = str(val)
             else:
-                token = f"{nonce}:{name}"
-                placeholders[token] = str(val)
+                str_val = str(val)
+                if not str_val:
+                    # Nothing to protect, and substituting a placeholder
+                    # for it would give Markdown non-empty text to wrap in
+                    # a stray <p></p> once the (empty) value replaces it.
+                    render_vars[name] = ""
+                    continue
+                # \ue000 (Private Use Area) delimits each end so one var's
+                # token can never be a prefix of another's (e.g. "param" vs
+                # "param_val") -- do not remove these escapes, even though
+                # they look like nothing changed in a diff or editor.
+                token = f"\ue000{nonce}:{name}\ue000"
+                placeholders[token] = str_val
                 render_vars[name] = token
 
         html = _get_markdown().reset().convert(translate(self._text) % render_vars)
