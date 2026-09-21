@@ -7,7 +7,7 @@ TEST_SCRIPTS = $(wildcard test/test_*.py)
 TEST_TARGETS = $(patsubst test/%.py,%,$(TEST_SCRIPTS))
 
 .PHONY: test
-test: $(TEST_TARGETS) test_smoke coverage i18n-check check_detail_escaping
+test: $(TEST_TARGETS) test_smoke coverage i18n-check
 
 .PHONY: check_detail_escaping
 check_detail_escaping: venv

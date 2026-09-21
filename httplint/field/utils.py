@@ -236,12 +236,22 @@ def check_sf_params(
 ) -> str:
     """
     Format parameters for a clause, checking validity against known_params.
+
+    Parameter names come from Structured Field dictionary-key syntax
+    ([a-z0-9_.*-]) and are safe to embed directly. Parameter values are
+    HTTP input; each is backtick-stripped and then always re-wrapped in a
+    code span before being embedded here -- including into a known
+    param's "desc" template, regardless of whether that template already
+    puts `%s` in a span of its own -- so a value can never land in bare
+    prose no matter how the template is written. The caller must wrap the
+    assembled, now-safe result in MarkdownSafe.
     """
     param_list = []
     for param_name, param_value in params.items():
+        safe_value = str(param_value).replace("`", "")
         if param_name not in known_params:
             add_note(unknown_param_note, param=param_name)
-            param_list.append(f"* `{param_name}`: `{param_value}`")
+            param_list.append(f"* `{param_name}`: `{safe_value}`")
         else:
             expected_type = known_params[param_name].get("type")
             if expected_type and not isinstance(param_value, expected_type):
@@ -250,7 +260,7 @@ def check_sf_params(
                     param=param_name,
                     value=param_value,
                 )
-                param_list.append(f"* `{param_name}`: `{param_value}`")
+                param_list.append(f"* `{param_name}`: `{safe_value}`")
                 continue
 
             allowed_values = known_params[param_name].get("values")
@@ -260,7 +270,7 @@ def check_sf_params(
                     param=param_name,
                     value=param_value,
                 )
-                param_list.append(f"* `{param_name}`: `{param_value}`")
+                param_list.append(f"* `{param_name}`: `{safe_value}`")
                 continue
 
             if "value_desc" in known_params[param_name]:
@@ -268,17 +278,22 @@ def check_sf_params(
                 if desc:
                     param_list.append(f"* {desc}")
                 else:
-                    param_list.append(f"* `{param_name}`: `{param_value}`")
+                    param_list.append(f"* `{param_name}`: `{safe_value}`")
             elif "desc" in known_params[param_name]:
-                if param_value is True:
-                    param_list.append(f"* {known_params[param_name]['desc']}")
-                else:
-                    param_list.append(f"* {known_params[param_name]['desc'] % param_value}")
+                desc = known_params[param_name]["desc"]
+                if "%s" in desc:
+                    wrapped = f"`{safe_value}`" if safe_value else ""
+                    param_list.append(f"* {desc % wrapped}")
+                elif param_value:
+                    # A static desc with no %s is a flag-style description,
+                    # meant for a truthy value; a falsy one (e.g. hit=?0)
+                    # has nothing to report.
+                    param_list.append(f"* {desc}")
             else:
                 if param_value is True:
                     param_list.append(f"* `{param_name}`")
                 else:
-                    param_list.append(f"* `{param_name}`: `{param_value}`")
+                    param_list.append(f"* `{param_name}`: `{safe_value}`")
 
     return "\n".join(param_list)
 

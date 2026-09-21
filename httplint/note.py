@@ -1,12 +1,14 @@
 from __future__ import annotations
 
+import re
+import secrets
 from collections import UserList
 from enum import Enum
 from threading import local
 from typing import Any, Dict, MutableMapping, Optional, Type
 
 from markdown import Markdown
-from markupsafe import Markup
+from markupsafe import Markup, escape
 
 from httplint.i18n import L_, translate
 from httplint.types import NoteListType, VariableType
@@ -23,11 +25,16 @@ class MarkdownSafe(str):
     """
     Marker for var values that are pre-composed Markdown.
 
-    Note._get_detail strips backticks from interpolated var values so
-    wire-supplied data cannot close a code span and inject raw HTML.
-    Wrap a value in MarkdownSafe(...) when the backticks (or other
-    Markdown syntax) in the value were produced by library code and
-    must survive interpolation intact.
+    Note._get_detail treats every var as opaque, wire-supplied data --
+    substituted into the rendered HTML only after Markdown has run,
+    HTML-escaped, so it can never be parsed as Markdown syntax -- unless
+    it's wrapped in MarkdownSafe(...). Wrap a value in MarkdownSafe(...)
+    when it is pre-composed Markdown built by library code (e.g. a joined
+    list of code spans, or an indented excerpt built by
+    httplint.util.markdown_context) and must be rendered as Markdown
+    rather than treated as opaque wire data. Never wrap a value that still
+    contains unvetted wire content -- escape or strip each wire-derived
+    fragment before assembling and wrapping it.
     """
 
 
@@ -36,6 +43,12 @@ def _get_markdown() -> Markdown:
     if not hasattr(_md_local, "md"):
         _md_local.md = Markdown(output_format="html")
     return _md_local.md
+
+
+# Matches a single %-format directive with a named key, e.g. %(name)s,
+# %(name).40s, %(name)5d -- everything but the bare "%%" escape, which
+# needs no key and is left for the final %-operator pass to collapse.
+_DIRECTIVE_RE = re.compile(r"%\((\w+)\)([-+ #0]*\d*(?:\.\d+)?[diouxXeEfFgGcrsa])")
 
 
 class categories(Enum):
@@ -137,27 +150,57 @@ class Note:
         """
         Show the HTML text for the message as a Unicode string.
 
-        The resulting string is already HTML-encoded.  Variable values are
-        passed as plain strings; the Markdown renderer handles escaping.
-        Template authors must wrap user-controlled vars in backtick code
-        spans (or indented code blocks) so Markdown escapes them correctly.
+        The resulting string is already HTML-encoded. A MarkdownSafe value
+        is substituted into the Markdown source before rendering, so it can
+        appear in prose, code spans or link targets like ordinary template
+        text -- that's an explicit, per-value opt-in made by the library
+        code that composed it (see MarkdownSafe).
 
-        As defense-in-depth, backticks are stripped from each interpolated
-        value so a wire-supplied backtick cannot close the surrounding
-        code span and let the rest of the value render as raw HTML.
-        Values that are pre-composed Markdown produced by library code
-        (e.g. a joined list of code spans) should be wrapped in
-        MarkdownSafe to opt out of this stripping.
+        Every other var is wire-supplied: it is rendered as an opaque
+        placeholder, and only substituted -- HTML-escaped -- into the
+        rendered HTML afterwards. Such a value is therefore never parsed as
+        Markdown, so backticks and other Markdown syntax in it survive and
+        display literally, instead of being stripped or able to break out
+        of a code span.
+
+        A directive's width/precision (e.g. %(name).40s) is applied to the
+        real value before it's hidden behind a placeholder, not to the
+        placeholder itself -- the placeholder is long enough (a random
+        nonce plus a counter) that a plausible width spec could otherwise
+        slice through it, corrupting it so the post-render substitution
+        below can no longer find it: the real value would be silently
+        dropped and a fragment of the placeholder would leak into the
+        rendered note instead.
         """
-        def _coerce(val: Any) -> str:
-            if isinstance(val, MarkdownSafe):
-                return str(val)
-            return str(val).replace("`", "")
+        nonce = secrets.token_hex(16)
+        placeholders: Dict[str, str] = {}
 
-        safe_vars = {k: _coerce(v) for k, v in self.vars.items()}
-        return Markup(
-            _get_markdown().reset().convert(translate(self._text) % safe_vars)
-        )
+        def _substitute_directive(directive: "re.Match[str]") -> str:
+            name, spec = directive.group(1), directive.group(2)
+            val = self.vars[name]
+            if isinstance(val, MarkdownSafe):
+                return directive.group(0)  # left for the % pass below
+            formatted = ("%" + spec) % (val,)
+            if not formatted:
+                # Nothing to protect, and substituting a placeholder for
+                # it would give Markdown non-empty text to wrap in a
+                # stray <p></p> once the (empty) value replaces it.
+                return ""
+            # \ue000 (Private Use Area) delimits each end so one
+            # directive's token can never be a prefix of another's -- do
+            # not remove these escapes, even though they look like
+            # nothing changed in a diff or editor.
+            token = f"\ue000{nonce}:{len(placeholders)}\ue000"
+            placeholders[token] = formatted
+            return token
+
+        templated = _DIRECTIVE_RE.sub(_substitute_directive, translate(self._text))
+        safe_vars = {n: str(v) for n, v in self.vars.items() if isinstance(v, MarkdownSafe)}
+        html = _get_markdown().reset().convert(templated % safe_vars)
+        if placeholders:
+            pattern = re.compile("|".join(re.escape(token) for token in placeholders))
+            html = pattern.sub(lambda m: str(escape(placeholders[m.group(0)])), html)
+        return Markup(html)
 
     summary = property(_get_summary)
     detail = property(_get_detail)

@@ -4,7 +4,7 @@ from urllib.parse import urljoin, urlsplit
 from httplint.field.json_field import BAD_JSON, JsonField
 from httplint.field.parsers.reporting_endpoints import ENDPOINT_NOT_SECURE
 from httplint.field.tests import FieldTest
-from httplint.note import Note, categories, levels
+from httplint.note import MarkdownSafe, Note, categories, levels
 from httplint.types import (
     AddNoteMethodType,
     NoteClassListType,
@@ -132,7 +132,9 @@ It allows websites to declare that they want to receive reports about network er
         if resolved_endpoints:
             add_note(
                 NEL_CONFIGURED,
-                endpoints=", ".join(f"`{e}`" for e in resolved_endpoints),
+                endpoints=MarkdownSafe(
+                    ", ".join(f"`{e.replace('`', '')}`" for e in resolved_endpoints)
+                ),
             )
 
 

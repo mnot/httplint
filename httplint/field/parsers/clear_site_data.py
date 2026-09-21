@@ -1,7 +1,7 @@
 from httplint.field import BAD_SYNTAX
 from httplint.field.list_field import HttpListField
 from httplint.field.tests import FieldTest
-from httplint.note import Note, categories, levels
+from httplint.note import MarkdownSafe, Note, categories, levels
 from httplint.syntax.rfc9110 import list_rule, quoted_string
 from httplint.types import (
     AddNoteMethodType,
@@ -53,7 +53,7 @@ origin."""
             return
         valid = [v for v in self.value if v in self.KNOWN_VALUES and v not in self._unquoted_values]
         if valid:
-            add_note(CSD_PRESENT, values=", ".join(f"`{v}`" for v in valid))
+            add_note(CSD_PRESENT, values=MarkdownSafe(", ".join(f"`{v}`" for v in valid)))
 
 
 class CSD_PRESENT(Note):

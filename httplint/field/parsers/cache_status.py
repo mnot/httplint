@@ -6,13 +6,14 @@ from http_sf import Token
 from httplint.field.structured_field import StructuredField
 from httplint.field.tests import FieldTest
 from httplint.field.utils import check_sf_params
-from httplint.note import Note, categories, levels
+from httplint.note import MarkdownSafe, Note, categories, levels
 from httplint.types import (
     AddNoteMethodType,
     NoteClassListType,
     ResponseLinterProtocol,
     SFListType,
 )
+from httplint.util import inline_safe
 
 
 class cache_status(StructuredField[ResponseLinterProtocol]):
@@ -31,7 +32,7 @@ debugging caches."""
         status_list = []
         for target, params in self.value:
 
-            target_str = (
+            target_str = inline_safe(
                 target.decode("ascii", "replace") if isinstance(target, bytes) else str(target)
             )
             param_str = check_sf_params(
@@ -41,10 +42,10 @@ debugging caches."""
                 CACHE_STATUS_UNKNOWN_PARAM,
                 CACHE_STATUS_BAD_PARAM_VAL,
             )
-            status_list.append(f"**{target_str}**:\n{param_str}")
+            status_list.append(f"**`{target_str}`**:\n{param_str}")
 
         if status_list:
-            add_note(CACHE_STATUS, status="\n\n".join(status_list))
+            add_note(CACHE_STATUS, status=MarkdownSafe("\n\n".join(status_list)))
 
 
 KNOWN_PARAMS: Dict[str, Dict[str, Any]] = {

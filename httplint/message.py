@@ -357,9 +357,9 @@ class REQUEST_CONTENT_NOT_DEFINED(Note):
     level = levels.BAD
     _summary = "The %(method)s doesn't define any meaning for content."
     _text = """\
-There are no defined semantics for content in %(method)s requests. While HTTP's framing layer
+There are no defined semantics for content in `%(method)s` requests. While HTTP's framing layer
 allows content to appear, that does not mean it is valid for every request method, and
-including content in a %(method)s request can cause interoperability and security issues.
+including content in a `%(method)s` request can cause interoperability and security issues.
 """
 
 

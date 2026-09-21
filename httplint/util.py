@@ -58,6 +58,18 @@ def display_bytes(inbytes: bytes, encoding: str = "utf-8", truncate: int = 40) -
     return "".join(out)
 
 
+def inline_safe(value: str) -> str:
+    """
+    Strip characters from a wire-supplied value that could corrupt a
+    single-line Markdown construct (a code span, a bold marker) it's
+    about to be embedded in: backticks, which could close a hand-built
+    code span early, and newlines, which end the paragraph such a
+    construct depends on staying inside -- an inline span can't survive
+    a paragraph break, unlike an indented block (see markdown_context).
+    """
+    return value.replace("`", "").replace("\r", "").replace("\n", "")
+
+
 def markdown_list(inlist: List[str], markup: str = "") -> MarkdownSafe:
     """
     Format a list of strings into Markdown.
@@ -68,6 +80,29 @@ def markdown_list(inlist: List[str], markup: str = "") -> MarkdownSafe:
     """
     safe = [i.replace("`", "") for i in inlist]
     return MarkdownSafe("\n".join(f"- {markup}{i}{markup}" for i in safe))
+
+
+def markdown_context(text: str, index: int, context_chars: int = 20) -> MarkdownSafe:
+    """
+    Format an excerpt of text around a character index as an indented
+    Markdown code block, with a pointer line underneath marking the index.
+
+    The block is delimited by indentation, not backticks, so embedded
+    backticks in wire-supplied text can't break out of it; Note._get_detail
+    still HTML-escapes its content via Markdown's own indented-block
+    handling on interpolation. Every line of the excerpt gets its own
+    indent -- an excerpt can itself contain a raw newline (e.g. from a
+    decoded Structured Field Byte Sequence), and indentation only holds a
+    block together for as long as every line carries it; an unindented
+    line ends the block early and falls through to ordinary, unescaped
+    paragraph parsing.
+    """
+    start = max(0, index - context_chars)
+    end = min(len(text), index + context_chars)
+    excerpt = text[start:end]
+    pointer = " " * (index - start) + "^"
+    indented = "\n".join(f"    {line}" for line in f"{excerpt}\n{pointer}".splitlines())
+    return MarkdownSafe(f"\n\n{indented}")
 
 
 class RelativeTime:

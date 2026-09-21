@@ -6,6 +6,7 @@ from httplint.field import BAD_SYNTAX, BAD_SYNTAX_DETAILED, HttpField
 from httplint.field.utils import RE_FLAGS, split_list_field
 from httplint.syntax import rfc9110
 from httplint.types import AddNoteMethodType, TMessage
+from httplint.util import markdown_context
 
 
 class HttpListField(HttpField[TMessage], Generic[TMessage]):
@@ -40,20 +41,16 @@ class HttpListField(HttpField[TMessage], Generic[TMessage]):
                     match = re.match(rf"^\s*(?:{element_syntax})", value, RE_FLAGS)
                     if match:
                         bad_char_index = match.end()
-                        context_start = max(0, bad_char_index - 20)
-                        context_end = min(len(value), bad_char_index + 20)
-                        context = value[context_start:context_end]
-                        pointer = " " * (bad_char_index - context_start) + "^"
                         problem = (
                             f"The invalid character '{value[bad_char_index]}' "
-                            f"was found at position {bad_char_index + 1}:"
-                            f"\n\n    {context}\n    {pointer}"
+                            f"was found at position {bad_char_index + 1}."
                         )
                         offset_add_note(
                             BAD_SYNTAX_DETAILED,
                             ref_uri=self.reference,
                             value=value,
                             problem=problem,
+                            context=markdown_context(value, bad_char_index),
                             category=self.category,
                         )
                     else:

@@ -198,7 +198,8 @@ but doesn't conform to it. See [the field's ABNF](%(ref_uri)s) for more informat
 This error may or may not prevent recipients from parsing the field; fixing it will
 improve interoperability.
 
-`%(problem)s`"""
+`%(problem)s`
+%(context)s"""
 
 
 class REQUEST_HDR_IN_RESPONSE(Note):
