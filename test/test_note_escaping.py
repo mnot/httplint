@@ -513,5 +513,39 @@ class FormatSpecOnRealValueTest(unittest.TestCase):
         self.assertIn("<code>b</code>", detail)
 
 
+# ---------------------------------------------------------------------------
+# Unit tests: Note._translate is an overridable hook (downstream i18n)
+# ---------------------------------------------------------------------------
+
+class NoteTranslateHookTest(unittest.TestCase):
+    """
+    A downstream subclass (e.g. redbot's RedbotNote) can override
+    _translate() to look messages up in its own catalog, without
+    reimplementing _get_summary/_get_detail.
+    """
+
+    def test_default_translate_uses_httplint_catalog(self):
+        with mock.patch(
+            "httplint.note.translate", side_effect=lambda msg: f"[httplint] {msg}"
+        ) as mocked:
+            note = Notes({}).add("test", NOTE_WITH_PLAIN_VALUE, value="x")
+            self.assertIn("[httplint] Unknown value", str(note.summary))
+            mocked.assert_any_call(NOTE_WITH_PLAIN_VALUE._summary)
+
+    def test_overridden_translate_is_used_for_summary_and_detail(self):
+        class DOWNSTREAM_NOTE(Note):
+            category = categories.GENERAL
+            level = levels.WARN
+            _summary = "Original summary."
+            _text = "Original detail."
+
+            def _translate(self, message: str) -> str:
+                return message.replace("Original", "Downstream")
+
+        note = Notes({}).add("test", DOWNSTREAM_NOTE)
+        self.assertEqual(str(note.summary), "Downstream summary.")
+        self.assertIn("Downstream detail.", str(note.detail))
+
+
 if __name__ == "__main__":
     unittest.main()

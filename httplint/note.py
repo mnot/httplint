@@ -137,6 +137,14 @@ class Note:
             and self.subject == other.subject
         )
 
+    def _translate(self, message: str) -> str:
+        """
+        Look up `message` in the message catalog. Subclasses defined by
+        downstream projects can override this to translate against their
+        own catalog instead of httplint's.
+        """
+        return translate(message)
+
     def _get_summary(self) -> str:
         """
         Output a textual summary of the message as a plain-text string.
@@ -144,7 +152,7 @@ class Note:
         The value is NOT HTML-escaped.  Consumers are responsible for escaping
         before embedding in HTML.
         """
-        return translate(self._summary) % self.vars
+        return self._translate(self._summary) % self.vars
 
     def _get_detail(self) -> Markup:
         """
@@ -194,7 +202,7 @@ class Note:
             placeholders[token] = formatted
             return token
 
-        templated = _DIRECTIVE_RE.sub(_substitute_directive, translate(self._text))
+        templated = _DIRECTIVE_RE.sub(_substitute_directive, self._translate(self._text))
         safe_vars = {n: str(v) for n, v in self.vars.items() if isinstance(v, MarkdownSafe)}
         html = _get_markdown().reset().convert(templated % safe_vars)
         if placeholders:
