@@ -547,5 +547,47 @@ class NoteTranslateHookTest(unittest.TestCase):
         self.assertIn("Downstream detail.", str(note.detail))
 
 
+# ---------------------------------------------------------------------------
+# Unit tests: format TypeErrors are wrapped with diagnostics (#163)
+# ---------------------------------------------------------------------------
+
+class FormatErrorDiagnosticsTest(unittest.TestCase):
+    """A bad %-directive (e.g. from a mistranslated catalog entry) must raise
+    a TypeError naming the Note subclass, active locale, original error and
+    vars -- not a bare, context-free TypeError."""
+
+    class NOTE_WITH_BAD_INT_SPEC(Note):
+        category = categories.GENERAL
+        level = levels.WARN
+        _summary = "count: %(count)d"
+        _text = "count: %(count)d"
+
+    def _make(self, note_cls, **vars):
+        notes = Notes({"field_name": "X-Test"})
+        return notes.add("test", note_cls, **vars)
+
+    def test_summary_format_error_is_wrapped_with_diagnostics(self):
+        note = self._make(self.NOTE_WITH_BAD_INT_SPEC, count="not-a-number")
+        with self.assertRaises(TypeError) as ctx:
+            note.summary  # pylint: disable=pointless-statement
+        message = str(ctx.exception)
+        self.assertIn("Summary formatting error", message)
+        self.assertIn("NOTE_WITH_BAD_INT_SPEC", message)
+        self.assertIn("locale:", message)
+        self.assertIn("not-a-number", message)
+        self.assertIsInstance(ctx.exception.__cause__, TypeError)
+
+    def test_detail_format_error_is_wrapped_with_diagnostics(self):
+        note = self._make(self.NOTE_WITH_BAD_INT_SPEC, count="not-a-number")
+        with self.assertRaises(TypeError) as ctx:
+            note.detail  # pylint: disable=pointless-statement
+        message = str(ctx.exception)
+        self.assertIn("Detail formatting error", message)
+        self.assertIn("NOTE_WITH_BAD_INT_SPEC", message)
+        self.assertIn("locale:", message)
+        self.assertIn("not-a-number", message)
+        self.assertIsInstance(ctx.exception.__cause__, TypeError)
+
+
 if __name__ == "__main__":
     unittest.main()

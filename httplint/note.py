@@ -10,7 +10,7 @@ from typing import Any, Dict, MutableMapping, Optional, Type
 from markdown import Markdown
 from markupsafe import Markup, escape
 
-from httplint.i18n import L_, translate
+from httplint.i18n import L_, get_locale, translate
 from httplint.types import NoteListType, VariableType
 
 
@@ -152,7 +152,13 @@ class Note:
         The value is NOT HTML-escaped.  Consumers are responsible for escaping
         before embedding in HTML.
         """
-        return self._translate(self._summary) % self.vars
+        try:
+            return self._translate(self._summary) % self.vars
+        except TypeError as err:
+            raise TypeError(
+                f"Summary formatting error in {self.__class__.__name__} "
+                f"(locale: {get_locale()}): {err} (vars: {self.vars!r})"
+            ) from err
 
     def _get_detail(self) -> Markup:
         """
@@ -202,9 +208,15 @@ class Note:
             placeholders[token] = formatted
             return token
 
-        templated = _DIRECTIVE_RE.sub(_substitute_directive, self._translate(self._text))
-        safe_vars = {n: str(v) for n, v in self.vars.items() if isinstance(v, MarkdownSafe)}
-        html = _get_markdown().reset().convert(templated % safe_vars)
+        try:
+            templated = _DIRECTIVE_RE.sub(_substitute_directive, self._translate(self._text))
+            safe_vars = {n: str(v) for n, v in self.vars.items() if isinstance(v, MarkdownSafe)}
+            html = _get_markdown().reset().convert(templated % safe_vars)
+        except TypeError as err:
+            raise TypeError(
+                f"Detail formatting error in {self.__class__.__name__} "
+                f"(locale: {get_locale()}): {err} (vars: {self.vars!r})"
+            ) from err
         if placeholders:
             pattern = re.compile("|".join(re.escape(token) for token in placeholders))
             html = pattern.sub(lambda m: str(escape(placeholders[m.group(0)])), html)

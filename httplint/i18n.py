@@ -23,6 +23,13 @@ def set_locale(locale_name: Optional[str]) -> Generator[None, None, None]:
         _locale_var.reset(token)
 
 
+def get_locale() -> str:
+    """
+    Return the currently active locale.
+    """
+    return _locale_var.get()
+
+
 def get_translations() -> Optional[NullTranslations]:
     locale = _locale_var.get()
     if locale not in _translations_cache:
