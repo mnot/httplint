@@ -8,7 +8,7 @@ from httplint.types import (
     ResponseLinterProtocol,
 )
 
-__version__ = "2026.05.2"
+__version__ = "2026.09.1"
 
 __all__ = [
     "HttpRequestLinter",
