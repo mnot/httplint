@@ -152,24 +152,45 @@ class Note:
         """
         return translate(message)
 
-    def _format_error(self, kind: str, err: Exception) -> TypeError:
+    def _diagnostic_error(self, kind: str, err: Exception, with_vars: bool = True) -> TypeError:
         """
-        Build a diagnostic TypeError for a failed %-format of this note's
-        template: names the failing Note subclass, the active locale, the
-        original error, and the vars being interpolated (via repr, so it's
-        reproducible). The original exception is not chained here -- callers
-        do that with `from err` -- but repr(self.vars) is guarded, since a
-        var whose __repr__ raises would otherwise destroy the diagnostic
-        it's meant to produce.
+        Build a diagnostic TypeError for a failure in this note's rendering
+        pipeline (a bad %-template, a failed _translate() call, or a
+        Markdown-conversion error): names the failing Note subclass, the
+        active locale, the original error, and -- when relevant -- the
+        vars being interpolated (via repr, so it's reproducible). The
+        original exception is not chained here -- callers do that with
+        `from err` -- but str(err) and repr(self.vars) are both guarded,
+        since either could itself raise (a custom exception with a broken
+        __str__, or a var with a broken __repr__) and destroy the
+        diagnostic they're meant to produce.
         """
         try:
-            vars_repr = repr(self.vars)
+            err_text = str(err)
         except Exception:  # pylint: disable=broad-except
-            vars_repr = "<repr(vars) failed>"
-        return TypeError(
-            f"{kind} formatting error in {self.__class__.__name__} "
-            f"(locale: {get_locale()}): {err} (vars: {vars_repr})"
-        )
+            err_text = f"<{err.__class__.__name__}: str(err) failed>"
+        message = f"{kind} error in {self.__class__.__name__} (locale: {get_locale()}): {err_text}"
+        if with_vars:
+            try:
+                vars_repr = repr(self.vars)
+            except Exception:  # pylint: disable=broad-except
+                vars_repr = "<repr(vars) failed>"
+            message += f" (vars: {vars_repr})"
+        return TypeError(message)
+
+    def _translate_safe(self, message: str) -> str:
+        """
+        Call self._translate(), wrapping any failure with diagnostic
+        context. Subclasses can override _translate() with an arbitrary
+        catalog lookup, so any exception it raises is caught here. Vars
+        aren't included in the diagnostic -- a translation-lookup failure
+        happens before the template is interpolated, so they're not yet
+        relevant to it.
+        """
+        try:
+            return self._translate(message)
+        except Exception as err:  # pylint: disable=broad-except
+            raise self._diagnostic_error("Translation", err, with_vars=False) from err
 
     def _get_summary(self) -> str:
         """
@@ -178,11 +199,11 @@ class Note:
         The value is NOT HTML-escaped.  Consumers are responsible for escaping
         before embedding in HTML.
         """
-        translated = self._translate(self._summary)
+        translated = self._translate_safe(self._summary)
         try:
             return translated % self.vars
         except _FORMAT_ERRORS as err:
-            raise self._format_error("Summary", err) from err
+            raise self._diagnostic_error("Summary formatting", err) from err
 
     def _get_detail(self) -> Markup:
         """
@@ -232,14 +253,17 @@ class Note:
             placeholders[token] = formatted
             return token
 
-        translated_text = self._translate(self._text)
+        translated_text = self._translate_safe(self._text)
         safe_vars = {n: str(v) for n, v in self.vars.items() if isinstance(v, MarkdownSafe)}
         try:
             templated = _DIRECTIVE_RE.sub(_substitute_directive, translated_text)
             substituted = templated % safe_vars
         except _FORMAT_ERRORS as err:
-            raise self._format_error("Detail", err) from err
-        html = _get_markdown().reset().convert(substituted)
+            raise self._diagnostic_error("Detail formatting", err) from err
+        try:
+            html = _get_markdown().reset().convert(substituted)
+        except Exception as err:  # pylint: disable=broad-except
+            raise self._diagnostic_error("Detail rendering", err) from err
         if placeholders:
             pattern = re.compile("|".join(re.escape(token) for token in placeholders))
             html = pattern.sub(lambda m: str(escape(placeholders[m.group(0)])), html)
