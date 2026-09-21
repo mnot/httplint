@@ -656,10 +656,11 @@ class FormatErrorDiagnosticsTest(unittest.TestCase):
         self.assertIn("repr(vars) failed", str(err))
         self.assertIsInstance(err.__cause__, TypeError)
 
-    def test_translate_override_error_is_not_mislabeled_as_formatting_error(self):
-        """An unrelated error raised by an overridden _translate() must
-        propagate as-is, not get relabeled as a formatting error -- the try
-        block only covers the %-operator calls, not the translation step."""
+    def test_translate_override_error_is_wrapped_with_translation_diagnostics(self):
+        """An error raised by an overridden _translate() gets its own
+        diagnostic wrapping (class, locale) -- distinct from a %-formatting
+        error, since a broken translation lookup is a different failure
+        mode than a bad template and shouldn't be mislabeled as one."""
 
         class BROKEN_TRANSLATE_NOTE(Note):
             category = categories.GENERAL
@@ -673,10 +674,86 @@ class FormatErrorDiagnosticsTest(unittest.TestCase):
         note = self._make(BROKEN_TRANSLATE_NOTE)
         with self.assertRaises(TypeError) as ctx:
             note.summary  # pylint: disable=pointless-statement
-        self.assertNotIn("formatting error", str(ctx.exception))
+        message = str(ctx.exception)
+        self.assertIn("Translation error", message)
+        self.assertIn("BROKEN_TRANSLATE_NOTE", message)
+        self.assertIn("locale:", message)
+        self.assertNotIn("formatting error", message)
+        self.assertIsInstance(ctx.exception.__cause__, TypeError)
+
         with self.assertRaises(TypeError) as ctx2:
             note.detail  # pylint: disable=pointless-statement
-        self.assertNotIn("formatting error", str(ctx2.exception))
+        message2 = str(ctx2.exception)
+        self.assertIn("Translation error", message2)
+        self.assertNotIn("formatting error", message2)
+        self.assertIsInstance(ctx2.exception.__cause__, TypeError)
+
+    def test_translate_override_non_type_error_is_wrapped_and_chained(self):
+        """_translate() isn't limited to raising TypeError -- an arbitrary
+        exception type from a downstream override must still be coerced to
+        a diagnostic TypeError, with the original preserved as __cause__."""
+
+        class BROKEN_TRANSLATE_VALUE_ERROR(Note):
+            category = categories.GENERAL
+            level = levels.WARN
+            _summary = "x"
+            _text = "x"
+
+            def _translate(self, message):
+                raise ValueError("catalog lookup failed")
+
+        note = self._make(BROKEN_TRANSLATE_VALUE_ERROR)
+        with self.assertRaises(TypeError) as ctx:
+            note.summary  # pylint: disable=pointless-statement
+        message = str(ctx.exception)
+        self.assertIn("Translation error", message)
+        self.assertIn("catalog lookup failed", message)
+        self.assertIsInstance(ctx.exception.__cause__, ValueError)
+
+    def test_translate_override_broken_str_does_not_swallow_diagnostic(self):
+        """An exception from _translate() whose own __str__ raises must not
+        destroy the diagnostic -- the wrapper falls back to a placeholder
+        instead of letting the str() failure replace the real error, and
+        the original (broken-str) exception is still chained as __cause__."""
+
+        class BrokenStr(Exception):
+            def __str__(self):
+                raise RuntimeError("str exploded")
+
+        class BROKEN_TRANSLATE_BROKEN_STR(Note):
+            category = categories.GENERAL
+            level = levels.WARN
+            _summary = "x"
+            _text = "x"
+
+            def _translate(self, message):
+                raise BrokenStr("unused")
+
+        note = self._make(BROKEN_TRANSLATE_BROKEN_STR)
+        with self.assertRaises(TypeError) as ctx:
+            note.summary  # pylint: disable=pointless-statement
+        message = str(ctx.exception)
+        self.assertIn("Translation error", message)
+        self.assertIn("str(err) failed", message)
+        self.assertIsInstance(ctx.exception.__cause__, BrokenStr)
+
+    def test_detail_rendering_error_is_wrapped_with_diagnostics(self):
+        """A failure in the Markdown-conversion step itself (not just the
+        %-formatting before it) must also get diagnostic context, rather
+        than propagating as a bare, contextless exception."""
+        note = self._make(self.NOTE_WITH_BAD_INT_SPEC, count=1)
+        with mock.patch("httplint.note._get_markdown") as mock_get_markdown:
+            mock_get_markdown.return_value.reset.return_value.convert.side_effect = (
+                RuntimeError("markdown blew up")
+            )
+            with self.assertRaises(TypeError) as ctx:
+                note.detail  # pylint: disable=pointless-statement
+        message = str(ctx.exception)
+        self.assertIn("Detail rendering error", message)
+        self.assertIn(note.__class__.__name__, message)
+        self.assertIn("locale:", message)
+        self.assertNotIn("formatting error", message)
+        self.assertIsInstance(ctx.exception.__cause__, RuntimeError)
 
 
 if __name__ == "__main__":
