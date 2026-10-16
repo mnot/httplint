@@ -1,4 +1,5 @@
 import sys
+import unicodedata
 from argparse import Namespace
 from enum import Enum
 from typing import List, Optional, Tuple
@@ -9,6 +10,29 @@ from thor.http.error import HttpError, HttpVersionError, StartLineError
 from httplint.i18n import translate
 from httplint.message import HttpMessageLinter, HttpRequestLinter, HttpResponseLinter
 from httplint.types import RawFieldListType
+
+_UNSAFE_CATEGORIES = frozenset(["Cc", "Cf", "Zl", "Zp", "Cs", "Co", "Cn"])
+
+
+def _escape_char(char: str) -> str:
+    if unicodedata.category(char) not in _UNSAFE_CATEGORIES:
+        return char
+    code = ord(char)
+    if code < 0x100:
+        return f"\\x{code:02x}"
+    if code < 0x10000:
+        return f"\\u{code:04x}"
+    return f"\\U{code:08x}"
+
+
+def terminal_safe(text: str) -> str:
+    """
+    Escape characters that could be interpreted by a terminal or hidden from the reader.
+
+    Not injective: a literal backslash is left alone, so the text `\\x1b` prints
+    the same as ESC.
+    """
+    return "".join(_escape_char(c) for c in text)
 
 
 class modes(Enum):
@@ -73,16 +97,16 @@ class HttpCliParser(HttpMessageHandler):
             if note.category != current_category:
                 print(f"\n### {translate(note.category.value)}\n")
                 current_category = note.category
-            print(f"* [{note.level.name}] {note.summary}")
+            print(f"* [{note.level.name}] {terminal_safe(note.summary)}")
             for subnote in note.subnotes:
-                print(f"  * [{subnote.level.name}] {subnote.summary}")
+                print(f"  * [{subnote.level.name}] {terminal_safe(subnote.summary)}")
         self._input_state = States.ERROR
 
     def input_error(self, err: HttpError, close: bool = True) -> None:
         "Report a parsing error."
         self.failed = True
         detail = f": {err.detail}" if err.detail else ""
-        print(f"httplint: {err.desc}{detail}", file=sys.stderr)
+        print(terminal_safe(f"httplint: {err.desc}{detail}"), file=sys.stderr)
 
     def request_topline(self, top_line: bytes) -> Tuple[bytes, bytes, bytes]:
         try:
