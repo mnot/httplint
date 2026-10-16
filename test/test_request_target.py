@@ -101,6 +101,11 @@ class TestRequestTargetForms(unittest.TestCase):
             "user:p%C3%A4ssword@xn--bcher-kva.example:8080",
         )
         self.assertEqual(authority_to_ascii("ü@[::1]:80"), "%C3%BC@[::1]:80")
+        # Colons in the password, and more than one "@": userinfo ends at the last one.
+        self.assertEqual(authority_to_ascii("u:p:ü@example.com"), "u:p:%C3%BC@example.com")
+        self.assertEqual(
+            authority_to_ascii("ü@ü@bücher.com"), "%C3%BC@%C3%BC@xn--bcher-kva.com"
+        )
         # Existing escapes and ASCII are left alone.
         self.assertEqual(authority_to_ascii("a%40b:c@example.com"), "a%40b:c@example.com")
 
@@ -113,6 +118,7 @@ class TestRequestTargetForms(unittest.TestCase):
             ("https://bücher@example.com/x.js", "b%C3%BCcher", "example.com"),
             ("https://u@bücher.example/x.js", "u", "xn--bcher-kva.example"),
             ("https://user:pässword@example.com/x.js", "user", "example.com"),
+            ("https://ü@ü@bücher.com/x.js", "%C3%BC@%C3%BC", "xn--bcher-kva.com"),
         ]:
             parts = urlsplit(iri_to_uri(iri))
             self.assertEqual(parts.username, user)
@@ -146,6 +152,7 @@ class TestRequestTargetForms(unittest.TestCase):
             b"example.com:99999",
             b"example.com:44a",
             b"user@example.com:443",
+            "ü@example.com:443".encode(),
             b"a..b:443",
         ]:
             self.assertNote(b"CONNECT", target, REQUEST_TARGET_FORM)
