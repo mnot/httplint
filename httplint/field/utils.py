@@ -9,6 +9,7 @@ from http_sf import Token
 from httplint.note import Note, categories, levels
 from httplint.syntax import rfc5234, rfc6838, rfc9110
 from httplint.types import AddNoteMethodType, ParamDictType
+from httplint.util import inline_safe
 
 RE_FLAGS = re.VERBOSE | re.IGNORECASE
 
@@ -281,7 +282,8 @@ def check_sf_params(
 
     Parameter names come from Structured Field dictionary-key syntax
     ([a-z0-9_.*-]) and are safe to embed directly. Parameter values are
-    HTTP input; each is backtick-stripped and then always re-wrapped in a
+    HTTP input; each is passed through inline_safe (no backticks or line
+    breaks) and then always re-wrapped in a
     code span before being embedded here -- including into a known
     param's "desc" template, regardless of whether that template already
     puts `%s` in a span of its own -- so a value can never land in bare
@@ -290,7 +292,7 @@ def check_sf_params(
     """
     param_list = []
     for param_name, param_value in params.items():
-        safe_value = str(param_value).replace("`", "")
+        safe_value = inline_safe(str(param_value))
         if param_name not in known_params:
             add_note(unknown_param_note, param=param_name)
             param_list.append(f"* `{param_name}`: `{safe_value}`")

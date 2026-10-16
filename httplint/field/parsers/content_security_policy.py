@@ -10,6 +10,7 @@ from httplint.types import (
     NoteClassListType,
     ResponseLinterProtocol,
 )
+from httplint.util import inline_safe
 
 # directive-name = 1*( ALPHA / DIGIT / "-" )
 DIRECTIVE_NAME = r"[a-zA-Z0-9-]+"
@@ -175,7 +176,7 @@ sources of content that browsers are allowed to load on a page."""
                     )
 
     def _make_list(self, items: list[str]) -> MarkdownSafe:
-        safe = [item.replace("`", "") for item in items]
+        safe = [inline_safe(item) for item in items]
         return MarkdownSafe("\n".join(f"* `{item}`" for item in safe))
 
 
