@@ -1,7 +1,8 @@
+import tracemalloc
 import unittest
 import brotli
 from httplint.message import HttpResponseLinter
-from httplint.content_encoding import BAD_BROTLI, BAD_GZIP
+from httplint.content_encoding import BAD_BROTLI, BAD_GZIP, DECOMPRESSION_LIMIT
 
 class TestContentEncoding(unittest.TestCase):
     def test_brotli_valid(self):
@@ -30,6 +31,45 @@ class TestContentEncoding(unittest.TestCase):
         
         notes = linter.notes
         self.assertTrue(any(isinstance(n, BAD_BROTLI) for n in notes), "BAD_BROTLI should be present")
+
+    def test_brotli_bomb_bounded(self):
+        # A few hundred bytes that expand to over 100MB must not be materialised in one piece.
+        compressor = brotli.Compressor(quality=5, lgwin=24)
+        parts = [compressor.process(b"\0" * (1024 * 1024)) for _ in range(110)]
+        parts.append(compressor.finish())
+        bomb = b"".join(parts)
+        self.assertLess(len(bomb), 4096)
+
+        linter = HttpResponseLinter()
+        linter.process_response_topline(b"HTTP/1.1", b"200", b"OK")
+        linter.process_headers([(b"Content-Encoding", b"br")])
+        sizes = []
+        linter.decoded.processors.append(lambda c: sizes.append(len(c)))
+
+        tracemalloc.start()
+        try:
+            linter.feed_content(bomb)
+            _, peak = tracemalloc.get_traced_memory()
+        finally:
+            tracemalloc.stop()
+        linter.finish_content(True)
+
+        self.assertTrue(any(isinstance(n, DECOMPRESSION_LIMIT) for n in linter.notes))
+        self.assertFalse(any(isinstance(n, BAD_BROTLI) for n in linter.notes))
+        self.assertLess(max(sizes, default=0), 32 * 1024 * 1024)
+        self.assertLess(peak, 16 * 1024 * 1024)
+
+    def test_brotli_multi_chunk_roundtrip(self):
+        data = bytes(range(256)) * 20000  # 5MB, spans several output pieces
+        compressed = brotli.compress(data)
+        linter = HttpResponseLinter()
+        linter.process_response_topline(b"HTTP/1.1", b"200", b"OK")
+        linter.process_headers([(b"Content-Encoding", b"br")])
+        for i in range(0, len(compressed), 1000):
+            linter.feed_content(compressed[i : i + 1000])
+        linter.finish_content(True)
+        self.assertEqual(linter.decoded.length, len(data))
+        self.assertFalse(any(isinstance(n, BAD_BROTLI) for n in linter.notes))
 
     def test_gzip_valid(self):
         import gzip

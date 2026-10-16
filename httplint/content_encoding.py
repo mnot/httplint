@@ -11,6 +11,7 @@ from httplint.types import LinterProtocol
 from httplint.util import display_bytes, f_num
 
 MAX_DECOMPRESSED_BYTES = 100 * 1024 * 1024  # 100MB
+MAX_BROTLI_OUTPUT_PIECE = 1024 * 1024
 # Linter limit, not a format rule; leaves room for a maximum FEXTRA plus long names.
 MAX_GZIP_HEADER_BYTES = 128 * 1024
 
@@ -221,7 +222,8 @@ class BrotliProcessor:
     def __init__(self, message: LinterProtocol, next_processor: Callable[[bytes], None]) -> None:
         self.message = message
         self.next_processor = next_processor
-        self._brotli_processor = brotli.Decompressor()
+        # Typed Any: brotli-stubs doesn't yet declare output_buffer_limit/can_accept_more_data.
+        self._brotli_processor: Any = brotli.Decompressor()
         self._decompressed = 0
         self.ok = True
 
@@ -230,14 +232,22 @@ class BrotliProcessor:
             return
 
         try:
-            chunk = self._brotli_processor.process(chunk)
-            if chunk:
-                self._decompressed += len(chunk)
-                if self._decompressed > MAX_DECOMPRESSED_BYTES:
-                    self.message.notes.add("field-content-encoding", DECOMPRESSION_LIMIT)
-                    self.ok = False
-                    return
-                self.next_processor(chunk)
+            data = chunk
+            while True:
+                # Bound each output piece; keep draining until the decoder has no more output.
+                decompressed = self._brotli_processor.process(
+                    data, output_buffer_limit=MAX_BROTLI_OUTPUT_PIECE
+                )
+                data = b""
+                if decompressed:
+                    self._decompressed += len(decompressed)
+                    if self._decompressed > MAX_DECOMPRESSED_BYTES:
+                        self.message.notes.add("field-content-encoding", DECOMPRESSION_LIMIT)
+                        self.ok = False
+                        return
+                    self.next_processor(decompressed)
+                if not decompressed and self._brotli_processor.can_accept_more_data():
+                    break
         except brotli.error as brotli_error:
             self.message.notes.add(
                 "field-content-encoding",
