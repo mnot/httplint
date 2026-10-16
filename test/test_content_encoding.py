@@ -1,7 +1,7 @@
 import unittest
 import brotli
 from httplint.message import HttpResponseLinter
-from httplint.content_encoding import BAD_BROTLI
+from httplint.content_encoding import BAD_BROTLI, BAD_GZIP
 
 class TestContentEncoding(unittest.TestCase):
     def test_brotli_valid(self):
@@ -68,6 +68,73 @@ class TestContentEncoding(unittest.TestCase):
              print(f"Double Gzip Notes: {[n.__class__.__name__ for n in linter.notes]}")
 
         self.assertEqual(linter.decoded.hash, hashlib.md5(data).digest())
+
+    @staticmethod
+    def _gzip_linter():
+        linter = HttpResponseLinter()
+        linter.process_response_topline(b"HTTP/1.1", b"200", b"OK")
+        linter.process_headers([(b"Content-Encoding", b"gzip")])
+        return linter
+
+    def test_gzip_unterminated_fname_bounded(self):
+        import time
+        linter = self._gzip_linter()
+        start = time.monotonic()
+        linter.feed_content(b"\x1f\x8b\x08\x08" + b"\0" * 6)
+        for _ in range(2048):
+            linter.feed_content(b"A" * 1024)
+        self.assertLess(time.monotonic() - start, 5)
+        bad = [n for n in linter.notes if isinstance(n, BAD_GZIP)]
+        self.assertEqual(len(bad), 1)
+
+    def test_gzip_unterminated_fcomment_bytewise(self):
+        import time
+        linter = self._gzip_linter()
+        start = time.monotonic()
+        linter.feed_content(b"\x1f\x8b\x08\x10" + b"\0" * 6)
+        for _ in range(200 * 1024):
+            linter.feed_content(b"A")
+        self.assertLess(time.monotonic() - start, 5)
+        self.assertTrue(any(isinstance(n, BAD_GZIP) for n in linter.notes))
+
+    def test_gzip_header_fields_bytewise(self):
+        import gzip
+        import hashlib
+        import io
+        data = b"Hello, header fields!"
+        buf = io.BytesIO()
+        with gzip.GzipFile(filename="a.txt", fileobj=buf, mode="wb") as f:
+            f.write(data)
+        raw = buf.getvalue()
+        self.assertTrue(raw[3] & 8)
+        linter = self._gzip_linter()
+        for i in range(len(raw)):
+            linter.feed_content(raw[i : i + 1])
+        linter.finish_content(True)
+        self.assertEqual(linter.decoded.hash, hashlib.md5(data).digest())
+        self.assertFalse(any(isinstance(n, BAD_GZIP) for n in linter.notes))
+
+    def test_gzip_max_extra_field(self):
+        import hashlib
+        import zlib
+        data = b"payload"
+        comp = zlib.compressobj(wbits=-zlib.MAX_WBITS)
+        body = comp.compress(data) + comp.flush()
+        extra = b"\xff\xff" + b"x" * 65535
+        raw = b"\x1f\x8b\x08\x04" + b"\0" * 6 + extra + body
+        raw += zlib.crc32(data).to_bytes(4, "little") + len(data).to_bytes(4, "little")
+        linter = self._gzip_linter()
+        for i in range(0, len(raw), 1000):
+            linter.feed_content(raw[i : i + 1000])
+        linter.finish_content(True)
+        self.assertFalse(any(isinstance(n, BAD_GZIP) for n in linter.notes))
+        self.assertEqual(linter.decoded.hash, hashlib.md5(data).digest())
+
+    def test_gzip_truncated_header_no_note(self):
+        linter = self._gzip_linter()
+        linter.feed_content(b"\x1f\x8b\x08\x08" + b"\0" * 6 + b"name")
+        linter.finish_content(True)
+        self.assertFalse(any(isinstance(n, BAD_GZIP) for n in linter.notes))
 
 if __name__ == "__main__":
     unittest.main()
