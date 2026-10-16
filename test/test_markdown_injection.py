@@ -54,6 +54,22 @@ class SfParamInjectionTest(unittest.TestCase):
             self.check(b"Proxy-Status", b"p", param)
 
 
+class OtherSitesInjectionTest(unittest.TestCase):
+    def test_link_resource_hint_target(self) -> None:
+        # Exploitable before inline_safe handled line breaks.
+        for sep in ("\n", "\r", "\r\n", "\u2028"):
+            with self.subTest(sep=repr(sep)):
+                value = f"<http://a/x{sep}{sep}{HTML}{sep}{sep}`>; rel=preload"
+                detail = detail_text(b"Link", value.encode("utf-8"))
+                self.assertNotIn("<img", detail)
+
+    def test_set_cookie_hardened_name(self) -> None:
+        # Hardening: names are limited by the cookie parser, so this is
+        # not known to be reachable.
+        value = f"a{HTML}`=b; Secure; HttpOnly; SameSite=Strict; Path=/"
+        self.assertNotIn("<img", detail_text(b"Set-Cookie", value.encode("utf-8")))
+
+
 class InlineSafeTest(unittest.TestCase):
     def test_strips_backtick_nul_and_line_breaks(self) -> None:
         raw = "a`b\x00c\nd\re\x0bf\x0cg\x1ch\x1di\x1ej\x85k l m"

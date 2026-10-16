@@ -240,7 +240,8 @@ def check_sf_params(
 
     Parameter names come from Structured Field dictionary-key syntax
     ([a-z0-9_.*-]) and are safe to embed directly. Parameter values are
-    HTTP input; each is backtick-stripped and then always re-wrapped in a
+    HTTP input; each is passed through inline_safe (no backticks or line
+    breaks) and then always re-wrapped in a
     code span before being embedded here -- including into a known
     param's "desc" template, regardless of whether that template already
     puts `%s` in a span of its own -- so a value can never land in bare
