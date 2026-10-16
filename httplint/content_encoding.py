@@ -2,7 +2,7 @@ import binascii
 import hashlib
 import weakref
 import zlib
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional, Union
 
 import brotli
 
@@ -11,6 +11,8 @@ from httplint.types import LinterProtocol
 from httplint.util import display_bytes, f_num
 
 MAX_DECOMPRESSED_BYTES = 100 * 1024 * 1024  # 100MB
+# Linter limit, not a format rule; leaves room for a maximum FEXTRA plus long names.
+MAX_GZIP_HEADER_BYTES = 128 * 1024
 
 
 class ContentEncodingProcessor:
@@ -82,7 +84,7 @@ class GzipProcessor:
         self.next_processor = next_processor
         self._gzip_processor = zlib.decompressobj(-zlib.MAX_WBITS)
         self._in_gzip = False
-        self._gzip_header_buffer = b""
+        self._gzip_header_buffer = bytearray()
         self._decompressed = 0
         self.ok = True
 
@@ -94,10 +96,11 @@ class GzipProcessor:
             self._gzip_header_buffer += chunk
             try:
                 chunk = self._read_gzip_header(self._gzip_header_buffer)
-                self._in_gzip = True
-                self._gzip_header_buffer = b""
+                header_len = len(self._gzip_header_buffer) - len(chunk)
             except IndexError:
-                return  # not a full header yet
+                if len(self._gzip_header_buffer) <= MAX_GZIP_HEADER_BYTES:
+                    return  # not a full header yet
+                header_len = len(self._gzip_header_buffer)
             except IOError as gzip_error:
                 self.message.notes.add(
                     "field-content-encoding",
@@ -105,12 +108,25 @@ class GzipProcessor:
                     gzip_error=str(gzip_error),
                 )
                 self.ok = False
-                self._gzip_header_buffer = b""
+                self._gzip_header_buffer = bytearray()
                 return
+
+            if header_len > MAX_GZIP_HEADER_BYTES:
+                # Same verdict however the body was chunked.
+                self.message.notes.add(
+                    "field-content-encoding",
+                    BAD_GZIP,
+                    gzip_error=f"Header exceeds the {f_num(MAX_GZIP_HEADER_BYTES)}-byte "
+                    "limit httplint handles",
+                )
+                self.ok = False
+                self._gzip_header_buffer = bytearray()
+                return
+            self._in_gzip = True
 
             # Since _read_gzip_header strips the header, 'chunk' is now the payload start.
             # We clear the buffer.
-            self._gzip_header_buffer = b""
+            self._gzip_header_buffer = bytearray()
 
         max_chunk_size = 1024 * 1024
         try:
@@ -147,7 +163,7 @@ class GzipProcessor:
             self.ok = False
 
     @staticmethod
-    def _read_gzip_header(content: bytes) -> bytes:
+    def _read_gzip_header(content: Union[bytes, bytearray]) -> bytes:
         """
         Parse a string for a GZIP header; if present, return remainder of
         gzipped content.
@@ -181,30 +197,24 @@ class GzipProcessor:
 
         if flag & gz_flags["FNAME"]:
             # Read and discard a null-terminated string
-            while True:
-                if len(content) <= offset:
-                    raise IndexError("Header not complete yet")
-                st1 = content[offset]
-                offset += 1
-                if st1 == 0:
-                    break
+            end = content.find(b"\0", offset)
+            if end < 0:
+                raise IndexError("Header not complete yet")
+            offset = end + 1
 
         if flag & gz_flags["FCOMMENT"]:
             # Read and discard a null-terminated string
-            while True:
-                if len(content) <= offset:
-                    raise IndexError("Header not complete yet")
-                st2 = content[offset]
-                offset += 1
-                if st2 == 0:
-                    break
+            end = content.find(b"\0", offset)
+            if end < 0:
+                raise IndexError("Header not complete yet")
+            offset = end + 1
 
         if flag & gz_flags["FHCRC"]:
             if len(content) < offset + 2:
                 raise IndexError("Header not complete yet")
             offset += 2
 
-        return content[offset:]
+        return bytes(content[offset:])
 
 
 class BrotliProcessor:
