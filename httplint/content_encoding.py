@@ -11,7 +11,8 @@ from httplint.types import LinterProtocol
 from httplint.util import display_bytes, f_num
 
 MAX_DECOMPRESSED_BYTES = 100 * 1024 * 1024  # 100MB
-MAX_GZIP_HEADER_BYTES = 64 * 1024 + 1024  # FEXTRA alone can be 64KiB
+# Linter limit, not a format rule; leaves room for a maximum FEXTRA plus long names.
+MAX_GZIP_HEADER_BYTES = 128 * 1024
 
 
 class ContentEncodingProcessor:
@@ -95,17 +96,11 @@ class GzipProcessor:
             self._gzip_header_buffer += chunk
             try:
                 chunk = self._read_gzip_header(self._gzip_header_buffer)
-                self._in_gzip = True
+                header_len = len(self._gzip_header_buffer) - len(chunk)
             except IndexError:
-                if len(self._gzip_header_buffer) > MAX_GZIP_HEADER_BYTES:
-                    self.message.notes.add(
-                        "field-content-encoding",
-                        BAD_GZIP,
-                        gzip_error="Header too large",
-                    )
-                    self.ok = False
-                    self._gzip_header_buffer = bytearray()
-                return  # not a full header yet
+                if len(self._gzip_header_buffer) <= MAX_GZIP_HEADER_BYTES:
+                    return  # not a full header yet
+                header_len = len(self._gzip_header_buffer)
             except IOError as gzip_error:
                 self.message.notes.add(
                     "field-content-encoding",
@@ -115,6 +110,19 @@ class GzipProcessor:
                 self.ok = False
                 self._gzip_header_buffer = bytearray()
                 return
+
+            if header_len > MAX_GZIP_HEADER_BYTES:
+                # Same verdict however the body was chunked.
+                self.message.notes.add(
+                    "field-content-encoding",
+                    BAD_GZIP,
+                    gzip_error=f"Header exceeds the {f_num(MAX_GZIP_HEADER_BYTES)}-byte "
+                    "limit httplint handles",
+                )
+                self.ok = False
+                self._gzip_header_buffer = bytearray()
+                return
+            self._in_gzip = True
 
             # Since _read_gzip_header strips the header, 'chunk' is now the payload start.
             # We clear the buffer.

@@ -130,6 +130,42 @@ class TestContentEncoding(unittest.TestCase):
         self.assertFalse(any(isinstance(n, BAD_GZIP) for n in linter.notes))
         self.assertEqual(linter.decoded.hash, hashlib.md5(data).digest())
 
+    def test_gzip_header_cap_independent_of_chunking(self):
+        import hashlib
+        import zlib
+        from httplint.content_encoding import MAX_GZIP_HEADER_BYTES
+
+        data = b"payload"
+        comp = zlib.compressobj(wbits=-zlib.MAX_WBITS)
+        body = comp.compress(data) + comp.flush()
+        trailer = zlib.crc32(data).to_bytes(4, "little") + len(data).to_bytes(4, "little")
+
+        def stream(header_len, flags):
+            # header_len covers the fixed 10 bytes plus the fields built below
+            if flags == "extra_name_comment":
+                extra = b"\xff\xff" + b"x" * 65535
+                rest = header_len - 10 - len(extra)
+                name = b"n" * (rest // 2) + b"\0"
+                comment = b"c" * (rest - len(name) - 1) + b"\0"
+                hdr = b"\x1f\x8b\x08\x1c" + b"\0" * 6 + extra + name + comment
+            else:
+                hdr = b"\x1f\x8b\x08\x08" + b"\0" * 6 + b"n" * (header_len - 11) + b"\0"
+            self.assertEqual(len(hdr), header_len)
+            return hdr + body + trailer
+
+        for flags in ("name", "extra_name_comment"):
+            for delta, valid in ((0, True), (1, False)):
+                raw = stream(MAX_GZIP_HEADER_BYTES + delta, flags)
+                for step in (1, 1000, 100000, len(raw)):
+                    linter = self._gzip_linter()
+                    for i in range(0, len(raw), step):
+                        linter.feed_content(raw[i : i + step])
+                    linter.finish_content(True)
+                    bad = any(isinstance(n, BAD_GZIP) for n in linter.notes)
+                    self.assertEqual(bad, not valid, (flags, delta, step))
+                    if valid:
+                        self.assertEqual(linter.decoded.hash, hashlib.md5(data).digest())
+
     def test_gzip_truncated_header_no_note(self):
         linter = self._gzip_linter()
         linter.feed_content(b"\x1f\x8b\x08\x08" + b"\0" * 6 + b"name")
