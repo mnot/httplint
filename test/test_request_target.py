@@ -109,10 +109,31 @@ class TestRequestTargetForms(unittest.TestCase):
 
         self.assertNote(b"GET", b"/" + b"a" * 9000, URI_TOO_LONG)
 
-    # Depends on rfc3986.py's userinfo and IPv6 handling, which is being fixed separately.
-    @unittest.expectedFailure
-    def test_authority_form_userinfo(self) -> None:
-        self.assertClean(b"CONNECT", b"user@example.com:443")
+    def test_authority_form_invalid(self) -> None:
+        for target in [
+            b"",
+            b":443",
+            b"example.com:",
+            b"example.com",
+            b"example.com:99999",
+            b"example.com:44a",
+            b"user@example.com:443",
+            b"a..b:443",
+        ]:
+            self.assertNote(b"CONNECT", target, REQUEST_TARGET_FORM)
+            self.assertNotIn(URI_BAD_SYNTAX, classes(lint(b"CONNECT", target)), repr(target))
+
+    def test_fragment_consistent_on_failure_paths(self) -> None:
+        for target in [b"/a\tb#frag", b"http://a..b/#frag", b"/a#frag"]:
+            linter = lint(b"GET", target)
+            self.assertIn(REQUEST_TARGET_FRAGMENT, classes(linter), repr(target))
+            self.assertNotIn("#", linter.uri or "", repr(target))
+
+    def test_form_summary_grammar(self) -> None:
+        notes = [n for n in lint(b"OPTIONS", b"/").notes if isinstance(n, REQUEST_TARGET_FORM)]
+        self.assertFalse(notes)
+        notes = [n for n in lint(b"CONNECT", b"/").notes if isinstance(n, REQUEST_TARGET_FORM)]
+        self.assertEqual(str(notes[0].summary), "The request target isn't valid for CONNECT requests.")
 
     @unittest.expectedFailure
     def test_authority_form_ipv6(self) -> None:

@@ -197,7 +197,8 @@ class HttpMessageLinter:
         return state
 
 
-ORIGIN_FORM = rf"{rfc9112.absolute_path} (?: \? {rfc3986.query} )?"
+# RFC 9112 Section 3.2.3: uri-host ":" port (rfc9112.authority_form is the older RFC 7230 rule)
+AUTHORITY_FORM = rf"(?= [^:] ) {rfc3986.host} : [0-9]+"
 
 
 class HttpRequestLinter(HttpMessageLinter):
@@ -226,42 +227,43 @@ class HttpRequestLinter(HttpMessageLinter):
         The request target form is checked against the method (RFC 9112 Section 3.2).
         """
         self.iri = iri
-        self.uri = iri  # fallback if it can't be converted
-        if re.search(r"[\x00-\x20\x7f-\x9f]", iri):
+        target, has_fragment, _ = iri.partition("#")
+        self.uri = target  # fallback if it can't be converted; never includes the fragment
+        if has_fragment:
+            self.notes.add("uri", REQUEST_TARGET_FRAGMENT)
+        if re.search(r"[\x00-\x20\x7f-\x9f]", target):
             self.notes.add("uri", URI_BAD_SYNTAX)
             return
 
-        target, has_fragment, _ = iri.partition("#")
-        if has_fragment:
-            self.notes.add("uri", REQUEST_TARGET_FRAGMENT)
-
-        if self.method == "CONNECT":
-            authority_form = True
-            pattern = rfc3986.authority
+        method = self.method or ""
+        authority_form = self.method == "CONNECT"
+        if authority_form:
+            pattern = AUTHORITY_FORM
         elif target == "*":
-            authority_form = False
             pattern = r"\*"
         elif target.startswith("/"):
-            authority_form = False
-            pattern = ORIGIN_FORM
+            pattern = rfc9112.origin_form
         else:
-            authority_form = False
             pattern = rfc3986.absolute_URI
 
         try:
             self.uri = authority_to_ascii(target) if authority_form else iri_to_uri(target)
         except (ValueError, UnicodeError):
-            self.notes.add("uri", URI_BAD_SYNTAX)
-            self.uri = target
+            if authority_form:
+                self.notes.add("uri", REQUEST_TARGET_FORM, method=method)
+            else:
+                self.notes.add("uri", URI_BAD_SYNTAX)
             return
 
-        if not re.fullmatch(pattern, self.uri, re.VERBOSE):
+        if not re.fullmatch(pattern, self.uri, re.VERBOSE) or (
+            authority_form and int(self.uri.rpartition(":")[2]) > 65535
+        ):
             if authority_form or target == "*":
-                self.notes.add("uri", REQUEST_TARGET_FORM, method=self.method or "")
+                self.notes.add("uri", REQUEST_TARGET_FORM, method=method)
             else:
                 self.notes.add("uri", URI_BAD_SYNTAX)
         elif target == "*" and self.method != "OPTIONS":
-            self.notes.add("uri", REQUEST_TARGET_FORM, method=self.method or "")
+            self.notes.add("uri", REQUEST_TARGET_FORM, method=method)
         if len(self.uri) > self.max_uri_chars:
             self.notes.add("uri", URI_TOO_LONG, uri_len=f_num(len(self.uri)))
 
@@ -414,9 +416,9 @@ This isn't a valid URI. See
 class REQUEST_TARGET_FORM(Note):
     category = categories.GENERAL
     level = levels.BAD
-    _summary = "The request target isn't valid for a %(method)s request."
+    _summary = "The request target isn't valid for %(method)s requests."
     _text = """\
-`CONNECT` requests use the `host:port` authority form, `OPTIONS` requests can use `*`, and other
+`CONNECT` requests use the `host:port` authority form (no userinfo, and the port is required), `OPTIONS` requests can use `*`, and other
 methods use either an absolute path (optionally with a query) or a full URI. See
 [RFC 9112 Section 3.2](https://www.rfc-editor.org/rfc/rfc9112.html#section-3.2)."""
 
