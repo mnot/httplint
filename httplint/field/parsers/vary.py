@@ -1,3 +1,4 @@
+from httplint.field import BAD_SYNTAX_DETAILED
 from httplint.field.list_field import HttpListField
 from httplint.field.tests import FieldTest
 from httplint.note import Note, categories, levels
@@ -131,3 +132,10 @@ class VaryDuplicateTest(FieldTest[ResponseLinterProtocol]):
     inputs = [b"a, b", b"a, c"]
     expected_out = ["a", "b", "c"]
     expected_notes: NoteClassListType = [VARY_DUPLICATE]
+
+
+class VaryStrayQuoteTest(FieldTest[ResponseLinterProtocol]):
+    name = "Vary"
+    inputs = [b'Accept"']
+    expected_out = ['accept"']
+    expected_notes: NoteClassListType = [BAD_SYNTAX_DETAILED]

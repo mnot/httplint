@@ -2,8 +2,12 @@
 Differential test of split_list_field() against the regex it replaced.
 
 Every short string over a nasty alphabet (quotes, backslash, comma, whitespace,
-control and non-Latin-1 characters) plus random longer ones must give identical
-output. Keep this in step with the function if its behaviour is deliberately changed.
+control and non-Latin-1 characters) plus random longer ones is checked. Where every
+quote opens a valid quoted-string, the output must be identical to the regex's. Where
+one doesn't, the regex dropped text; the function must instead keep every character
+(bar commas and whitespace), and every item the regex produced must survive inside
+one of its items. Keep this in step with the function if its behaviour is deliberately
+changed.
 
 Usage: PYTHONPATH=. .venv/bin/python tools/diff_split_list_field.py [random-count]
 """
@@ -37,6 +41,19 @@ def old_split_list_field(field_value: str) -> List[str]:
     ]
 
 
+WELL_FORMED = re.compile(rf'(?:[^"]|{rfc9110.quoted_string})*', RE_FLAGS)
+SKIPPED = re.compile(r"[\s,]+")
+
+
+def check(value: str) -> bool:
+    old = old_split_list_field(value)
+    new = split_list_field(value)
+    if WELL_FORMED.fullmatch(value):
+        return old == new
+    kept = SKIPPED.sub("", "".join(new)) == SKIPPED.sub("", value)
+    return kept and all(any(item in n for n in new) for item in old)
+
+
 def candidates(random_count: int):
     for length in range(EXHAUSTIVE_LENGTH + 1):
         for chars in itertools.product(ALPHABET, repeat=length):
@@ -51,7 +68,7 @@ def main() -> int:
     checked = differences = 0
     for value in candidates(random_count):
         checked += 1
-        if old_split_list_field(value) != split_list_field(value):
+        if not check(value):
             differences += 1
             if differences <= 10:
                 print("DIFFERENT:", repr(value))
