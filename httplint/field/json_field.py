@@ -28,6 +28,12 @@ class JsonField(HttpField[TMessage], Generic[TMessage]):
         except json.JSONDecodeError as why:
             add_note(BAD_JSON, error=str(why), category=self.category)
             self.value = None
+        except RecursionError:
+            add_note(BAD_JSON, error="nested too deeply", category=self.category)
+            self.value = None
+        except ValueError:
+            add_note(BAD_JSON, error="number too large", category=self.category)
+            self.value = None
 
         super().finish(add_note)
 

@@ -105,6 +105,10 @@ def markdown_context(text: str, index: int, context_chars: int = 20) -> Markdown
     return MarkdownSafe(f"\n\n{indented}")
 
 
+# RFC 9111 Section 1.2.2: delta-seconds beyond 2^31 are treated as 2^31.
+MAX_DELTA_SECONDS = 2147483648
+
+
 class RelativeTime:
     def __init__(self, utime: float, now: float, show_sign: int = 1) -> None:
         self.utime = utime
@@ -112,7 +116,7 @@ class RelativeTime:
         self.show_sign = show_sign
 
     def __str__(self) -> str:
-        delta_secs = self.utime - self.now
+        delta_secs = max(-MAX_DELTA_SECONDS, min(MAX_DELTA_SECONDS, self.utime - self.now))
         delta = timedelta(seconds=delta_secs)
         if self.show_sign == 1:
             output = format_timedelta(delta, add_direction=True, threshold=1.2)
