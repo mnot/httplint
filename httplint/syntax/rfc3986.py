@@ -75,16 +75,17 @@ ls32 = rf"(?: (?: {h16} : {h16} ) | {IPv4address} )"
 #                 / [ *4( h16 ":" ) h16 ] "::"              ls32
 #                 / [ *5( h16 ":" ) h16 ] "::"              h16
 #                 / [ *6( h16 ":" ) h16 ] "::"
-IPv6address = rf"""(?:                              (?: {h16} : ){{6}} {ls32} |
-                                                 :: (?: {h16} : ){{5}} {ls32} |
-                                           {h16} :: (?: {h16} : ){{4}} {ls32} |
-                        (?: {h16} : )      {h16} :: (?: {h16} : ){{3}} {ls32} |
-                        (?: {h16} : ){{2}} {h16} :: (?: {h16} : ){{2}} {ls32} |
-                        (?: {h16} : ){{3}} {h16} ::     {h16} :        {ls32} |
-                        (?: {h16} : ){{4}} {h16} ::                    {ls32} |
-                        (?: {h16} : ){{5}} {h16} ::                    {h16}  |
-                        (?: {h16} : ){{6}} {h16} ::
-                    )
+IPv6address = rf"""(?:
+    (?: {h16} : ){{6}} {ls32} |
+    :: (?: {h16} : ){{5}} {ls32} |
+    (?: {h16} )? :: (?: {h16} : ){{4}} {ls32} |
+    (?: (?: {h16} : ){{0,1}} {h16} )? :: (?: {h16} : ){{3}} {ls32} |
+    (?: (?: {h16} : ){{0,2}} {h16} )? :: (?: {h16} : ){{2}} {ls32} |
+    (?: (?: {h16} : ){{0,3}} {h16} )? :: {h16} : {ls32} |
+    (?: (?: {h16} : ){{0,4}} {h16} )? :: {ls32} |
+    (?: (?: {h16} : ){{0,5}} {h16} )? :: {h16} |
+    (?: (?: {h16} : ){{0,6}} {h16} )? ::
+)
 """
 
 #   IPvFuture     = "v" 1*HEXDIG "." 1*( unreserved / sub-delims / ":" )
@@ -97,7 +98,7 @@ IP_literal = rf"\[ (?: {IPv6address} | {IPvFuture} ) \]"
 reg_name = rf"(?: {unreserved} | {pct_encoded} | {sub_delims} )*"
 
 #   userinfo      = *( unreserved / pct-encoded / sub-delims / ":" )
-userinfo = rf"(?: {unreserved} | {pct_encoded} | {sub_delims} | : )"
+userinfo = rf"(?: {unreserved} | {pct_encoded} | {sub_delims} | : )*"
 
 #   host          = IP-literal / IPv4address / reg-name
 host = rf"(?: {IP_literal} | {IPv4address} | {reg_name} )"
@@ -134,7 +135,7 @@ path_noscheme = rf"{segment_nz_nc} (?: / {segment} )*"
 path_rootless = rf"{segment_nz} (?: / {segment} )*"
 
 #   path-empty    = 0<pchar>
-path_empty = rf"{pchar}{0}"
+path_empty = ""
 
 #   path          = path-abempty    ; begins with "/" or is empty
 #                 / path-absolute   ; begins with "/" but not "//"
