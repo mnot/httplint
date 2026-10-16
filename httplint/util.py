@@ -12,12 +12,18 @@ from urllib.parse import urlsplit, urlunsplit
 from httplint.i18n import format_timedelta, translate
 from httplint.note import MarkdownSafe
 
+_ASCII = "".join(map(chr, range(128)))
+
 
 def authority_to_ascii(authority: str) -> str:
-    "IDNA-encode the host of an authority, leaving userinfo and port alone."
+    """
+    Make an authority ASCII: IDNA-encode the host, and percent-encode any non-ASCII
+    userinfo as UTF-8 (RFC 3987, Section 3.1). The port is left alone.
+    """
     userinfo, at, hostport = authority.rpartition("@")
+    userinfo = urlquote(userinfo, safe=_ASCII)
     if hostport.startswith("["):  # IP-literal; nothing to encode
-        return authority
+        return f"{userinfo}{at}{hostport}"
     host, colon, port = hostport.partition(":")
     return f"{userinfo}{at}{host.encode('idna').decode('ascii')}{colon}{port}"
 
