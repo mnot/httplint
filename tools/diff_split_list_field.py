@@ -6,8 +6,8 @@ control and non-Latin-1 characters) plus random longer ones is checked. Where ev
 quote opens a valid quoted-string, the output must be identical to the regex's. Where
 one doesn't, the regex dropped text; the function must instead keep every character
 (bar commas and whitespace), and every item the regex produced must survive inside
-one of its items. Keep this in step with the function if its behaviour is deliberately
-changed.
+one of its items, in order. Keep this in step with the function if its behaviour is
+deliberately changed.
 
 Usage: PYTHONPATH=. .venv/bin/python tools/diff_split_list_field.py [random-count]
 """
@@ -51,7 +51,14 @@ def check(value: str) -> bool:
     if WELL_FORMED.fullmatch(value):
         return old == new
     kept = SKIPPED.sub("", "".join(new)) == SKIPPED.sub("", value)
-    return kept and all(any(item in n for n in new) for item in old)
+    # Each old item sits inside a new item, and in the same order.
+    idx = 0
+    for item in old:
+        while idx < len(new) and item not in new[idx]:
+            idx += 1
+        if idx == len(new):
+            return False
+    return kept
 
 
 def candidates(random_count: int):

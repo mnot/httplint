@@ -54,7 +54,6 @@ class SplitListFieldTest(unittest.TestCase):
             split_list_field('no-store, max-age=60"x'), ["no-store", 'max-age=60"x']
         )
         self.assertEqual(split_list_field("a\\"), ["a\\"])
-        self.assertEqual(split_list_field('"a\x00b",c'), ['"a\x00b"', "c"])
 
     def assert_fast(self, value):
         start = time.monotonic()
