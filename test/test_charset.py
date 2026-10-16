@@ -4,9 +4,11 @@ from httplint.charset import (
     CHARSET_IMPLICIT_MISMATCH,
     CHARSET_MISMATCH,
     CHARSET_UNDECODABLE,
+    _canonical,
     _decode_declared,
     _encodings_compatible,
     _sample_is_truncated,
+    is_text_encoding,
 )
 from httplint.content_encoding import BAD_ZLIB
 from httplint.message import HttpResponseLinter
@@ -186,7 +188,43 @@ class CharsetTest(unittest.TestCase):
             [(b"Content-Type", b"text/plain; charset=hex")],
             body,
         )
-        self.assertTrue(_has_note(linter.notes, CHARSET_UNDECODABLE))
+        self.assertFalse(_has_note(linter.notes, CHARSET_UNDECODABLE))
+
+    def test_non_text_charset_not_recorded(self):
+        for name in (b"hex", b"base64", b"zlib", b"rot13", b"bz2"):
+            with self.subTest(name=name):
+                linter = _run([(b"Content-Type", b"text/plain; charset=" + name)], b"x")
+                self.assertIsNone(linter.character_encoding)
+
+    def test_text_charset_recorded(self):
+        linter = _run([(b"Content-Type", b"text/plain; charset=UTF8")], b"x")
+        self.assertEqual(linter.character_encoding, "UTF8")
+
+
+class IsTextEncodingTest(unittest.TestCase):
+    def test_non_text_codecs_rejected(self):
+        for name in ("hex", "base64", "zlib", "rot13", "bz2", "uu"):
+            with self.subTest(name=name):
+                self.assertFalse(is_text_encoding(name))
+                self.assertIsNone(_canonical(name))
+
+    def test_unknown_and_malformed_rejected(self):
+        for name in ("nonesuch", "", "utf\x008", None):
+            with self.subTest(name=name):
+                self.assertFalse(is_text_encoding(name))
+
+    def test_text_encodings_accepted(self):
+        for name in (
+            "utf-8",
+            "UTF8",
+            "iso-8859-1",
+            "windows-1252",
+            "shift_jis",
+            "utf-16",
+        ):
+            with self.subTest(name=name):
+                self.assertTrue(is_text_encoding(name))
+                self.assertIsNotNone(_canonical(name))
 
 
 class DecodeDeclaredTest(unittest.TestCase):
