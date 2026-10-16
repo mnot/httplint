@@ -11,14 +11,19 @@ from httplint.i18n import format_timedelta, translate
 from httplint.note import MarkdownSafe
 
 
+def authority_to_ascii(authority: str) -> str:
+    "IDNA-encode the host of an authority, leaving userinfo and port alone."
+    userinfo, at, hostport = authority.rpartition("@")
+    if hostport.startswith("["):  # IP-literal; nothing to encode
+        return authority
+    host, colon, port = hostport.partition(":")
+    return f"{userinfo}{at}{host.encode('idna').decode('ascii')}{colon}{port}"
+
+
 def iri_to_uri(iri: str) -> str:
     "Takes a string that can contain an IRI and return a URI."
     scheme, authority, path, query, frag = urlsplit(iri)
-    if ":" in authority:
-        host, port = authority.split(":", 1)
-        authority = host.encode("idna").decode("ascii") + f":{port}"
-    else:
-        authority = authority.encode("idna").decode("ascii")
+    authority = authority_to_ascii(authority)
     sub_delims = "!$&'()*+,;="
     pchar = "-.+~" + sub_delims + ":@" + "%"
     path = urlquote(path, safe=pchar + "/")

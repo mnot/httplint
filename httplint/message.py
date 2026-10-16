@@ -16,7 +16,7 @@ from httplint.field.section import FieldSection
 from httplint.i18n import L_, translate
 from httplint.note import Note, Notes, categories, levels
 from httplint.status import StatusChecker
-from httplint.syntax import rfc3986
+from httplint.syntax import rfc3986, rfc9112
 from httplint.types import (
     CachingProtocol,
     LinterProtocol,
@@ -26,7 +26,7 @@ from httplint.types import (
     ResponseLinterProtocol,
     SectionProtocol,
 )
-from httplint.util import f_num, iri_to_uri
+from httplint.util import authority_to_ascii, f_num, iri_to_uri
 
 
 class HttpMessageParams(TypedDict):
@@ -197,6 +197,9 @@ class HttpMessageLinter:
         return state
 
 
+ORIGIN_FORM = rf"{rfc9112.absolute_path} (?: \? {rfc3986.query} )?"
+
+
 class HttpRequestLinter(HttpMessageLinter):
     """
     A HTTP Request message linter.
@@ -219,19 +222,46 @@ class HttpRequestLinter(HttpMessageLinter):
     def set_uri(self, iri: str) -> None:
         """
         Given a unicode string (possibly an IRI), convert to a URI and make sure it's sensible.
+
+        The request target form is checked against the method (RFC 9112 Section 3.2).
         """
         self.iri = iri
+        self.uri = iri  # fallback if it can't be converted
+        if re.search(r"[\x00-\x20\x7f-\x9f]", iri):
+            self.notes.add("uri", URI_BAD_SYNTAX)
+            return
+
+        target, has_fragment, _ = iri.partition("#")
+        if has_fragment:
+            self.notes.add("uri", REQUEST_TARGET_FRAGMENT)
+
+        if self.method == "CONNECT":
+            authority_form = True
+            pattern = rfc3986.authority
+        elif target == "*":
+            authority_form = False
+            pattern = r"\*"
+        elif target.startswith("/"):
+            authority_form = False
+            pattern = ORIGIN_FORM
+        else:
+            authority_form = False
+            pattern = rfc3986.absolute_URI
+
         try:
-            self.uri = iri_to_uri(iri)
+            self.uri = authority_to_ascii(target) if authority_form else iri_to_uri(target)
         except (ValueError, UnicodeError):
             self.notes.add("uri", URI_BAD_SYNTAX)
-            self.uri = iri  # hope?
+            self.uri = target
             return
-        if not re.match(rf"^\s*{rfc3986.URI}\s*$", self.uri, re.VERBOSE):
-            self.notes.add("uri", URI_BAD_SYNTAX)
-        if "#" in self.uri:
-            # chop off the fragment
-            self.uri = self.uri[: self.uri.index("#")]
+
+        if not re.fullmatch(pattern, self.uri, re.VERBOSE):
+            if authority_form or target == "*":
+                self.notes.add("uri", REQUEST_TARGET_FORM, method=self.method or "")
+            else:
+                self.notes.add("uri", URI_BAD_SYNTAX)
+        elif target == "*" and self.method != "OPTIONS":
+            self.notes.add("uri", REQUEST_TARGET_FORM, method=self.method or "")
         if len(self.uri) > self.max_uri_chars:
             self.notes.add("uri", URI_TOO_LONG, uri_len=f_num(len(self.uri)))
 
@@ -379,6 +409,25 @@ class URI_BAD_SYNTAX(Note):
     _text = """\
 This isn't a valid URI. See
 [RFC3986](http://www.ietf.org/rfc/rfc3986.txt) for more information."""
+
+
+class REQUEST_TARGET_FORM(Note):
+    category = categories.GENERAL
+    level = levels.BAD
+    _summary = "The request target isn't valid for a %(method)s request."
+    _text = """\
+`CONNECT` requests use the `host:port` authority form, `OPTIONS` requests can use `*`, and other
+methods use either an absolute path (optionally with a query) or a full URI. See
+[RFC 9112 Section 3.2](https://www.rfc-editor.org/rfc/rfc9112.html#section-3.2)."""
+
+
+class REQUEST_TARGET_FRAGMENT(Note):
+    category = categories.GENERAL
+    level = levels.BAD
+    _summary = "The request target contains a fragment."
+    _text = """\
+Fragment identifiers are processed by the client and aren't sent in the request target. See
+[RFC 9112 Section 3.2](https://www.rfc-editor.org/rfc/rfc9112.html#section-3.2)."""
 
 
 class STATUS_CODE_NON_NUMERIC(Note):
