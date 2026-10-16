@@ -422,10 +422,11 @@ methods use either an absolute path (optionally with a query) or a full URI. See
 
 class REQUEST_TARGET_FRAGMENT(Note):
     category = categories.GENERAL
-    level = levels.BAD
+    level = levels.WARN
     _summary = "The request target contains a fragment."
     _text = """\
-Fragment identifiers are processed by the client and aren't sent in the request target. See
+Fragment identifiers are handled by the client and shouldn't be sent in the request target;
+recipients typically ignore or reject them. See
 [RFC 9112 Section 3.2](https://www.rfc-editor.org/rfc/rfc9112.html#section-3.2)."""
 
 

@@ -1,5 +1,6 @@
 import unittest
 
+from httplint.note import levels
 from httplint.message import (
     HttpRequestLinter,
     REQUEST_TARGET_FORM,
@@ -89,8 +90,6 @@ class TestRequestTargetForms(unittest.TestCase):
         )
         self.assertEqual(authority_to_ascii("[::1]:80"), "[::1]:80")
 
-    # Depends on rfc3986.py's userinfo production, which is being fixed separately.
-    @unittest.expectedFailure
     def test_idna_after_userinfo(self) -> None:
         linter = self.assertClean(b"GET", "http://user:pw@bücher.example/".encode())
         self.assertEqual(linter.uri, "http://user:pw@xn--bcher-kva.example/")
@@ -129,12 +128,16 @@ class TestRequestTargetForms(unittest.TestCase):
             self.assertIn(REQUEST_TARGET_FRAGMENT, classes(linter), repr(target))
             self.assertNotIn("#", linter.uri or "", repr(target))
 
+    def test_fragment_is_a_warning(self) -> None:
+        self.assertEqual(REQUEST_TARGET_FRAGMENT.level, levels.WARN)
+        notes = [n for n in lint(b"GET", b"/a#b").notes if isinstance(n, REQUEST_TARGET_FRAGMENT)]
+        self.assertEqual(notes[0].level, levels.WARN)
+
     def test_form_summary_grammar(self) -> None:
         notes = [n for n in lint(b"OPTIONS", b"/").notes if isinstance(n, REQUEST_TARGET_FORM)]
         self.assertFalse(notes)
         notes = [n for n in lint(b"CONNECT", b"/").notes if isinstance(n, REQUEST_TARGET_FORM)]
         self.assertEqual(str(notes[0].summary), "The request target isn't valid for CONNECT requests.")
 
-    @unittest.expectedFailure
     def test_authority_form_ipv6(self) -> None:
         self.assertClean(b"CONNECT", b"[::1]:443")
