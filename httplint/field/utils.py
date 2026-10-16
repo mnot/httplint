@@ -153,10 +153,53 @@ def split_string(instr: str, item: str, split: str) -> List[str]:
     @param item: regex for item to be split out
     @param split: regex for splitter
     @return: list of strings
+
+    ``item`` is arbitrary, so this can backtrack quadratically; ``parse_params`` uses
+    ``split_params`` instead.
     """
     if not instr:
         return []
     return [h.strip() for h in re.findall(rf"{item}(?={split}|\s*$)", instr, re.VERBOSE)]
+
+
+_TOKEN_RE = re.compile(rfc9110.token, re.VERBOSE)
+_PARAMETER_VALUE_RE = re.compile(rfc9110.parameter_value, re.VERBOSE)
+_WHITESPACE_RE = re.compile(r"\s*")
+
+
+def split_params(instr: str, delim: str = ";") -> List[str]:
+    """
+    Split a parameter list into its ``name=value`` parameters.
+
+    ``delim`` is a literal separator, optionally surrounded by whitespace; it must not be
+    a token character. Text that isn't a parameter followed by a separator or the end of
+    the string is skipped, so ``a=b c=d`` yields only ``c=d``.
+
+    This is linear, and gives the same results as ``split_string`` called with
+    ``rfc9110.parameter``, which backtracked quadratically. A parameter name is always a
+    whole run of token characters (``=`` ends it), and a token value can't end early
+    before a separator, so a start that fails would fail at every later point in the
+    same run; the scan jumps past the run.
+    """
+    size = len(instr)
+    params: List[str] = []
+    pos = 0
+    while pos < size:
+        name = _TOKEN_RE.match(instr, pos)
+        if not name:
+            pos += 1
+            continue
+        name_end = name.end()
+        if name_end < size and instr[name_end] == "=":
+            value = _PARAMETER_VALUE_RE.match(instr, name_end + 1)
+            if value:
+                after = _WHITESPACE_RE.match(instr, value.end()).end()  # type: ignore[union-attr]
+                if after == size or instr.startswith(delim, after):
+                    params.append(instr[pos : value.end()])
+                    pos = value.end()
+                    continue
+        pos = name_end
+    return params
 
 
 def _char_set(pattern: str) -> FrozenSet[str]:
@@ -227,7 +270,7 @@ def parse_params(
     Parse parameters into a dictionary.
     """
     param_dict: ParamDictType = {}
-    for param in split_string(instr, rfc9110.parameter, rf"\s*{delim}\s*"):
+    for param in split_params(instr, delim):
         try:
             key, val = param.split("=", 1)
         except ValueError:
