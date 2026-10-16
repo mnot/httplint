@@ -1,4 +1,4 @@
-import re
+import unicodedata
 from argparse import Namespace
 from enum import Enum
 from typing import List, Optional, Tuple
@@ -10,15 +10,28 @@ from httplint.i18n import translate
 from httplint.message import HttpMessageLinter, HttpRequestLinter, HttpResponseLinter
 from httplint.types import RawFieldListType
 
-# C0/C1 controls, DEL, line/paragraph separators and bidi override/isolate marks.
-_UNSAFE_CHARS = re.compile("[\x00-\x1f\x7f-\x9f\u200e\u200f\u2028\u2029\u202a-\u202e\u2066-\u2069]")
+_UNSAFE_CATEGORIES = frozenset(["Cc", "Cf", "Zl", "Zp", "Cs", "Co", "Cn"])
+
+
+def _escape_char(char: str) -> str:
+    if unicodedata.category(char) not in _UNSAFE_CATEGORIES:
+        return char
+    code = ord(char)
+    if code < 0x100:
+        return f"\\x{code:02x}"
+    if code < 0x10000:
+        return f"\\u{code:04x}"
+    return f"\\U{code:08x}"
 
 
 def terminal_safe(text: str) -> str:
-    "Escape characters in text that could be interpreted by a terminal."
-    return _UNSAFE_CHARS.sub(
-        lambda m: f"\\x{ord(m[0]):02x}" if ord(m[0]) < 0x100 else f"\\u{ord(m[0]):04x}", text
-    )
+    """
+    Escape characters that could be interpreted by a terminal or hidden from the reader.
+
+    Not injective: a literal backslash is left alone, so the text `\\x1b` prints
+    the same as ESC.
+    """
+    return "".join(_escape_char(c) for c in text)
 
 
 class modes(Enum):
