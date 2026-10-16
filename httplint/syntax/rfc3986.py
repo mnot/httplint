@@ -134,7 +134,7 @@ path_noscheme = rf"{segment_nz_nc} (?: / {segment} )*"
 path_rootless = rf"{segment_nz} (?: / {segment} )*"
 
 #   path-empty    = 0<pchar>
-path_empty = ""
+path_empty = rf"{pchar}{{0}}"
 
 #   path          = path-abempty    ; begins with "/" or is empty
 #                 / path-absolute   ; begins with "/" but not "//"
