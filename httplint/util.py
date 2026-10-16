@@ -1,4 +1,5 @@
 import locale
+import re
 import time
 import unittest
 from binascii import b2a_hex
@@ -58,16 +59,22 @@ def display_bytes(inbytes: bytes, encoding: str = "utf-8", truncate: int = 40) -
     return "".join(out)
 
 
+# Backtick, NUL, and every character str.splitlines() treats as a line break
+# (\r \n \v \f \x1c-\x1e \x85 U+2028 U+2029); Markdown parsers differ on
+# which of these end a paragraph, so strip them all.
+_INLINE_UNSAFE_RE = re.compile("[`\\x00\\n\\r\\x0b\\x0c\\x1c-\\x1e\\x85\\u2028\\u2029]")
+
+
 def inline_safe(value: str) -> str:
     """
     Strip characters from a wire-supplied value that could corrupt a
     single-line Markdown construct (a code span, a bold marker) it's
     about to be embedded in: backticks, which could close a hand-built
-    code span early, and newlines, which end the paragraph such a
+    code span early, and line breaks, which end the paragraph such a
     construct depends on staying inside -- an inline span can't survive
     a paragraph break, unlike an indented block (see markdown_context).
     """
-    return value.replace("`", "").replace("\r", "").replace("\n", "")
+    return _INLINE_UNSAFE_RE.sub("", value)
 
 
 def markdown_list(inlist: List[str], markup: str = "") -> MarkdownSafe:
@@ -78,7 +85,7 @@ def markdown_list(inlist: List[str], markup: str = "") -> MarkdownSafe:
     close the surrounding `markup` span. The result is MarkdownSafe so
     Note._get_detail preserves the structural markup on interpolation.
     """
-    safe = [i.replace("`", "") for i in inlist]
+    safe = [inline_safe(i) for i in inlist]
     return MarkdownSafe("\n".join(f"- {markup}{i}{markup}" for i in safe))
 
 

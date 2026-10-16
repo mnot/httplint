@@ -10,6 +10,7 @@ from httplint.types import (
     NoteClassListType,
     ResponseLinterProtocol,
 )
+from httplint.util import inline_safe
 
 
 def _valid_reporting_endpoints(field_value: Any, base_uri: str) -> Set[str]:
@@ -133,7 +134,7 @@ It allows websites to declare that they want to receive reports about network er
             add_note(
                 NEL_CONFIGURED,
                 endpoints=MarkdownSafe(
-                    ", ".join(f"`{e.replace('`', '')}`" for e in resolved_endpoints)
+                    ", ".join(f"`{inline_safe(e)}`" for e in resolved_endpoints)
                 ),
             )
 
