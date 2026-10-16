@@ -11,7 +11,7 @@ def main() -> None:
     with set_locale(args.locale):
         start_time = time.time() if args.now else None
         parser = HttpCliParser(args, start_time)
-        parser.handle_input(sys.stdin.read().encode("utf-8", "replace"))
+        parser.handle_input(sys.stdin.buffer.read())
         if parser.failed:
             sys.exit(1)
 

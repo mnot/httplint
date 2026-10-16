@@ -1,6 +1,7 @@
 import contextlib
 import io
 import sys
+import types
 import unittest
 from typing import List, Tuple
 from unittest import mock
@@ -17,7 +18,9 @@ def run_cli(args: List[str], stdin: str) -> Tuple[int, str, str]:
     status = 0
     with (
         mock.patch.object(sys, "argv", ["httplint", *args]),
-        mock.patch.object(sys, "stdin", io.StringIO(stdin)),
+        mock.patch.object(
+            sys, "stdin", types.SimpleNamespace(buffer=io.BytesIO(stdin.encode("utf-8")))
+        ),
         contextlib.redirect_stdout(out),
         contextlib.redirect_stderr(err),
     ):
