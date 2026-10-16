@@ -20,7 +20,7 @@ class ContentEncodingProcessor:
 
         self.length: int = 0
         self.hash: Optional[bytes] = None
-        self._hash_processor = hashlib.new("md5")
+        self._hash_processor = hashlib.new("md5", usedforsecurity=False)
 
         self.decode_ok: bool = True
 

@@ -13,7 +13,7 @@ from httplint.types import (
     NoteClassListType,
     ResponseLinterProtocol,
 )
-from httplint.util import relative_time
+from httplint.util import inline_safe, relative_time
 
 CookieType = Tuple[str, str, List[Tuple[str, Union[str, int]]]]
 
@@ -60,9 +60,7 @@ requests to the server."""
         if hardened:
             add_note(
                 SET_COOKIE_HARDENED,
-                cookie_names=MarkdownSafe(
-                    ", ".join(f"`{n.replace('`', '')}`" for n in hardened)
-                ),
+                cookie_names=MarkdownSafe(", ".join(f"`{inline_safe(n)}`" for n in hardened)),
             )
 
         for note_adder, note, category, kwargs in self._deferred_notes:

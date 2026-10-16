@@ -3,7 +3,7 @@
 
 from httplint.note import Note, categories, levels
 from httplint.types import ResponseLinterProtocol
-from httplint.util import relative_time
+from httplint.util import MAX_DELTA_SECONDS, relative_time
 
 ### configuration
 CACHEABLE_METHODS = ["GET", "HEAD"]
@@ -21,7 +21,7 @@ class ResponseCacheChecker:
         self.store_shared = True
         self.freshness_lifetime_shared: int = 0
 
-        self.age_value = response.headers.parsed.get("age", 0)
+        self.age_value = min(response.headers.parsed.get("age", 0) or 0, MAX_DELTA_SECONDS)
         self.date_value = response.headers.parsed.get("date", None)
         self.expires_value = response.headers.parsed.get("expires", None)
         self.lm_value = response.headers.parsed.get("last-modified", None)
@@ -29,6 +29,9 @@ class ResponseCacheChecker:
         self.vary_value = response.headers.parsed.get("vary", set())
         self.cc_value = response.headers.parsed.get("cache-control", [])
         self.cc_dict = dict(self.cc_value)
+        for directive in ("max-age", "s-maxage"):
+            if isinstance(self.cc_dict.get(directive), int):
+                self.cc_dict[directive] = min(self.cc_dict[directive], MAX_DELTA_SECONDS)
 
         if self._request is not None:
             self.request_time = self._request.start_time
