@@ -1,3 +1,4 @@
+import sys
 from argparse import Namespace
 from enum import Enum
 from typing import List, Optional, Tuple
@@ -22,7 +23,10 @@ class HttpCliParser(HttpMessageHandler):
 
     def __init__(self, args: Namespace, start_time: Optional[float] = None) -> None:
         self.start_time = start_time
+        if not isinstance(args.mode, modes):
+            raise ValueError(f"unknown input mode: {args.mode!r}")
         self.mode = args.mode
+        self.failed = False
         self.linter: HttpMessageLinter
         HttpMessageHandler.__init__(self)
 
@@ -47,7 +51,7 @@ class HttpCliParser(HttpMessageHandler):
             self.linter.process_headers(hdr_tuples)
             allows_body = bool(content_length and content_length > 0) or (transfer_codes != [])
             is_final = True
-        if self.mode == modes.RESPONSE:
+        elif self.mode == modes.RESPONSE:
             self.linter = HttpResponseLinter(start_time=self.start_time)
             version, status_code, status_phrase = self.response_topline(top_line)
             self.linter.process_response_topline(version, status_code, status_phrase)
@@ -75,7 +79,10 @@ class HttpCliParser(HttpMessageHandler):
         self._input_state = States.ERROR
 
     def input_error(self, err: HttpError, close: bool = True) -> None:
-        "Indicate an error state."
+        "Report a parsing error."
+        self.failed = True
+        detail = f": {err.detail}" if err.detail else ""
+        print(f"httplint: {err.desc}{detail}", file=sys.stderr)
 
     def request_topline(self, top_line: bytes) -> Tuple[bytes, bytes, bytes]:
         try:
