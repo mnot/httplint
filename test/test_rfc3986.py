@@ -168,7 +168,7 @@ class RFC3986GrammarTest(unittest.TestCase):
         )
 
     def test_uri(self) -> None:
-        self.check(rfc3986.URI, URI_VALID[:-1] + ["foo:?a=b#f"], URI_INVALID)
+        self.check(rfc3986.URI, URI_VALID, URI_INVALID)
 
     def test_absolute_uri(self) -> None:
         self.check(
