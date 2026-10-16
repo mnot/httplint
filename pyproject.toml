@@ -22,7 +22,7 @@ dependencies = [
     "http-sf>=1.2.1",
     "sniffpy==1.0.0",
     "Babel",
-    "Brotli",
+    "Brotli>=1.2.0",
     "chardet",
 ]
 
