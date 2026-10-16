@@ -10,6 +10,7 @@ from unittest import mock
 from argparse import Namespace
 from contextlib import redirect_stdout
 
+from test.test_cli import run_cli as run_main
 from httplint.cli.http_parser import HttpCliParser, modes, terminal_safe
 from httplint.message import HttpResponseLinter
 from httplint.note import Note, categories, levels
@@ -76,6 +77,15 @@ class TestCliTerminalSafety(unittest.TestCase):
         self.assertIn("  * [WARN] Child '\\x1b[31m\\u202e\\xad'.", out)
         for raw in ("\x1b", "\u202e", "\xad"):
             self.assertNotIn(raw, out)
+
+    def test_start_line_error_escaped_on_stderr(self) -> None:
+        for mode, line in (("request", "BAD\x1b[31mLINE\x07"), ("response", "HTTP/9.9\x1b[31m 200 OK")):
+            status, out, err = run_main(["-i", mode], line + "\r\nHost: a\r\n\r\n")
+            self.assertEqual(status, 1)
+            self.assertIn("httplint:", err)
+            self.assertIn("\\x1b[31m", err)
+            self.assertNotIn("\x1b", err + out)
+            self.assertNotIn("\x07", err + out)
 
     def test_helper(self) -> None:
         self.assertEqual(terminal_safe("a\x1bb\x7fc\x9bd\n"), "a\\x1bb\\x7fc\\x9bd\\x0a")
