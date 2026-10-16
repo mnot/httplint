@@ -196,6 +196,12 @@ class CharsetTest(unittest.TestCase):
                 linter = _run([(b"Content-Type", b"text/plain; charset=" + name)], b"x")
                 self.assertIsNone(linter.character_encoding)
 
+    def test_undefined_charset_does_not_crash(self):
+        body = ("Café naïve résumé " * 10).encode("utf-8")
+        linter = _run([(b"Content-Type", b"text/plain; charset=undefined")], body)
+        self.assertIsNone(linter.character_encoding)
+        self.assertFalse(_has_note(linter.notes, CHARSET_UNDECODABLE))
+
     def test_text_charset_recorded(self):
         linter = _run([(b"Content-Type", b"text/plain; charset=UTF8")], b"x")
         self.assertEqual(linter.character_encoding, "UTF8")
@@ -203,7 +209,7 @@ class CharsetTest(unittest.TestCase):
 
 class IsTextEncodingTest(unittest.TestCase):
     def test_non_text_codecs_rejected(self):
-        for name in ("hex", "base64", "zlib", "rot13", "bz2", "uu"):
+        for name in ("hex", "base64", "zlib", "rot13", "bz2", "uu", "undefined"):
             with self.subTest(name=name):
                 self.assertFalse(is_text_encoding(name))
                 self.assertIsNone(_canonical(name))
@@ -221,6 +227,9 @@ class IsTextEncodingTest(unittest.TestCase):
             "windows-1252",
             "shift_jis",
             "utf-16",
+            "utf-16le",
+            "utf-32",
+            "utf-32be",
         ):
             with self.subTest(name=name):
                 self.assertTrue(is_text_encoding(name))
@@ -244,6 +253,11 @@ class DecodeDeclaredTest(unittest.TestCase):
         self.assertIsNone(_decode_declared(sample, "hex", truncated=True))
         self.assertIsNone(_decode_declared(sample, "rot13", truncated=True))
         self.assertIsNone(_decode_declared(sample, "base64", truncated=True))
+
+    def test_bare_unicode_error_codec_rejected(self):
+        # "undefined" raises a plain UnicodeError, not UnicodeDecodeError.
+        self.assertIsNone(_decode_declared(b"caf\xc3\xa9", "undefined", truncated=False))
+        self.assertIsNone(_decode_declared(b"caf\xc3\xa9", "undefined", truncated=True))
 
     def test_genuinely_corrupt_truncated_sample_still_rejected(self):
         # Tolerance only covers a trailing incomplete sequence; garbage

@@ -52,10 +52,12 @@ def is_text_encoding(name: Optional[str]) -> bool:
     if name is None:
         return False
     # Empty input short-circuits before the codec is checked, so probe
-    # with a byte; a decode error still means the codec is a text one.
+    # with a byte. Text codecs that reject one byte (utf-16, utf-32) raise
+    # UnicodeDecodeError; any other error, including the bare UnicodeError
+    # from "undefined", means it isn't usable.
     try:
         b"a".decode(name)
-    except UnicodeError:
+    except UnicodeDecodeError:
         return True
     except (LookupError, TypeError, ValueError):
         return False
@@ -98,15 +100,15 @@ def _decode_declared(sample: bytes, encoding: str, truncated: bool) -> Optional[
     """
     try:
         return sample.decode(encoding, errors="strict")
-    except LookupError:
-        return None
     except UnicodeDecodeError:
         if not truncated:
             return None
         try:
             return codecs.getincrementaldecoder(encoding)().decode(sample, final=False)
-        except UnicodeDecodeError:
+        except UnicodeError:
             return None
+    except (LookupError, UnicodeError):
+        return None
 
 
 def verify_charset(linter: LinterProtocol) -> None:  # pylint: disable=too-many-return-statements
