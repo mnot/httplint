@@ -24,6 +24,10 @@ ACCEPTED = [
     "(c) Bob (d) <w@example.org> (e)",
     "Bob\r\n Smith <w@example.org>",
     "obs_phrase <w@example.org>",
+    "w@example.org\r\n",
+    "\r\nw@example.org",
+    " (c) w@example.org (c) ",
+    "\r\n w@example.org\r\n ",
 ]
 
 REJECTED = [
@@ -50,7 +54,13 @@ ADVERSARIAL = {
     "comment content": "(" + "a" * N,
     "whitespace": " " * N + "\x00",
     "address then whitespace": "w@x.org" + " " * N + "\x00",
-    "folds": "a" + "\r\n " * (N // 3) + "\x00",
+    "folds": "a" + "\r\n " * N + "\x00",
+    "leading folds": "\r\n " * N + "\x00",
+    "leading folds then address": "\r\n " * N + "w@x.org\x00",
+    "address then folds": "w@x.org" + "\r\n " * N + "\x00",
+    "angle address then folds": "a <w@x.org>" + "\r\n " * N + "x",
+    "mixed folds": "w@x.org" + " \r\n \t\r\n  " * (N // 6) + "\x00",
+    "bare CRLFs": "\r\n" * (N // 2) + "\x00",
     "phrase then angle": "a " * (N // 2) + "<",
     "local part": "a" * N + "@",
     "domain": "a@" + "a" * N + "\x00",
@@ -76,7 +86,16 @@ class TestMailbox(unittest.TestCase):
             self.assertLess(elapsed, TIME_LIMIT, f"{name}: {elapsed:.2f}s")
 
     def test_from_header_is_bounded(self):
-        for value in (b"a" * N + b"\x00", b" " * N + b"\x00", b"w@x.org" + b" " * N + b"\x00"):
+        fold = b"\r\n " * N
+        for value in (
+            b"a" * N + b"\x00",
+            b" " * N + b"\x00",
+            b"w@x.org" + b" " * N + b"\x00",
+            fold + b"\x00",
+            fold + b"w@x.org\x00",
+            b"w@x.org" + fold + b"\x00",
+            b"a <w@x.org>" + fold + b"x",
+        ):
             linter = HttpRequestLinter()
             linter.process_request_topline(b"GET", b"http://a/", b"1.1")
             start = time.perf_counter()

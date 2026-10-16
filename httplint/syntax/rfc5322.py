@@ -125,6 +125,12 @@ name_addr = rf"(?: {display_name}? {angle_addr} )"
 # mailbox         =   name-addr / addr-spec
 #
 # The lookarounds stop the leading and trailing CFWS from sharing whitespace with a caller's own
-# \s* padding, which would otherwise cost quadratic time on a long run of whitespace.
+# \s* padding, which would otherwise cost quadratic time on a long run of whitespace. They cover
+# space, tab and CRLF folds (a CRLF followed by WSP). A bare CRLF is deliberately not covered: it
+# can't be CFWS, so only the caller's \s* can absorb it.
 
-mailbox = rf"(?: (?<! [ \t] ) (?: {name_addr} | {addr_spec} ) (?! [ \t] ) )"
+mailbox = rf"""(?:
+    (?<! [ \t] ) (?! (?<= \r\n ) [ \t] )
+    (?: {name_addr} | {addr_spec} )
+    (?! [ \t] | \r\n [ \t] )
+)"""
