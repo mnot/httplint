@@ -10,7 +10,7 @@ from httplint.types import (
     AnyMessageLinterProtocol,
     NoteClassListType,
 )
-from httplint.util import markdown_list
+from httplint.util import MAX_DELTA_SECONDS, markdown_list
 
 # known cache directives; assumed to not allow duplicates
 # values are (valid_in_requests, valid_in_responses, value_type, value_type_str)
@@ -117,7 +117,7 @@ ignoring it there."""
             else:
                 try:
                     val = value_func(directive_val)
-                    if isinstance(val, int) and val > 2147483648:
+                    if isinstance(val, int) and val > MAX_DELTA_SECONDS:
                         add_note(CC_MAX_AGE_TOO_LARGE, directive=directive_name)
                     return (directive_name, val)
                 except (ValueError, TypeError):

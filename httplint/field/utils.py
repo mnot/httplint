@@ -1,13 +1,13 @@
 import calendar
 import re
 from email.utils import parsedate as lib_parsedate
-from typing import Any, Dict, List, Optional, Tuple, Type, Union
+from typing import Any, Dict, FrozenSet, List, Optional, Tuple, Type, Union
 from urllib.parse import unquote as urlunquote
 
 from http_sf import Token
 
 from httplint.note import Note, categories, levels
-from httplint.syntax import rfc6838, rfc9110
+from httplint.syntax import rfc5234, rfc6838, rfc9110
 from httplint.types import AddNoteMethodType, ParamDictType
 from httplint.util import inline_safe
 
@@ -159,20 +159,62 @@ def split_string(instr: str, item: str, split: str) -> List[str]:
     return [h.strip() for h in re.findall(rf"{item}(?={split}|\s*$)", instr, re.VERBOSE)]
 
 
+def _char_set(pattern: str) -> FrozenSet[str]:
+    """
+    The characters below U+0100 that a single-character regex accepts. That covers
+    everything qdtext and quoted-pair allow (they stop at obs-text, U+00FF); anything
+    higher is outside both.
+    """
+    return frozenset(c for c in map(chr, range(256)) if re.fullmatch(pattern, c, RE_FLAGS))
+
+
+_QDTEXT = _char_set(rfc9110.qdtext)
+_QUOTED_PAIR_CHAR = _char_set(
+    rf"(?: {rfc5234.HTAB} | {rfc5234.SP} | {rfc5234.VCHAR} | {rfc9110.obs_text} )"
+)
+
+
 def split_list_field(field_value: str) -> List[str]:
-    "Split a field field value on commas. needs to conform to the #rule."
-    return [
-        stripped
-        for stripped in (
-            f.strip()
-            for f in re.findall(
-                r'((?:[^",]|%s)+)(?=%s|\s*$)' % (rfc9110.quoted_string, r"(?:\s*(?:,\s*)+)"),
-                field_value,
-                RE_FLAGS,
-            )
-        )
-        if stripped
-    ]
+    """
+    Split a field value on commas, as the #rule needs.
+
+    Commas inside a quoted-string don't split. A quote that doesn't start a valid
+    quoted-string is not an item character: text before it that isn't followed by a
+    comma is dropped, and parsing resumes one character later.
+
+    This is linear; an earlier regex-based version backtracked quadratically.
+    """
+    size = len(field_value)
+    # quote_end[idx]: if inside a quoted-string at idx, the index just after its closing
+    # quote, or -1 if it is unterminated or malformed.
+    quote_end = [-1] * (size + 2)
+    # run_end[idx]: where the run of non-comma characters and quoted-strings starting at
+    # idx stops (at a comma or the end), or -1 if it stops at a bad quote.
+    run_end = [size] * (size + 1)
+    for idx in range(size - 1, -1, -1):
+        char = field_value[idx]
+        if char == '"':
+            quote_end[idx] = idx + 1
+            after = quote_end[idx + 1]
+            run_end[idx] = run_end[after] if after >= 0 else -1
+            continue
+        if char in _QDTEXT:
+            quote_end[idx] = quote_end[idx + 1]
+        elif char == "\\" and idx + 1 < size and field_value[idx + 1] in _QUOTED_PAIR_CHAR:
+            quote_end[idx] = quote_end[idx + 2]
+        run_end[idx] = idx if char == "," else run_end[idx + 1]
+    items: List[str] = []
+    pos = 0
+    while pos < size:
+        stop = run_end[pos]
+        if stop > pos:
+            item = field_value[pos:stop].strip()
+            if item:
+                items.append(item)
+            pos = stop
+        else:
+            pos += 1
+    return items
 
 
 def parse_params(
