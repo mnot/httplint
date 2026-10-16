@@ -7,6 +7,7 @@ from httplint.types import (
     NoteClassListType,
     ResponseLinterProtocol,
 )
+from httplint.util import MAX_DELTA_SECONDS
 
 
 class age(SingletonField[ResponseLinterProtocol]):
@@ -29,7 +30,7 @@ The `Age` response header conveys the sender's estimate of the amount of time si
         if age_value < 0:
             add_note(AGE_NEGATIVE)
             raise ValueError
-        if age_value > 2147483648:
+        if age_value > MAX_DELTA_SECONDS:
             add_note(AGE_LARGE)
         return age_value
 

@@ -11,7 +11,9 @@ def main() -> None:
     with set_locale(args.locale):
         start_time = time.time() if args.now else None
         parser = HttpCliParser(args, start_time)
-        parser.handle_input(sys.stdin.read().encode("utf-8", "replace"))
+        parser.handle_input(sys.stdin.buffer.read())
+        if parser.failed:
+            sys.exit(1)
 
 
 def getargs() -> Namespace:
@@ -20,10 +22,12 @@ def getargs() -> Namespace:
     parser.add_argument(
         "-i",
         "--input",
-        choices=[i.value for i in modes],
+        type=modes,
+        metavar="{request,response}",
+        choices=list(modes),
         default=modes.RESPONSE,
         dest="mode",
-        help="The input mode",
+        help="The input mode (default: response)",
     )
 
     parser.add_argument(

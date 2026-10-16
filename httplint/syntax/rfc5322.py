@@ -26,26 +26,35 @@ qcontent = rf"(?: {qtext} | {quoted_pair} )"
 ctext = r"[\x21-\x27\x2a-\x5b\x5d\x7e]"
 
 # ccontent        =   ctext / quoted-pair / comment
-
-ccontent = rf"(?: {ctext} | {quoted_pair} |)"
+#
+# The comment rule, and the CFWS and phrase rules below, are written as flat repetitions of
+# single tokens rather than as nested repetitions of FWS, CFWS and atom. The RFC's nesting is
+# ambiguous (e.g., "a" can be one atom or two), which makes backtracking exponential on
+# non-matching input; the accepted language is the same. Nested comments are not supported.
 
 # FWS             =   ([*WSP CRLF] 1*WSP) /  obs-FWS
 
 FWS = rf"(?: (?: {WSP}* {CRLF} )? {WSP}{{1,}} )"
 
+# One unit of a run of FWS; a CRLF is only valid when followed by WSP.
+
+fws_unit = rf"(?: {WSP} | {CRLF} {WSP} )"
+
 # comment         =   "(" *([FWS] ccontent) [FWS] ")"
 
-comment = rf"(?: \( (?: {FWS}? {ccontent} )* {FWS}? \) )"
+comment = rf"(?: \( (?: {fws_unit} | {ctext} | {quoted_pair} )* \) )"
 
 # CFWS            =   (1*([FWS] comment) [FWS]) / FWS
 
-CFWS = rf"(?: (?: {FWS}? {comment} {FWS}? ){{1,}} | {FWS} )"
+CFWS = rf"(?: (?: {fws_unit} | {comment} ){{1,}} )"
 
 # quoted-string   =  [CFWS]
 #                    DQUOTE *([FWS] qcontent) [FWS] DQUOTE
 #                    [CFWS]
 
-quoted_string = rf"(?: {CFWS}? \" (?: {FWS}? {qcontent} )* \" {CFWS}? )"
+quoted_string_core = rf"(?: \" (?: {FWS}? {qcontent} )* \" )"
+
+quoted_string = rf"(?: {CFWS}? {quoted_string_core} {CFWS}? )"
 
 # atext           =   ALPHA / DIGIT /    ; Printable US-ASCII
 #                    "!" / "#" /        ;  characters not including
@@ -62,16 +71,13 @@ quoted_string = rf"(?: {CFWS}? \" (?: {FWS}? {qcontent} )* \" {CFWS}? )"
 atext = rf"(?: {ALPHA} | {DIGIT} | [!#$%&'*+\-/=?^_`{{|}}~] )"
 
 # atom            =   [CFWS] 1*atext [CFWS]
-
-atom = rf"(?: {CFWS}? {atext}{{1,}} {CFWS}? )"
-
 # word            =   atom / quoted-string
-
-word = rf"(?: {atom} | {quoted_string} )"
-
 # phrase          =   1*word / obs-phrase
+#
+# Flattened; see above. Trailing CFWS is left to angle-addr, which allows it. obs-phrase is
+# not supported.
 
-phrase = rf"(?: {word}{{1,}} | obs_phrase )"
+phrase = rf"(?: (?: {CFWS}? (?: {atext} | {quoted_string_core} ) ){{1,}} )"
 
 # display-name    =   phrase
 
@@ -117,5 +123,14 @@ angle_addr = rf"(?: {CFWS}? \< {addr_spec} \> {CFWS}? )"
 name_addr = rf"(?: {display_name}? {angle_addr} )"
 
 # mailbox         =   name-addr / addr-spec
+#
+# The lookarounds stop the leading and trailing CFWS from sharing whitespace with a caller's own
+# \s* padding, which would otherwise cost quadratic time on a long run of whitespace. They cover
+# space, tab and CRLF folds (a CRLF followed by WSP). A bare CRLF is deliberately not covered: it
+# can't be CFWS, so only the caller's \s* can absorb it.
 
-mailbox = rf"(?: {name_addr} | {addr_spec} )"
+mailbox = rf"""(?:
+    (?<! [ \t] ) (?! (?<= \r\n ) [ \t] )
+    (?: {name_addr} | {addr_spec} )
+    (?! [ \t] | \r\n [ \t] )
+)"""
