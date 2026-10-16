@@ -1,4 +1,3 @@
-import codecs
 import hashlib
 import re
 import weakref
@@ -8,7 +7,7 @@ from typing import Any, Dict, Optional, TypedDict, cast
 from typing_extensions import NotRequired, Unpack
 
 from httplint.cache import ResponseCacheChecker
-from httplint.charset import verify_charset
+from httplint.charset import is_text_encoding, verify_charset
 from httplint.content_encoding import ContentEncodingProcessor
 from httplint.content_type import verify_content_type
 from httplint.field.cors import check_preflight_request, check_preflight_response
@@ -106,11 +105,8 @@ class HttpMessageLinter:
         # set the character encoding from headers
         if "content-type" in self.headers.parsed:
             enc = self.headers.parsed["content-type"][1].get("charset", None)
-            try:
-                codecs.lookup(enc)
+            if is_text_encoding(enc):
                 self.character_encoding = enc
-            except (LookupError, TypeError):
-                pass
 
     def feed_content(self, chunk: bytes) -> None:
         """
