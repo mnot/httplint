@@ -1,4 +1,6 @@
 import locale
+import math
+import re
 import time
 import unittest
 from binascii import b2a_hex
@@ -63,16 +65,22 @@ def display_bytes(inbytes: bytes, encoding: str = "utf-8", truncate: int = 40) -
     return "".join(out)
 
 
+# Backtick, NUL, and every character str.splitlines() treats as a line break
+# (\r \n \v \f \x1c-\x1e \x85 U+2028 U+2029); Markdown parsers differ on
+# which of these end a paragraph, so strip them all.
+_INLINE_UNSAFE_RE = re.compile("[`\\x00\\n\\r\\x0b\\x0c\\x1c-\\x1e\\x85\\u2028\\u2029]")
+
+
 def inline_safe(value: str) -> str:
     """
     Strip characters from a wire-supplied value that could corrupt a
     single-line Markdown construct (a code span, a bold marker) it's
     about to be embedded in: backticks, which could close a hand-built
-    code span early, and newlines, which end the paragraph such a
+    code span early, and line breaks, which end the paragraph such a
     construct depends on staying inside -- an inline span can't survive
     a paragraph break, unlike an indented block (see markdown_context).
     """
-    return value.replace("`", "").replace("\r", "").replace("\n", "")
+    return _INLINE_UNSAFE_RE.sub("", value)
 
 
 def markdown_list(inlist: List[str], markup: str = "") -> MarkdownSafe:
@@ -83,7 +91,7 @@ def markdown_list(inlist: List[str], markup: str = "") -> MarkdownSafe:
     close the surrounding `markup` span. The result is MarkdownSafe so
     Note._get_detail preserves the structural markup on interpolation.
     """
-    safe = [i.replace("`", "") for i in inlist]
+    safe = [inline_safe(i) for i in inlist]
     return MarkdownSafe("\n".join(f"- {markup}{i}{markup}" for i in safe))
 
 
@@ -110,14 +118,30 @@ def markdown_context(text: str, index: int, context_chars: int = 20) -> Markdown
     return MarkdownSafe(f"\n\n{indented}")
 
 
+# RFC 9111 Section 1.2.2: delta-seconds beyond 2^31 are treated as 2^31.
+MAX_DELTA_SECONDS = 2147483648
+
+# Largest span timedelta can represent; RelativeTime caps display here.
+MAX_TIMEDELTA_SECONDS = timedelta.max.days * 86400  # symmetric with timedelta.min
+
+
 class RelativeTime:
     def __init__(self, utime: float, now: float, show_sign: int = 1) -> None:
         self.utime = utime
         self.now = now
         self.show_sign = show_sign
 
+    def _delta_secs(self) -> float:
+        try:
+            delta_secs = float(self.utime - self.now)
+        except OverflowError:
+            delta_secs = math.inf if self.utime > self.now else -math.inf
+        if math.isnan(delta_secs):
+            return 0
+        return max(-MAX_TIMEDELTA_SECONDS, min(MAX_TIMEDELTA_SECONDS, delta_secs))
+
     def __str__(self) -> str:
-        delta_secs = self.utime - self.now
+        delta_secs = self._delta_secs()
         delta = timedelta(seconds=delta_secs)
         if self.show_sign == 1:
             output = format_timedelta(delta, add_direction=True, threshold=1.2)

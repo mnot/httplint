@@ -22,7 +22,7 @@ dependencies = [
     "http-sf>=1.2.1",
     "sniffpy==1.0.0",
     "Babel",
-    "Brotli",
+    "Brotli>=1.2.0",
     "chardet",
 ]
 
@@ -53,7 +53,7 @@ httplint = "httplint.cli:main"
 
 [build-system]
 requires = [
-    "setuptools>=42",
+    "setuptools>=77",
     "wheel"
 ]
 build-backend = "setuptools.build_meta"

@@ -14,6 +14,7 @@ from httplint.types import (
     NoteClassListType,
     ParamDictType,
 )
+from httplint.util import inline_safe
 
 
 class link(HttpListField[AnyMessageLinterProtocol]):
@@ -72,7 +73,7 @@ statement of the form "[context IRI] has a [relation type] resource at [target I
             hints_plain = ", ".join(present)
             lines = []
             for rel_name, targets in present.items():
-                safe = [t.replace("`", "") for t in targets]
+                safe = [inline_safe(t) for t in targets]
                 lines.append(f"- `{rel_name}`: {', '.join(f'`{t}`' for t in safe)}")
             add_note(
                 LINK_RESOURCE_HINTS,

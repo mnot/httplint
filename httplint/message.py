@@ -1,4 +1,3 @@
-import codecs
 import hashlib
 import re
 import weakref
@@ -8,7 +7,7 @@ from typing import Any, Dict, Optional, TypedDict, cast
 from typing_extensions import NotRequired, Unpack
 
 from httplint.cache import ResponseCacheChecker
-from httplint.charset import verify_charset
+from httplint.charset import is_text_encoding, verify_charset
 from httplint.content_encoding import ContentEncodingProcessor
 from httplint.content_type import verify_content_type
 from httplint.field.cors import check_preflight_request, check_preflight_response
@@ -73,7 +72,7 @@ class HttpMessageLinter:
 
         self.content_length: int = 0
         self.content_hash: Optional[bytes] = None
-        self._hash_processor = hashlib.new("md5")
+        self._hash_processor = hashlib.new("md5", usedforsecurity=False)
         self.character_encoding: Optional[str] = None
         self.content_sample: bytes = b""
         self.content_sample_truncated: bool = False
@@ -106,11 +105,8 @@ class HttpMessageLinter:
         # set the character encoding from headers
         if "content-type" in self.headers.parsed:
             enc = self.headers.parsed["content-type"][1].get("charset", None)
-            try:
-                codecs.lookup(enc)
+            if is_text_encoding(enc):
                 self.character_encoding = enc
-            except (LookupError, TypeError):
-                pass
 
     def feed_content(self, chunk: bytes) -> None:
         """
@@ -326,9 +322,10 @@ class HttpResponseLinter(HttpMessageLinter):
     ) -> None:
         self.version = version.decode("ascii", "replace")
         self.status_code_str = status_code.decode("ascii", "replace")
-        try:
+        # status-code = 3DIGIT; int() would also accept "+200", " 200", "2_00" and "0200".
+        if re.fullmatch(r"[0-9]{3}", self.status_code_str):
             self.status_code = int(self.status_code_str)
-        except ValueError:
+        else:
             self.notes.add("status", STATUS_CODE_NON_NUMERIC)
         if status_phrase:
             try:
