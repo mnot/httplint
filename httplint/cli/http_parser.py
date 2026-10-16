@@ -1,3 +1,4 @@
+import re
 from argparse import Namespace
 from enum import Enum
 from typing import List, Optional, Tuple
@@ -8,6 +9,16 @@ from thor.http.error import HttpError, HttpVersionError, StartLineError
 from httplint.i18n import translate
 from httplint.message import HttpMessageLinter, HttpRequestLinter, HttpResponseLinter
 from httplint.types import RawFieldListType
+
+# C0/C1 controls, DEL, line/paragraph separators and bidi override/isolate marks.
+_UNSAFE_CHARS = re.compile("[\x00-\x1f\x7f-\x9f\u200e\u200f\u2028\u2029\u202a-\u202e\u2066-\u2069]")
+
+
+def terminal_safe(text: str) -> str:
+    "Escape characters in text that could be interpreted by a terminal."
+    return _UNSAFE_CHARS.sub(
+        lambda m: f"\\x{ord(m[0]):02x}" if ord(m[0]) < 0x100 else f"\\u{ord(m[0]):04x}", text
+    )
 
 
 class modes(Enum):
@@ -69,9 +80,9 @@ class HttpCliParser(HttpMessageHandler):
             if note.category != current_category:
                 print(f"\n### {translate(note.category.value)}\n")
                 current_category = note.category
-            print(f"* [{note.level.name}] {note.summary}")
+            print(f"* [{note.level.name}] {terminal_safe(note.summary)}")
             for subnote in note.subnotes:
-                print(f"  * [{subnote.level.name}] {subnote.summary}")
+                print(f"  * [{subnote.level.name}] {terminal_safe(subnote.summary)}")
         self._input_state = States.ERROR
 
     def input_error(self, err: HttpError, close: bool = True) -> None:
