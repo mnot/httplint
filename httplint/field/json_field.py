@@ -9,8 +9,11 @@ MAX_JSON_DEPTH = 100
 
 
 def _too_deep(value: Any) -> bool:
-    "Iteratively check nesting, so the answer doesn't depend on the recursion limit."
-    stack = [(value, 1)]
+    """
+    Iteratively check nesting, so the answer doesn't depend on the recursion limit.
+    The outer list that finish() wraps around the field lines doesn't count.
+    """
+    stack = [(value, 0)]
     while stack:
         item, depth = stack.pop()
         if isinstance(item, (list, dict)):

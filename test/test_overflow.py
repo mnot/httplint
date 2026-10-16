@@ -108,3 +108,17 @@ def test_json_depth_consistent():
     assert BAD_JSON in [type(n) for n in lint(b"Report-To", deep).notes]
     shallow = b"[" * 50 + b"]" * 50
     assert BAD_JSON not in [type(n) for n in lint(b"Report-To", shallow).notes]
+
+
+def nested(kind, levels):
+    if kind == "array":
+        return b"[" * levels + b"]" * levels
+    return b'{"a":' * (levels - 1) + b"{}" + b"}" * (levels - 1)
+
+
+@pytest.mark.parametrize("name", [b"NEL", b"Report-To"])
+@pytest.mark.parametrize("kind", ["array", "object"])
+def test_json_depth_boundary(name, kind):
+    for levels, rejected in [(99, False), (100, False), (101, True)]:
+        notes = [type(n) for n in lint(name, nested(kind, levels)).notes]
+        assert (BAD_JSON in notes) == rejected, (levels, kind)
