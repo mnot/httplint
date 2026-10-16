@@ -1,9 +1,24 @@
 import json
-from typing import Generic
+from typing import Any, Generic
 
 from httplint.field import HttpField
 from httplint.note import Note, categories, levels
 from httplint.types import AddNoteMethodType, TMessage
+
+MAX_JSON_DEPTH = 100
+
+
+def _too_deep(value: Any) -> bool:
+    "Iteratively check nesting, so the answer doesn't depend on the recursion limit."
+    stack = [(value, 1)]
+    while stack:
+        item, depth = stack.pop()
+        if isinstance(item, (list, dict)):
+            if depth > MAX_JSON_DEPTH:
+                return True
+            children = item.values() if isinstance(item, dict) else item
+            stack.extend((child, depth + 1) for child in children)
+    return False
 
 
 class JsonField(HttpField[TMessage], Generic[TMessage]):
@@ -31,9 +46,15 @@ class JsonField(HttpField[TMessage], Generic[TMessage]):
         except RecursionError:
             add_note(BAD_JSON, error="nested too deeply", category=self.category)
             self.value = None
-        except ValueError:
-            add_note(BAD_JSON, error="number too large", category=self.category)
+        except ValueError as why:
+            # Beyond JSONDecodeError, the only ValueError is Python's int-digit limit.
+            error = "number too large" if "digits" in str(why) else "value out of range"
+            add_note(BAD_JSON, error=error, category=self.category)
             self.value = None
+        else:
+            if _too_deep(self.value):
+                add_note(BAD_JSON, error="nested too deeply", category=self.category)
+                self.value = None
 
         super().finish(add_note)
 

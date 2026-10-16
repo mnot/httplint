@@ -1,4 +1,5 @@
 import locale
+import math
 import time
 import unittest
 from binascii import b2a_hex
@@ -108,6 +109,9 @@ def markdown_context(text: str, index: int, context_chars: int = 20) -> Markdown
 # RFC 9111 Section 1.2.2: delta-seconds beyond 2^31 are treated as 2^31.
 MAX_DELTA_SECONDS = 2147483648
 
+# Largest span timedelta can represent; RelativeTime caps display here.
+MAX_TIMEDELTA_SECONDS = timedelta.max.days * 86400  # symmetric with timedelta.min
+
 
 class RelativeTime:
     def __init__(self, utime: float, now: float, show_sign: int = 1) -> None:
@@ -115,8 +119,17 @@ class RelativeTime:
         self.now = now
         self.show_sign = show_sign
 
+    def _delta_secs(self) -> float:
+        try:
+            delta_secs = float(self.utime - self.now)
+        except OverflowError:
+            delta_secs = math.inf if self.utime > self.now else -math.inf
+        if math.isnan(delta_secs):
+            return 0
+        return max(-MAX_TIMEDELTA_SECONDS, min(MAX_TIMEDELTA_SECONDS, delta_secs))
+
     def __str__(self) -> str:
-        delta_secs = max(-MAX_DELTA_SECONDS, min(MAX_DELTA_SECONDS, self.utime - self.now))
+        delta_secs = self._delta_secs()
         delta = timedelta(seconds=delta_secs)
         if self.show_sign == 1:
             output = format_timedelta(delta, add_direction=True, threshold=1.2)
