@@ -15,7 +15,7 @@ from httplint.field.section import FieldSection
 from httplint.i18n import L_, translate
 from httplint.note import Note, Notes, categories, levels
 from httplint.status import StatusChecker
-from httplint.syntax import rfc3986
+from httplint.syntax import rfc3986, rfc9112
 from httplint.types import (
     CachingProtocol,
     LinterProtocol,
@@ -25,7 +25,7 @@ from httplint.types import (
     ResponseLinterProtocol,
     SectionProtocol,
 )
-from httplint.util import f_num, iri_to_uri
+from httplint.util import authority_to_ascii, f_num, iri_to_uri
 
 
 class HttpMessageParams(TypedDict):
@@ -193,6 +193,10 @@ class HttpMessageLinter:
         return state
 
 
+# RFC 9112 Section 3.2.3: uri-host ":" port (rfc9112.authority_form is the older RFC 7230 rule)
+AUTHORITY_FORM = rf"(?= [^:] ) {rfc3986.host} : [0-9]+"
+
+
 class HttpRequestLinter(HttpMessageLinter):
     """
     A HTTP Request message linter.
@@ -215,19 +219,47 @@ class HttpRequestLinter(HttpMessageLinter):
     def set_uri(self, iri: str) -> None:
         """
         Given a unicode string (possibly an IRI), convert to a URI and make sure it's sensible.
+
+        The request target form is checked against the method (RFC 9112 Section 3.2).
         """
         self.iri = iri
-        try:
-            self.uri = iri_to_uri(iri)
-        except (ValueError, UnicodeError):
+        target, has_fragment, _ = iri.partition("#")
+        self.uri = target  # fallback if it can't be converted; never includes the fragment
+        if has_fragment:
+            self.notes.add("uri", REQUEST_TARGET_FRAGMENT)
+        if re.search(r"[\x00-\x20\x7f-\x9f]", target):
             self.notes.add("uri", URI_BAD_SYNTAX)
-            self.uri = iri  # hope?
             return
-        if not re.match(rf"^\s*{rfc3986.URI}\s*$", self.uri, re.VERBOSE):
-            self.notes.add("uri", URI_BAD_SYNTAX)
-        if "#" in self.uri:
-            # chop off the fragment
-            self.uri = self.uri[: self.uri.index("#")]
+
+        method = self.method or ""
+        authority_form = self.method == "CONNECT"
+        if authority_form:
+            pattern = AUTHORITY_FORM
+        elif target == "*":
+            pattern = r"\*"
+        elif target.startswith("/"):
+            pattern = rfc9112.origin_form
+        else:
+            pattern = rfc3986.absolute_URI
+
+        try:
+            self.uri = authority_to_ascii(target) if authority_form else iri_to_uri(target)
+        except (ValueError, UnicodeError):
+            if authority_form:
+                self.notes.add("uri", REQUEST_TARGET_FORM, method=method)
+            else:
+                self.notes.add("uri", URI_BAD_SYNTAX)
+            return
+
+        if not re.fullmatch(pattern, self.uri, re.VERBOSE) or (
+            authority_form and int(self.uri.rpartition(":")[2]) > 65535
+        ):
+            if authority_form or target == "*":
+                self.notes.add("uri", REQUEST_TARGET_FORM, method=method)
+            else:
+                self.notes.add("uri", URI_BAD_SYNTAX)
+        elif target == "*" and self.method != "OPTIONS":
+            self.notes.add("uri", REQUEST_TARGET_FORM, method=method)
         if len(self.uri) > self.max_uri_chars:
             self.notes.add("uri", URI_TOO_LONG, uri_len=f_num(len(self.uri)))
 
@@ -376,6 +408,26 @@ class URI_BAD_SYNTAX(Note):
     _text = """\
 This isn't a valid URI. See
 [RFC3986](http://www.ietf.org/rfc/rfc3986.txt) for more information."""
+
+
+class REQUEST_TARGET_FORM(Note):
+    category = categories.GENERAL
+    level = levels.BAD
+    _summary = "The request target isn't valid for %(method)s requests."
+    _text = """\
+`CONNECT` requests use the `host:port` authority form (no userinfo, and the port is required), `OPTIONS` requests can use `*`, and other
+methods use either an absolute path (optionally with a query) or a full URI. See
+[RFC 9112 Section 3.2](https://www.rfc-editor.org/rfc/rfc9112.html#section-3.2)."""
+
+
+class REQUEST_TARGET_FRAGMENT(Note):
+    category = categories.GENERAL
+    level = levels.WARN
+    _summary = "The request target contains a fragment."
+    _text = """\
+Fragment identifiers are handled by the client and shouldn't be sent in the request target;
+recipients typically ignore or reject them. See
+[RFC 9112 Section 3.2](https://www.rfc-editor.org/rfc/rfc9112.html#section-3.2)."""
 
 
 class STATUS_CODE_NON_NUMERIC(Note):
