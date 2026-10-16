@@ -159,7 +159,11 @@ def split_string(instr: str, item: str, split: str) -> List[str]:
 
 
 def _char_set(pattern: str) -> FrozenSet[str]:
-    "The characters below U+0100 that a single-character regex accepts."
+    """
+    The characters below U+0100 that a single-character regex accepts. That covers
+    everything qdtext and quoted-pair allow (they stop at obs-text, U+00FF); anything
+    higher is outside both.
+    """
     return frozenset(c for c in map(chr, range(256)) if re.fullmatch(pattern, c, RE_FLAGS))
 
 

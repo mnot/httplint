@@ -26,14 +26,32 @@ class SplitListFieldTest(unittest.TestCase):
         self.assertEqual(split_list_field(r'"a\",b",c'), [r'"a\",b"', "c"])
         self.assertEqual(split_list_field('a"b"c,d'), ['a"b"c', "d"])
 
+    def test_quoted_character_classes(self):
+        # obs-text and HTAB are allowed inside a quoted-string; controls and DEL aren't,
+        # nor is a backslash before one. The quote then doesn't open a quoted-string.
+        self.assertEqual(split_list_field('"\xe9",c'), ['"\xe9"', "c"])
+        self.assertEqual(split_list_field('"a\tb",c'), ['"a\tb"', "c"])
+        self.assertEqual(split_list_field('"a\x00b",c'), ["c"])
+        self.assertEqual(split_list_field('"a\x7fb",c'), ["c"])
+        self.assertEqual(split_list_field('"\\\x00",c'), ["c"])
+
+    def test_whitespace(self):
+        # Whitespace as str.strip() and the regex \s see it, not only SP and HTAB.
+        self.assertEqual(split_list_field("\x0ba\x0c,\u2003b\u2003"), ["a", "b"])
+
     def test_unterminated_quote(self):
-        # Behaviour carried over from the regex implementation: text before a bad
-        # quote that isn't followed by a comma is dropped.
+        # KNOWN BUG, pinned to keep the linear-time rewrite behaviour-neutral: a quote
+        # that doesn't open a valid quoted-string silently drops the text before it
+        # (unless a comma follows), so 'max-age=60"' yields nothing and no syntax note
+        # is raised. These expectations record the old regex's output, not intended
+        # behaviour; fix them together with the bug.
         self.assertEqual(split_list_field('a"b,c'), ["b", "c"])
         self.assertEqual(split_list_field('"a,b'), ["a", "b"])
         self.assertEqual(split_list_field('a,"b'), ["a", "b"])
         self.assertEqual(split_list_field('a "b'), ["b"])
         self.assertEqual(split_list_field('a"'), [])
+        self.assertEqual(split_list_field('max-age=60"'), [])
+        self.assertEqual(split_list_field('no-store, max-age=60"x'), ["no-store", "x"])
         self.assertEqual(split_list_field("a\\"), ["a\\"])
 
     def assert_fast(self, value):
@@ -42,18 +60,23 @@ class SplitListFieldTest(unittest.TestCase):
         self.assertLess(time.monotonic() - start, TIME_LIMIT)
 
     def test_unterminated_quote_is_linear(self):
+        # Reproducer: quadratic on the old regex.
         self.assert_fast("a" * SIZE + '"')
+        # Regression guards: these were not slow on the old regex.
         self.assert_fast('"' + "a" * SIZE)
         self.assert_fast('"\\' * (SIZE // 2))
         self.assert_fast('"a' * (SIZE // 2))
 
     def test_empty_elements_are_linear(self):
+        # Reproducer: quadratic on the old regex.
         self.assert_fast(" ," * (SIZE // 2))
+        # Regression guards.
         self.assert_fast("," * SIZE)
         self.assert_fast(" " * SIZE)
         self.assert_fast(", " * (SIZE // 2) + "a")
 
     def test_many_elements_are_linear(self):
+        # Regression guards.
         self.assert_fast("a," * SIZE)
         self.assert_fast('"a,b",' * (SIZE // 6))
 
