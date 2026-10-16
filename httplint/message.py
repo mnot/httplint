@@ -73,7 +73,7 @@ class HttpMessageLinter:
 
         self.content_length: int = 0
         self.content_hash: Optional[bytes] = None
-        self._hash_processor = hashlib.new("md5")
+        self._hash_processor = hashlib.new("md5", usedforsecurity=False)
         self.character_encoding: Optional[str] = None
         self.content_sample: bytes = b""
         self.content_sample_truncated: bool = False
