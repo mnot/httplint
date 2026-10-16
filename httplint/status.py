@@ -48,6 +48,8 @@ class StatusChecker:
     ) -> None:
         self.request = request
         self.response = response
+        if response.status_code is None:  # invalid or missing; already noted
+            return
         self.add_note = partial(response.notes.add, status=response.status_code or 0)
         try:
             status_method = getattr(self, f"status{response.status_code}")
