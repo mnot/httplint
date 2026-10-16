@@ -343,6 +343,37 @@ class TestStatusCodeSyntax(unittest.TestCase):
                 self.assertEqual(linter.status_code_str, raw.decode("ascii", "replace"))
                 self.assertIn(STATUS_CODE_NON_NUMERIC, [n.__class__ for n in linter.notes])
 
+    def test_invalid_status_code_only_one_status_note(self):
+        for raw in [b"+200", b"0200", b"abc"]:
+            with self.subTest(raw=raw):
+                classes = [n.__class__ for n in self._lint(raw).notes]
+                self.assertIn(STATUS_CODE_NON_NUMERIC, classes)
+                self.assertNotIn(STATUS_NONSTANDARD, classes)
+
+    def test_invalid_status_code_with_status_dependent_fields(self):
+        from httplint.field.parsers.content_range import CONTENT_RANGE_MEANINGLESS
+        from httplint.field.parsers.location import LOCATION_UNDEFINED
+        from httplint.field.parsers.strict_transport_security import HSTS_OVER_HTTP
+
+        linter = HttpResponseLinter()
+        linter.base_uri = "http://example.com/"
+        linter.process_response_topline(b"HTTP/1.1", b"+200", b"OK")
+        linter.process_headers(
+            [
+                (b"Date", b"Fri, 01 Jan 2021 00:00:00 GMT"),
+                (b"Location", b"/foo"),
+                (b"Content-Range", b"bytes 0-9/10"),
+                (b"Strict-Transport-Security", b"max-age=31536000"),
+            ]
+        )
+        linter.finish_content(True)
+        classes = [n.__class__ for n in linter.notes]
+        for n in linter.notes:  # HSTS_OVER_HTTP is a child of HSTS_INVALID
+            classes.extend(sub.__class__ for sub in n.subnotes)
+        self.assertIsNone(linter.status_code)
+        for note in [LOCATION_UNDEFINED, CONTENT_RANGE_MEANINGLESS, HSTS_OVER_HTTP]:
+            self.assertIn(note, classes)
+
     def test_valid_status_code_syntax(self):
         linter = self._lint(b"200")
         self.assertEqual(linter.status_code, 200)
