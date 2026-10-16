@@ -1,6 +1,7 @@
 import unittest
 from httplint import HttpResponseLinter
-from httplint.status import HEADER_SHOULD_NOT_BE_IN_304
+from httplint.message import STATUS_CODE_NON_NUMERIC
+from httplint.status import HEADER_SHOULD_NOT_BE_IN_304, STATUS_NONSTANDARD
 
 
 class TestStatus304(unittest.TestCase):
@@ -311,6 +312,52 @@ class TestStatus417(unittest.TestCase):
         notes = [n.__class__ for n in linter.notes]
         self.assertIn(STATUS_417_WITH_100_CONTINUE, notes)
         self.assertNotIn(STATUS_EXPECTATION_FAILED, notes)
+
+
+class TestStatusCodeSyntax(unittest.TestCase):
+    """The status code must be exactly three ASCII digits (RFC 9112 section 4)."""
+
+    def _lint(self, status_code: bytes) -> HttpResponseLinter:
+        linter = HttpResponseLinter()
+        linter.process_response_topline(b"HTTP/1.1", status_code, b"OK")
+        linter.process_headers([(b"Date", b"Fri, 01 Jan 2021 00:00:00 GMT")])
+        linter.finish_content(True)
+        return linter
+
+    def test_invalid_status_code_syntax(self):
+        for raw in [
+            b"2_00",
+            b"+200",
+            b" 200",
+            b"200 ",
+            b"0200",
+            b"-1",
+            b"20",
+            b"",
+            b"abc",
+            b"\xd9\xa2\xd9\xa0\xd9\xa0",  # Arabic-Indic digits
+        ]:
+            with self.subTest(raw=raw):
+                linter = self._lint(raw)
+                self.assertIsNone(linter.status_code)
+                self.assertEqual(linter.status_code_str, raw.decode("ascii", "replace"))
+                self.assertIn(STATUS_CODE_NON_NUMERIC, [n.__class__ for n in linter.notes])
+
+    def test_valid_status_code_syntax(self):
+        linter = self._lint(b"200")
+        self.assertEqual(linter.status_code, 200)
+        self.assertEqual(linter.status_code_str, "200")
+        self.assertNotIn(STATUS_CODE_NON_NUMERIC, [n.__class__ for n in linter.notes])
+
+    def test_out_of_range_three_digit_codes_unchanged(self):
+        for raw, number in [(b"099", 99), (b"600", 600), (b"999", 999)]:
+            with self.subTest(raw=raw):
+                linter = self._lint(raw)
+                self.assertEqual(linter.status_code, number)
+                self.assertEqual(linter.status_code_str, raw.decode("ascii"))
+                classes = [n.__class__ for n in linter.notes]
+                self.assertNotIn(STATUS_CODE_NON_NUMERIC, classes)
+                self.assertIn(STATUS_NONSTANDARD, classes)
 
 
 if __name__ == "__main__":
