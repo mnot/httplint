@@ -205,8 +205,10 @@ def split_params(instr: str, delim: str = ";") -> List[str]:
 def _char_set(pattern: str) -> FrozenSet[str]:
     """
     The characters below U+0100 that a single-character regex accepts. That covers
-    everything qdtext and quoted-pair allow (they stop at obs-text, U+00FF); anything
-    higher is outside both.
+    everything qdtext and quoted-pair allow (they stop at obs-text, U+00FF). Under
+    IGNORECASE the regex also accepts a few higher characters that case-fold into that
+    range (U+0130, for one); field values are decoded as ASCII or ISO-8859-1, so none
+    can occur.
     """
     return frozenset(c for c in map(chr, range(256)) if re.fullmatch(pattern, c, RE_FLAGS))
 
@@ -222,8 +224,8 @@ def split_list_field(field_value: str) -> List[str]:
     Split a field value on commas, as the #rule needs.
 
     Commas inside a quoted-string don't split. A quote that doesn't start a valid
-    quoted-string is not an item character: text before it that isn't followed by a
-    comma is dropped, and parsing resumes one character later.
+    quoted-string is an ordinary character of its item, so the malformed item reaches the
+    field's own syntax check instead of being dropped.
 
     This is linear; an earlier regex-based version backtracked quadratically.
     """
@@ -232,14 +234,14 @@ def split_list_field(field_value: str) -> List[str]:
     # quote, or -1 if it is unterminated or malformed.
     quote_end = [-1] * (size + 2)
     # run_end[idx]: where the run of non-comma characters and quoted-strings starting at
-    # idx stops (at a comma or the end), or -1 if it stops at a bad quote.
+    # idx stops (at a comma or the end).
     run_end = [size] * (size + 1)
     for idx in range(size - 1, -1, -1):
         char = field_value[idx]
         if char == '"':
             quote_end[idx] = idx + 1
             after = quote_end[idx + 1]
-            run_end[idx] = run_end[after] if after >= 0 else -1
+            run_end[idx] = run_end[after if after >= 0 else idx + 1]
             continue
         if char in _QDTEXT:
             quote_end[idx] = quote_end[idx + 1]
@@ -250,13 +252,10 @@ def split_list_field(field_value: str) -> List[str]:
     pos = 0
     while pos < size:
         stop = run_end[pos]
-        if stop > pos:
-            item = field_value[pos:stop].strip()
-            if item:
-                items.append(item)
-            pos = stop
-        else:
-            pos += 1
+        item = field_value[pos:stop].strip()
+        if item:
+            items.append(item)
+        pos = stop + 1
     return items
 
 

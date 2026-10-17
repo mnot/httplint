@@ -28,30 +28,31 @@ class SplitListFieldTest(unittest.TestCase):
 
     def test_quoted_character_classes(self):
         # obs-text and HTAB are allowed inside a quoted-string; controls and DEL aren't,
-        # nor is a backslash before one. The quote then doesn't open a quoted-string.
+        # nor is a backslash before one. The quote then doesn't open a quoted-string, and the
+        # item is kept (for the syntax check to report) rather than dropped.
         self.assertEqual(split_list_field('"\xe9",c'), ['"\xe9"', "c"])
         self.assertEqual(split_list_field('"a\tb",c'), ['"a\tb"', "c"])
-        self.assertEqual(split_list_field('"a\x00b",c'), ["c"])
-        self.assertEqual(split_list_field('"a\x7fb",c'), ["c"])
-        self.assertEqual(split_list_field('"\\\x00",c'), ["c"])
+        self.assertEqual(split_list_field('"a\x00b",c'), ['"a\x00b"', "c"])
+        self.assertEqual(split_list_field('"a\x7fb",c'), ['"a\x7fb"', "c"])
+        self.assertEqual(split_list_field('"\\\x00",c'), ['"\\\x00"', "c"])
 
     def test_whitespace(self):
         # Whitespace as str.strip() and the regex \s see it, not only SP and HTAB.
         self.assertEqual(split_list_field("\x0ba\x0c,\u2003b\u2003"), ["a", "b"])
 
     def test_unterminated_quote(self):
-        # KNOWN BUG, pinned to keep the linear-time rewrite behaviour-neutral: a quote
-        # that doesn't open a valid quoted-string silently drops the text before it
-        # (unless a comma follows), so 'max-age=60"' yields nothing and no syntax note
-        # is raised. These expectations record the old regex's output, not intended
-        # behaviour; fix them together with the bug.
-        self.assertEqual(split_list_field('a"b,c'), ["b", "c"])
-        self.assertEqual(split_list_field('"a,b'), ["a", "b"])
-        self.assertEqual(split_list_field('a,"b'), ["a", "b"])
-        self.assertEqual(split_list_field('a "b'), ["b"])
-        self.assertEqual(split_list_field('a"'), [])
-        self.assertEqual(split_list_field('max-age=60"'), [])
-        self.assertEqual(split_list_field('no-store, max-age=60"x'), ["no-store", "x"])
+        # A quote that doesn't open a valid quoted-string is an ordinary character of its
+        # item, so the malformed item reaches the field's syntax check rather than being
+        # dropped.
+        self.assertEqual(split_list_field('a"b,c'), ['a"b', "c"])
+        self.assertEqual(split_list_field('"a,b'), ['"a', "b"])
+        self.assertEqual(split_list_field('a,"b'), ["a", '"b'])
+        self.assertEqual(split_list_field('a "b'), ['a "b'])
+        self.assertEqual(split_list_field('a"'), ['a"'])
+        self.assertEqual(split_list_field('max-age=60"'), ['max-age=60"'])
+        self.assertEqual(
+            split_list_field('no-store, max-age=60"x'), ["no-store", 'max-age=60"x']
+        )
         self.assertEqual(split_list_field("a\\"), ["a\\"])
 
     def assert_fast(self, value):
