@@ -267,6 +267,10 @@ def parse_params(
 ) -> ParamDictType:
     """
     Parse parameters into a dictionary.
+
+    If a parameter repeats, the first instance is used and the rest are ignored (and
+    not checked further), as RFC 8288 does for Link, the Server Timing specification
+    for Server-Timing, and the MIME Sniffing Standard for Content-Type.
     """
     param_dict: ParamDictType = {}
     for param in split_params(instr, delim):
@@ -278,6 +282,7 @@ def parse_params(
         k_norm = key.lower()
         if k_norm in param_dict:
             add_note(PARAM_REPEATS, param=k_norm)
+            continue
         if val[0] == val[-1] == "'":
             add_note(
                 PARAM_SINGLE_QUOTED,
@@ -440,7 +445,10 @@ class PARAM_REPEATS(Note):
     _summary = "The '%(param)s' parameter repeats in the %(field_name)s header."
     _text = """\
 Parameters on the `%(field_name)s` field should not repeat; implementations may handle them
-differently."""
+differently. Where a specification says, it's the first instance that counts -- for example,
+[RFC 8288](https://www.rfc-editor.org/rfc/rfc8288.html#section-3.3) for `Link`, and the
+[Server Timing](https://w3c.github.io/server-timing/#the-server-timing-header-field)
+specification -- and that is the one used here."""
 
 
 class PARAM_SINGLE_QUOTED(Note):

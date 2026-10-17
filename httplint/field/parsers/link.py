@@ -167,9 +167,11 @@ class RelativeLinkTest(FieldTest[AnyMessageLinterProtocol]):
 
 
 class RepeatingRelationLinkTest(FieldTest[AnyMessageLinterProtocol]):
+    "RFC 8288 Section 3.3: occurrences after the first are ignored."
+
     name = "Link"
     inputs = [b'</foo>; rel="example"; rel="another"']
-    expected_out = [("/foo", {"rel": "another"})]
+    expected_out = [("/foo", {"rel": "example"})]
     expected_notes: NoteClassListType = [PARAM_REPEATS]
 
 
