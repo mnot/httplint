@@ -90,6 +90,57 @@ class TestRequestTargetForms(unittest.TestCase):
         )
         self.assertEqual(authority_to_ascii("[::1]:80"), "[::1]:80")
 
+    def test_host_to_ascii_keeps_deviation_characters(self) -> None:
+        from httplint.util import host_to_ascii
+
+        # Where IDNA2003 and IDNA2008 differ (UTS #46, Table 1): the IDNA2003 result is a
+        # different domain.
+        for host, ascii_host in [
+            ("faß.de", "xn--fa-hia.de"),  # not fass.de
+            ("βόλος.com", "xn--nxasmm1c.com"),  # not xn--nxasmq6b.com
+            ("ශ්\u200dරී.com", "xn--10cl1a0b660p.com"),  # ZWJ kept
+            ("نامه\u200cای.com", "xn--mgba3gch31f060k.com"),  # ZWNJ kept
+        ]:
+            with self.subTest(host=host):
+                self.assertEqual(host_to_ascii(host), ascii_host)
+                self.assertNotEqual(host.encode("idna").decode(), ascii_host)
+
+    def test_host_to_ascii_maps_case_and_compatibility_characters(self) -> None:
+        from httplint.util import host_to_ascii
+
+        self.assertEqual(host_to_ascii("BÜCHER.Example"), "xn--bcher-kva.example")
+        self.assertEqual(host_to_ascii("ｗｗｗ.ü.example"), "www.xn--tda.example")
+        self.assertEqual(host_to_ascii("bücher.example."), "xn--bcher-kva.example.")
+
+    def test_host_to_ascii_falls_back_for_what_idna2008_forbids(self) -> None:
+        from httplint.util import host_to_ascii
+
+        # Browsers accept these (URL Standard: UTS #46, not IDNA2008); so did we.
+        self.assertEqual(host_to_ascii("☕.example"), "xn--53h.example")
+        self.assertEqual(host_to_ascii("ü_.example"), "xn--_-dha.example")
+        self.assertEqual(host_to_ascii("-ü.example"), "xn----eha.example")
+
+    def test_host_to_ascii_leaves_ascii_alone(self) -> None:
+        from httplint.util import host_to_ascii
+
+        self.assertEqual(host_to_ascii("EXAMPLE.com"), "EXAMPLE.com")
+        self.assertEqual(host_to_ascii("xn--bcher-kva.example"), "xn--bcher-kva.example")
+        self.assertEqual(host_to_ascii("a_b.example"), "a_b.example")
+
+    def test_host_to_ascii_rejects_what_neither_accepts(self) -> None:
+        from httplint.util import host_to_ascii
+
+        for host in ["a..b", "ü..b", "ü" * 64 + ".com", ".ü"]:
+            with self.subTest(host=host):
+                with self.assertRaises(UnicodeError):
+                    host_to_ascii(host)
+
+    def test_idna2008_host_in_request_target(self) -> None:
+        linter = self.assertClean(b"GET", "http://faß.de/straße".encode())
+        self.assertEqual(linter.uri, "http://xn--fa-hia.de/stra%C3%9Fe")
+        linter = self.assertClean(b"CONNECT", "faß.de:443".encode())
+        self.assertEqual(linter.uri, "xn--fa-hia.de:443")
+
     def test_authority_to_ascii_userinfo(self) -> None:
         from httplint.util import authority_to_ascii
 

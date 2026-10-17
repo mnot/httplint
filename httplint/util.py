@@ -9,15 +9,38 @@ from typing import Any, List
 from urllib.parse import quote as urlquote
 from urllib.parse import urlsplit, urlunsplit
 
+import idna
+
 from httplint.i18n import format_timedelta, translate
 from httplint.note import MarkdownSafe
 
 _ASCII = "".join(map(chr, range(128)))
 
 
+def host_to_ascii(host: str) -> str:
+    """
+    Convert a host to ASCII for DNS: IDNA2008 with Unicode IDNA Compatibility Processing
+    (UTS #46) to map case and compatibility characters, without the transitional
+    processing that turns "faß.de" into "fass.de" (a different domain). That is what
+    the URL Standard does, and IDNA2008 itself (RFC 5890) obsoletes the IDNA2003 that
+    RFC 3986 and RFC 3987 still cite.
+
+    IDNA2008 forbids some code points that UTS #46 and browsers allow (symbols and
+    emoji, "_", a hyphen at the start of a label). For those, and for hosts that
+    are already ASCII, this falls back to Python's IDNA2003 codec, so the result is no
+    stricter than before. Raises UnicodeError if neither accepts the host.
+    """
+    if not host.isascii():
+        try:
+            return idna.encode(host, uts46=True, transitional=False).decode("ascii")
+        except idna.IDNAError:
+            pass
+    return host.encode("idna").decode("ascii")
+
+
 def authority_to_ascii(authority: str) -> str:
     """
-    Make an authority ASCII: IDNA-encode the host, and percent-encode any non-ASCII
+    Make an authority ASCII: convert the host (see host_to_ascii), and percent-encode any non-ASCII
     userinfo as UTF-8 (RFC 3987, Section 3.1). The port is left alone.
     """
     userinfo, at, hostport = authority.rpartition("@")
@@ -25,7 +48,7 @@ def authority_to_ascii(authority: str) -> str:
     if hostport.startswith("["):  # IP-literal; nothing to encode
         return f"{userinfo}{at}{hostport}"
     host, colon, port = hostport.partition(":")
-    return f"{userinfo}{at}{host.encode('idna').decode('ascii')}{colon}{port}"
+    return f"{userinfo}{at}{host_to_ascii(host)}{colon}{port}"
 
 
 def iri_to_uri(iri: str) -> str:
