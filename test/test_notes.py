@@ -17,6 +17,8 @@ def checkNote(note_cls):
     assert note_cls._summary != "", note_name
     assert not re.search(r"\s{2,}", note_cls._summary), note_name
     assert isinstance(note_cls._text, str), note_name
+    # An unclosed code span runs on into the rest of the note.
+    assert note_cls._text.count("`") % 2 == 0, note_name
 
     # Render summary and detail with a synthetic value for every named
     # %-directive in the templates -- 1 satisfies every conversion
