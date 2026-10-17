@@ -1,6 +1,6 @@
 import codecs
 from functools import lru_cache
-from typing import Dict, Optional, Tuple
+from typing import Dict, FrozenSet, List, Optional, Tuple
 
 import chardet
 
@@ -87,24 +87,47 @@ _PYTHON_DECODERS: Dict[str, Tuple[str, ...]] = {
     "EUC-KR": ("cp949",),
 }
 
-# Labels that name US-ASCII or ISO-8859-1, but that recipients following the Encoding
-# Standard decode as windows-1252.
-ASCII_LABELS = frozenset({"us-ascii", "ascii", "ansi_x3.4-1968"})
-LATIN1_LABELS = frozenset(
-    {
-        "iso-8859-1",
-        "iso8859-1",
-        "iso88591",
-        "iso_8859-1",
-        "iso_8859-1:1987",
-        "iso-ir-100",
-        "latin1",
-        "l1",
-        "ibm819",
-        "cp819",
-        "csisolatin1",
-    }
-)
+# Labels for registered charsets that recipients following the Encoding Standard decode as
+# a Windows one -- bytes the registered charset leaves undefined, or means differently,
+# show up as something else -- with the Python codec that decodes the registered charset.
+# RemappedLabelsTest (test_charset.py) checks that this covers every such label in the Standard.
+REMAPPED_LABELS: Dict[str, str] = {
+    **dict.fromkeys(("us-ascii", "ascii", "ansi_x3.4-1968"), "ascii"),
+    **dict.fromkeys(
+        (
+            "iso-8859-1",
+            "iso8859-1",
+            "iso88591",
+            "iso_8859-1",
+            "iso_8859-1:1987",
+            "iso-ir-100",
+            "latin1",
+            "l1",
+            "ibm819",
+            "cp819",
+            "csisolatin1",
+        ),
+        "latin-1",
+    ),
+    **dict.fromkeys(
+        (
+            "iso-8859-9",
+            "iso8859-9",
+            "iso88599",
+            "iso_8859-9",
+            "iso_8859-9:1989",
+            "iso-ir-148",
+            "latin5",
+            "l5",
+            "csisolatin5",
+        ),
+        "iso8859-9",
+    ),
+    # Python's tis-620 leaves 0xA0 undefined; ISO-8859-11 is TIS-620 plus the no-break space
+    # that Thai pages labelled tis-620 use, so that isn't worth a note.
+    "tis-620": "iso8859-11",
+    **dict.fromkeys(("iso-8859-11", "iso8859-11", "iso885911"), "iso8859-11"),
+}
 
 # chardet names that aren't Encoding Standard labels, as ones that are.
 _CHARDET_ALIASES = {
@@ -325,27 +348,59 @@ def verify_charset(linter: LinterProtocol) -> None:  # pylint: disable=too-many-
     _note_remapped_label(linter, effective_charset_raw, sample)
 
 
+def remapped_bytes(label: str) -> FrozenSet[int]:
+    """
+    The bytes (0x80-0xFF) that a recipient following the Encoding Standard decodes
+    differently from the encoding `label` names, or that encoding leaves undefined; empty
+    if `label` isn't a remapped one.
+    """
+    return _remapped_bytes(normalise_label(label))
+
+
+@lru_cache(maxsize=None)
+def _remapped_bytes(label: str) -> FrozenSet[int]:
+    codec = REMAPPED_LABELS.get(label)
+    encoding = whatwg_encoding(label)
+    if codec is None or encoding is None:
+        return frozenset()
+    differing = set()
+    for byte in range(0x80, 0x100):
+        try:
+            registered: Optional[str] = bytes([byte]).decode(codec)
+        except UnicodeDecodeError:
+            registered = None
+        if registered != decode_bytes(bytes([byte]), encoding, sniff_bom=False):
+            differing.add(byte)
+    return frozenset(differing)
+
+
+def format_byte_ranges(values: FrozenSet[int]) -> str:
+    "Bytes as ranges, like '0x80, 0x82-0x8C'."
+    ranges: List[List[int]] = []
+    for value in sorted(values):
+        if ranges and ranges[-1][1] == value - 1:
+            ranges[-1][1] = value
+        else:
+            ranges.append([value, value])
+    return ", ".join(
+        f"0x{start:02X}" if start == end else f"0x{start:02X}-0x{end:02X}" for start, end in ranges
+    )
+
+
 def _note_remapped_label(linter: LinterProtocol, declared_raw: str, sample: bytes) -> None:
     """
-    Note a US-ASCII or ISO-8859-1 label on content that those encodings, as
-    registered, can't carry but that recipients decode as windows-1252 without
-    complaint. Nothing else will have noticed.
+    Note a label for a registered charset on content that charset can't carry but that
+    recipients decode as a Windows one without complaint. Nothing else will have noticed.
     """
     label = normalise_label(declared_raw)
-    if label in ASCII_LABELS:
-        bad_bytes = "0x80-0xFF"
-        found = any(byte & 0x80 for byte in sample)
-    elif label in LATIN1_LABELS:
-        bad_bytes = "0x80-0x9F"
-        found = any(0x80 <= byte <= 0x9F for byte in sample)
-    else:
-        return
+    found = remapped_bytes(label) & set(sample)
     if found:
         linter.notes.add(
             "content-type",
             CHARSET_LABEL_REMAPPED,
             declared_charset=declared_raw,
-            bad_bytes=bad_bytes,
+            encoding=whatwg_encoding(label),
+            bad_bytes=format_byte_ranges(found),
         )
 
 
@@ -380,12 +435,13 @@ class CHARSET_LABEL_REMAPPED(Note):
     _summary = "Recipients won't decode the content as %(declared_charset)s."
     _text = """\
 The `Content-Type` header declares the character encoding as `%(declared_charset)s`, but the
-content has bytes in the range %(bad_bytes)s, which that encoding doesn't define.
+content has bytes (%(bad_bytes)s) that the standard encoding of that name doesn't define, or
+defines as something else.
 
 Browsers follow the [Encoding Standard](https://encoding.spec.whatwg.org/#names-and-labels), which
-decodes `%(declared_charset)s` as `windows-1252`, so they will show something for those bytes
-(curly quotes and `€`, or UTF-8 text as mojibake). Recipients that follow the label strictly
-will treat them as errors or control characters.
+decodes `%(declared_charset)s` as `%(encoding)s`, so they will show something for those bytes:
+punctuation and symbols like curly quotes and `€`, or UTF-8 text as mojibake. Recipients that follow
+the label strictly will treat them as errors or control characters.
 
 Declare the encoding the content really uses; for UTF-8, that's `utf-8`."""
 
