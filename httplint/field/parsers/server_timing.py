@@ -1,5 +1,6 @@
 from typing import Tuple
 
+from httplint.field import BAD_SYNTAX_DETAILED
 from httplint.field.list_field import HttpListField
 from httplint.field.tests import FieldTest
 from httplint.field.utils import PARAM_REPEATS, parse_params
@@ -128,3 +129,16 @@ class ServerTimingRepeatedParamTest(FieldTest[ResponseLinterProtocol]):
     inputs = [b'db;dur=53;dur=foo;desc="Database";desc="Other"']
     expected_out = [("db", {"dur": "53", "desc": "Database"})]
     expected_notes: NoteClassListType = [PARAM_REPEATS]
+
+
+class ServerTimingInvalidFirstParamTest(FieldTest[ResponseLinterProtocol]):
+    "An empty first dur is the first dur; the 5 after it is ignored."
+
+    name = "Server-Timing"
+    inputs = [b'db;dur=;dur=5;desc="x"']
+    expected_out = [("db", {"desc": "x"})]
+    expected_notes: NoteClassListType = [
+        BAD_SYNTAX_DETAILED,
+        PARAM_REPEATS,
+        SERVER_TIMING_MISSING_DUR,
+    ]
