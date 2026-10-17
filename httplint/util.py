@@ -17,25 +17,57 @@ from httplint.note import MarkdownSafe
 _ASCII = "".join(map(chr, range(128)))
 
 
+# What both IDNA2003 and UTS #46 treat as a dot between labels.
+_LABEL_SEPARATORS = re.compile("[.\u3002\uff0e\uff61]")
+
+# A label longer than this can't be valid: in 63 characters of A-label, NFKC and
+# punycode can't make it much shorter. It bounds the work done on hostile input.
+_MAX_LABEL_INPUT = 252
+
+
 def host_to_ascii(host: str) -> str:
     """
-    Convert a host to ASCII for DNS: IDNA2008 with Unicode IDNA Compatibility Processing
-    (UTS #46) to map case and compatibility characters, without the transitional
-    processing that turns "faß.de" into "fass.de" (a different domain). That is what
-    the URL Standard does, and IDNA2008 itself (RFC 5890) obsoletes the IDNA2003 that
-    RFC 3986 and RFC 3987 still cite.
+    Convert a host to ASCII for DNS, a label at a time: IDNA2008 with Unicode IDNA
+    Compatibility Processing (UTS #46) to map case and compatibility characters, but
+    without the transitional processing that turns "faß.de" into "fass.de" (a different
+    domain). That is what the URL Standard does, and IDNA2008 itself (RFC 5890)
+    obsoletes the IDNA2003 that RFC 3986 and RFC 3987 still cite.
 
     IDNA2008 forbids some code points that UTS #46 and browsers allow (symbols and
-    emoji, "_", a hyphen at the start of a label). For those, and for hosts that
-    are already ASCII, this falls back to Python's IDNA2003 codec, so the result is no
-    stricter than before. Raises UnicodeError if neither accepts the host.
+    emoji, "_", a hyphen at the start or end of a label). A label with one falls back
+    to Python's IDNA2003 codec -- the label, not the host, so that "_dmarc.faß.de" still
+    gets the right "faß" -- and is no stricter than before. Hosts that are already
+    ASCII go to the codec unchanged. ASCII labels in other hosts are lowercased, as UTS
+    #46 does, but not otherwise checked beyond their length. Raises UnicodeError if
+    there's a label that nothing accepts.
     """
-    if not host.isascii():
-        try:
-            return idna.encode(host, uts46=True, transitional=False).decode("ascii")
-        except idna.IDNAError:
-            pass
-    return host.encode("idna").decode("ascii")
+    if host.isascii():
+        return host.encode("idna").decode("ascii")
+    labels = _LABEL_SEPARATORS.split(host)
+    for index, label in enumerate(labels):
+        if not label and (index == 0 or index != len(labels) - 1):  # only a trailing dot
+            raise UnicodeError("label empty")
+    return ".".join(_label_to_ascii(label) for label in labels)
+
+
+def _label_to_ascii(label: str) -> str:
+    if not label:
+        return label
+    if label.isascii():
+        if len(label) > 63:
+            raise UnicodeError("label too long")
+        return label.lower()
+    if len(label) > _MAX_LABEL_INPUT:
+        raise UnicodeError("label too long")
+    try:
+        mapped = idna.uts46_remap(label, std3_rules=False, transitional=False)
+        # The label is now at most 63 characters of A-label, which takes 4 for "xn--"
+        # and a character for everything in it.
+        if len(mapped) > 59 or "." in mapped:
+            raise idna.IDNAError("label unsuitable")
+        return idna.alabel(mapped).decode("ascii")
+    except idna.IDNAError:
+        return label.encode("idna").decode("ascii")
 
 
 def authority_to_ascii(authority: str) -> str:

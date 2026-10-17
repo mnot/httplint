@@ -1,12 +1,12 @@
 import unittest
 
-from httplint.note import levels
 from httplint.message import (
-    HttpRequestLinter,
     REQUEST_TARGET_FORM,
     REQUEST_TARGET_FRAGMENT,
     URI_BAD_SYNTAX,
+    HttpRequestLinter,
 )
+from httplint.note import levels
 
 
 def lint(method: bytes, target: bytes) -> HttpRequestLinter:
@@ -120,6 +120,59 @@ class TestRequestTargetForms(unittest.TestCase):
         self.assertEqual(host_to_ascii("ü_.example"), "xn--_-dha.example")
         self.assertEqual(host_to_ascii("-ü.example"), "xn----eha.example")
 
+    def test_host_to_ascii_falls_back_a_label_at_a_time(self) -> None:
+        from httplint.util import host_to_ascii
+
+        # One label IDNA2008 forbids shouldn't cost the others their right answer.
+        for host, ascii_host in [
+            ("_dmarc.faß.de", "_dmarc.xn--fa-hia.de"),
+            ("_acme-challenge.faß.de", "_acme-challenge.xn--fa-hia.de"),
+            ("www_1.faß.de", "www_1.xn--fa-hia.de"),
+            ("-b.faß.de", "-b.xn--fa-hia.de"),
+            ("_x.βόλος.com", "_x.xn--nxasmm1c.com"),
+            ("ab--c.βόλος.com", "ab--c.xn--nxasmm1c.com"),
+            ("☕.faß.de", "xn--53h.xn--fa-hia.de"),
+        ]:
+            with self.subTest(host=host):
+                self.assertEqual(host_to_ascii(host), ascii_host)
+        # A label that is both forbidden and has a deviation character still gets IDNA2003.
+        self.assertEqual(host_to_ascii("x.faß-.de"), "x.fass-.de")
+
+    def test_host_to_ascii_dots_and_labels(self) -> None:
+        from httplint.util import host_to_ascii
+
+        self.assertEqual(host_to_ascii("faß。de"), "xn--fa-hia.de")  # ideographic full stop
+        self.assertEqual(host_to_ascii("ü."), "xn--tda.")
+        self.assertEqual(host_to_ascii("ÜBER.Example.COM"), "xn--ber-goa.example.com")
+        with self.assertRaises(UnicodeError):
+            host_to_ascii("ü." + "a" * 64)  # an ASCII label that's too long, as before
+        # 250 characters: long hosts are fine, as with the codec.
+        long_host = ("a" * 60 + ".") * 4 + "faß.de"
+        self.assertEqual(host_to_ascii(long_host), ("a" * 60 + ".") * 4 + "xn--fa-hia.de")
+
+    def test_host_to_ascii_is_fast_on_hostile_input(self) -> None:
+        import time
+
+        from httplint.util import host_to_ascii
+
+        # idna 3.7-3.13 decode an xn-- label with a quadratic codec; these must never
+        # get to it, or to the codec's own NFKC amplification.
+        for host in [
+            "xn--" + "a" * 1_000_000 + ".ü",
+            "ü.xn--" + "a" * 1_000_000,
+            "ﷺ" * 65_536,
+            "ü" * 1_000_000,
+            "ب" + "1\u200c" * 100_000 + "ب",
+        ]:
+            start = time.monotonic()
+            with self.assertRaises(UnicodeError):
+                host_to_ascii(host)
+            self.assertLess(time.monotonic() - start, 2.0, host[:20])
+        # Many short labels are linear too (and valid; there's no total length limit).
+        start = time.monotonic()
+        host_to_ascii("ü." * 100_000)
+        self.assertLess(time.monotonic() - start, 5.0)
+
     def test_host_to_ascii_leaves_ascii_alone(self) -> None:
         from httplint.util import host_to_ascii
 
@@ -154,9 +207,7 @@ class TestRequestTargetForms(unittest.TestCase):
         self.assertEqual(authority_to_ascii("ü@[::1]:80"), "%C3%BC@[::1]:80")
         # Colons in the password, and more than one "@": userinfo ends at the last one.
         self.assertEqual(authority_to_ascii("u:p:ü@example.com"), "u:p:%C3%BC@example.com")
-        self.assertEqual(
-            authority_to_ascii("ü@ü@bücher.com"), "%C3%BC@%C3%BC@xn--bcher-kva.com"
-        )
+        self.assertEqual(authority_to_ascii("ü@ü@bücher.com"), "%C3%BC@%C3%BC@xn--bcher-kva.com")
         # Existing escapes and ASCII are left alone.
         self.assertEqual(authority_to_ascii("a%40b:c@example.com"), "a%40b:c@example.com")
 
@@ -224,7 +275,9 @@ class TestRequestTargetForms(unittest.TestCase):
         notes = [n for n in lint(b"OPTIONS", b"/").notes if isinstance(n, REQUEST_TARGET_FORM)]
         self.assertFalse(notes)
         notes = [n for n in lint(b"CONNECT", b"/").notes if isinstance(n, REQUEST_TARGET_FORM)]
-        self.assertEqual(str(notes[0].summary), "The request target isn't valid for CONNECT requests.")
+        self.assertEqual(
+            str(notes[0].summary), "The request target isn't valid for CONNECT requests."
+        )
 
     def test_authority_form_ipv6(self) -> None:
         self.assertClean(b"CONNECT", b"[::1]:443")
