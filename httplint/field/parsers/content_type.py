@@ -32,7 +32,7 @@ a GET."""
     def parse(self, field_value: str, add_note: AddNoteMethodType) -> Tuple[str, ParamDictType]:
         media_type, params = parse_media_type(field_value, add_note, nostar=["charset"])
         charset = params.get("charset")
-        if isinstance(charset, str):
+        if isinstance(charset, str) and normalise_label(charset):
             check_charset(charset, add_note)
         return media_type, params
 
@@ -190,3 +190,11 @@ class CTCharsetUnregisteredTest(FieldTest[AnyMessageLinterProtocol]):
     inputs = [b"text/plain; charset=utf8"]
     expected_out: Any = ("text/plain", {"charset": "utf8"})
     expected_notes: NoteClassListType = [CHARSET_UNREGISTERED]
+
+
+class CTCharsetEmptyTest(FieldTest[AnyMessageLinterProtocol]):
+    "Nothing to say about an empty name."
+
+    name = "Content-Type"
+    inputs = [b'text/plain; charset=""']
+    expected_out: Any = ("text/plain", {"charset": ""})

@@ -316,7 +316,7 @@ class DecodeBytesTest(unittest.TestCase):
     def test_genuinely_corrupt_truncated_sample_still_rejected(self):
         # Tolerance only covers a trailing incomplete sequence; garbage
         # earlier in the sample must still fail.
-        sample = b"\xff\xfe not valid utf-8 anywhere"
+        sample = b"\xc0\xaf not valid utf-8 anywhere"
         self.assertIsNone(decode_bytes(sample, "UTF-8", truncated=True))
 
 

@@ -64,7 +64,9 @@ def iana_names(csv_text: str) -> FrozenSet[str]:
     for row in csv.DictReader(io.StringIO(csv_text)):
         names.add(row["Name"].lower())
         for alias in row["Aliases"].replace("\r", "").split("\n"):
-            if alias and alias != "None":
+            # The registry's "Aliases" cell also carries remarks, like "(aliases are
+            # provided for historical reasons ...) [malyshev]".
+            if alias and alias != "None" and not alias.startswith("(") and " " not in alias:
                 names.add(alias.lower())
     return frozenset(names)
 

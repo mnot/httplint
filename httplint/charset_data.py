@@ -280,7 +280,6 @@ SINGLE_BYTE: Dict[str, str] = {
 # Lowercased names and aliases in the IANA Character Sets registry.
 IANA_NAMES: FrozenSet[str] = frozenset(
     [
-        "(aliases are provided for historical reasons and should not be used) [malyshev]",
         "437",
         "850",
         "851",

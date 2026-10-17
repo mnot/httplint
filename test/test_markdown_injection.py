@@ -54,6 +54,18 @@ class SfParamInjectionTest(unittest.TestCase):
             self.check(b"Proxy-Status", b"p", param)
 
 
+class CharsetInjectionTest(unittest.TestCase):
+    def test_unknown_charset_in_content_type(self) -> None:
+        # Only a name that isn't a known label reaches CHARSET_UNKNOWN's text, and any
+        # quoted-string can be one. 0x85 is an obs-text line break to some parsers.
+        for sep in ("", "\x85", "\xa0"):
+            payload = f'text/plain; charset="x{sep}`{HTML}`{sep}"'
+            with self.subTest(sep=sep):
+                detail = detail_text(b"Content-Type", payload.encode("latin-1"))
+                self.assertNotIn("<img", detail)
+                self.assertIn("&lt;img", detail)
+
+
 class OtherSitesInjectionTest(unittest.TestCase):
     def test_link_resource_hint_target(self) -> None:
         # Exploitable before inline_safe handled line breaks.

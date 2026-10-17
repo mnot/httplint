@@ -106,8 +106,37 @@ LATIN1_LABELS = frozenset(
     }
 )
 
-# chardet names that aren't Encoding Standard labels.
-_CHARDET_ALIASES = {"utf-8-sig": "UTF-8", "maccyrillic": "x-mac-cyrillic", "macroman": "macintosh"}
+# chardet names that aren't Encoding Standard labels, as ones that are.
+_CHARDET_ALIASES = {
+    "utf-8-sig": "utf-8",
+    "utf-16-be": "utf-16be",
+    "utf-16-le": "utf-16le",
+    "maccyrillic": "x-mac-cyrillic",
+    "macroman": "macintosh",
+    "cp932": "windows-31j",
+    "cp949": "windows-949",
+    "cp874": "windows-874",
+    "iso8859-16": "iso-8859-16",
+}
+
+# A byte order mark outranks any label, in the Encoding Standard's decode algorithm and
+# in recipients' encoding sniffing; it's removed from the text.
+_BYTE_ORDER_MARKS = (
+    (b"\xef\xbb\xbf", "UTF-8"),
+    (b"\xfe\xff", "UTF-16BE"),
+    (b"\xff\xfe", "UTF-16LE"),
+)
+
+
+def _gb18030_euro(error: UnicodeError) -> Tuple[str, int]:
+    "The Standard's gb18030 decoder maps a lone 0x80 to the euro sign; Python's rejects it."
+    if isinstance(error, UnicodeDecodeError) and error.object[error.start] == 0x80:
+        return "\u20ac", error.start + 1
+    raise error
+
+
+codecs.register_error("httplint-gb18030-euro", _gb18030_euro)
+_ERROR_HANDLERS = {"gb18030": "httplint-gb18030-euro"}
 
 
 def normalise_label(label: Optional[str]) -> str:
@@ -146,7 +175,9 @@ def can_decode(encoding: str) -> bool:
     return encoding in SINGLE_BYTE or encoding in _PYTHON_DECODERS or encoding.startswith("py:")
 
 
-def decode_bytes(sample: bytes, encoding: str, truncated: bool = False) -> Optional[str]:
+def decode_bytes(
+    sample: bytes, encoding: str, truncated: bool = False, sniff_bom: bool = True
+) -> Optional[str]:
     """
     Decode `sample` as a recipient following the Encoding Standard would. Returns
     None if that decoding hits an error: invalid UTF-8, a byte that a single-byte
@@ -157,8 +188,14 @@ def decode_bytes(sample: bytes, encoding: str, truncated: bool = False) -> Optio
     detected encodings the Standard doesn't have. If `truncated`, a trailing
     incomplete multi-byte sequence is tolerated -- of any length, since a message cut
     short by a dropped connection may leave a sample far smaller than
-    TRUNCATION_SAFETY_MARGIN.
+    TRUNCATION_SAFETY_MARGIN. If `sniff_bom`, a byte order mark overrides `encoding`;
+    turn it off to ask what the label alone decodes.
     """
+    if sniff_bom:
+        for mark, bom_encoding in _BYTE_ORDER_MARKS:
+            if sample.startswith(mark):
+                encoding, sample = bom_encoding, sample[len(mark) :]
+                break
     if encoding in SINGLE_BYTE:
         text = sample.decode("latin-1").translate(_translation(encoding))
         return None if "\ufffd" in text else text
@@ -166,20 +203,17 @@ def decode_bytes(sample: bytes, encoding: str, truncated: bool = False) -> Optio
         names: Tuple[str, ...] = (encoding[3:],)
     else:
         names = _PYTHON_DECODERS.get(encoding, ())
-    if encoding in ("UTF-16BE", "UTF-16LE"):
-        # A byte order mark outranks the label, as it does in recipients.
-        if sample.startswith(b"\xfe\xff"):
-            names = ("utf-16-be",)
-        elif sample.startswith(b"\xff\xfe"):
-            names = ("utf-16-le",)
     for name in names:
+        handler = _ERROR_HANDLERS.get(name, "strict")
         try:
-            return sample.decode(name, errors="strict")
+            return sample.decode(name, errors=handler)
         except UnicodeDecodeError:
             if not truncated:
                 continue
             try:
-                return codecs.getincrementaldecoder(name)().decode(sample, final=False)
+                return codecs.getincrementaldecoder(name)(errors=handler).decode(
+                    sample, final=False
+                )
             except UnicodeError:
                 continue
         except (LookupError, UnicodeError):
@@ -335,8 +369,8 @@ def _encodings_compatible(declared: str, detected: str, sample: bytes, truncated
         if len(sample) <= TRUNCATION_SAFETY_MARGIN:
             return True
         sample = sample[:-TRUNCATION_SAFETY_MARGIN]
-    declared_text = decode_bytes(sample, declared)
-    detected_text = decode_bytes(sample, detected)
+    declared_text = decode_bytes(sample, declared, truncated, sniff_bom=False)
+    detected_text = decode_bytes(sample, detected, truncated, sniff_bom=False)
     return declared_text is not None and declared_text == detected_text
 
 
