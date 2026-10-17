@@ -90,7 +90,7 @@ _PYTHON_DECODERS: Dict[str, Tuple[str, ...]] = {
 # Labels for registered charsets that recipients following the Encoding Standard decode as
 # a Windows one -- bytes the registered charset leaves undefined, or means differently,
 # show up as something else -- with the Python codec that decodes the registered charset.
-# test_charset_labels checks that this covers every such label in the Standard.
+# RemappedLabelsTest (test_charset.py) checks that this covers every such label in the Standard.
 REMAPPED_LABELS: Dict[str, str] = {
     **dict.fromkeys(("us-ascii", "ascii", "ansi_x3.4-1968"), "ascii"),
     **dict.fromkeys(
@@ -123,7 +123,9 @@ REMAPPED_LABELS: Dict[str, str] = {
         ),
         "iso8859-9",
     ),
-    "tis-620": "tis-620",
+    # Python's tis-620 leaves 0xA0 undefined; ISO-8859-11 is TIS-620 plus the no-break space
+    # that Thai pages labelled tis-620 use, so that isn't worth a note.
+    "tis-620": "iso8859-11",
     **dict.fromkeys(("iso-8859-11", "iso8859-11", "iso885911"), "iso8859-11"),
 }
 
@@ -346,13 +348,17 @@ def verify_charset(linter: LinterProtocol) -> None:  # pylint: disable=too-many-
     _note_remapped_label(linter, effective_charset_raw, sample)
 
 
-@lru_cache(maxsize=None)
 def remapped_bytes(label: str) -> FrozenSet[int]:
     """
     The bytes (0x80-0xFF) that a recipient following the Encoding Standard decodes
-    differently from the charset `label` is registered for, or that charset leaves
-    undefined; empty if `label` isn't a remapped one.
+    differently from the encoding `label` names, or that encoding leaves undefined; empty
+    if `label` isn't a remapped one.
     """
+    return _remapped_bytes(normalise_label(label))
+
+
+@lru_cache(maxsize=None)
+def _remapped_bytes(label: str) -> FrozenSet[int]:
     codec = REMAPPED_LABELS.get(label)
     encoding = whatwg_encoding(label)
     if codec is None or encoding is None:
@@ -429,7 +435,7 @@ class CHARSET_LABEL_REMAPPED(Note):
     _summary = "Recipients won't decode the content as %(declared_charset)s."
     _text = """\
 The `Content-Type` header declares the character encoding as `%(declared_charset)s`, but the
-content has bytes (%(bad_bytes)s) that the registered encoding of that name doesn't define, or
+content has bytes (%(bad_bytes)s) that the standard encoding of that name doesn't define, or
 defines as something else.
 
 Browsers follow the [Encoding Standard](https://encoding.spec.whatwg.org/#names-and-labels), which

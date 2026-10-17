@@ -220,7 +220,10 @@ class LabelRemappedTest(unittest.TestCase):
 
     TEXT = "Il a dit \u201cbonjour\u201d \u2014 caf\u00e9 \u20ac5 et encore du texte. " * 4
     THAI = "\u0e2a\u0e27\u0e31\u0e2a\u0e14\u0e35\u0e04\u0e23\u0e31\u0e1a " * 20
-    TURKISH = "\u011fe\u00e7\u0131\u015f \u201cm\u00fc\u015fteri\u201d \u20ac5 yaz\u0131 \u0130\u00d6 " * 8
+    TURKISH = (
+        "\u011fe\u00e7\u0131\u015f \u201cm\u00fc\u015fteri\u201d \u20ac5 yaz\u0131 \u0130\u00d6 "
+        * 8
+    )
 
     def remapped(self, label, body):
         linter = _run([(b"Content-Type", b"text/html; charset=" + label)], body)
@@ -248,10 +251,20 @@ class LabelRemappedTest(unittest.TestCase):
             with self.subTest(label=label):
                 self.assertTrue(self.remapped(label, body))
 
+    def test_thai_no_break_space_is_not_worth_a_note(self):
+        # Pages labelled tis-620 use 0xA0 as a no-break space, though TIS-620 leaves it
+        # undefined.
+        body = (self.THAI + "\u00a0" + self.THAI).encode("iso8859-11")
+        self.assertFalse(self.remapped(b"tis-620", body))
+
     def test_content_the_registered_charset_can_carry_is_fine(self):
         for label, text, codec in [
             (b"iso-8859-1", "Caf\u00e9 r\u00e9sum\u00e9 na\u00efve gar\u00e7on " * 40, "latin-1"),
-            (b"iso-8859-9", "\u011fe\u00e7\u0131\u015f \u00fc\u015fteri yaz\u0131 \u0130\u00d6 " * 20, "iso8859-9"),
+            (
+                b"iso-8859-9",
+                "\u011fe\u00e7\u0131\u015f \u00fc\u015fteri yaz\u0131 \u0130\u00d6 " * 20,
+                "iso8859-9",
+            ),
             (b"tis-620", self.THAI, "tis-620"),
             (b"iso-8859-11", self.THAI + "\u00a0", "iso8859-11"),
         ]:
@@ -265,9 +278,15 @@ class LabelRemappedTest(unittest.TestCase):
         self.assertTrue(self.remapped(b"iso-8859-1", body + b" \x93"))
 
     def test_windows_labels_are_not_remapped(self):
-        for label, codec in [(b"windows-1252", "cp1252"), (b"windows-1254", "cp1254"), (b"windows-874", "cp874")]:
+        for label, codec in [
+            (b"windows-1252", "cp1252"),
+            (b"windows-1254", "cp1254"),
+            (b"windows-874", "cp874"),
+        ]:
             with self.subTest(label=label):
-                body = (self.TEXT if codec == "cp1252" else self.THAI + "\u2026").encode(codec, "replace")
+                body = (self.TEXT if codec == "cp1252" else self.THAI + "\u2026").encode(
+                    codec, "replace"
+                )
                 self.assertFalse(self.remapped(label, body))
 
     def test_ascii_content_is_fine(self):
@@ -311,6 +330,29 @@ class RemappedLabelsTest(unittest.TestCase):
         for label, codec in REMAPPED_LABELS.items():
             with self.subTest(label=label):
                 self.assertTrue(is_text_encoding(codec))
+
+    def test_remapped_bytes_per_label(self):
+        # Pinned, so a wrong codec for one label shows up. Windows-1252 and its Latin-1
+        # spellings differ only where windows-1252 has printable characters; windows-1254
+        # likewise; Thai differs in the C1 range where windows-874 has punctuation.
+        latin1 = frozenset({0x80, *range(0x82, 0x8D), 0x8E, *range(0x91, 0x9D), 0x9E, 0x9F})
+        latin5 = frozenset({0x80, *range(0x82, 0x8D), *range(0x91, 0x9D), 0x9F})
+        thai = frozenset({0x80, 0x85, *range(0x91, 0x98)})
+        expected = {
+            frozenset(range(0x80, 0x100)): ["us-ascii", "ascii", "ansi_x3.4-1968"],
+            latin1: ["iso-8859-1", "latin1", "l1", "csisolatin1", "ibm819", "iso-ir-100"],
+            latin5: ["iso-8859-9", "latin5", "l5", "csisolatin5", "iso-ir-148", "iso88599"],
+            thai: ["tis-620", "iso-8859-11", "iso8859-11", "iso885911"],
+        }
+        for differing, labels in expected.items():
+            for label in labels:
+                with self.subTest(label=label):
+                    self.assertEqual(remapped_bytes(label), differing)
+
+    def test_remapped_bytes_normalises_the_label(self):
+        self.assertEqual(remapped_bytes("US-ASCII"), remapped_bytes("us-ascii"))
+        self.assertEqual(remapped_bytes(" Latin1\t"), remapped_bytes("latin1"))
+        self.assertNotEqual(remapped_bytes("TIS-620"), frozenset())
 
     def test_remapped_bytes(self):
         self.assertEqual(remapped_bytes("us-ascii"), frozenset(range(0x80, 0x100)))
@@ -396,9 +438,7 @@ class EncodingsCompatibleTest(unittest.TestCase):
         # shift_jis defers the incomplete lead byte, cp1252 decodes it
         # outright -- which must not manufacture a mismatch.
         sample = ("ABC" * 3000).encode("shift_jis") + "日".encode("shift_jis")[:1]
-        self.assertTrue(
-            _encodings_compatible("Shift_JIS", "windows-1252", sample, truncated=True)
-        )
+        self.assertTrue(_encodings_compatible("Shift_JIS", "windows-1252", sample, truncated=True))
 
     def test_real_mismatch_still_detected_when_truncated(self):
         # The tail trim must not mask a genuine mismatch elsewhere in a
@@ -413,9 +453,7 @@ class EncodingsCompatibleTest(unittest.TestCase):
         # Too little left after trimming to compare safely; err toward
         # not flagging a mismatch rather than risking a false one.
         sample = b"ab"
-        self.assertTrue(
-            _encodings_compatible("Shift_JIS", "windows-1252", sample, truncated=True)
-        )
+        self.assertTrue(_encodings_compatible("Shift_JIS", "windows-1252", sample, truncated=True))
 
 
 class SampleIsTruncatedTest(unittest.TestCase):
