@@ -2,6 +2,7 @@ import unittest
 
 from httplint.charset import (
     CHARSET_IMPLICIT_MISMATCH,
+    CHARSET_LABEL_REMAPPED,
     CHARSET_MISMATCH,
     CHARSET_UNDECODABLE,
     _canonical,
@@ -205,6 +206,59 @@ class CharsetTest(unittest.TestCase):
     def test_text_charset_recorded(self):
         linter = _run([(b"Content-Type", b"text/plain; charset=UTF8")], b"x")
         self.assertEqual(linter.character_encoding, "UTF8")
+
+
+class LabelRemappedTest(unittest.TestCase):
+    """
+    US-ASCII and ISO-8859-1 labels mean windows-1252 to browsers, so content those
+    encodings can't carry decodes without complaint -- but not for everyone.
+    """
+
+    TEXT = "Il a dit \u201cbonjour\u201d \u2014 caf\u00e9 \u20ac5 et encore du texte. " * 4
+
+    def test_latin1_label_on_windows_1252_content(self):
+        for label in (b"iso-8859-1", b"latin1", b"ISO_8859-1", b"l1"):
+            with self.subTest(label=label):
+                linter = _run(
+                    [(b"Content-Type", b"text/html; charset=" + label)],
+                    self.TEXT.encode("cp1252"),
+                )
+                self.assertTrue(_has_note(linter.notes, CHARSET_LABEL_REMAPPED))
+                self.assertFalse(_has_note(linter.notes, CHARSET_UNDECODABLE))
+
+    def test_ascii_label_on_windows_1252_content(self):
+        for label in (b"us-ascii", b"ascii", b"US-ASCII"):
+            with self.subTest(label=label):
+                linter = _run(
+                    [(b"Content-Type", b"text/html; charset=" + label)],
+                    self.TEXT.encode("cp1252"),
+                )
+                self.assertTrue(_has_note(linter.notes, CHARSET_LABEL_REMAPPED))
+                self.assertFalse(_has_note(linter.notes, CHARSET_UNDECODABLE))
+
+    def test_latin1_label_on_latin1_content_is_fine(self):
+        # Bytes 0xA0-0xFF are the same in both, so nobody can tell.
+        body = ("Café résumé naïve garçon " * 40).encode("latin-1")
+        linter = _run([(b"Content-Type", b"text/html; charset=iso-8859-1")], body)
+        self.assertFalse(_has_note(linter.notes, CHARSET_LABEL_REMAPPED))
+
+    def test_windows_1252_label_is_fine(self):
+        linter = _run(
+            [(b"Content-Type", b"text/html; charset=windows-1252")], self.TEXT.encode("cp1252")
+        )
+        self.assertFalse(_has_note(linter.notes, CHARSET_LABEL_REMAPPED))
+
+    def test_ascii_content_is_fine(self):
+        linter = _run([(b"Content-Type", b"text/html; charset=us-ascii")], b"plain text " * 20)
+        self.assertFalse(_has_note(linter.notes, CHARSET_LABEL_REMAPPED))
+
+    def test_utf8_content_gets_the_mismatch_note_instead(self):
+        # The label is wrong whatever browsers do; one note says so.
+        linter = _run(
+            [(b"Content-Type", b"text/html; charset=us-ascii")], self.TEXT.encode("utf-8")
+        )
+        self.assertTrue(_has_note(linter.notes, CHARSET_MISMATCH))
+        self.assertFalse(_has_note(linter.notes, CHARSET_LABEL_REMAPPED))
 
 
 class IsTextEncodingTest(unittest.TestCase):

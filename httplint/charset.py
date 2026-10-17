@@ -87,6 +87,25 @@ _PYTHON_DECODERS: Dict[str, Tuple[str, ...]] = {
     "EUC-KR": ("cp949",),
 }
 
+# Labels that name US-ASCII or ISO-8859-1, but that recipients following the Encoding
+# Standard decode as windows-1252.
+ASCII_LABELS = frozenset({"us-ascii", "ascii", "ansi_x3.4-1968"})
+LATIN1_LABELS = frozenset(
+    {
+        "iso-8859-1",
+        "iso8859-1",
+        "iso88591",
+        "iso_8859-1",
+        "iso_8859-1:1987",
+        "iso-ir-100",
+        "latin1",
+        "l1",
+        "ibm819",
+        "cp819",
+        "csisolatin1",
+    }
+)
+
 # chardet names that aren't Encoding Standard labels.
 _CHARDET_ALIASES = {"utf-8-sig": "UTF-8", "maccyrillic": "x-mac-cyrillic", "macroman": "macintosh"}
 
@@ -267,6 +286,33 @@ def verify_charset(linter: LinterProtocol) -> None:  # pylint: disable=too-many-
                 declared_charset=effective_charset_raw,
                 detected_charset=detected_raw,
             )
+        return
+
+    _note_remapped_label(linter, effective_charset_raw, sample)
+
+
+def _note_remapped_label(linter: LinterProtocol, declared_raw: str, sample: bytes) -> None:
+    """
+    Note a US-ASCII or ISO-8859-1 label on content that those encodings, as
+    registered, can't carry but that recipients decode as windows-1252 without
+    complaint. Nothing else will have noticed.
+    """
+    label = normalise_label(declared_raw)
+    if label in ASCII_LABELS:
+        bad_bytes = "0x80-0xFF"
+        found = any(byte & 0x80 for byte in sample)
+    elif label in LATIN1_LABELS:
+        bad_bytes = "0x80-0x9F"
+        found = any(0x80 <= byte <= 0x9F for byte in sample)
+    else:
+        return
+    if found:
+        linter.notes.add(
+            "content-type",
+            CHARSET_LABEL_REMAPPED,
+            declared_charset=declared_raw,
+            bad_bytes=bad_bytes,
+        )
 
 
 def _encodings_compatible(declared: str, detected: str, sample: bytes, truncated: bool) -> bool:
@@ -292,6 +338,22 @@ def _encodings_compatible(declared: str, detected: str, sample: bytes, truncated
     declared_text = decode_bytes(sample, declared)
     detected_text = decode_bytes(sample, detected)
     return declared_text is not None and declared_text == detected_text
+
+
+class CHARSET_LABEL_REMAPPED(Note):
+    category = categories.GENERAL
+    level = levels.WARN
+    _summary = "Recipients won't decode the content as %(declared_charset)s."
+    _text = """\
+The `Content-Type` header declares the character encoding as `%(declared_charset)s`, but the
+content has bytes in the range %(bad_bytes)s, which that encoding doesn't define.
+
+Browsers follow the [Encoding Standard](https://encoding.spec.whatwg.org/#names-and-labels), which
+decodes `%(declared_charset)s` as `windows-1252`, so they will show something for those bytes
+(curly quotes and `€`, or UTF-8 text as mojibake). Recipients that follow the label strictly
+will treat them as errors or control characters.
+
+Declare the encoding the content really uses; for UTF-8, that's `utf-8`."""
 
 
 class CHARSET_MISMATCH(Note):
