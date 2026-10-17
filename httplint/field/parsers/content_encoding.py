@@ -78,8 +78,8 @@ class ENCODING_UNWANTED(Note):
     level = levels.WARN
     _summary = "This response uses the '%(coding)s' content-coding, but it wasn't requested."
     _text = """\
-This response's `Content-Encoding` header indicates it has the `%(coding)s content-coding applied
-, but the client didn't indicate support for it in the request.
+This response's `Content-Encoding` header indicates it has the `%(coding)s` content-coding
+applied, but the client didn't indicate support for it in the request.
 
 Normally, clients ask for the encodings they want in the `Accept-Encoding` request header. Using
 encodings that the client doesn't explicitly request can lead to interoperability problems."""
