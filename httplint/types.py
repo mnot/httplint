@@ -110,6 +110,7 @@ class LinterProtocol(Protocol):
 
     message_type: Any
     character_encoding: Optional[str]
+    whatwg_encoding: Optional[str]
 
     def can_have_content(self) -> bool: ...
 

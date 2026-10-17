@@ -2,12 +2,13 @@ import unittest
 
 from httplint.charset import (
     CHARSET_IMPLICIT_MISMATCH,
+    CHARSET_LABEL_REMAPPED,
     CHARSET_MISMATCH,
     CHARSET_UNDECODABLE,
     _canonical,
-    _decode_declared,
     _encodings_compatible,
     _sample_is_truncated,
+    decode_bytes,
     is_text_encoding,
 )
 from httplint.content_encoding import BAD_ZLIB
@@ -207,6 +208,59 @@ class CharsetTest(unittest.TestCase):
         self.assertEqual(linter.character_encoding, "UTF8")
 
 
+class LabelRemappedTest(unittest.TestCase):
+    """
+    US-ASCII and ISO-8859-1 labels mean windows-1252 to browsers, so content those
+    encodings can't carry decodes without complaint -- but not for everyone.
+    """
+
+    TEXT = "Il a dit \u201cbonjour\u201d \u2014 caf\u00e9 \u20ac5 et encore du texte. " * 4
+
+    def test_latin1_label_on_windows_1252_content(self):
+        for label in (b"iso-8859-1", b"latin1", b"ISO_8859-1", b"l1"):
+            with self.subTest(label=label):
+                linter = _run(
+                    [(b"Content-Type", b"text/html; charset=" + label)],
+                    self.TEXT.encode("cp1252"),
+                )
+                self.assertTrue(_has_note(linter.notes, CHARSET_LABEL_REMAPPED))
+                self.assertFalse(_has_note(linter.notes, CHARSET_UNDECODABLE))
+
+    def test_ascii_label_on_windows_1252_content(self):
+        for label in (b"us-ascii", b"ascii", b"US-ASCII"):
+            with self.subTest(label=label):
+                linter = _run(
+                    [(b"Content-Type", b"text/html; charset=" + label)],
+                    self.TEXT.encode("cp1252"),
+                )
+                self.assertTrue(_has_note(linter.notes, CHARSET_LABEL_REMAPPED))
+                self.assertFalse(_has_note(linter.notes, CHARSET_UNDECODABLE))
+
+    def test_latin1_label_on_latin1_content_is_fine(self):
+        # Bytes 0xA0-0xFF are the same in both, so nobody can tell.
+        body = ("Café résumé naïve garçon " * 40).encode("latin-1")
+        linter = _run([(b"Content-Type", b"text/html; charset=iso-8859-1")], body)
+        self.assertFalse(_has_note(linter.notes, CHARSET_LABEL_REMAPPED))
+
+    def test_windows_1252_label_is_fine(self):
+        linter = _run(
+            [(b"Content-Type", b"text/html; charset=windows-1252")], self.TEXT.encode("cp1252")
+        )
+        self.assertFalse(_has_note(linter.notes, CHARSET_LABEL_REMAPPED))
+
+    def test_ascii_content_is_fine(self):
+        linter = _run([(b"Content-Type", b"text/html; charset=us-ascii")], b"plain text " * 20)
+        self.assertFalse(_has_note(linter.notes, CHARSET_LABEL_REMAPPED))
+
+    def test_utf8_content_gets_the_mismatch_note_instead(self):
+        # The label is wrong whatever browsers do; one note says so.
+        linter = _run(
+            [(b"Content-Type", b"text/html; charset=us-ascii")], self.TEXT.encode("utf-8")
+        )
+        self.assertTrue(_has_note(linter.notes, CHARSET_MISMATCH))
+        self.assertFalse(_has_note(linter.notes, CHARSET_LABEL_REMAPPED))
+
+
 class IsTextEncodingTest(unittest.TestCase):
     def test_non_text_codecs_rejected(self):
         for name in ("hex", "base64", "zlib", "rot13", "bz2", "uu", "undefined"):
@@ -236,34 +290,34 @@ class IsTextEncodingTest(unittest.TestCase):
                 self.assertIsNotNone(_canonical(name))
 
 
-class DecodeDeclaredTest(unittest.TestCase):
+class DecodeBytesTest(unittest.TestCase):
     def test_short_truncated_sample_tolerated(self):
         # A sample far smaller than TRUNCATION_SAFETY_MARGIN (e.g. a
         # dropped connection after a handful of bytes) must still be
         # tolerated -- there's nothing left to trim.
         sample = "Café".encode("utf-8")[:-1]
-        self.assertIsNotNone(_decode_declared(sample, "utf-8", truncated=True))
+        self.assertIsNotNone(decode_bytes(sample, "UTF-8", truncated=True))
 
     def test_non_truncated_incomplete_sequence_rejected(self):
         sample = "Café".encode("utf-8")[:-1]
-        self.assertIsNone(_decode_declared(sample, "utf-8", truncated=False))
+        self.assertIsNone(decode_bytes(sample, "UTF-8", truncated=False))
 
     def test_non_text_codec_rejected_not_crashed(self):
         sample = ("Café naïve " * 400).encode("utf-8")
-        self.assertIsNone(_decode_declared(sample, "hex", truncated=True))
-        self.assertIsNone(_decode_declared(sample, "rot13", truncated=True))
-        self.assertIsNone(_decode_declared(sample, "base64", truncated=True))
+        self.assertIsNone(decode_bytes(sample, "py:hex", truncated=True))
+        self.assertIsNone(decode_bytes(sample, "py:rot13", truncated=True))
+        self.assertIsNone(decode_bytes(sample, "py:base64", truncated=True))
 
     def test_bare_unicode_error_codec_rejected(self):
         # "undefined" raises a plain UnicodeError, not UnicodeDecodeError.
-        self.assertIsNone(_decode_declared(b"caf\xc3\xa9", "undefined", truncated=False))
-        self.assertIsNone(_decode_declared(b"caf\xc3\xa9", "undefined", truncated=True))
+        self.assertIsNone(decode_bytes(b"caf\xc3\xa9", "py:undefined", truncated=False))
+        self.assertIsNone(decode_bytes(b"caf\xc3\xa9", "py:undefined", truncated=True))
 
     def test_genuinely_corrupt_truncated_sample_still_rejected(self):
         # Tolerance only covers a trailing incomplete sequence; garbage
         # earlier in the sample must still fail.
-        sample = b"\xff\xfe not valid utf-8 anywhere"
-        self.assertIsNone(_decode_declared(sample, "utf-8", truncated=True))
+        sample = b"\xc0\xaf not valid utf-8 anywhere"
+        self.assertIsNone(decode_bytes(sample, "UTF-8", truncated=True))
 
 
 class EncodingsCompatibleTest(unittest.TestCase):
@@ -274,7 +328,7 @@ class EncodingsCompatibleTest(unittest.TestCase):
         # outright -- which must not manufacture a mismatch.
         sample = ("ABC" * 3000).encode("shift_jis") + "日".encode("shift_jis")[:1]
         self.assertTrue(
-            _encodings_compatible("shift_jis", "cp1252", sample, truncated=True)
+            _encodings_compatible("Shift_JIS", "windows-1252", sample, truncated=True)
         )
 
     def test_real_mismatch_still_detected_when_truncated(self):
@@ -283,7 +337,7 @@ class EncodingsCompatibleTest(unittest.TestCase):
         sample = ("Привет мир! Москва " * 200).encode("windows-1251")
         self.assertGreater(len(sample), 8)
         self.assertFalse(
-            _encodings_compatible("iso-8859-1", "windows-1251", sample, truncated=True)
+            _encodings_compatible("windows-1252", "windows-1251", sample, truncated=True)
         )
 
     def test_short_truncated_sample_treated_as_compatible(self):
@@ -291,7 +345,7 @@ class EncodingsCompatibleTest(unittest.TestCase):
         # not flagging a mismatch rather than risking a false one.
         sample = b"ab"
         self.assertTrue(
-            _encodings_compatible("shift_jis", "cp1252", sample, truncated=True)
+            _encodings_compatible("Shift_JIS", "windows-1252", sample, truncated=True)
         )
 
 

@@ -7,7 +7,7 @@ from typing import Any, Dict, Optional, TypedDict, cast
 from typing_extensions import NotRequired, Unpack
 
 from httplint.cache import ResponseCacheChecker
-from httplint.charset import is_text_encoding, verify_charset
+from httplint.charset import is_text_encoding, verify_charset, whatwg_encoding
 from httplint.content_encoding import ContentEncodingProcessor
 from httplint.content_type import verify_content_type
 from httplint.field.cors import check_preflight_request, check_preflight_response
@@ -74,6 +74,7 @@ class HttpMessageLinter:
         self.content_hash: Optional[bytes] = None
         self._hash_processor = hashlib.new("md5", usedforsecurity=False)
         self.character_encoding: Optional[str] = None
+        self.whatwg_encoding: Optional[str] = None
         self.content_sample: bytes = b""
         self.content_sample_truncated: bool = False
 
@@ -105,7 +106,10 @@ class HttpMessageLinter:
         # set the character encoding from headers
         if "content-type" in self.headers.parsed:
             enc = self.headers.parsed["content-type"][1].get("charset", None)
-            if is_text_encoding(enc):
+            self.whatwg_encoding = whatwg_encoding(enc)
+            # Python has to be able to decode it too: consumers pass this straight to
+            # the codec machinery, and 'replacement' labels are ones recipients refuse.
+            if self.whatwg_encoding not in (None, "replacement") and is_text_encoding(enc):
                 self.character_encoding = enc
 
     def feed_content(self, chunk: bytes) -> None:

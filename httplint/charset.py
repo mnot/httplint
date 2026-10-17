@@ -1,8 +1,10 @@
 import codecs
-from typing import Optional
+from functools import lru_cache
+from typing import Dict, Optional, Tuple
 
 import chardet
 
+from httplint.charset_data import SINGLE_BYTE, WHATWG_LABELS
 from httplint.content_encoding import BAD_BROTLI, BAD_GZIP, BAD_ZLIB
 from httplint.note import Note, categories, levels
 from httplint.types import LinterProtocol
@@ -64,13 +66,159 @@ def is_text_encoding(name: Optional[str]) -> bool:
     return True
 
 
+_ASCII_WHITESPACE = " \t\n\r\f"
+
+# The Python codecs that best match each multi-byte encoding in the Encoding Standard,
+# tried in order. The single-byte ones are decoded from the Standard's own tables
+# (charset_data.SINGLE_BYTE). Checked against the Standard's indexes: cp949 and cp932
+# agree with EUC-KR and Shift_JIS on every double-byte sequence, gb18030 accepts every
+# one GBK does (a few map to different private-use characters), and big5hkscs misses
+# about 190 of Big5's 19,800 mappings.
+_PYTHON_DECODERS: Dict[str, Tuple[str, ...]] = {
+    "UTF-8": ("utf-8",),
+    "UTF-16BE": ("utf-16-be",),
+    "UTF-16LE": ("utf-16-le",),
+    "GBK": ("gb18030",),
+    "gb18030": ("gb18030",),
+    "Big5": ("big5hkscs",),
+    "EUC-JP": ("euc_jp", "euc_jisx0213"),
+    "ISO-2022-JP": ("iso2022_jp_ext", "iso2022_jp"),
+    "Shift_JIS": ("cp932",),
+    "EUC-KR": ("cp949",),
+}
+
+# Labels that name US-ASCII or ISO-8859-1, but that recipients following the Encoding
+# Standard decode as windows-1252.
+ASCII_LABELS = frozenset({"us-ascii", "ascii", "ansi_x3.4-1968"})
+LATIN1_LABELS = frozenset(
+    {
+        "iso-8859-1",
+        "iso8859-1",
+        "iso88591",
+        "iso_8859-1",
+        "iso_8859-1:1987",
+        "iso-ir-100",
+        "latin1",
+        "l1",
+        "ibm819",
+        "cp819",
+        "csisolatin1",
+    }
+)
+
+# chardet names that aren't Encoding Standard labels, as ones that are.
+_CHARDET_ALIASES = {
+    "utf-8-sig": "utf-8",
+    "utf-16-be": "utf-16be",
+    "utf-16-le": "utf-16le",
+    "maccyrillic": "x-mac-cyrillic",
+    "macroman": "macintosh",
+    "cp932": "windows-31j",
+    "cp949": "windows-949",
+    "cp874": "windows-874",
+    "iso8859-16": "iso-8859-16",
+}
+
+# A byte order mark outranks any label, in the Encoding Standard's decode algorithm and
+# in recipients' encoding sniffing; it's removed from the text.
+_BYTE_ORDER_MARKS = (
+    (b"\xef\xbb\xbf", "UTF-8"),
+    (b"\xfe\xff", "UTF-16BE"),
+    (b"\xff\xfe", "UTF-16LE"),
+)
+
+
+def _gb18030_euro(error: UnicodeError) -> Tuple[str, int]:
+    "The Standard's gb18030 decoder maps a lone 0x80 to the euro sign; Python's rejects it."
+    if isinstance(error, UnicodeDecodeError) and error.object[error.start] == 0x80:
+        return "\u20ac", error.start + 1
+    raise error
+
+
+codecs.register_error("httplint-gb18030-euro", _gb18030_euro)
+_ERROR_HANDLERS = {"gb18030": "httplint-gb18030-euro"}
+
+
+def normalise_label(label: Optional[str]) -> str:
+    "Strip ASCII whitespace and ASCII-lowercase, as the Encoding Standard does."
+    return "".join(c.lower() if c.isascii() else c for c in (label or "").strip(_ASCII_WHITESPACE))
+
+
+def whatwg_encoding(label: Optional[str]) -> Optional[str]:
+    "The Encoding Standard's name for the encoding a label identifies, if it identifies one."
+    return WHATWG_LABELS.get(normalise_label(label))
+
+
 def _canonical(name: str) -> Optional[str]:
+    """
+    The key to compare and decode a chardet-detected encoding by: an Encoding Standard
+    name where there is one, otherwise "py:" and the Python codec's name.
+    """
+    encoding = whatwg_encoding(_CHARDET_ALIASES.get(normalise_label(name), name))
+    if encoding is not None:
+        return encoding
     if not is_text_encoding(name):
         return None
     try:
-        return codecs.lookup(name).name
+        return "py:" + codecs.lookup(name).name
     except (LookupError, TypeError, ValueError):
         return None
+
+
+@lru_cache(maxsize=None)
+def _translation(encoding: str) -> Dict[int, str]:
+    return {0x80 + offset: char for offset, char in enumerate(SINGLE_BYTE[encoding])}
+
+
+def can_decode(encoding: str) -> bool:
+    "True if `decode_bytes` can check content against `encoding`."
+    return encoding in SINGLE_BYTE or encoding in _PYTHON_DECODERS or encoding.startswith("py:")
+
+
+def decode_bytes(
+    sample: bytes, encoding: str, truncated: bool = False, sniff_bom: bool = True
+) -> Optional[str]:
+    """
+    Decode `sample` as a recipient following the Encoding Standard would. Returns
+    None if that decoding hits an error: invalid UTF-8, a byte that a single-byte
+    encoding leaves unmapped, a multi-byte sequence that isn't one. windows-1252 maps
+    every byte, so nothing is an error there.
+
+    `encoding` is a name from the Standard, or "py:" and a Python codec name for
+    detected encodings the Standard doesn't have. If `truncated`, a trailing
+    incomplete multi-byte sequence is tolerated -- of any length, since a message cut
+    short by a dropped connection may leave a sample far smaller than
+    TRUNCATION_SAFETY_MARGIN. If `sniff_bom`, a byte order mark overrides `encoding`;
+    turn it off to ask what the label alone decodes.
+    """
+    if sniff_bom:
+        for mark, bom_encoding in _BYTE_ORDER_MARKS:
+            if sample.startswith(mark):
+                encoding, sample = bom_encoding, sample[len(mark) :]
+                break
+    if encoding in SINGLE_BYTE:
+        text = sample.decode("latin-1").translate(_translation(encoding))
+        return None if "\ufffd" in text else text
+    if encoding.startswith("py:"):
+        names: Tuple[str, ...] = (encoding[3:],)
+    else:
+        names = _PYTHON_DECODERS.get(encoding, ())
+    for name in names:
+        handler = _ERROR_HANDLERS.get(name, "strict")
+        try:
+            return sample.decode(name, errors=handler)
+        except UnicodeDecodeError:
+            if not truncated:
+                continue
+            try:
+                return codecs.getincrementaldecoder(name)(errors=handler).decode(
+                    sample, final=False
+                )
+            except UnicodeError:
+                continue
+        except (LookupError, UnicodeError):
+            continue
+    return None
 
 
 def _sample_is_truncated(linter: LinterProtocol) -> bool:
@@ -82,33 +230,6 @@ def _sample_is_truncated(linter: LinterProtocol) -> bool:
     if linter.content_sample_truncated or not linter.complete:
         return True
     return any(isinstance(note, _DECODE_FAILURE_NOTES) for note in linter.notes)
-
-
-def _decode_declared(sample: bytes, encoding: str, truncated: bool) -> Optional[str]:
-    """
-    Decode `sample` as `encoding` for the primary "does this decode at
-    all" check. A genuinely invalid or non-text encoding name (e.g.
-    "hex", "rot13") always fails here via LookupError before any
-    incremental decoding is attempted, so it can never reach
-    `codecs.getincrementaldecoder`, which has no such guard and would
-    otherwise raise a codec-specific exception instead of a catchable
-    one. If `truncated`, a trailing incomplete multi-byte sequence is
-    tolerated -- of any length, since a message cut short by a dropped
-    connection may leave a sample far smaller than
-    TRUNCATION_SAFETY_MARGIN. Returns the decoded text, or None if
-    decoding fails.
-    """
-    try:
-        return sample.decode(encoding, errors="strict")
-    except UnicodeDecodeError:
-        if not truncated:
-            return None
-        try:
-            return codecs.getincrementaldecoder(encoding)().decode(sample, final=False)
-        except UnicodeError:
-            return None
-    except (LookupError, UnicodeError):
-        return None
 
 
 def verify_charset(linter: LinterProtocol) -> None:  # pylint: disable=too-many-return-statements
@@ -145,9 +266,10 @@ def verify_charset(linter: LinterProtocol) -> None:  # pylint: disable=too-many-
         # No declared or implied charset; nothing to check against.
         return
 
-    declared_canonical = _canonical(effective_charset_raw)
-    if declared_canonical is None:
-        # Unknown or non-text encoding; no note is emitted for it.
+    declared_canonical = whatwg_encoding(effective_charset_raw)
+    if declared_canonical is None or not can_decode(declared_canonical):
+        # Not an encoding recipients use, or one they refuse to decode; the
+        # Content-Type field reports it.
         return
 
     sample = linter.content_sample
@@ -161,7 +283,7 @@ def verify_charset(linter: LinterProtocol) -> None:  # pylint: disable=too-many-
 
     # Primary check: does the declared encoding actually decode the content?
     truncated = _sample_is_truncated(linter)
-    decodes = _decode_declared(sample, effective_charset_raw, truncated) is not None
+    decodes = decode_bytes(sample, declared_canonical, truncated) is not None
 
     detection = chardet.detect(sample)
     detected_raw = detection.get("encoding")
@@ -198,6 +320,33 @@ def verify_charset(linter: LinterProtocol) -> None:  # pylint: disable=too-many-
                 declared_charset=effective_charset_raw,
                 detected_charset=detected_raw,
             )
+        return
+
+    _note_remapped_label(linter, effective_charset_raw, sample)
+
+
+def _note_remapped_label(linter: LinterProtocol, declared_raw: str, sample: bytes) -> None:
+    """
+    Note a US-ASCII or ISO-8859-1 label on content that those encodings, as
+    registered, can't carry but that recipients decode as windows-1252 without
+    complaint. Nothing else will have noticed.
+    """
+    label = normalise_label(declared_raw)
+    if label in ASCII_LABELS:
+        bad_bytes = "0x80-0xFF"
+        found = any(byte & 0x80 for byte in sample)
+    elif label in LATIN1_LABELS:
+        bad_bytes = "0x80-0x9F"
+        found = any(0x80 <= byte <= 0x9F for byte in sample)
+    else:
+        return
+    if found:
+        linter.notes.add(
+            "content-type",
+            CHARSET_LABEL_REMAPPED,
+            declared_charset=declared_raw,
+            bad_bytes=bad_bytes,
+        )
 
 
 def _encodings_compatible(declared: str, detected: str, sample: bytes, truncated: bool) -> bool:
@@ -220,12 +369,25 @@ def _encodings_compatible(declared: str, detected: str, sample: bytes, truncated
         if len(sample) <= TRUNCATION_SAFETY_MARGIN:
             return True
         sample = sample[:-TRUNCATION_SAFETY_MARGIN]
-    try:
-        declared_text = sample.decode(declared, errors="strict")
-        detected_text = sample.decode(detected, errors="strict")
-    except (UnicodeDecodeError, LookupError):
-        return False
-    return declared_text == detected_text
+    declared_text = decode_bytes(sample, declared, truncated, sniff_bom=False)
+    detected_text = decode_bytes(sample, detected, truncated, sniff_bom=False)
+    return declared_text is not None and declared_text == detected_text
+
+
+class CHARSET_LABEL_REMAPPED(Note):
+    category = categories.GENERAL
+    level = levels.WARN
+    _summary = "Recipients won't decode the content as %(declared_charset)s."
+    _text = """\
+The `Content-Type` header declares the character encoding as `%(declared_charset)s`, but the
+content has bytes in the range %(bad_bytes)s, which that encoding doesn't define.
+
+Browsers follow the [Encoding Standard](https://encoding.spec.whatwg.org/#names-and-labels), which
+decodes `%(declared_charset)s` as `windows-1252`, so they will show something for those bytes
+(curly quotes and `€`, or UTF-8 text as mojibake). Recipients that follow the label strictly
+will treat them as errors or control characters.
+
+Declare the encoding the content really uses; for UTF-8, that's `utf-8`."""
 
 
 class CHARSET_MISMATCH(Note):
