@@ -225,7 +225,7 @@ class StatusChecker:
 
     def status414(self) -> None:  # Request-URI Too Long
         if self.request and self.request.uri:
-            uri_len = f"({len(self.request.uri)} characters)"
+            uri_len = f"({getattr(self.request, 'uri_length', len(self.request.uri))} characters)"
         else:
             uri_len = ""
         self.add_note("uri", STATUS_URI_TOO_LONG, uri_len=uri_len)
