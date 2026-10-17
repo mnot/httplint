@@ -90,6 +90,110 @@ class TestRequestTargetForms(unittest.TestCase):
         )
         self.assertEqual(authority_to_ascii("[::1]:80"), "[::1]:80")
 
+    def test_host_to_ascii_keeps_deviation_characters(self) -> None:
+        from httplint.util import host_to_ascii
+
+        # Where IDNA2003 and IDNA2008 differ (UTS #46, Table 1): the IDNA2003 result is a
+        # different domain.
+        for host, ascii_host in [
+            ("faß.de", "xn--fa-hia.de"),  # not fass.de
+            ("βόλος.com", "xn--nxasmm1c.com"),  # not xn--nxasmq6b.com
+            ("ශ්\u200dරී.com", "xn--10cl1a0b660p.com"),  # ZWJ kept
+            ("نامه\u200cای.com", "xn--mgba3gch31f060k.com"),  # ZWNJ kept
+        ]:
+            with self.subTest(host=host):
+                self.assertEqual(host_to_ascii(host), ascii_host)
+                self.assertNotEqual(host.encode("idna").decode(), ascii_host)
+
+    def test_host_to_ascii_maps_case_and_compatibility_characters(self) -> None:
+        from httplint.util import host_to_ascii
+
+        self.assertEqual(host_to_ascii("BÜCHER.Example"), "xn--bcher-kva.example")
+        self.assertEqual(host_to_ascii("ｗｗｗ.ü.example"), "www.xn--tda.example")
+        self.assertEqual(host_to_ascii("bücher.example."), "xn--bcher-kva.example.")
+
+    def test_host_to_ascii_falls_back_for_what_idna2008_forbids(self) -> None:
+        from httplint.util import host_to_ascii
+
+        # Browsers accept these (URL Standard: UTS #46, not IDNA2008); so did we.
+        self.assertEqual(host_to_ascii("☕.example"), "xn--53h.example")
+        self.assertEqual(host_to_ascii("ü_.example"), "xn--_-dha.example")
+        self.assertEqual(host_to_ascii("-ü.example"), "xn----eha.example")
+
+    def test_host_to_ascii_falls_back_a_label_at_a_time(self) -> None:
+        from httplint.util import host_to_ascii
+
+        # One label IDNA2008 forbids shouldn't cost the others their right answer.
+        for host, ascii_host in [
+            ("_dmarc.faß.de", "_dmarc.xn--fa-hia.de"),
+            ("_acme-challenge.faß.de", "_acme-challenge.xn--fa-hia.de"),
+            ("www_1.faß.de", "www_1.xn--fa-hia.de"),
+            ("-b.faß.de", "-b.xn--fa-hia.de"),
+            ("_x.βόλος.com", "_x.xn--nxasmm1c.com"),
+            ("ab--c.βόλος.com", "ab--c.xn--nxasmm1c.com"),
+            ("☕.faß.de", "xn--53h.xn--fa-hia.de"),
+        ]:
+            with self.subTest(host=host):
+                self.assertEqual(host_to_ascii(host), ascii_host)
+        # A label that is both forbidden and has a deviation character still gets IDNA2003.
+        self.assertEqual(host_to_ascii("x.faß-.de"), "x.fass-.de")
+
+    def test_host_to_ascii_dots_and_labels(self) -> None:
+        from httplint.util import host_to_ascii
+
+        self.assertEqual(host_to_ascii("faß。de"), "xn--fa-hia.de")  # ideographic full stop
+        self.assertEqual(host_to_ascii("ü."), "xn--tda.")
+        self.assertEqual(host_to_ascii("ÜBER.Example.COM"), "xn--ber-goa.example.com")
+        with self.assertRaises(UnicodeError):
+            host_to_ascii("ü." + "a" * 64)  # an ASCII label that's too long, as before
+        # 250 characters: long hosts are fine, as with the codec.
+        long_host = ("a" * 60 + ".") * 4 + "faß.de"
+        self.assertEqual(host_to_ascii(long_host), ("a" * 60 + ".") * 4 + "xn--fa-hia.de")
+
+    def test_host_to_ascii_is_fast_on_hostile_input(self) -> None:
+        import time
+
+        from httplint.util import host_to_ascii
+
+        # idna 3.7-3.13 decode an xn-- label with a quadratic codec; these must never
+        # get to it, or to the codec's own NFKC amplification.
+        for host in [
+            "xn--" + "a" * 1_000_000 + ".ü",
+            "ü.xn--" + "a" * 1_000_000,
+            "ﷺ" * 65_536,
+            "ü" * 1_000_000,
+            "ب" + "1\u200c" * 100_000 + "ب",
+        ]:
+            start = time.monotonic()
+            with self.assertRaises(UnicodeError):
+                host_to_ascii(host)
+            self.assertLess(time.monotonic() - start, 2.0, host[:20])
+        # Many short labels are linear too (and valid; there's no total length limit).
+        start = time.monotonic()
+        host_to_ascii("ü." * 100_000)
+        self.assertLess(time.monotonic() - start, 5.0)
+
+    def test_host_to_ascii_leaves_ascii_alone(self) -> None:
+        from httplint.util import host_to_ascii
+
+        self.assertEqual(host_to_ascii("EXAMPLE.com"), "EXAMPLE.com")
+        self.assertEqual(host_to_ascii("xn--bcher-kva.example"), "xn--bcher-kva.example")
+        self.assertEqual(host_to_ascii("a_b.example"), "a_b.example")
+
+    def test_host_to_ascii_rejects_what_neither_accepts(self) -> None:
+        from httplint.util import host_to_ascii
+
+        for host in ["a..b", "ü..b", "ü" * 64 + ".com", ".ü"]:
+            with self.subTest(host=host):
+                with self.assertRaises(UnicodeError):
+                    host_to_ascii(host)
+
+    def test_idna2008_host_in_request_target(self) -> None:
+        linter = self.assertClean(b"GET", "http://faß.de/straße".encode())
+        self.assertEqual(linter.uri, "http://xn--fa-hia.de/stra%C3%9Fe")
+        linter = self.assertClean(b"CONNECT", "faß.de:443".encode())
+        self.assertEqual(linter.uri, "xn--fa-hia.de:443")
+
     def test_authority_to_ascii_userinfo(self) -> None:
         from httplint.util import authority_to_ascii
 

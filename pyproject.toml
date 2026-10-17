@@ -24,6 +24,7 @@ dependencies = [
     "Babel",
     "Brotli>=1.2.0",
     "chardet",
+    "idna>=3.7",
 ]
 
 [project.optional-dependencies]
