@@ -5,7 +5,7 @@ from urllib.parse import urljoin, urlsplit
 from httplint.field import BAD_SYNTAX
 from httplint.field.list_field import HttpListField
 from httplint.field.tests import FieldTest
-from httplint.field.utils import PARAM_REPEATS, parse_params
+from httplint.field.utils import PARAM_REPEATS, PARAM_STAR_ERROR, parse_params
 from httplint.note import MarkdownSafe, Note, categories, levels
 from httplint.syntax import rfc3986, rfc8288, rfc9110
 from httplint.types import (
@@ -167,9 +167,11 @@ class RelativeLinkTest(FieldTest[AnyMessageLinterProtocol]):
 
 
 class RepeatingRelationLinkTest(FieldTest[AnyMessageLinterProtocol]):
+    "RFC 8288 Section 3.3: occurrences after the first are ignored."
+
     name = "Link"
     inputs = [b'</foo>; rel="example"; rel="another"']
-    expected_out = [("/foo", {"rel": "another"})]
+    expected_out = [("/foo", {"rel": "example"})]
     expected_notes: NoteClassListType = [PARAM_REPEATS]
 
 
@@ -260,3 +262,12 @@ class MixedHintTargetsLinkTest(FieldTest[AnyMessageLinterProtocol]):
         ("ftp://example.com/x", {"rel": "preload"}),
     ]
     expected_notes: NoteClassListType = [LINK_RESOURCE_HINTS, LINK_BAD_HINT_TARGET]
+
+
+class RepeatedRejectedTitleStarLinkTest(FieldTest[AnyMessageLinterProtocol]):
+    "The first title* is the one that counts, even though it's rejected."
+
+    name = "Link"
+    inputs = [b"</foo>; rel=ex; title*=bogus; title*=UTF-8''%41"]
+    expected_out = [("/foo", {"rel": "ex"})]
+    expected_notes: NoteClassListType = [PARAM_STAR_ERROR, PARAM_REPEATS]

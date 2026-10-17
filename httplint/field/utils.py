@@ -1,7 +1,7 @@
 import calendar
 import re
 from email.utils import parsedate as lib_parsedate
-from typing import Any, Dict, FrozenSet, List, Optional, Tuple, Type, Union
+from typing import Any, Dict, FrozenSet, List, Optional, Set, Tuple, Type, Union
 from urllib.parse import unquote as urlunquote
 
 from http_sf import Token
@@ -167,6 +167,29 @@ _PARAMETER_VALUE_RE = re.compile(rfc9110.parameter_value, re.VERBOSE)
 _WHITESPACE_RE = re.compile(r"\s*")
 
 
+def _param_spans(instr: str, delim: str) -> List[Tuple[int, int]]:
+    "Where split_params finds its parameters in ``instr``, as (start, end)."
+    size = len(instr)
+    spans: List[Tuple[int, int]] = []
+    pos = 0
+    while pos < size:
+        name = _TOKEN_RE.match(instr, pos)
+        if not name:
+            pos += 1
+            continue
+        name_end = name.end()
+        if name_end < size and instr[name_end] == "=":
+            value = _PARAMETER_VALUE_RE.match(instr, name_end + 1)
+            if value:
+                after = _WHITESPACE_RE.match(instr, value.end()).end()  # type: ignore[union-attr]
+                if after == size or instr.startswith(delim, after):
+                    spans.append((pos, value.end()))
+                    pos = value.end()
+                    continue
+        pos = name_end
+    return spans
+
+
 def split_params(instr: str, delim: str = ";") -> List[str]:
     """
     Split a parameter list into its ``name=value`` parameters.
@@ -181,25 +204,30 @@ def split_params(instr: str, delim: str = ";") -> List[str]:
     before a separator, so a start that fails would fail at every later point in the
     same run; the scan jumps past the run.
     """
+    return [instr[start:end] for start, end in _param_spans(instr, delim)]
+
+
+def _segment_starts(instr: str, delim: str) -> List[int]:
+    "Where each non-blank segment between delimiters starts, ignoring delimiters in quotes."
     size = len(instr)
-    params: List[str] = []
+    starts: List[int] = []
     pos = 0
     while pos < size:
-        name = _TOKEN_RE.match(instr, pos)
-        if not name:
+        while pos < size and instr[pos].isspace():
             pos += 1
-            continue
-        name_end = name.end()
-        if name_end < size and instr[name_end] == "=":
-            value = _PARAMETER_VALUE_RE.match(instr, name_end + 1)
-            if value:
-                after = _WHITESPACE_RE.match(instr, value.end()).end()  # type: ignore[union-attr]
-                if after == size or instr.startswith(delim, after):
-                    params.append(instr[pos : value.end()])
-                    pos = value.end()
-                    continue
-        pos = name_end
-    return params
+        if pos >= size:
+            break
+        if not instr.startswith(delim, pos):
+            starts.append(pos)
+        quoted = False
+        while pos < size and (quoted or not instr.startswith(delim, pos)):
+            if instr[pos] == "\\" and quoted:
+                pos += 1
+            elif instr[pos] == '"':
+                quoted = not quoted
+            pos += 1
+        pos += len(delim)
+    return starts
 
 
 def _char_set(pattern: str) -> FrozenSet[str]:
@@ -267,17 +295,37 @@ def parse_params(
 ) -> ParamDictType:
     """
     Parse parameters into a dictionary.
+
+    If a parameter repeats, the first instance is used and the rest are ignored (and
+    not checked further), as RFC 8288 does for Link, the Server Timing specification
+    for Server-Timing, and the MIME Sniffing Standard for Content-Type. That includes an
+    instance that isn't a valid ``name=value`` (``dur=`` or a bare ``dur``) or that is
+    rejected (a ``title*`` with a bad value): it's still the first, so a later one
+    doesn't take its place.
     """
+    spans = _param_spans(instr, delim)
+    valid_starts = {start for start, _ in spans}
+    # Instances in order: each parameter, and each segment that starts with a name but
+    # isn't one (which the specs count as an instance too).
+    instances: List[Tuple[int, str, Optional[Tuple[int, int]]]] = []
+    for start, end in spans:
+        instances.append((start, instr[start:end].split("=", 1)[0].lower(), (start, end)))
+    for start in _segment_starts(instr, delim):
+        name = _TOKEN_RE.match(instr, start)
+        if name and start not in valid_starts:
+            instances.append((start, name.group().lower(), None))
+    instances.sort(key=lambda instance: instance[0])
+
     param_dict: ParamDictType = {}
-    for param in split_params(instr, delim):
-        try:
-            key, val = param.split("=", 1)
-        except ValueError:
-            param_dict[param.lower()] = None
-            continue
-        k_norm = key.lower()
-        if k_norm in param_dict:
+    seen: Set[str] = set()
+    for _, k_norm, span in instances:
+        if k_norm in seen:
             add_note(PARAM_REPEATS, param=k_norm)
+            continue
+        seen.add(k_norm)
+        if span is None:
+            continue
+        key, val = instr[span[0] : span[1]].split("=", 1)
         if val[0] == val[-1] == "'":
             add_note(
                 PARAM_SINGLE_QUOTED,
@@ -440,7 +488,10 @@ class PARAM_REPEATS(Note):
     _summary = "The '%(param)s' parameter repeats in the %(field_name)s header."
     _text = """\
 Parameters on the `%(field_name)s` field should not repeat; implementations may handle them
-differently."""
+differently. Where a specification says, it's the first instance that counts -- for example,
+[RFC 8288](https://www.rfc-editor.org/rfc/rfc8288.html#section-3.3) for `Link`, and the
+[Server Timing](https://w3c.github.io/server-timing/#the-server-timing-header-field)
+specification -- and that is the one used here."""
 
 
 class PARAM_SINGLE_QUOTED(Note):

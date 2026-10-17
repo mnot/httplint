@@ -7,6 +7,7 @@ from httplint.field.tests import FieldTest
 from httplint.field.utils import (
     MEDIA_TYPE_BAD_NAME,
     MEDIA_TYPE_LONG_NAME,
+    PARAM_REPEATS,
     parse_media_type,
 )
 from httplint.note import Note, categories, levels
@@ -198,3 +199,12 @@ class CTCharsetEmptyTest(FieldTest[AnyMessageLinterProtocol]):
     name = "Content-Type"
     inputs = [b'text/plain; charset=""']
     expected_out: Any = ("text/plain", {"charset": ""})
+
+
+class CTRepeatedCharsetTest(FieldTest[AnyMessageLinterProtocol]):
+    "The first charset counts, as in the MIME Sniffing Standard; the repeat is noted."
+
+    name = "Content-Type"
+    inputs = [b"text/plain; charset=utf-8; charset=nonesuch"]
+    expected_out: Any = ("text/plain", {"charset": "utf-8"})
+    expected_notes: NoteClassListType = [PARAM_REPEATS]
