@@ -5,9 +5,9 @@ from httplint.charset import (
     CHARSET_MISMATCH,
     CHARSET_UNDECODABLE,
     _canonical,
-    _decode_declared,
     _encodings_compatible,
     _sample_is_truncated,
+    decode_bytes,
     is_text_encoding,
 )
 from httplint.content_encoding import BAD_ZLIB
@@ -236,34 +236,34 @@ class IsTextEncodingTest(unittest.TestCase):
                 self.assertIsNotNone(_canonical(name))
 
 
-class DecodeDeclaredTest(unittest.TestCase):
+class DecodeBytesTest(unittest.TestCase):
     def test_short_truncated_sample_tolerated(self):
         # A sample far smaller than TRUNCATION_SAFETY_MARGIN (e.g. a
         # dropped connection after a handful of bytes) must still be
         # tolerated -- there's nothing left to trim.
         sample = "Café".encode("utf-8")[:-1]
-        self.assertIsNotNone(_decode_declared(sample, "utf-8", truncated=True))
+        self.assertIsNotNone(decode_bytes(sample, "UTF-8", truncated=True))
 
     def test_non_truncated_incomplete_sequence_rejected(self):
         sample = "Café".encode("utf-8")[:-1]
-        self.assertIsNone(_decode_declared(sample, "utf-8", truncated=False))
+        self.assertIsNone(decode_bytes(sample, "UTF-8", truncated=False))
 
     def test_non_text_codec_rejected_not_crashed(self):
         sample = ("Café naïve " * 400).encode("utf-8")
-        self.assertIsNone(_decode_declared(sample, "hex", truncated=True))
-        self.assertIsNone(_decode_declared(sample, "rot13", truncated=True))
-        self.assertIsNone(_decode_declared(sample, "base64", truncated=True))
+        self.assertIsNone(decode_bytes(sample, "py:hex", truncated=True))
+        self.assertIsNone(decode_bytes(sample, "py:rot13", truncated=True))
+        self.assertIsNone(decode_bytes(sample, "py:base64", truncated=True))
 
     def test_bare_unicode_error_codec_rejected(self):
         # "undefined" raises a plain UnicodeError, not UnicodeDecodeError.
-        self.assertIsNone(_decode_declared(b"caf\xc3\xa9", "undefined", truncated=False))
-        self.assertIsNone(_decode_declared(b"caf\xc3\xa9", "undefined", truncated=True))
+        self.assertIsNone(decode_bytes(b"caf\xc3\xa9", "py:undefined", truncated=False))
+        self.assertIsNone(decode_bytes(b"caf\xc3\xa9", "py:undefined", truncated=True))
 
     def test_genuinely_corrupt_truncated_sample_still_rejected(self):
         # Tolerance only covers a trailing incomplete sequence; garbage
         # earlier in the sample must still fail.
         sample = b"\xff\xfe not valid utf-8 anywhere"
-        self.assertIsNone(_decode_declared(sample, "utf-8", truncated=True))
+        self.assertIsNone(decode_bytes(sample, "UTF-8", truncated=True))
 
 
 class EncodingsCompatibleTest(unittest.TestCase):
@@ -274,7 +274,7 @@ class EncodingsCompatibleTest(unittest.TestCase):
         # outright -- which must not manufacture a mismatch.
         sample = ("ABC" * 3000).encode("shift_jis") + "日".encode("shift_jis")[:1]
         self.assertTrue(
-            _encodings_compatible("shift_jis", "cp1252", sample, truncated=True)
+            _encodings_compatible("Shift_JIS", "windows-1252", sample, truncated=True)
         )
 
     def test_real_mismatch_still_detected_when_truncated(self):
@@ -283,7 +283,7 @@ class EncodingsCompatibleTest(unittest.TestCase):
         sample = ("Привет мир! Москва " * 200).encode("windows-1251")
         self.assertGreater(len(sample), 8)
         self.assertFalse(
-            _encodings_compatible("iso-8859-1", "windows-1251", sample, truncated=True)
+            _encodings_compatible("windows-1252", "windows-1251", sample, truncated=True)
         )
 
     def test_short_truncated_sample_treated_as_compatible(self):
@@ -291,7 +291,7 @@ class EncodingsCompatibleTest(unittest.TestCase):
         # not flagging a mismatch rather than risking a false one.
         sample = b"ab"
         self.assertTrue(
-            _encodings_compatible("shift_jis", "cp1252", sample, truncated=True)
+            _encodings_compatible("Shift_JIS", "windows-1252", sample, truncated=True)
         )
 
 
