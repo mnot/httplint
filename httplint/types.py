@@ -122,6 +122,7 @@ class RequestLinterProtocol(LinterProtocol, Protocol):
     method: Optional[str]
     iri: Optional[str]
     uri: Optional[str]
+    uri_length: int
 
     @property
     def response(self) -> Optional[ResponseLinterProtocol]: ...
