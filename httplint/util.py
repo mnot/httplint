@@ -17,6 +17,17 @@ from httplint.note import MarkdownSafe
 USERINFO_SAFE = "-._~!$&'()*+,;=:%"
 
 
+def userinfo_escape_growth(iri: str) -> int:
+    """
+    How many characters the ASCII escaping in authority_to_ascii adds to the URI that
+    iri_to_uri makes from `iri`. Before that escaping, the URI's length was the length
+    that mattered for limits, and this lets callers keep reporting it.
+    """
+    userinfo, at, _ = urlsplit(iri).netloc.rpartition("@")
+    unsafe = sum(1 for c in userinfo if c.isascii() and not c.isalnum() and c not in USERINFO_SAFE)
+    return 2 * unsafe if at else 0
+
+
 def authority_to_ascii(authority: str) -> str:
     """
     Make an authority ASCII: IDNA-encode the host, and percent-encode anything in the

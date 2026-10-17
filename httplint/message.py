@@ -26,7 +26,7 @@ from httplint.types import (
     ResponseLinterProtocol,
     SectionProtocol,
 )
-from httplint.util import authority_to_ascii, f_num, iri_to_uri
+from httplint.util import authority_to_ascii, f_num, iri_to_uri, userinfo_escape_growth
 
 
 class HttpMessageParams(TypedDict):
@@ -227,6 +227,8 @@ class HttpRequestLinter(HttpMessageLinter):
         self.method: Optional[str] = None
         self.iri: Optional[str] = None
         self.uri: Optional[str] = None
+        # Length of the URI, before escaping ASCII in userinfo (see userinfo_escape_growth)
+        self.uri_length: int = 0
 
     def process_request_topline(self, method: bytes, iri: bytes, version: bytes) -> None:
         self.method = method.decode("ascii", "replace")
@@ -242,6 +244,7 @@ class HttpRequestLinter(HttpMessageLinter):
         self.iri = iri
         target, has_fragment, _ = iri.partition("#")
         self.uri = target  # fallback if it can't be converted; never includes the fragment
+        self.uri_length = len(target)
         if has_fragment:
             self.notes.add("uri", REQUEST_TARGET_FRAGMENT)
         if re.search(r"[\x00-\x20\x7f-\x9f]", target):
@@ -263,6 +266,9 @@ class HttpRequestLinter(HttpMessageLinter):
 
         try:
             self.uri = authority_to_ascii(target) if authority_form else iri_to_uri(target)
+            self.uri_length = len(self.uri) - (
+                0 if authority_form else userinfo_escape_growth(target)
+            )
         except (ValueError, UnicodeError):
             if authority_form:
                 self.notes.add("uri", REQUEST_TARGET_FORM, method=method)
@@ -283,8 +289,8 @@ class HttpRequestLinter(HttpMessageLinter):
                 self.notes.add("uri", URI_BAD_SYNTAX)
         elif target == "*" and self.method != "OPTIONS":
             self.notes.add("uri", REQUEST_TARGET_FORM, method=method)
-        if len(self.uri) > self.max_uri_chars:
-            self.notes.add("uri", URI_TOO_LONG, uri_len=f_num(len(self.uri)))
+        if self.uri_length > self.max_uri_chars:
+            self.notes.add("uri", URI_TOO_LONG, uri_len=f_num(self.uri_length))
 
     def can_have_content(self) -> bool:
         return True

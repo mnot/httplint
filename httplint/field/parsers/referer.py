@@ -8,6 +8,7 @@ from httplint.types import (
     AddNoteMethodType,
     RequestLinterProtocol,
 )
+from httplint.util import iri_to_uri
 
 
 class referer(SingletonField[RequestLinterProtocol]):
@@ -30,9 +31,10 @@ resource from which the target URI was obtained (i.e., the "referrer")."""
             return
 
         try:
-            parsed_referer = urlparse(referer_uri)
+            # Compare like with like: the request's URI has been through iri_to_uri
+            parsed_referer = urlparse(iri_to_uri(referer_uri))
             parsed_request = urlparse(request_uri)
-        except ValueError:
+        except (ValueError, UnicodeError):
             return  # Already handled by URI syntax checks
 
         if parsed_referer.scheme.lower() in ["https", "wss"]:

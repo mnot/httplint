@@ -1,12 +1,12 @@
 import unittest
 
-from httplint.note import levels
 from httplint.message import (
-    HttpRequestLinter,
     REQUEST_TARGET_FORM,
     REQUEST_TARGET_FRAGMENT,
     URI_BAD_SYNTAX,
+    HttpRequestLinter,
 )
+from httplint.note import levels
 
 
 def lint(method: bytes, target: bytes) -> HttpRequestLinter:
@@ -103,9 +103,7 @@ class TestRequestTargetForms(unittest.TestCase):
         self.assertEqual(authority_to_ascii("ü@[::1]:80"), "%C3%BC@[::1]:80")
         # Colons in the password, and more than one "@": userinfo ends at the last one.
         self.assertEqual(authority_to_ascii("u:p:ü@example.com"), "u:p:%C3%BC@example.com")
-        self.assertEqual(
-            authority_to_ascii("ü@ü@bücher.com"), "%C3%BC%40%C3%BC@xn--bcher-kva.com"
-        )
+        self.assertEqual(authority_to_ascii("ü@ü@bücher.com"), "%C3%BC%40%C3%BC@xn--bcher-kva.com")
         # Existing escapes and ASCII are left alone.
         self.assertEqual(authority_to_ascii("a%40b:c@example.com"), "a%40b:c@example.com")
 
@@ -137,14 +135,64 @@ class TestRequestTargetForms(unittest.TestCase):
 
     def test_unsafe_userinfo_is_still_flagged(self) -> None:
         # The converted URI is valid, but the target as sent wasn't.
-        for target in ['http://u"x@example.com/', "http://u<@example.com/", "http://u\\@example.com/",
-                       "http://a@b@example.com/", "http://u%zz@example.com/"]:
+        for target in [
+            'http://u"x@example.com/',
+            "http://u<@example.com/",
+            "http://u\\@example.com/",
+            "http://a@b@example.com/",
+            "http://u%zz@example.com/",
+        ]:
             with self.subTest(target=target):
                 self.assertNote(b"GET", target.encode(), URI_BAD_SYNTAX)
                 self.assertTrue((lint(b"GET", target.encode()).uri or "").isascii())
         for target in ["http://us\u00e9r:p\u00e4ss@example.com/", "http://u:p%40q@example.com/"]:
             with self.subTest(target=target):
                 self.assertClean(b"GET", target.encode())
+
+    def test_encoding_userinfo_doesnt_change_the_length_reported(self) -> None:
+        from httplint.message import URI_TOO_LONG
+        from httplint.util import f_num
+
+        # 7,920 characters as sent; escaping the 100 quotes would take it past 8,000.
+        target = b"http://" + b'"' * 100 + b"@example.com/" + b"a" * 7800
+        linter = lint(b"GET", target)
+        self.assertNotIn(URI_TOO_LONG, classes(linter))
+        self.assertEqual(linter.uri_length, len(target))
+        # Over the limit, the length is the one as sent (as it was before userinfo was escaped).
+        target = b"http://" + b"a" * 7990 + b'"@example.com/'
+        note = next(n for n in lint(b"GET", target).notes if isinstance(n, URI_TOO_LONG))
+        self.assertIn(f"({f_num(len(target))} characters)", str(note.summary))
+        # Other conversion still counts: the path's escapes are part of the URI.
+        linter = lint(b"GET", b"http://example.com/" + b'"' * 10)
+        self.assertEqual(linter.uri_length, len(b"http://example.com/" + b"%22" * 10))
+
+    def test_userinfo_escape_growth(self) -> None:
+        from httplint.util import userinfo_escape_growth
+
+        self.assertEqual(userinfo_escape_growth('https://u"x:p<w@h/'), 4)
+        self.assertEqual(userinfo_escape_growth("https://a@b@h/"), 2)
+        self.assertEqual(userinfo_escape_growth("https://us\u00e9r@h/"), 0)  # not ASCII
+        self.assertEqual(userinfo_escape_growth("https://u-._~!$&'()*+,;=:%41@h/"), 0)
+        self.assertEqual(userinfo_escape_growth('https://h/p@q"r'), 0)  # not userinfo
+
+    def test_referer_matching_the_target_is_the_same_origin(self) -> None:
+        from httplint.field.parsers.referer import REFERER_SECURE_TO_DIFFERENT_ORIGIN
+
+        for target in [
+            'https://u"x@example.com/p',
+            "https://u\\@example.com/p",
+            "https://a@b@example.com/p",
+            "https://u<@example.com/",
+        ]:
+            with self.subTest(target=target):
+                linter = HttpRequestLinter()
+                linter.process_request_topline(b"GET", target.encode(), b"HTTP/1.1")
+                linter.process_headers([(b"Referer", target.encode()), (b"User-Agent", b"t")])
+                self.assertNotIn(REFERER_SECURE_TO_DIFFERENT_ORIGIN, classes(linter))
+        linter = HttpRequestLinter()
+        linter.process_request_topline(b"GET", b"https://example.com/p", b"HTTP/1.1")
+        linter.process_headers([(b"Referer", b"https://example.org/p"), (b"User-Agent", b"t")])
+        self.assertIn(REFERER_SECURE_TO_DIFFERENT_ORIGIN, classes(linter))
 
     def test_iri_to_uri_userinfo(self) -> None:
         from urllib.parse import urlsplit
@@ -210,7 +258,9 @@ class TestRequestTargetForms(unittest.TestCase):
         notes = [n for n in lint(b"OPTIONS", b"/").notes if isinstance(n, REQUEST_TARGET_FORM)]
         self.assertFalse(notes)
         notes = [n for n in lint(b"CONNECT", b"/").notes if isinstance(n, REQUEST_TARGET_FORM)]
-        self.assertEqual(str(notes[0].summary), "The request target isn't valid for CONNECT requests.")
+        self.assertEqual(
+            str(notes[0].summary), "The request target isn't valid for CONNECT requests."
+        )
 
     def test_authority_form_ipv6(self) -> None:
         self.assertClean(b"CONNECT", b"[::1]:443")
