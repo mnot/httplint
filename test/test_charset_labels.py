@@ -216,7 +216,7 @@ class VerifyAgainstLabelsTest(unittest.TestCase):
         self.assertFalse(_has_note(linter, CHARSET_UNDECODABLE))
 
     def test_windows_874_label_is_checked(self):
-        # Python spells it cp874, so it used to be skipped as unknown.
+        # Python spelled it only cp874 until 3.14, so it was skipped as unknown.
         body = "สวัสดีครับ ยินดีต้อนรับ ".encode("cp874") * 20
         self.assertFalse(_has_note(_run(b"text/html; charset=windows-874", body), CHARSET_UNDECODABLE))
         body = "caf\xe9 déjà vu ".encode("latin-1") * 20 + b"\xdb"  # 0xDB is unmapped
@@ -250,9 +250,10 @@ class VerifyAgainstLabelsTest(unittest.TestCase):
                 self.assertEqual(linter.whatwg_encoding, encoding)
 
     def test_python_cant_decode_it(self):
-        # Known to recipients, but not a Python codec; consumers decode with Python.
-        linter = _run(b"text/plain; charset=windows-874", b"x")
-        self.assertEqual(linter.whatwg_encoding, "windows-874")
+        # Known to recipients, but not a Python codec in any version; consumers decode
+        # with Python.
+        linter = _run(b"text/plain; charset=x-user-defined", b"x")
+        self.assertEqual(linter.whatwg_encoding, "x-user-defined")
         self.assertIsNone(linter.character_encoding)
 
     def test_replacement_labels_are_not_recorded(self):
