@@ -3,6 +3,7 @@ import re
 import weakref
 from functools import partial
 from typing import Any, Dict, Optional, TypedDict, cast
+from urllib.parse import urlsplit
 
 from typing_extensions import NotRequired, Unpack
 
@@ -200,6 +201,18 @@ class HttpMessageLinter:
 # RFC 9112 Section 3.2.3: uri-host ":" port (rfc9112.authority_form is the older RFC 7230 rule)
 AUTHORITY_FORM = rf"(?= [^:] ) {rfc3986.host} : [0-9]+"
 
+# RFC 3987's iuserinfo: userinfo, plus non-ASCII characters
+IUSERINFO = (
+    rf"(?: {rfc3986.unreserved} | {rfc3986.pct_encoded} | {rfc3986.sub_delims} | : "
+    r"| [^\x00-\x7f] )*"
+)
+
+
+def _userinfo_valid(iri: str) -> bool:
+    "True if the IRI has no userinfo, or userinfo that is valid as it stands."
+    userinfo, at, _ = urlsplit(iri).netloc.rpartition("@")
+    return not at or re.fullmatch(IUSERINFO, userinfo, re.VERBOSE) is not None
+
 
 class HttpRequestLinter(HttpMessageLinter):
     """
@@ -237,6 +250,7 @@ class HttpRequestLinter(HttpMessageLinter):
 
         method = self.method or ""
         authority_form = self.method == "CONNECT"
+        absolute_form = False
         if authority_form:
             pattern = AUTHORITY_FORM
         elif target == "*":
@@ -245,6 +259,7 @@ class HttpRequestLinter(HttpMessageLinter):
             pattern = rfc9112.origin_form
         else:
             pattern = rfc3986.absolute_URI
+            absolute_form = True
 
         try:
             self.uri = authority_to_ascii(target) if authority_form else iri_to_uri(target)
@@ -255,8 +270,12 @@ class HttpRequestLinter(HttpMessageLinter):
                 self.notes.add("uri", URI_BAD_SYNTAX)
             return
 
-        if not re.fullmatch(pattern, self.uri, re.VERBOSE) or (
-            authority_form and int(self.uri.rpartition(":")[2]) > 65535
+        # Conversion encodes characters that can't be in userinfo, so check the original.
+        bad_userinfo = absolute_form and not _userinfo_valid(target)
+        if (
+            bad_userinfo
+            or not re.fullmatch(pattern, self.uri, re.VERBOSE)
+            or (authority_form and int(self.uri.rpartition(":")[2]) > 65535)
         ):
             if authority_form or target == "*":
                 self.notes.add("uri", REQUEST_TARGET_FORM, method=method)

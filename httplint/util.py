@@ -12,16 +12,19 @@ from urllib.parse import urlsplit, urlunsplit
 from httplint.i18n import format_timedelta, translate
 from httplint.note import MarkdownSafe
 
-_ASCII = "".join(map(chr, range(128)))
+# What userinfo may contain in a URI besides unreserved characters, RFC 3986 Section 3.2.1;
+# "%" is there so that existing escapes survive.
+USERINFO_SAFE = "-._~!$&'()*+,;=:%"
 
 
 def authority_to_ascii(authority: str) -> str:
     """
-    Make an authority ASCII: IDNA-encode the host, and percent-encode any non-ASCII
-    userinfo as UTF-8 (RFC 3987, Section 3.1). The port is left alone.
+    Make an authority ASCII: IDNA-encode the host, and percent-encode anything in the
+    userinfo that a URI can't carry as UTF-8 (non-ASCII characters, RFC 3987 Section 3.1,
+    and ASCII ones like a space or "@"). The port is left alone.
     """
     userinfo, at, hostport = authority.rpartition("@")
-    userinfo = urlquote(userinfo, safe=_ASCII)
+    userinfo = urlquote(userinfo, safe=USERINFO_SAFE)
     if hostport.startswith("["):  # IP-literal; nothing to encode
         return f"{userinfo}{at}{hostport}"
     host, colon, port = hostport.partition(":")

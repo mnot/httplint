@@ -104,10 +104,47 @@ class TestRequestTargetForms(unittest.TestCase):
         # Colons in the password, and more than one "@": userinfo ends at the last one.
         self.assertEqual(authority_to_ascii("u:p:ü@example.com"), "u:p:%C3%BC@example.com")
         self.assertEqual(
-            authority_to_ascii("ü@ü@bücher.com"), "%C3%BC@%C3%BC@xn--bcher-kva.com"
+            authority_to_ascii("ü@ü@bücher.com"), "%C3%BC%40%C3%BC@xn--bcher-kva.com"
         )
         # Existing escapes and ASCII are left alone.
         self.assertEqual(authority_to_ascii("a%40b:c@example.com"), "a%40b:c@example.com")
+
+    def test_authority_to_ascii_unsafe_ascii_userinfo(self) -> None:
+        from urllib.parse import urlsplit
+
+        from httplint.util import authority_to_ascii
+
+        # ASCII that userinfo can't carry is percent-encoded too, as in the path.
+        for userinfo, encoded in [
+            ('u"x', "u%22x"),
+            ("u<x>", "u%3Cx%3E"),
+            ("u\\x", "u%5Cx"),
+            ("u x", "u%20x"),
+            ("u[x]", "u%5Bx%5D"),
+            ("a@b", "a%40b"),
+            ("u/x?y#z", "u%2Fx%3Fy%23z"),
+        ]:
+            with self.subTest(userinfo=userinfo):
+                authority = authority_to_ascii(f"{userinfo}:pw@example.com")
+                self.assertEqual(authority, f"{encoded}:pw@example.com")
+                parts = urlsplit(f"https://{authority}/")
+                self.assertEqual(parts.hostname, "example.com")
+                self.assertEqual(parts.password, "pw")
+        # What it may carry is left alone, escapes included.
+        allowed = "Az09-._~!$&'()*+,;=:%41"
+        self.assertEqual(authority_to_ascii(f"{allowed}@example.com"), f"{allowed}@example.com")
+        self.assertEqual(authority_to_ascii('"@[::1]'), "%22@[::1]")
+
+    def test_unsafe_userinfo_is_still_flagged(self) -> None:
+        # The converted URI is valid, but the target as sent wasn't.
+        for target in ['http://u"x@example.com/', "http://u<@example.com/", "http://u\\@example.com/",
+                       "http://a@b@example.com/", "http://u%zz@example.com/"]:
+            with self.subTest(target=target):
+                self.assertNote(b"GET", target.encode(), URI_BAD_SYNTAX)
+                self.assertTrue((lint(b"GET", target.encode()).uri or "").isascii())
+        for target in ["http://us\u00e9r:p\u00e4ss@example.com/", "http://u:p%40q@example.com/"]:
+            with self.subTest(target=target):
+                self.assertClean(b"GET", target.encode())
 
     def test_iri_to_uri_userinfo(self) -> None:
         from urllib.parse import urlsplit
@@ -118,7 +155,7 @@ class TestRequestTargetForms(unittest.TestCase):
             ("https://bücher@example.com/x.js", "b%C3%BCcher", "example.com"),
             ("https://u@bücher.example/x.js", "u", "xn--bcher-kva.example"),
             ("https://user:pässword@example.com/x.js", "user", "example.com"),
-            ("https://ü@ü@bücher.com/x.js", "%C3%BC@%C3%BC", "xn--bcher-kva.com"),
+            ("https://ü@ü@bücher.com/x.js", "%C3%BC%40%C3%BC", "xn--bcher-kva.com"),
         ]:
             parts = urlsplit(iri_to_uri(iri))
             self.assertEqual(parts.username, user)
