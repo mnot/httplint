@@ -5,12 +5,16 @@ from httplint.charset import (
     CHARSET_LABEL_REMAPPED,
     CHARSET_MISMATCH,
     CHARSET_UNDECODABLE,
+    REMAPPED_LABELS,
     _canonical,
     _encodings_compatible,
     _sample_is_truncated,
     decode_bytes,
+    format_byte_ranges,
     is_text_encoding,
+    remapped_bytes,
 )
+from httplint.charset_data import WHATWG_LABELS
 from httplint.content_encoding import BAD_ZLIB
 from httplint.message import HttpResponseLinter
 
@@ -210,47 +214,64 @@ class CharsetTest(unittest.TestCase):
 
 class LabelRemappedTest(unittest.TestCase):
     """
-    US-ASCII and ISO-8859-1 labels mean windows-1252 to browsers, so content those
-    encodings can't carry decodes without complaint -- but not for everyone.
+    Labels for registered charsets that browsers decode as a Windows one: content those
+    charsets can't carry shows something in a browser, but not for everyone.
     """
 
     TEXT = "Il a dit \u201cbonjour\u201d \u2014 caf\u00e9 \u20ac5 et encore du texte. " * 4
+    THAI = "\u0e2a\u0e27\u0e31\u0e2a\u0e14\u0e35\u0e04\u0e23\u0e31\u0e1a " * 20
+    TURKISH = "\u011fe\u00e7\u0131\u015f \u201cm\u00fc\u015fteri\u201d \u20ac5 yaz\u0131 \u0130\u00d6 " * 8
 
-    def test_latin1_label_on_windows_1252_content(self):
+    def remapped(self, label, body):
+        linter = _run([(b"Content-Type", b"text/html; charset=" + label)], body)
+        self.assertFalse(_has_note(linter.notes, CHARSET_UNDECODABLE), label)
+        return _has_note(linter.notes, CHARSET_LABEL_REMAPPED)
+
+    def test_latin1_labels_on_windows_1252_content(self):
         for label in (b"iso-8859-1", b"latin1", b"ISO_8859-1", b"l1"):
             with self.subTest(label=label):
-                linter = _run(
-                    [(b"Content-Type", b"text/html; charset=" + label)],
-                    self.TEXT.encode("cp1252"),
-                )
-                self.assertTrue(_has_note(linter.notes, CHARSET_LABEL_REMAPPED))
-                self.assertFalse(_has_note(linter.notes, CHARSET_UNDECODABLE))
+                self.assertTrue(self.remapped(label, self.TEXT.encode("cp1252")))
 
-    def test_ascii_label_on_windows_1252_content(self):
+    def test_ascii_labels_on_windows_1252_content(self):
         for label in (b"us-ascii", b"ascii", b"US-ASCII"):
             with self.subTest(label=label):
-                linter = _run(
-                    [(b"Content-Type", b"text/html; charset=" + label)],
-                    self.TEXT.encode("cp1252"),
-                )
-                self.assertTrue(_has_note(linter.notes, CHARSET_LABEL_REMAPPED))
-                self.assertFalse(_has_note(linter.notes, CHARSET_UNDECODABLE))
+                self.assertTrue(self.remapped(label, self.TEXT.encode("cp1252")))
 
-    def test_latin1_label_on_latin1_content_is_fine(self):
-        # Bytes 0xA0-0xFF are the same in both, so nobody can tell.
-        body = ("Café résumé naïve garçon " * 40).encode("latin-1")
-        linter = _run([(b"Content-Type", b"text/html; charset=iso-8859-1")], body)
-        self.assertFalse(_has_note(linter.notes, CHARSET_LABEL_REMAPPED))
+    def test_latin5_labels_on_windows_1254_content(self):
+        for label in (b"iso-8859-9", b"latin5", b"l5"):
+            with self.subTest(label=label):
+                self.assertTrue(self.remapped(label, self.TURKISH.encode("cp1254")))
 
-    def test_windows_1252_label_is_fine(self):
-        linter = _run(
-            [(b"Content-Type", b"text/html; charset=windows-1252")], self.TEXT.encode("cp1252")
-        )
-        self.assertFalse(_has_note(linter.notes, CHARSET_LABEL_REMAPPED))
+    def test_thai_labels_on_windows_874_content(self):
+        body = (self.THAI + "\u2026 \u201csawasdee\u201d").encode("cp874")
+        for label in (b"tis-620", b"iso-8859-11", b"ISO8859-11"):
+            with self.subTest(label=label):
+                self.assertTrue(self.remapped(label, body))
+
+    def test_content_the_registered_charset_can_carry_is_fine(self):
+        for label, text, codec in [
+            (b"iso-8859-1", "Caf\u00e9 r\u00e9sum\u00e9 na\u00efve gar\u00e7on " * 40, "latin-1"),
+            (b"iso-8859-9", "\u011fe\u00e7\u0131\u015f \u00fc\u015fteri yaz\u0131 \u0130\u00d6 " * 20, "iso8859-9"),
+            (b"tis-620", self.THAI, "tis-620"),
+            (b"iso-8859-11", self.THAI + "\u00a0", "iso8859-11"),
+        ]:
+            with self.subTest(label=label):
+                self.assertFalse(self.remapped(label, text.encode(codec)))
+
+    def test_only_bytes_that_differ_count(self):
+        # 0x81 is U+0081 in both ISO-8859-1 and windows-1252; 0x93 is not.
+        body = b"caf\xe9 caf\xe9 caf\xe9 caf\xe9 caf\xe9 caf\xe9 caf\xe9 caf\xe9 caf\xe9 caf\xe9 caf\xe9"
+        self.assertFalse(self.remapped(b"iso-8859-1", body + b" \x81"))
+        self.assertTrue(self.remapped(b"iso-8859-1", body + b" \x93"))
+
+    def test_windows_labels_are_not_remapped(self):
+        for label, codec in [(b"windows-1252", "cp1252"), (b"windows-1254", "cp1254"), (b"windows-874", "cp874")]:
+            with self.subTest(label=label):
+                body = (self.TEXT if codec == "cp1252" else self.THAI + "\u2026").encode(codec, "replace")
+                self.assertFalse(self.remapped(label, body))
 
     def test_ascii_content_is_fine(self):
-        linter = _run([(b"Content-Type", b"text/html; charset=us-ascii")], b"plain text " * 20)
-        self.assertFalse(_has_note(linter.notes, CHARSET_LABEL_REMAPPED))
+        self.assertFalse(self.remapped(b"us-ascii", b"plain text " * 20))
 
     def test_utf8_content_gets_the_mismatch_note_instead(self):
         # The label is wrong whatever browsers do; one note says so.
@@ -259,6 +280,54 @@ class LabelRemappedTest(unittest.TestCase):
         )
         self.assertTrue(_has_note(linter.notes, CHARSET_MISMATCH))
         self.assertFalse(_has_note(linter.notes, CHARSET_LABEL_REMAPPED))
+
+    def test_note_names_the_encoding_and_the_bytes(self):
+        linter = _run(
+            [(b"Content-Type", b"text/html; charset=tis-620")],
+            (self.THAI + "\u201chi\u201d").encode("cp874"),
+        )
+        note = next(n for n in linter.notes if isinstance(n, CHARSET_LABEL_REMAPPED))
+        self.assertIn("<code>windows-874</code>", str(note.detail))
+        # The bytes in the content, not every byte that differs.
+        self.assertIn("(0x93-0x94)", str(note.detail))
+
+
+class RemappedLabelsTest(unittest.TestCase):
+    def test_covers_every_label_the_standard_remaps(self):
+        # Labels for a registered charset that the Standard maps to a Windows encoding;
+        # the Windows encodings' own labels aren't remapped.
+        native = {
+            "windows-1252": {"cp1252", "windows-1252", "x-cp1252"},
+            "windows-1254": {"cp1254", "windows-1254", "x-cp1254"},
+            "windows-874": {"dos-874", "windows-874"},
+        }
+        for encoding, own in native.items():
+            expected = {l for l, e in WHATWG_LABELS.items() if e == encoding} - own
+            covered = {l for l in REMAPPED_LABELS if WHATWG_LABELS.get(l) == encoding}
+            self.assertEqual(covered, expected, encoding)
+        self.assertEqual({WHATWG_LABELS[l] for l in REMAPPED_LABELS}, set(native))
+
+    def test_codecs_exist(self):
+        for label, codec in REMAPPED_LABELS.items():
+            with self.subTest(label=label):
+                self.assertTrue(is_text_encoding(codec))
+
+    def test_remapped_bytes(self):
+        self.assertEqual(remapped_bytes("us-ascii"), frozenset(range(0x80, 0x100)))
+        self.assertEqual(remapped_bytes("windows-1252"), frozenset())
+        self.assertEqual(remapped_bytes("nonesuch"), frozenset())
+        # windows-1252 differs from ISO-8859-1 only where it has printable characters.
+        latin1 = remapped_bytes("latin1")
+        self.assertTrue(latin1 <= set(range(0x80, 0xA0)))
+        self.assertIn(0x93, latin1)
+        self.assertNotIn(0x81, latin1)
+
+    def test_format_byte_ranges(self):
+        self.assertEqual(format_byte_ranges(frozenset()), "")
+        self.assertEqual(format_byte_ranges(frozenset({0x80})), "0x80")
+        self.assertEqual(
+            format_byte_ranges(frozenset({0x80, 0x82, 0x83, 0x84, 0x91})), "0x80, 0x82-0x84, 0x91"
+        )
 
 
 class IsTextEncodingTest(unittest.TestCase):
