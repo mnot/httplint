@@ -1,10 +1,19 @@
+import gzip
 import tracemalloc
 import unittest
+import zlib
 import brotli
 from httplint.message import HttpResponseLinter
-import zlib
+from httplint.util import f_num
 from httplint.charset import CHARSET_UNDECODABLE
-from httplint.content_encoding import BAD_BROTLI, BAD_DEFLATE, BAD_GZIP, DECOMPRESSION_LIMIT
+from httplint.content_encoding import (
+    BAD_BROTLI,
+    BAD_DEFLATE,
+    BAD_GZIP,
+    BAD_ZLIB,
+    DECOMPRESSION_LIMIT,
+    DeflateProcessor,
+)
 from httplint.content_type import CONTENT_TYPE_MISMATCH
 from httplint.message import CL_CORRECT, CONTENT_NOT_ALLOWED
 
@@ -324,9 +333,66 @@ class TestUndecodedCodings(unittest.TestCase):
         )
         self.assertTrue(_has(linter, BAD_DEFLATE))
 
-    def test_deflate_then_gzip_order(self):
-        import gzip
+    def test_deflate_zlib_header_check(self):
+        for level in (0, 1, 6, 9):
+            self.assertTrue(DeflateProcessor._looks_like_zlib(zlib.compress(b"x", level)[:2]))
+        # CINFO > 7 is not valid in RFC 1950, even with correct check bits
+        cmf = 0x88
+        flg = (31 - (cmf * 256) % 31) % 31
+        self.assertFalse(DeflateProcessor._looks_like_zlib(bytes([cmf, flg])))
+        self.assertFalse(DeflateProcessor._looks_like_zlib(b"\x78\x00"))
+        self.assertFalse(DeflateProcessor._looks_like_zlib(b"\x00\x00"))
 
+    def test_deflate_limit(self):
+        # A small deflate stream that expands past the limit must be cut off in pieces.
+        zeros = b"\0" * (1024 * 1024)
+        for wbits in (zlib.MAX_WBITS, -zlib.MAX_WBITS):
+            comp = zlib.compressobj(9, zlib.DEFLATED, wbits)
+            parts = [comp.compress(zeros) for _ in range(110)]
+            parts.append(comp.flush())
+            bomb = b"".join(parts)
+            self.assertLess(len(bomb), 512 * 1024)
+
+            linter = HttpResponseLinter()
+            linter.process_response_topline(b"HTTP/1.1", b"200", b"OK")
+            linter.process_headers([(b"Content-Encoding", b"deflate")])
+            sizes = []
+            linter.decoded.processors.append(lambda c, sizes=sizes: sizes.append(len(c)))
+
+            tracemalloc.start()
+            try:
+                linter.feed_content(bomb)
+                _, peak = tracemalloc.get_traced_memory()
+            finally:
+                tracemalloc.stop()
+            linter.finish_content(True)
+
+            self.assertTrue(_has(linter, DECOMPRESSION_LIMIT), wbits)
+            self.assertFalse(_has(linter, BAD_DEFLATE), wbits)
+            self.assertLess(max(sizes, default=0), 32 * 1024 * 1024, wbits)
+            self.assertLess(peak, 16 * 1024 * 1024, wbits)
+
+    def test_deflate_trailing_data_ignored(self):
+        # Pins current behaviour (same as gzip): bytes after the end of the stream are dropped.
+        data = b"hello world" * 100
+        for compressed in (zlib.compress(data), zlib.compress(data)[2:-4]):
+            linter = _response(
+                b"200", [(b"Content-Encoding", b"deflate")], [compressed, b"trailing junk"]
+            )
+            self.assertEqual(linter.decoded.length, len(data))
+            self.assertFalse(_has(linter, BAD_DEFLATE))
+
+    def test_deflate_corrupt_after_data_counts_decompressed_bytes(self):
+        data = b"hello world" * 100
+        comp = zlib.compressobj()
+        good = comp.compress(data) + comp.flush(zlib.Z_SYNC_FLUSH)
+        linter = _response(b"200", [(b"Content-Encoding", b"deflate")], [good, b"\xff" * 20])
+        self.assertEqual(linter.decoded.length, len(data))
+        note = next(n for n in linter.notes if isinstance(n, BAD_DEFLATE))
+        self.assertEqual(note.vars["ok_deflate_len"], f_num(len(data)))
+        self.assertIn(f"{f_num(len(data))} bytes were decompressed", str(note.detail))
+
+    def test_deflate_then_gzip_order(self):
         data = b"hello world" * 100
         both = gzip.compress(zlib.compress(data))
         linter = _response(b"200", [(b"Content-Encoding", b"deflate, gzip")], [both])
@@ -356,8 +422,6 @@ class TestUndecodedCodings(unittest.TestCase):
 
     def test_undecoded_hidden_behind_decodable(self):
         # "zstd, gzip": gzip is undone, leaving zstd bytes
-        import gzip
-
         headers = HTML_UTF8 + [(b"Content-Encoding", b"zstd, gzip")]
         linter = _response(b"200", headers, [gzip.compress(LATIN1_HTML)])
         self.assertFalse(linter.content_decoded)
@@ -372,6 +436,49 @@ class TestUndecodedCodings(unittest.TestCase):
         linter = _response(b"200", HTML_UTF8 + [(b"Content-Encoding", b"identity")], [LATIN1_HTML])
         self.assertTrue(linter.content_decoded)
         self.assertTrue(_has(linter, CHARSET_UNDECODABLE))
+
+
+
+def _render(linter):
+    "Render every note the way a consumer would; any bad template raises."
+    return [(n.summary, str(n.detail)) for n in linter.notes]
+
+
+class TestNoteRendering(unittest.TestCase):
+    def test_content_not_allowed_renders(self):
+        linter = _response(b"205", [(b"Content-Length", b"5")], [b"hello"])
+        note = next(n for n in linter.notes if isinstance(n, CONTENT_NOT_ALLOWED))
+        self.assertEqual(note.summary, "This message can not have content.")
+        self.assertIn("HTTP does not allow this message to have content", str(note.detail))
+
+    def test_no_content_statuses_render(self):
+        for status in (b"100", b"101", b"199", b"204", b"205", b"304"):
+            for headers in ([], [(b"Content-Length", b"5")]):
+                linter = _response(status, headers, [b"hello"])
+                self.assertTrue(_has(linter, CONTENT_NOT_ALLOWED), status)
+                _render(linter)
+
+    def test_head_with_content_renders(self):
+        linter = _response(b"200", [], [b"hello"], method_head=True)
+        self.assertTrue(_has(linter, CONTENT_NOT_ALLOWED))
+        _render(linter)
+
+    def test_content_encoding_notes_render(self):
+        deflated = zlib.compress(LATIN1_HTML)
+        cases = [
+            ([(b"Content-Encoding", b"deflate")], [b"\x78\x9c" + b"\xff" * 50], BAD_DEFLATE),
+            ([(b"Content-Encoding", b"gzip")], [b"\x1f\x8b\x08\x00" + b"\xff" * 50], BAD_ZLIB),
+            ([(b"Content-Encoding", b"gzip")], [b"not gzip at all"], BAD_GZIP),
+            ([(b"Content-Encoding", b"br")], [b"Create some corrupt brotli data"], BAD_BROTLI),
+        ]
+        for headers, chunks, note_class in cases:
+            linter = _response(b"200", HTML_UTF8 + headers, chunks)
+            self.assertTrue(_has(linter, note_class), note_class)
+            _render(linter)
+        linter = _response(b"200", HTML_UTF8 + [(b"Content-Encoding", b"deflate")], [deflated])
+        _render(linter)
+        linter = _response(b"200", HTML_UTF8 + [(b"Content-Encoding", b"zstd")], [b"\x28\xb5\x2f\xfd"])
+        _render(linter)
 
 
 if __name__ == "__main__":

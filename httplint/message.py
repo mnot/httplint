@@ -147,7 +147,9 @@ class HttpMessageLinter:
                     )
         else:
             if self.content_length and not self.no_content:
-                self.notes.add("message", CONTENT_NOT_ALLOWED)
+                self.notes.add(
+                    "message", CONTENT_NOT_ALLOWED, message=translate(L_("This message"))
+                )
         self.post_checks()
 
         for section in [self.headers, self.trailers]:
@@ -420,7 +422,7 @@ class CONTENT_NOT_ALLOWED(Note):
     category = categories.GENERAL
     level = levels.BAD
     _summary = "%(message)s can not have content."
-    _note = """\
+    _text = """\
 HTTP does not allow this message to have content; including it can cause security and
 interoperability issues.
 """
