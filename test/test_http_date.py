@@ -36,6 +36,8 @@ class HttpDateTest(unittest.TestCase):
         self.assertEqual(parse("Sun Nov  6 08:49:37 1994"), (784111777, [DATE_OBSOLETE]))
 
     def test_rfc850_two_digit_year_pivot(self) -> None:
+        # Pins the existing fixed pivot (email.utils: 69-99 -> 19xx, 00-68 -> 20xx). RFC 9110
+        # Section 5.6.7 asks for a rolling 50-year rule instead; that is tracked separately.
         self.assertEqual(
             parse("Sunday, 06-Nov-68 08:49:37 GMT")[0], calendar.timegm((2068, 11, 6, 8, 49, 37))
         )
