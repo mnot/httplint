@@ -100,7 +100,7 @@ in `416` (Requested Range Not Satisfiable) responses."""
             # Error in range parsing; already noted
             raise ValueError
         else:
-            if self._status_code() == 416:
+            if self._status_code() == 416 and unit.lower() == "bytes":
                 add_note(CONTENT_RANGE_SATISFIED_IN_416)
             if last_byte_pos is not None:
                 if first_byte_pos > last_byte_pos:
@@ -584,3 +584,31 @@ class ContentRangeNoteWordingTest(unittest.TestCase):
     def test_short_unchanged(self) -> None:
         notes = self.parse("bytes 1-100/abc")
         self.assertEqual(notes, [(RANGE_INVALID_INTEGER, {"value": "abc"})])
+
+
+class ContentRangeSatisfiedIn416CaseTest(FieldTest[ResponseLinterProtocol]):
+    name = "Content-Range"
+    inputs = [b"Bytes 1-100/200"]
+    expected_out = ContentRangeValue("Bytes", 1, 100, 200)
+    expected_notes: NoteClassListType = [CONTENT_RANGE_SATISFIED_IN_416]
+
+    def set_response_context(self, message: ResponseLinterProtocol) -> None:
+        message.status_code = 416
+
+
+class ContentRangeOtherUnitIn416Test(FieldTest[ResponseLinterProtocol]):
+    name = "Content-Range"
+    inputs = [b"pages 1-3/10"]
+    expected_out = ContentRangeValue("pages", 1, 3, 10)
+
+    def set_response_context(self, message: ResponseLinterProtocol) -> None:
+        message.status_code = 416
+
+
+class ContentRangeUnsatisfiedIn416Test(FieldTest[ResponseLinterProtocol]):
+    name = "Content-Range"
+    inputs = [b"bytes */200"]
+    expected_out = ContentRangeValue("bytes", None, None, 200)
+
+    def set_response_context(self, message: ResponseLinterProtocol) -> None:
+        message.status_code = 416
