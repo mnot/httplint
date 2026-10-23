@@ -15,7 +15,7 @@ Indicates that the client should not 'sniff' the `Content-Type` of the message f
     deprecated = False
 
     def evaluate(self, add_note: AddNoteMethodType) -> None:
-        if "nosniff" in self.value:
+        if self.value and self.value[0].lower() == "nosniff":
             add_note(CONTENT_TYPE_OPTIONS)
         else:
             add_note(CONTENT_TYPE_OPTIONS_UNKNOWN)
@@ -57,3 +57,24 @@ class XContentTypeOptionsTest(FieldTest[ResponseLinterProtocol]):
     inputs = [b"nosniff", b"foo"]
     expected_out = ["nosniff", "foo"]
     expected_notes: NoteClassListType = [CONTENT_TYPE_OPTIONS, BAD_SYNTAX]
+
+
+class XContentTypeOptionsCaseTest(FieldTest[ResponseLinterProtocol]):
+    name = "X-Content-Type-Options"
+    inputs = [b"NOSNIFF"]
+    expected_out = ["NOSNIFF"]
+    expected_notes: NoteClassListType = [CONTENT_TYPE_OPTIONS]
+
+
+class XContentTypeOptionsFirstValueTest(FieldTest[ResponseLinterProtocol]):
+    name = "X-Content-Type-Options"
+    inputs = [b"nosniff, foo"]
+    expected_out = ["nosniff", "foo"]
+    expected_notes: NoteClassListType = [CONTENT_TYPE_OPTIONS, BAD_SYNTAX]
+
+
+class XContentTypeOptionsNotFirstTest(FieldTest[ResponseLinterProtocol]):
+    name = "X-Content-Type-Options"
+    inputs = [b"foo, nosniff"]
+    expected_out = ["foo", "nosniff"]
+    expected_notes: NoteClassListType = [BAD_SYNTAX, CONTENT_TYPE_OPTIONS_UNKNOWN]

@@ -38,9 +38,9 @@ the transmitted content in frames that are part of other web pages.
         return field_value.upper()
 
     def evaluate(self, add_note: AddNoteMethodType) -> None:
-        if "DENY" in self.value:
+        if self.value == "DENY":
             add_note(FRAME_OPTIONS_DENY)
-        elif "SAMEORIGIN" in self.value:
+        elif self.value == "SAMEORIGIN":
             add_note(FRAME_OPTIONS_SAMEORIGIN)
         else:
             add_note(FRAME_OPTIONS_UNKNOWN)
@@ -119,4 +119,18 @@ class UnknownXFOTest(FieldTest[ResponseLinterProtocol]):
     name = "X-Frame-Options"
     inputs = [b"foO"]
     expected_out = "FOO"
+    expected_notes: NoteClassListType = [BAD_SYNTAX, FRAME_OPTIONS_UNKNOWN]
+
+
+class AllowFromXFOTest(FieldTest[ResponseLinterProtocol]):
+    name = "X-Frame-Options"
+    inputs = [b"ALLOW-FROM https://deny.example.com"]
+    expected_out = "ALLOW-FROM HTTPS://DENY.EXAMPLE.COM"
+    expected_notes: NoteClassListType = [FRAME_OPTIONS_UNKNOWN]
+
+
+class SubstringXFOTest(FieldTest[ResponseLinterProtocol]):
+    name = "X-Frame-Options"
+    inputs = [b"NOTDENY"]
+    expected_out = "NOTDENY"
     expected_notes: NoteClassListType = [BAD_SYNTAX, FRAME_OPTIONS_UNKNOWN]
