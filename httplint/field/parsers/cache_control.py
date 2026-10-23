@@ -131,16 +131,17 @@ ignoring it there."""
                 if directive_val is not None:
                     add_note(CC_SHOULD_NOT_HAVE_VALUE, directive=directive_name)
             else:
+                # KNOWN_CC keeps plain `int` for delta-seconds because cdn_cache_control
+                # tests `value_func is int`; the stricter parser is swapped in here.
                 is_delta = value_func is int
                 if is_delta:
                     value_func = _delta_seconds
                 try:
                     arg = directive_val
-                    quoted = (
-                        is_delta and arg is not None and len(arg) >= 2 and arg[0] == arg[-1] == '"'
-                    )
-                    if quoted and arg is not None:
-                        arg = re.sub(r"\\(.)", r"\1", arg[1:-1])
+                    quoted = False
+                    if is_delta and arg is not None and len(arg) >= 2 and arg[0] == arg[-1] == '"':
+                        quoted = True
+                        arg = unquote_string(arg)
                     val = value_func(arg)
                     if quoted:
                         add_note(CC_QUOTED_VALUE, directive=directive_name)
@@ -247,11 +248,12 @@ class CC_BAD_VALUE_TYPE(Note):
 class CC_QUOTED_VALUE(Note):
     category = categories.CACHING
     level = levels.WARN
-    _summary = "The %(directive)s cache directive's value is quoted."
+    _summary = "The %(directive)s cache directive's value is quoted but should be a bare number."
     _text = """\
 The `%(directive)s` cache directive's value is a number, so senders must not generate it as a
-quoted string. Recipients ought to accept both forms, and it has been interpreted as if it were
-not quoted, but some implementations may not recognise the quoted form."""
+quoted string. [RFC 9111](https://www.rfc-editor.org/rfc/rfc9111.html#section-5.2) says that
+recipients ought to accept both forms, so it has been interpreted as if it were not quoted, but
+some implementations may not recognise the quoted form."""
 
 
 class CC_MAX_AGE_TOO_LARGE(Note):
@@ -426,6 +428,24 @@ class CacheControlQuotedDeltaTest(FieldTest[AnyMessageLinterProtocol]):
 class CacheControlBadQuotedDeltaTest(FieldTest[AnyMessageLinterProtocol]):
     name = "Cache-Control"
     inputs = [b'max-age=" 5"']
+    expected_notes: NoteClassListType = [CC_BAD_VALUE_TYPE]
+
+
+class CacheControlUnderscoreTest(FieldTest[AnyMessageLinterProtocol]):
+    name = "Cache-Control"
+    inputs = [b"max-age=1_0"]
+    expected_notes: NoteClassListType = [CC_BAD_VALUE_TYPE]
+
+
+class CacheControlLeadingZerosTest(FieldTest[AnyMessageLinterProtocol]):
+    name = "Cache-Control"
+    inputs = [b"max-age=05"]
+    expected_out = [("max-age", 5)]
+
+
+class CacheControlEmptyQuotedTest(FieldTest[AnyMessageLinterProtocol]):
+    name = "Cache-Control"
+    inputs = [b'max-age=""']
     expected_notes: NoteClassListType = [CC_BAD_VALUE_TYPE]
 
 
