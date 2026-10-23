@@ -1,6 +1,8 @@
 from typing import Any, List, Set
 
+from httplint.field import FIELD_DEPRECATED
 from httplint.field.json_field import BAD_JSON, JsonField
+from httplint.field.parsers.report_to import REPORT_TO_MISSING_KEY
 from httplint.field.parsers.reporting_endpoints import (
     BAD_REPORTING_ENDPOINT_URL,
     ENDPOINT_NOT_SECURE,
@@ -11,7 +13,6 @@ from httplint.field.utils import (
     is_integer,
     is_number,
     known_reporting_endpoints,
-    report_to_groups,
 )
 from httplint.note import MarkdownSafe, Note, categories, levels
 from httplint.types import (
@@ -32,6 +33,30 @@ def _valid_reporting_endpoints(field_value: Any, base_uri: str) -> Set[str]:
         if endpoint_problem(base_uri, url) is None:
             valid.add(name)
     return valid
+
+
+def _usable_report_to_groups(message: ResponseLinterProtocol) -> Set[str]:
+    """
+    Names of Report-To groups with at least one endpoint that has a well-formed URL and a
+    secure scheme.
+    """
+    usable: Set[str] = set()
+    report_to_value = message.headers.parsed.get("report-to")
+    if not isinstance(report_to_value, list):
+        return usable
+    for group in report_to_value:
+        if not isinstance(group, dict):
+            continue
+        name = group.get("group", "default")
+        endpoints = group.get("endpoints")
+        if not isinstance(name, str) or not isinstance(endpoints, list):
+            continue
+        for endpoint in endpoints:
+            url = endpoint.get("url") if isinstance(endpoint, dict) else None
+            if isinstance(url, str) and endpoint_problem(message.base_uri, url) is None:
+                usable.add(name)
+                break
+    return usable
 
 
 class nel(JsonField[ResponseLinterProtocol]):
@@ -124,7 +149,7 @@ It allows websites to declare that they want to receive reports about network er
         # Browsers that implement NEL take its endpoints from Report-To groups.
         known_endpoints = known_reporting_endpoints(self.message, include_report_to=True)
         reporting_endpoints_field = self.message.headers.parsed.get("reporting-endpoints")
-        valid_endpoints = report_to_groups(self.message)
+        valid_endpoints = _usable_report_to_groups(self.message)
         if reporting_endpoints_field:
             valid_endpoints |= _valid_reporting_endpoints(
                 reporting_endpoints_field, self.message.base_uri
@@ -138,8 +163,12 @@ It allows websites to declare that they want to receive reports about network er
             if report_to and isinstance(report_to, str):
                 if report_to not in known_endpoints:
                     add_note(NEL_REPORT_TO_MISSING, key="report_to", value=report_to)
-                elif report_to in valid_endpoints and self._clean_policies[idx]:
-                    resolved_endpoints.append(report_to)
+                elif report_to in valid_endpoints:
+                    if self._clean_policies[idx]:
+                        resolved_endpoints.append(report_to)
+                elif not (reporting_endpoints_field and report_to in reporting_endpoints_field):
+                    # A Report-To group (a Reporting-Endpoints problem has its own note).
+                    add_note(NEL_REPORT_TO_GROUP_UNUSABLE, value=report_to)
 
         if resolved_endpoints:
             add_note(
@@ -205,6 +234,16 @@ class NEL_REPORT_TO_MISSING(Note):
 The `report_to` member in the [Network Error Logging](https://w3c.github.io/network-error-logging/)
 policy specifies a reporting endpoint, but no matching endpoint refers to it in the
 `Reporting-Endpoints` header or a group in the `Report-To` header."""
+
+
+class NEL_REPORT_TO_GROUP_UNUSABLE(Note):
+    category = categories.GENERAL
+    level = levels.WARN
+    _summary = "The Report-To group '%(value)s' has no usable endpoint."
+    _text = """\
+The `report_to` member in the [Network Error Logging](https://w3c.github.io/network-error-logging/)
+policy names a group in the `Report-To` header, but none of the group's endpoints has a
+well-formed URL with a secure scheme, so browsers may not deliver reports to it."""
 
 
 class NelTest(FieldTest[ResponseLinterProtocol]):
@@ -312,44 +351,113 @@ class NelReportToBadURLTest(FieldTest[ResponseLinterProtocol]):
         message.headers.process([(b"Reporting-Endpoints", b'group1="http://["')])
 
 
-# Report-To is injected as parsed: FieldTest processes the headers twice, which JsonField
-# doesn't tolerate. test/test_nel_report_to.py covers the real header.
+def _report_to_header(group: str, *urls: str) -> bytes:
+    endpoints = ", ".join(f'{{"url": "{url}"}}' for url in urls)
+    return f'{{"group": "{group}", "max_age": 10, "endpoints": [{endpoints}]}}'.encode()
 
 
 class NelReportToGroupTest(FieldTest[ResponseLinterProtocol]):
     name = "NEL"
     inputs = [b'{"report_to": "g", "max_age": 1}']
     expected_out = [{"report_to": "g", "max_age": 1}]
-    expected_notes: NoteClassListType = [NEL_CONFIGURED]
+    expected_notes: NoteClassListType = [FIELD_DEPRECATED, NEL_CONFIGURED]
 
     def set_response_context(self, message: ResponseLinterProtocol) -> None:
-        message.headers.parsed["report-to"] = [
-            {"group": "g", "max_age": 10, "endpoints": [{"url": "https://example.com/r"}]}
-        ]
+        message.headers.process(
+            [
+                (
+                    b"Report-To",
+                    _report_to_header("g", "https://example.com/r"),
+                )
+            ]
+        )
 
 
 class NelReportToDefaultGroupTest(FieldTest[ResponseLinterProtocol]):
     name = "NEL"
     inputs = [b'{"report_to": "default", "max_age": 1}']
     expected_out = [{"report_to": "default", "max_age": 1}]
-    expected_notes: NoteClassListType = [NEL_CONFIGURED]
+    expected_notes: NoteClassListType = [FIELD_DEPRECATED, NEL_CONFIGURED]
 
     def set_response_context(self, message: ResponseLinterProtocol) -> None:
-        message.headers.parsed["report-to"] = [
-            {"max_age": 10, "endpoints": [{"url": "https://example.com/r"}]}
-        ]
+        message.headers.process(
+            [(b"Report-To", b'{"max_age": 10, "endpoints": [{"url": "https://example.com/r"}]}')]
+        )
 
 
 class NelReportToOtherGroupTest(FieldTest[ResponseLinterProtocol]):
     name = "NEL"
     inputs = [b'{"report_to": "g", "max_age": 1}']
     expected_out = [{"report_to": "g", "max_age": 1}]
-    expected_notes: NoteClassListType = [NEL_REPORT_TO_MISSING]
+    expected_notes: NoteClassListType = [FIELD_DEPRECATED, NEL_REPORT_TO_MISSING]
 
     def set_response_context(self, message: ResponseLinterProtocol) -> None:
-        message.headers.parsed["report-to"] = [
-            {"group": "other", "max_age": 10, "endpoints": [{"url": "https://example.com/r"}]}
-        ]
+        message.headers.process(
+            [
+                (
+                    b"Report-To",
+                    _report_to_header("other", "https://example.com/r"),
+                )
+            ]
+        )
+
+
+class NelReportToGroupInsecureTest(FieldTest[ResponseLinterProtocol]):
+    name = "NEL"
+    inputs = [b'{"report_to": "g", "max_age": 1}']
+    expected_out = [{"report_to": "g", "max_age": 1}]
+    expected_notes: NoteClassListType = [FIELD_DEPRECATED, NEL_REPORT_TO_GROUP_UNUSABLE]
+
+    def set_response_context(self, message: ResponseLinterProtocol) -> None:
+        message.headers.process(
+            [
+                (
+                    b"Report-To",
+                    _report_to_header("g", "http://example.com/r"),
+                )
+            ]
+        )
+
+
+class NelReportToGroupNoEndpointsTest(FieldTest[ResponseLinterProtocol]):
+    name = "NEL"
+    inputs = [b'{"report_to": "g", "max_age": 1}']
+    expected_out = [{"report_to": "g", "max_age": 1}]
+    expected_notes: NoteClassListType = [
+        FIELD_DEPRECATED,
+        REPORT_TO_MISSING_KEY,
+        NEL_REPORT_TO_GROUP_UNUSABLE,
+    ]
+
+    def set_response_context(self, message: ResponseLinterProtocol) -> None:
+        message.headers.process([(b"Report-To", b'{"group": "g", "max_age": 10}')])
+
+
+class NelReportToGroupBadURLTest(FieldTest[ResponseLinterProtocol]):
+    name = "NEL"
+    inputs = [b'{"report_to": "g", "max_age": 1}']
+    expected_out = [{"report_to": "g", "max_age": 1}]
+    expected_notes: NoteClassListType = [FIELD_DEPRECATED, NEL_REPORT_TO_GROUP_UNUSABLE]
+
+    def set_response_context(self, message: ResponseLinterProtocol) -> None:
+        message.headers.process([(b"Report-To", _report_to_header("g", "http://["))])
+
+
+class NelReportToGroupOneUsableTest(FieldTest[ResponseLinterProtocol]):
+    name = "NEL"
+    inputs = [b'{"report_to": "g", "max_age": 1}']
+    expected_out = [{"report_to": "g", "max_age": 1}]
+    expected_notes: NoteClassListType = [FIELD_DEPRECATED, NEL_CONFIGURED]
+
+    def set_response_context(self, message: ResponseLinterProtocol) -> None:
+        message.headers.process(
+            [
+                (
+                    b"Report-To",
+                    _report_to_header("g", "http://example.com/r", "https://example.com/r"),
+                )
+            ]
+        )
 
 
 class NelBooleanMaxAgeTest(FieldTest[ResponseLinterProtocol]):
