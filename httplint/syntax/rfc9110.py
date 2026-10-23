@@ -12,13 +12,7 @@ from .rfc3986 import (
     authority,
 )
 from .rfc3986 import host as uri_host
-from .rfc3986 import (
-    path_abempty,
-    port,
-    query,
-    relative_part,
-    segment,
-)
+from .rfc3986 import path_abempty, port, query, relative_part, segment
 from .rfc5234 import (
     ALPHA,
     DIGIT,
