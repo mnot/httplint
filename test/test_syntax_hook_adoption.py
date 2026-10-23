@@ -4,7 +4,8 @@ second, unrelated syntax defect still gets the generic syntax note.
 """
 
 import unittest
-from typing import List, Type
+from functools import partial
+from typing import Iterable, List, Type
 
 from httplint.field import BAD_SYNTAX, BAD_SYNTAX_DETAILED
 from httplint.field.parsers.accept import ACCEPT_BAD_SYNTAX
@@ -21,9 +22,11 @@ from httplint.field.parsers.content_range import (
     CONTENT_RANGE_MISSING_UNIT,
     RANGE_INVALID_INTEGER,
 )
+from httplint.field.parsers.strict_transport_security import HSTS_BAD_MAX_AGE
 from httplint.field.parsers.age import AGE_NEGATIVE, AGE_NOT_INT
 from httplint.field.cors import CORS_PREFLIGHT_ONLY
 from httplint.field.tests import FakeRequestLinter, FakeResponseLinter
+from httplint.i18n import L_
 from httplint.note import Note
 
 
@@ -36,7 +39,24 @@ def note_classes(
         message.status_code = status_code
     message.headers.process([(name.encode(), value.encode("latin-1")) for value in values])
     message.post_checks()
-    return [type(note) for note in message.notes]
+    handler = message.headers.handlers[name.lower()]
+    handler.post_check(
+        partial(
+            message.notes.add,
+            f"field-{name.lower()}",
+            field_name=handler.canonical_name,
+            field_type=L_("header"),
+        )
+    )
+    classes: List[Type[Note]] = []
+
+    def collect(notes: Iterable[Note]) -> None:
+        for note in notes:
+            classes.append(type(note))
+            collect(note.subnotes)
+
+    collect(message.notes)
+    return classes
 
 
 class AcceptMediaTypeTest(unittest.TestCase):
@@ -142,6 +162,43 @@ class ContentRangeTest(unittest.TestCase):
             with self.subTest(value=value):
                 notes = note_classes(FakeResponseLinter, "Content-Range", value, status_code=206)
                 self.assertEqual(notes, expected)
+
+
+class StrictTransportSecurityTest(unittest.TestCase):
+    def counts(self, value: str) -> List[int]:
+        "How many HSTS_BAD_MAX_AGE and generic syntax notes the value gets."
+        notes = note_classes(FakeResponseLinter, "Strict-Transport-Security", value)
+        return [
+            notes.count(HSTS_BAD_MAX_AGE),
+            len([n for n in notes if n in (BAD_SYNTAX, BAD_SYNTAX_DETAILED)]),
+        ]
+
+    def test_empty_max_age_gets_one_note(self) -> None:
+        for value in ["max-age=", "max-age= ", "max-age=;", "max-age=; includeSubDomains", "max-age =;"]:
+            with self.subTest(value=value):
+                self.assertEqual(self.counts(value), [1, 0])
+
+    def test_second_defect_keeps_the_generic_note(self) -> None:
+        for value in [
+            "max-age=; foo bar",
+            "max-age=;/",
+            "max-age=; includeSubDomains=a b",
+            "max-age=; max-age=",
+            "includeSubDomains; foo bar; max-age=",
+        ]:
+            with self.subTest(value=value):
+                self.assertEqual(self.counts(value), [1, 1])
+
+    def test_valid_and_other_bad_values_are_unchanged(self) -> None:
+        for value, expected in [
+            ("max-age=1", [0, 0]),
+            ("max-age", [1, 0]),
+            ('max-age=""', [1, 0]),
+            ("max-age=abc", [1, 0]),
+            ("max-age=1 2", [1, 1]),
+        ]:
+            with self.subTest(value=value):
+                self.assertEqual(self.counts(value), expected)
 
 
 if __name__ == "__main__":
