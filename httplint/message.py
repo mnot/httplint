@@ -208,6 +208,12 @@ IUSERINFO = (
 )
 
 
+def _port_too_large(port: str) -> bool:
+    "True if the port (DIGIT+) is above 65535; avoids int() on very long digit strings."
+    significant = port.lstrip("0")
+    return len(significant) > 5 or int(significant or "0") > 65535
+
+
 def _userinfo_valid(iri: str) -> bool:
     "True if the IRI has no userinfo, or userinfo that is valid as it stands."
     userinfo, at, _ = urlsplit(iri).netloc.rpartition("@")
@@ -281,7 +287,7 @@ class HttpRequestLinter(HttpMessageLinter):
         if (
             bad_userinfo
             or not re.fullmatch(pattern, self.uri, re.VERBOSE)
-            or (authority_form and int(self.uri.rpartition(":")[2]) > 65535)
+            or (authority_form and _port_too_large(self.uri.rpartition(":")[2]))
         ):
             if authority_form or target == "*":
                 self.notes.add("uri", REQUEST_TARGET_FORM, method=method)
