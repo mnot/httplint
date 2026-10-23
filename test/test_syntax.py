@@ -228,6 +228,9 @@ class SyntaxBacktrackingTest(unittest.TestCase):
             ("reason-phrase", rfc9112.reason_phrase, "a b" * n + bad),
             ("start-line", rfc9112.start_line, "HTTP/1.1 200 " + "a " * n + bad),
             ("HTTP-version", rfc9112.HTTP_version, "HTTP/1." + "1" * n),
+            ("obs-fold OWS", rfc9112.obs_fold, " \t" * n + bad),
+            ("obs-fold RWS", rfc9112.obs_fold, "\r\n" + " \t" * n + bad),
+            ("obs-fold lines", rfc9112.obs_fold, " \r\n" * n + bad),
         ]
         for label, rule, value in cases:
             self.check_full(label, rule, value)
@@ -778,6 +781,24 @@ class SyntaxTranslationTest(unittest.TestCase):
             self.assertTrue(fullmatch(rfc9112.reason_phrase, value))
         for value in ["\x01", "a\r\nb", "a\x7f"]:
             self.assertFalse(fullmatch(rfc9112.reason_phrase, value))
+
+    def test_obs_fold(self) -> None:
+        "obs-fold = OWS CRLF RWS (RFC 9112 Section 5.2) was missing."
+        for value in ["\r\n ", " \r\n\t", "\t \r\n  \t", "\r\n    "]:
+            with self.subTest(value=value):
+                self.assertTrue(fullmatch(rfc9112.obs_fold, value))
+        for value in ["", "\r\n", " \r\n", "\n ", "\r ", "\r\n x", "a\r\n ", " \r\n \r\n "]:
+            with self.subTest(value=value):
+                self.assertFalse(fullmatch(rfc9112.obs_fold, value))
+        # It is the continuation of a field line: the field-line before it ends with OWS.
+        self.assertTrue(fullmatch(rf"{rfc9112.field_line} {rfc9112.obs_fold} b", "A: a\r\n b"))
+
+    def test_rules_defined_by_rfc9110(self) -> None:
+        "absolute-path and obs-text are RFC 9110's; the copies in rfc9112 had the same text."
+        self.assertEqual(rfc9112.absolute_path, rf"(?: / {rfc3986.segment} )+")
+        self.assertEqual(rfc9112.obs_text, r"[\x80-\xff]")
+        self.assertIs(rfc9112.absolute_path, rfc9110.absolute_path)
+        self.assertIs(rfc9112.obs_text, rfc9110.obs_text)
 
     def test_http_message(self) -> None:
         "HTTP-message puts the CRLF after start-line, as RFC 9112 Section 2.1 does."

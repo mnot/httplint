@@ -4,11 +4,7 @@ Regex for RFC9112
 
 # pylint: disable=invalid-name, line-too-long
 
-from .rfc3986 import (
-    absolute_URI,
-    query,
-    segment,
-)
+from .rfc3986 import absolute_URI, query
 from .rfc5234 import (
     CRLF,
     DIGIT,
@@ -18,12 +14,18 @@ from .rfc5234 import (
     SP,
     VCHAR,
 )
+
+# RFC 9112 refers to these rules, which RFC 9110 defines (uri-host and port are RFC 3986's, via
+# RFC 9110); they are imported, not redefined, so that there is one transcription of each.
 from .rfc9110 import (
     BWS,
     OWS,
+    RWS,
+    absolute_path,
     field_name,
     field_value,
     list_rule,
+    obs_text,
     port,
     quoted_string,
     token,
@@ -36,6 +38,11 @@ SPEC_URL = "http://httpwg.org/specs/rfc9112"
 #   field-line = field-name ":" OWS field-value OWS
 
 field_line = rf"(?: {field_name} : {OWS} {field_value} {OWS} )"
+
+#   obs-fold = OWS CRLF RWS
+#            ; obsolete line folding
+
+obs_fold = rf"(?: {OWS} {CRLF} {RWS} )"
 
 ## Chunked Encoding
 
@@ -112,10 +119,6 @@ method = token
 
 absolute_form = absolute_URI
 
-#   absolute-path = 1*( "/" segment )
-
-absolute_path = rf"(?: / {segment} )+"
-
 #   asterisk-form = "*"
 
 asterisk_form = r"\*"
@@ -139,9 +142,6 @@ request_line = rf"(?: {method} {SP} {request_target} {SP} {HTTP_version} )"
 #   status-code = 3DIGIT
 
 status_code = rf"(?: {DIGIT}{{3}} )"
-
-#   obs-text = %x80-FF
-obs_text = r"[\x80-\xff]"
 
 #   reason-phrase = 1*( HTAB / SP / VCHAR / obs-text )
 
