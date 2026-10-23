@@ -109,6 +109,19 @@ class RefererTest(FieldTest[RequestLinterProtocol]):
     expected_out = "http://www.example.org/hypertext/Overview.html"
 
 
+class RefererQueryTest(FieldTest[RequestLinterProtocol]):
+    name = "Referer"
+    inputs = [b"/a?b=c"]
+    expected_out = "/a?b=c"
+
+
+class RefererColonSegmentTest(FieldTest[RequestLinterProtocol]):
+    name = "Referer"
+    inputs = [b"1:2"]
+    expected_out = "1:2"
+    expected_notes: NoteClassListType = [BAD_SYNTAX]
+
+
 class RefererBadURITest(FieldTest[RequestLinterProtocol]):
     name = "Referer"
     inputs = [b"https://[::1"]
