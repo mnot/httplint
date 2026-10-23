@@ -115,7 +115,7 @@ class PERMISSIONS_POLICY_UNKNOWN_TOKEN(Note):
     _summary = "'%(token)s' is not valid in an allowlist."
     _text = """\
 The token `%(token)s` is not a valid keyword in an allowlist.
-Valid tokens are `self` and `src`."""
+Valid tokens are `self`, `src` and `*`."""
 
 
 class PERMISSIONS_POLICY_QUOTED_KEYWORD(Note):
