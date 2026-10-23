@@ -4,10 +4,11 @@ split_list_field must split on commas outside quoted-strings, in linear time.
 It used to be a regex that backtracked quadratically on some inputs.
 """
 
+import itertools
 import time
 import unittest
 
-from httplint.field.utils import split_list_field
+from httplint.field.utils import _QDTEXT, _QUOTED_PAIR_CHAR, split_list_field
 
 # Generous: linear inputs take well under a second; the quadratic ones took minutes.
 TIME_LIMIT = 5.0
@@ -121,7 +122,7 @@ class SplitListFieldCommentsTest(unittest.TestCase):
         self.assertEqual(self.split("a\\"), ["a\\"])
 
     def test_same_as_default_without_parens(self):
-        for value in ['a;b="x,y", c', 'a"b,c', ' a ,b,, c ,', r'"a\",b",c', "", " , ,"]:
+        for value in ['a;b="x,y", c', 'a"b,c', " a ,b,, c ,", r'"a\",b",c', "", " , ,"]:
             self.assertEqual(self.split(value), split_list_field(value), value)
 
     def test_unmatched_is_linear(self):
@@ -132,10 +133,89 @@ class SplitListFieldCommentsTest(unittest.TestCase):
         self.assertLess(self.timed("(" * (SIZE // 2) + ")" * (SIZE // 2)), TIME_LIMIT)
         self.assertLess(self.timed("(,)," * (SIZE // 4)), TIME_LIMIT)
 
+    def test_escaped_parens_are_linear(self):
+        # Quadratic when each unmatched "(" was matched by rescanning to the end; the escaped
+        # ones in particular were never remembered.
+        for unit in ["\\(", "(\\(", "\\)", "\\\\", "(\\", "\\()", "(\\)"]:
+            for size in (SIZE // len(unit), 32_000 // len(unit)):
+                self.assertLess(self.timed(unit * size), 1.0, unit)
+        self.assertLess(self.timed("1.1 a " + "\\(" * 4000), 1.0)
+
     def timed(self, value):
         start = time.monotonic()
         self.split(value)
         return time.monotonic() - start
+
+
+def reference_split(value, comments):
+    "A slow, direct implementation of the splitting rules, to compare against."
+
+    def quote_close(start):
+        "Index just after the closing quote of the quoted-string opening at `start`, or -1."
+        idx = start + 1
+        while idx < len(value):
+            char = value[idx]
+            if char == '"':
+                return idx + 1
+            if char in _QDTEXT:
+                idx += 1
+            elif char == "\\" and idx + 1 < len(value) and value[idx + 1] in _QUOTED_PAIR_CHAR:
+                idx += 2
+            else:
+                return -1
+        return -1
+
+    def comment_close(start):
+        "Index just after the ')' matching the '(' at `start`, or -1."
+        depth = 1
+        idx = start + 1
+        while idx < len(value):
+            char = value[idx]
+            if char == "\\" and idx + 1 < len(value) and value[idx + 1] in _QUOTED_PAIR_CHAR:
+                idx += 2
+                continue
+            if char == "(":
+                depth += 1
+            elif char == ")":
+                depth -= 1
+                if depth == 0:
+                    return idx + 1
+            idx += 1
+        return -1
+
+    items = []
+    item_start = 0
+    idx = 0
+    while idx < len(value):
+        char = value[idx]
+        jump = -1
+        if char == ",":
+            items.append(value[item_start:idx].strip())
+            item_start = idx + 1
+        elif char == '"':
+            jump = quote_close(idx)
+        elif char == "(" and comments:
+            jump = comment_close(idx)
+        idx = jump if jump >= 0 else idx + 1
+    items.append(value[item_start:].strip())
+    return [item for item in items if item]
+
+
+class SplitListFieldDifferentialTest(unittest.TestCase):
+    "The linear splitter agrees with the direct one on every short string."
+
+    ALPHABET = 'a()\\", '
+
+    def test_exhaustive(self):
+        for length in range(8):
+            for chars in itertools.product(self.ALPHABET, repeat=length):
+                value = "".join(chars)
+                for comments in (False, True):
+                    self.assertEqual(
+                        split_list_field(value, comments=comments),
+                        reference_split(value, comments),
+                        (value, comments),
+                    )
 
 
 if __name__ == "__main__":
