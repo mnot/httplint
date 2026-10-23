@@ -15,13 +15,13 @@ from httplint.field.utils import (
 )
 
 
-def parse(instr, nostar=None):
+def parse(instr, nostar=None, bws=False):
     notes = []
 
     def add_note(cls, **kwargs):
         notes.append((cls, kwargs["param"]))
 
-    return parse_params(instr, add_note, nostar), notes
+    return parse_params(instr, add_note, nostar, bws=bws), notes
 
 
 class ParseParamsTest(unittest.TestCase):
@@ -100,6 +100,23 @@ class ParseParamsTest(unittest.TestCase):
         self.assertEqual(
             parse("x*=\"UTF-8''a\"; x*=UTF-8''b"),
             ({"x*": "a"}, [(PARAM_STAR_QUOTED, "x*"), (PARAM_REPEATS, "x*")]),
+        )
+
+    def test_bws_is_opt_in(self):
+        # Parameters (RFC 9110 Section 5.6.6) have no whitespace around "="; Link's do.
+        self.assertEqual(parse('a = "x"; b= y; c =z'), ({}, []))
+        self.assertEqual(
+            parse('a = "x"; b= y; c =z', bws=True), ({"a": "x", "b": "y", "c": "z"}, [])
+        )
+        self.assertEqual(parse("a=b; c=d", bws=True), ({"a": "b", "c": "d"}, []))
+
+    def test_bws_with_repeats_and_star(self):
+        self.assertEqual(parse("a = 1; A =2", bws=True), ({"a": "1"}, [(PARAM_REPEATS, "a")]))
+        self.assertEqual(
+            parse("x* = UTF-8''a%20b", bws=True, nostar=["y"]), ({"x*": "a b"}, [])
+        )
+        self.assertEqual(
+            parse("x* = UTF-8''a", bws=True, nostar=["x"]), ({}, [(PARAM_STAR_BAD, "x")])
         )
 
 

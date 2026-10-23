@@ -42,7 +42,7 @@ statement of the form "[context IRI] has a [relation type] resource at [target I
             link_value, param_str = field_value, ""
         link_value = link_value.strip()[1:-1]  # trim the angle brackets
         param_dict = parse_params(
-            param_str, add_note, ["rel", "rev", "anchor", "hreflang", "type", "media"]
+            param_str, add_note, ["rel", "rev", "anchor", "hreflang", "type", "media"], bws=True
         )
         if not self._check_hint_target(link_value, param_dict, add_note):
             self._check_syntax(field_value, add_note)
@@ -205,6 +205,44 @@ class QuotedRelationLinkTest(FieldTest[AnyMessageLinterProtocol]):
     name = "Link"
     inputs = [b'<http://www.example.com/>; rel="example"']
     expected_out = [("http://www.example.com/", {"rel": "example"})]
+
+
+class BWSLinkTest(FieldTest[AnyMessageLinterProtocol]):
+    "RFC 8288 Section 3: link-param = token BWS [ '=' BWS ( token / quoted-string ) ]."
+
+    name = "Link"
+    inputs = [b'</foo>; rel = "example"; type = "text/plain"; title= "x"']
+    expected_out = [("/foo", {"rel": "example", "type": "text/plain", "title": "x"})]
+
+
+class BWSTokenLinkTest(FieldTest[AnyMessageLinterProtocol]):
+    name = "Link"
+    inputs = [b"</foo>; rel = next"]
+    expected_out = [("/foo", {"rel": "next"})]
+
+
+class NoBWSLinkTest(FieldTest[AnyMessageLinterProtocol]):
+    "Guard: the same parameters without whitespace around the equals signs."
+
+    name = "Link"
+    inputs = [b'</foo>; rel="example"; type="text/plain"; title="x"']
+    expected_out = [("/foo", {"rel": "example", "type": "text/plain", "title": "x"})]
+
+
+class BWSRepeatingLinkTest(FieldTest[AnyMessageLinterProtocol]):
+    name = "Link"
+    inputs = [b'</foo>; rel = "example"; rel="another"']
+    expected_out = [("/foo", {"rel": "example"})]
+    expected_notes: NoteClassListType = [PARAM_REPEATS]
+
+
+class BWSHintLinkTest(FieldTest[AnyMessageLinterProtocol]):
+    "A rel that has BWS around the equals sign still drives the rel-based checks."
+
+    name = "Link"
+    inputs = [b"</foo>; rel = preload"]
+    expected_out = [("/foo", {"rel": "preload"})]
+    expected_notes: NoteClassListType = [LINK_RESOURCE_HINTS]
 
 
 class RelativeLinkTest(FieldTest[AnyMessageLinterProtocol]):

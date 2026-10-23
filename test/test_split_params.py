@@ -4,6 +4,8 @@ split_params must split a parameter list into name=value parameters, in linear t
 It replaces a split_string() call whose regex backtracked quadratically.
 """
 
+import itertools
+import re
 import time
 import unittest
 
@@ -36,10 +38,29 @@ class SplitParamsTest(unittest.TestCase):
     def test_whitespace(self):
         self.assertEqual(split_params("a=b ;\x0bc=d\n"), ["a=b", "c=d"])
 
-    def assert_fast(self, value):
+    def assert_fast(self, value, bws=False):
         start = time.monotonic()
-        split_params(value)
+        split_params(value, bws=bws)
         self.assertLess(time.monotonic() - start, TIME_LIMIT)
+
+    def test_bws_is_opt_in(self):
+        self.assertEqual(split_params("a = b; c =d; e= f"), [])
+        self.assertEqual(split_params("a = b; c =d; e= f", bws=True), ["a = b", "c =d", "e= f"])
+        self.assertEqual(split_params('a = "x;y" ; b', bws=True), ['a = "x;y"'])
+        self.assertEqual(split_params("a =; b = c", bws=True), ["b = c"])
+
+    def test_bws_only_changes_whitespace_around_equals(self):
+        for length in range(8):
+            for combo in itertools.product('a=; "', repeat=length):
+                value = "".join(combo)
+                if not re.search(r"\s=|=\s", value):
+                    self.assertEqual(split_params(value, bws=True), split_params(value), value)
+
+    def test_bws_is_linear(self):
+        self.assert_fast("a = b;" * (SIZE // 6), bws=True)
+        self.assert_fast("a" + " " * SIZE + "x", bws=True)
+        self.assert_fast("a=" + " " * SIZE + "x", bws=True)
+        self.assert_fast("a " * (SIZE // 2), bws=True)
 
     def test_no_equals_is_linear(self):
         self.assert_fast("a" * SIZE)
