@@ -1135,6 +1135,192 @@ class SyntaxLanguageTagBacktrackingTest(unittest.TestCase):
                 self.assertLess(elapsed, TIME_LIMIT, f"{label}: {elapsed:.2f}s")
 
 
+
+class SyntaxRfc5322AuditTest(unittest.TestCase):
+    """
+    Audit of rfc5322 against RFC 5322 sections 3.2 and 3.4 (issue #303). Two rules accepted
+    less than the RFC does: quoted-string forbade FWS before the closing quote, and comments
+    could not nest. Rules that were missing have been added.
+    """
+
+    def test_quoted_string_trailing_fws(self) -> None:
+        "quoted-string = DQUOTE *([FWS] qcontent) [FWS] DQUOTE: FWS is allowed before the end."
+        old = rf"(?: \" (?: {rfc5322.FWS}? {rfc5322.qcontent} )* \" )"
+        new = rfc5322.quoted_string_core
+        self.assertNotEqual(old, new)
+        differences = 0
+        for value in strings(['"', "a", " ", "\t", "\\", "\r", "\n"], 6):
+            with self.subTest(value=repr(value)):
+                was, now = fullmatch(old, value), fullmatch(new, value)
+                shorter = value.endswith('"') and any(
+                    fullmatch(rfc5322.FWS, value[split:-1]) and fullmatch(old, value[:split] + '"')
+                    for split in range(len(value) - 1)
+                )
+                # The only new strings are an old one with FWS added before the closing quote.
+                self.assertEqual(now, was or shorter)
+                differences += now and not was
+        self.assertGreater(differences, 10)
+        for value in ['"a "', '" "', '"a\t"', '"a \r\n "', '"a b "', '"a\\ "']:
+            with self.subTest(value=repr(value)):
+                self.assertTrue(fullmatch(new, value))
+        for value in ['"a \r\n"', '"a', 'a "', '"a" "', '"\r\n"']:
+            with self.subTest(value=repr(value)):
+                self.assertFalse(fullmatch(new, value))
+
+    def test_quoted_string_in_from(self) -> None:
+        for value in ['"Bob " <w@x.org>', '" " <w@x.org>', '"a "@x.org', '"Bob Smith" <w@x.org>']:
+            with self.subTest(value=value):
+                self.assertTrue(matches(rfc9110.From, value))
+                self.assertNotIn("BAD_SYNTAX", field_notes(False, b"From", value.encode()))
+        self.assertFalse(matches(rfc9110.From, '"Bob <w@x.org>'))
+
+    @staticmethod
+    def depth(value: str) -> int:
+        "The nesting depth of `value` if it is one comment, or -1 if it isn't."
+        level = deepest = pos = 0
+        while pos < len(value):
+            char = value[pos]
+            if level == 0 and pos > 0:
+                return -1
+            if char == "\\":
+                if level == 0 or pos + 1 >= len(value):
+                    return -1
+                pos += 2
+                continue
+            if char == "(":
+                level += 1
+                deepest = max(deepest, level)
+            elif char == ")":
+                if level == 0:
+                    return -1
+                level -= 1
+            elif level == 0:
+                return -1
+            pos += 1
+        return deepest if level == 0 and deepest else -1
+
+    def test_nested_comments(self) -> None:
+        "comment = '(' *([FWS] ccontent) [FWS] ')' where ccontent can be a comment."
+        old = rf"(?: \( (?: {rfc5322.fws_unit} | {rfc5322.ctext} | {rfc5322.quoted_pair} )* \) )"
+        for value in strings(["(", ")", "a", "\\", " "], 7):
+            with self.subTest(value=value):
+                level = self.depth(value)
+                self.assertEqual(fullmatch(rfc5322.comment, value), 1 <= level <= 3)
+                self.assertEqual(fullmatch(old, value), level == 1)
+        for value in ["(a (b) c)", "(a (b (c)) d)", "(a\r\n (b))", "(a (b) (c))"]:
+            with self.subTest(value=repr(value)):
+                self.assertTrue(fullmatch(rfc5322.comment, value))
+        for value in ["(a (b (c (d))))", "(a (b)", "(a\r\n(b))", "(a)(b)"]:
+            with self.subTest(value=repr(value)):
+                self.assertFalse(fullmatch(rfc5322.comment, value))
+
+    def test_nested_comments_in_from(self) -> None:
+        for value in [
+            "w@x.org (a (b) c)",
+            "(a (b)) w@x.org",
+            "Bob (a (b (c))) <w@x.org> (d (e))",
+        ]:
+            with self.subTest(value=value):
+                self.assertTrue(matches(rfc9110.From, value))
+                self.assertNotIn("BAD_SYNTAX", field_notes(False, b"From", value.encode()))
+        self.assertFalse(matches(rfc9110.From, "w@x.org (a (b (c (d))))"))
+
+    def test_specials(self) -> None:
+        "specials is the visible characters that are not atext."
+        atext = re.compile(rfc5322.atext, re.VERBOSE)
+        for code in range(256):
+            char = chr(code)
+            with self.subTest(char=repr(char)):
+                expected = 0x21 <= code <= 0x7E and not atext.fullmatch(char)
+                self.assertEqual(fullmatch(rfc5322.specials, char), expected)
+        self.assertEqual(sum(fullmatch(rfc5322.specials, chr(c)) for c in range(256)), 13)
+
+    def test_atom_and_word(self) -> None:
+        for value in ["a", "abc", " a ", "(c) a (d)", "a!#$%", "(c)\r\n a"]:
+            with self.subTest(value=repr(value)):
+                self.assertTrue(fullmatch(rfc5322.atom, value))
+                self.assertTrue(fullmatch(rfc5322.word, value))
+        for value in ["", "a b", "a.b", "(c)", "a@b", "a(b"]:
+            with self.subTest(value=repr(value)):
+                self.assertFalse(fullmatch(rfc5322.atom, value))
+        for value in ['"a b"', ' "a b" (c)', '""']:
+            with self.subTest(value=repr(value)):
+                self.assertTrue(fullmatch(rfc5322.word, value))
+                self.assertFalse(fullmatch(rfc5322.atom, value))
+
+    def test_unstructured(self) -> None:
+        for value in ["", "a", "a b", " a  b  ", "a\r\n b", "Hello, World!", "   "]:
+            with self.subTest(value=repr(value)):
+                self.assertTrue(fullmatch(rfc5322.unstructured, value))
+        for value in ["a\x00", "a\r\nb", "a\x80", "a\n"]:
+            with self.subTest(value=repr(value)):
+                self.assertFalse(fullmatch(rfc5322.unstructured, value))
+
+    def test_address_lists(self) -> None:
+        accepted = [
+            "a@b.c",
+            "Bob <a@b.c>",
+            "a@b.c, d@e.f",
+            "a@b.c , <d@e.f>",
+            "Bob <a@b.c>, Al <d@e.f>",
+        ]
+        groups = [
+            "G:;",
+            "G: a@b.c;",
+            "G: a@b.c, d@e.f ;",
+            "G: (c) ;",
+            "G:; (c)",
+            "Some G: <a@b.c>;",
+        ]
+        rejected = ["", "a@b.c,", ",a@b.c", "a@b.c,,d@e.f", "G: a@b.c", "G a@b.c;", "G: ;;"]
+        for value in accepted:
+            with self.subTest(value=value):
+                self.assertTrue(fullmatch(rfc5322.mailbox_list, value))
+                self.assertTrue(fullmatch(rfc5322.address_list, value))
+        for value in groups:
+            with self.subTest(value=value):
+                self.assertTrue(fullmatch(rfc5322.group, value))
+                self.assertTrue(fullmatch(rfc5322.address, value))
+                self.assertTrue(fullmatch(rfc5322.address_list, value))
+                self.assertFalse(fullmatch(rfc5322.mailbox_list, value))
+        self.assertTrue(fullmatch(rfc5322.address_list, "a@b.c, G: d@e.f;, Bob <g@h.i>"))
+        self.assertTrue(fullmatch(rfc5322.group_list, "a@b.c, d@e.f"))
+        self.assertTrue(fullmatch(rfc5322.group_list, " (c) "))
+        for value in rejected:
+            with self.subTest(value=value):
+                self.assertFalse(fullmatch(rfc5322.address_list, value))
+        # The From field's mailbox is unchanged.
+        self.assertTrue(fullmatch(rfc5322.mailbox_core, "Bob <a@b.c>"))
+        self.assertFalse(matches(rfc9110.From, "a@b.c, d@e.f"))
+
+    def test_adversarial(self) -> None:
+        "Linear time on non-matching input for the changed and the new rules."
+        n = 3000
+        cases = [
+            ("trailing spaces in quotes", rfc5322.mailbox, '"a' + " " * n + "\x00"),
+            ("spaced quoted atoms", rfc5322.mailbox, '"a "' * n + "\x00"),
+            ("quotes and folds", rfc5322.mailbox, '"a' + " \r\n " * n + "\x00"),
+            ("nested comments", rfc5322.mailbox, "((((" * n + "\x00"),
+            ("sibling comments", rfc5322.mailbox, "(a (b (c)))" * (n // 4) + "\x00"),
+            ("deep and broken", rfc5322.mailbox, "w@x.org " + "(a (b (c" * (n // 4)),
+            ("mailbox list", rfc5322.mailbox_list, "a <b@c>, " * (n // 4) + "\x00"),
+            ("address list", rfc5322.address_list, "a@b.c, " * (n // 4) + "\x00"),
+            ("address list groups", rfc5322.address_list, "G: a@b.c;, " * (n // 4) + "\x00"),
+            ("group list", rfc5322.group, "G:" + " (c)" * (n // 4) + "\x00"),
+            ("group mailboxes", rfc5322.group, "G:" + "a@b.c," * (n // 4) + "\x00"),
+            ("atoms", rfc5322.word, "a " * n + "\x00"),
+            ("unstructured", rfc5322.unstructured, "a  " * n + "\x00"),
+            ("unstructured folds", rfc5322.unstructured, "a\r\n " * n + "\x00"),
+        ]
+        for label, rule, value in cases:
+            compiled = re.compile(rf"^\s*(?:{rule})\s*$", re.VERBOSE | re.IGNORECASE)
+            with self.subTest(label):
+                start = time.monotonic()
+                compiled.match(value)
+                elapsed = time.monotonic() - start
+                self.assertLess(elapsed, TIME_LIMIT, f"{label}: {elapsed:.2f}s")
+
+
 def run_regex_check() -> None:
     print("Checking Syntax...")
     count, modules, errors = check_regex()
