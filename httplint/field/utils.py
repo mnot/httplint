@@ -857,11 +857,13 @@ def is_number(value: Any) -> bool:
 CODING_ALIASES = {"x-gzip": "gzip", "x-compress": "compress"}
 
 
-def coding_acceptable(accept_encoding: List[Tuple[str, ParamDictType]], coding: str) -> bool:
+def coding_acceptable(
+    accept_encoding: List[Tuple[str, ParamDictType]], coding: str, wildcard: bool = True
+) -> bool:
     """
     Whether a request's parsed Accept-Encoding allows ``coding`` (RFC 9110 Section 12.5.3):
-    an explicit entry decides, then ``*``, and q=0 means not acceptable. An invalid q is
-    treated as absent. ``x-gzip`` and ``x-compress`` are equivalent
+    an explicit entry decides, then ``*`` (unless ``wildcard`` is False), and q=0 means not
+    acceptable. An invalid q is treated as absent.``x-gzip`` and ``x-compress`` are equivalent
     to ``gzip`` and ``compress``, both in the request and as ``coding``; if the request gives
     conflicting entries for the same coding, the first wins.
     """
@@ -872,6 +874,6 @@ def coding_acceptable(accept_encoding: List[Tuple[str, ParamDictType]], coding: 
     coding = CODING_ALIASES.get(coding, coding)
     if coding in explicit:
         return explicit[coding] != 0.0
-    if "*" in explicit:
+    if wildcard and "*" in explicit:
         return explicit["*"] != 0.0
     return False

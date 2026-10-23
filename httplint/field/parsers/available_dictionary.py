@@ -2,6 +2,7 @@ from typing import Any
 
 from httplint.field.structured_field import StructuredField
 from httplint.field.tests import FieldTest
+from httplint.field.utils import coding_acceptable
 from httplint.note import Note, categories, levels
 from httplint.types import (
     AddNoteMethodType,
@@ -33,12 +34,8 @@ dictionary available for use in compressing the response."""
             return
 
         ae_values = self.message.headers.parsed.get("accept-encoding", [])
-        has_dictionary_support = False
-        for enc, _params in ae_values:
-            if enc in ["dcb", "dcz"]:
-                has_dictionary_support = True
-                break
-        if not has_dictionary_support:
+        # RFC 9842 Section 6.1: the client lists the encodings it supports; a `*` doesn't count.
+        if not any(coding_acceptable(ae_values, enc, wildcard=False) for enc in ("dcb", "dcz")):
             add_note(AVAILABLE_DICTIONARY_MISSING_AE)
 
 
@@ -101,3 +98,67 @@ class AvailableDictionaryMissingAETest(FieldTest[RequestLinterProtocol]):
     def set_request_context(self, message: RequestLinterProtocol) -> None:
         # Accept-Encoding missing 'dcb' or 'dcz'
         message.headers.parsed["accept-encoding"] = [("gzip", {})]
+
+
+class AvailableDictionaryQZeroTest(FieldTest[RequestLinterProtocol]):
+    "dcb;q=0 refuses dictionary compression, so it isn't support."
+
+    name = "Available-Dictionary"
+    inputs = [b":pZGm1Av0IEBKARczz7exkNYsZb8LzaMrV7J32a2fFG4=:"]
+    expected_out: tuple[bytes, dict[str, Any]] = (
+        b"\xa5\x91\xa6\xd4\x0b\xf4 @J\x01\x173\xcf\xb7\xb1\x90\xd6,e\xbf\x0b\xcd\xa3"
+        b"+W\xb2w\xd9\xad\x9f\x14n",
+        {},
+    )
+    expected_notes: NoteClassListType = [AVAILABLE_DICTIONARY_MISSING_AE]
+
+    def set_request_context(self, message: RequestLinterProtocol) -> None:
+        message.headers.process([(b"accept-encoding", b"gzip, dcb;q=0, dcz;q=0")])
+
+
+class AvailableDictionaryOneQZeroTest(FieldTest[RequestLinterProtocol]):
+    "Guard: one of dcb and dcz is enough; main also accepts this."
+
+    name = "Available-Dictionary"
+    inputs = [b":pZGm1Av0IEBKARczz7exkNYsZb8LzaMrV7J32a2fFG4=:"]
+    expected_out: tuple[bytes, dict[str, Any]] = (
+        b"\xa5\x91\xa6\xd4\x0b\xf4 @J\x01\x173\xcf\xb7\xb1\x90\xd6,e\xbf\x0b\xcd\xa3"
+        b"+W\xb2w\xd9\xad\x9f\x14n",
+        {},
+    )
+    expected_notes: NoteClassListType = []
+
+    def set_request_context(self, message: RequestLinterProtocol) -> None:
+        message.headers.process([(b"accept-encoding", b"dcb;q=0, dcz;q=0.5")])
+
+
+class AvailableDictionaryWildcardTest(FieldTest[RequestLinterProtocol]):
+    "Guard: `*` doesn't advertise dictionary-aware encodings (RFC 9842 Section 6.1)."
+
+    name = "Available-Dictionary"
+    inputs = [b":pZGm1Av0IEBKARczz7exkNYsZb8LzaMrV7J32a2fFG4=:"]
+    expected_out: tuple[bytes, dict[str, Any]] = (
+        b"\xa5\x91\xa6\xd4\x0b\xf4 @J\x01\x173\xcf\xb7\xb1\x90\xd6,e\xbf\x0b\xcd\xa3"
+        b"+W\xb2w\xd9\xad\x9f\x14n",
+        {},
+    )
+    expected_notes: NoteClassListType = [AVAILABLE_DICTIONARY_MISSING_AE]
+
+    def set_request_context(self, message: RequestLinterProtocol) -> None:
+        message.headers.process([(b"accept-encoding", b"*")])
+
+
+class AvailableDictionaryCaseTest(FieldTest[RequestLinterProtocol]):
+    "Guard: Accept-Encoding is parsed to lower case; main also accepts this."
+
+    name = "Available-Dictionary"
+    inputs = [b":pZGm1Av0IEBKARczz7exkNYsZb8LzaMrV7J32a2fFG4=:"]
+    expected_out: tuple[bytes, dict[str, Any]] = (
+        b"\xa5\x91\xa6\xd4\x0b\xf4 @J\x01\x173\xcf\xb7\xb1\x90\xd6,e\xbf\x0b\xcd\xa3"
+        b"+W\xb2w\xd9\xad\x9f\x14n",
+        {},
+    )
+    expected_notes: NoteClassListType = []
+
+    def set_request_context(self, message: RequestLinterProtocol) -> None:
+        message.headers.process([(b"accept-encoding", b"gzip, DCB;q=0.8")])
