@@ -45,8 +45,6 @@ class AddNoteMethodType(Protocol):
     ) -> Note: ...
 
 
-DeferredNoteType = Tuple[AddNoteMethodType, Type[Note], Optional[Any], Dict[str, VariableType]]
-
 NoteArgsType = Tuple[Type[Note], Dict[str, VariableType]]
 
 
