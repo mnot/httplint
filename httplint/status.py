@@ -4,12 +4,12 @@ from functools import partial
 from typing import List, Optional
 
 from httplint.note import Note, categories, levels
-from httplint.util import markdown_list
 from httplint.types import (
     RequestLinterProtocol,
     ResponseLinterProtocol,
     StrFieldListType,
 )
+from httplint.util import markdown_list
 
 safe_methods = ["GET", "HEAD", "OPTIONS", "TRACE"]
 
