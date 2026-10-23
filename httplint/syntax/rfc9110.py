@@ -626,9 +626,13 @@ received_protocol = rf"(?: (?: {protocol_name} / )? {protocol_version} )"
 
 #   received-by = pseudonym [ ":" port ]
 #
-# An IP-literal (from RFC 7230's uri-host) is also accepted, so that `Via: 1.1 [::1]` still
-# passes. The two alternatives can't match the same text (a pseudonym is a token and an IP-literal starts with
-# "["), which keeps this linear; a uri-host alternative overlaps the token and doesn't.
+# Deliberate, small deviation from the strict RFC 9110 grammar: an IP-literal is also accepted.
+# pseudonym is a token, which can't express an IPv6 host such as [::1]; RFC 7230 allowed a
+# uri-host here, proxies send IPv6 hosts, and the prose of RFC 9110 Section 7.6.3 still says
+# received-by is normally the host and port. Drop the IP_literal alternative if the RFC is
+# corrected to match. The alternatives can't match the same text (a pseudonym is a token and an
+# IP-literal starts with "["), which keeps this linear; a uri-host alternative overlaps the
+# token and doesn't.
 
 received_by = rf"(?: (?: {pseudonym} | {IP_literal} ) (?: : {port} )? )"
 
