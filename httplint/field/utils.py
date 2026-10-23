@@ -2,7 +2,9 @@ import calendar
 import re
 from email.utils import parsedate as lib_parsedate
 from typing import Any, Dict, FrozenSet, List, Optional, Set, Tuple, Type, Union
+from urllib.parse import SplitResult
 from urllib.parse import unquote as urlunquote
+from urllib.parse import urljoin, urlsplit
 
 from http_sf import Token
 
@@ -383,9 +385,11 @@ def check_sf_params(
     param_list = []
     for param_name, param_value in params.items():
         safe_value = inline_safe(str(param_value))
+        # An empty code span would swallow the next span's delimiters.
+        shown_value = f"`{safe_value}`" if safe_value else "(empty)"
         if param_name not in known_params:
             add_note(unknown_param_note, param=param_name)
-            param_list.append(f"* `{param_name}`: `{safe_value}`")
+            param_list.append(f"* `{param_name}`: {shown_value}")
         else:
             expected_type = known_params[param_name].get("type")
             if expected_type and not isinstance(param_value, expected_type):
@@ -394,7 +398,7 @@ def check_sf_params(
                     param=param_name,
                     value=param_value,
                 )
-                param_list.append(f"* `{param_name}`: `{safe_value}`")
+                param_list.append(f"* `{param_name}`: {shown_value}")
                 continue
 
             allowed_values = known_params[param_name].get("values")
@@ -404,7 +408,7 @@ def check_sf_params(
                     param=param_name,
                     value=param_value,
                 )
-                param_list.append(f"* `{param_name}`: `{safe_value}`")
+                param_list.append(f"* `{param_name}`: {shown_value}")
                 continue
 
             if "value_desc" in known_params[param_name]:
@@ -412,11 +416,11 @@ def check_sf_params(
                 if desc:
                     param_list.append(f"* {desc}")
                 else:
-                    param_list.append(f"* `{param_name}`: `{safe_value}`")
+                    param_list.append(f"* `{param_name}`: {shown_value}")
             elif "desc" in known_params[param_name]:
                 desc = known_params[param_name]["desc"]
                 if "%s" in desc:
-                    wrapped = f"`{safe_value}`" if safe_value else ""
+                    wrapped = f"`{safe_value}`" if safe_value else "(empty)"
                     param_list.append(f"* {desc % wrapped}")
                 elif param_value:
                     # A static desc with no %s is a flag-style description,
@@ -427,7 +431,7 @@ def check_sf_params(
                 if param_value is True:
                     param_list.append(f"* `{param_name}`")
                 else:
-                    param_list.append(f"* `{param_name}`: `{safe_value}`")
+                    param_list.append(f"* `{param_name}`: {shown_value}")
 
     return "\n".join(param_list)
 
@@ -651,3 +655,20 @@ def vary_covers(message: Any, name: str) -> bool:
     vary_values = message.headers.parsed.get("vary") or ()
     values = {str(v).lower() for v in vary_values}
     return "*" in values or name.lower() in values
+
+
+# --- resolve_url: URL resolution shared by Link, Location, Referer, Reporting-Endpoints,
+# --- Speculation-Rules and NEL
+
+
+def resolve_url(url: str, base: str = "") -> Optional[SplitResult]:
+    "Resolve url against base (if any) and split it; None if urllib rejects it (e.g., bad IPv6)."
+    try:
+        return urlsplit(urljoin(base, url))
+    except ValueError:
+        return None
+
+
+def is_secure(split: SplitResult) -> bool:
+    "Whether a split URL has a secure scheme (https or wss)."
+    return split.scheme.lower() in ("https", "wss")
