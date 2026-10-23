@@ -1,8 +1,6 @@
-import re
 from typing import Any, Generic, List
 
-from httplint.field import BAD_SYNTAX, HttpField
-from httplint.field.utils import RE_FLAGS
+from httplint.field import HttpField
 from httplint.note import Note, categories, levels
 from httplint.types import AddNoteMethodType, TMessage
 
@@ -33,12 +31,9 @@ class SingletonField(HttpField[TMessage], Generic[TMessage]):
             if len(self.raw_values) > 1:
                 add_note(SINGLE_HEADER_REPEAT)
             first_raw = self.raw_values[0]
-            if self.syntax:
-                if not re.match(rf"^\s*(?:{self.syntax})\s*$", first_raw, RE_FLAGS):
-                    if self.report_syntax:
-                        add_note(BAD_SYNTAX, ref_uri=self.reference)
             try:
-                self.value = self.parse(first_raw.strip(), add_note)
+                with self._syntax_checked(first_raw, add_note):
+                    self.value = self.parse(first_raw.strip(), add_note)
             except ValueError:
                 self.value = None
 

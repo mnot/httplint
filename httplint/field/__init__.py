@@ -1,6 +1,18 @@
 import re
 from abc import ABC, abstractmethod
-from typing import Any, Generic, Union, get_args, get_origin
+from contextlib import contextmanager
+from typing import (
+    Any,
+    ClassVar,
+    Generic,
+    Iterator,
+    Optional,
+    Pattern,
+    Tuple,
+    Union,
+    get_args,
+    get_origin,
+)
 
 from httplint.field.utils import RE_FLAGS
 from httplint.note import Note, categories, levels
@@ -16,6 +28,7 @@ from httplint.types import (
     StrFieldListType,
     TMessage,
 )
+from httplint.util import inline_safe, markdown_context
 
 # base URLs for references
 RFC2616 = "https://www.rfc-editor.org/rfc/rfc2616.html#%s"
@@ -37,12 +50,14 @@ class HttpField(ABC, Generic[TMessage]):
     syntax: Union[
         str, rfc9110.list_rule, bool
     ]  # Verbose regular expression to match, or False to indicate no syntax.
-    report_syntax: bool = True  # If False, syntax mismatch suppresses BAD_SYNTAX.
+    report_syntax: bool = True  # If False, a syntax mismatch adds no note at all.
+    max_syntax_length: Optional[int] = None  # Longer values aren't syntax-checked, if set.
     deprecated: bool = False
     no_coverage: bool = False  # Turns off coverage checks.
     message: TMessage
     _valid_in_requests: bool = True
     _valid_in_responses: bool = True
+    _syntax_cache: ClassVar[Optional[Tuple[Pattern[str], Pattern[str]]]]
 
     @property
     def valid_in_requests(self) -> bool:
@@ -104,6 +119,87 @@ class HttpField(ABC, Generic[TMessage]):
         if not hasattr(self, "canonical_name"):
             self.canonical_name = self.wire_name
         self.value: Any = []
+        self._syntax_suppressed = False
+
+    @classmethod
+    def _syntax_source(cls) -> Union[str, rfc9110.list_rule, bool]:
+        "The ABNF that one value is checked against; subclasses can narrow `syntax`."
+        return cls.syntax
+
+    @classmethod
+    def _syntax_patterns(cls) -> Optional[Tuple[Pattern[str], Pattern[str]]]:
+        """
+        The compiled (full match, longest-prefix match) patterns for this class, or None if it has
+        no syntax. Compiled on first use and kept on the class.
+        """
+        if "_syntax_cache" not in cls.__dict__:
+            source = cls._syntax_source()
+            cls._syntax_cache = (
+                (
+                    re.compile(rf"^\s*(?:{source})\s*$", RE_FLAGS),
+                    re.compile(rf"^\s*(?:{source})", RE_FLAGS),
+                )
+                if source
+                else None
+            )
+        return cls._syntax_cache
+
+    def _check_syntax(self, value: str, add_note: AddNoteMethodType) -> bool:
+        """
+        Check one value against the field's syntax, adding BAD_SYNTAX_DETAILED (if part of the
+        value matches) or BAD_SYNTAX (if none does) when it doesn't conform. Returns False if it
+        doesn't conform.
+
+        Values longer than `max_syntax_length` aren't checked. Nothing is added if `report_syntax`
+        is False, or if parse() called `suppress_syntax_note()`.
+        """
+        patterns = self._syntax_patterns()
+        if patterns is None:
+            return True
+        if self.max_syntax_length is not None and len(value) > self.max_syntax_length:
+            return True
+        full, prefix = patterns
+        if full.match(value):
+            return True
+        if not self.report_syntax or self._syntax_suppressed:
+            return False
+        match = prefix.match(value)
+        if match:
+            bad_char_index = match.end()
+            problem = (
+                f"The invalid character '{inline_safe(value[bad_char_index])}' "
+                f"was found at position {bad_char_index + 1}."
+            )
+            add_note(
+                BAD_SYNTAX_DETAILED,
+                ref_uri=self.reference,
+                value=value,
+                problem=problem,
+                context=markdown_context(value, bad_char_index),
+                category=self.category,
+            )
+        else:
+            add_note(BAD_SYNTAX, ref_uri=self.reference, category=self.category)
+        return False
+
+    def suppress_syntax_note(self) -> None:
+        """
+        Called from parse() when it has reported the value's syntax defect with a more specific
+        note; the syntax check then adds no BAD_SYNTAX or BAD_SYNTAX_DETAILED for that value.
+        """
+        self._syntax_suppressed = True
+
+    @contextmanager
+    def _syntax_checked(self, value: str, add_note: AddNoteMethodType) -> Iterator[None]:
+        """
+        Run the body (which parses `value`), then check its syntax, whether or not the body
+        raised ValueError, so that parse() gets to suppress the syntax note first.
+        """
+        self._syntax_suppressed = False
+        try:
+            yield
+        finally:
+            self._check_syntax(value, add_note)
 
     def evaluate(self, add_note: AddNoteMethodType) -> None:
         """
