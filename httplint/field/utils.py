@@ -863,17 +863,22 @@ def coding_acceptable(
     """
     Whether a request's parsed Accept-Encoding allows ``coding`` (RFC 9110 Section 12.5.3):
     an explicit entry decides, then ``*`` (unless ``wildcard`` is False), and q=0 means not
-    acceptable. An invalid q is treated as absent.``x-gzip`` and ``x-compress`` are equivalent
-    to ``gzip`` and ``compress``, both in the request and as ``coding``; if the request gives
-    conflicting entries for the same coding, the first wins.
+    acceptable. An invalid q is treated as absent. ``x-gzip`` and ``x-compress`` are equivalent
+    to ``gzip`` and ``compress``, both in the request and as ``coding``. An entry for the
+    literal ``coding`` decides first (the first of any duplicates); an alias entry is used
+    only when there is none.
     """
     explicit: Dict[str, Optional[float]] = {}
+    aliased: Dict[str, Optional[float]] = {}
     for entry_coding, params in accept_encoding:
-        name = CODING_ALIASES.get(entry_coding, entry_coding)
-        explicit.setdefault(name, parse_qvalue(dict(params), None))
-    coding = CODING_ALIASES.get(coding, coding)
+        q_value = parse_qvalue(dict(params), None)
+        explicit.setdefault(entry_coding, q_value)
+        aliased.setdefault(CODING_ALIASES.get(entry_coding, entry_coding), q_value)
     if coding in explicit:
         return explicit[coding] != 0.0
+    canonical = CODING_ALIASES.get(coding, coding)
+    if canonical in aliased:
+        return aliased[canonical] != 0.0
     if wildcard and "*" in explicit:
         return explicit["*"] != 0.0
     return False
