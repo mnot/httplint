@@ -8,6 +8,7 @@ import unittest
 from functools import partial
 from typing import List, Tuple
 
+from httplint.field import BAD_SYNTAX_DETAILED
 from httplint.field.parsers.content_security_policy import (
     CONTENT_SECURITY_POLICY,
     CSP_REPORT_TO_MISSING,
@@ -47,8 +48,8 @@ class CSPBacktrackingTest(unittest.TestCase):
     def test_repeated_directives_then_bad_byte(self) -> None:
         self.assert_fast(b"a b ;" * 40 + b"\x80")
 
-    def test_many_values_then_bad_byte(self) -> None:
-        self.assert_fast(b"a" + b" b" * 2000 + b"\x80")
+    def test_mixed_whitespace_then_bad_byte(self) -> None:
+        self.assert_fast(b"a" + b" \t" * 1000 + b"\x80")
 
 
 def has_report_to_child(note: Note) -> bool:
@@ -56,15 +57,60 @@ def has_report_to_child(note: Note) -> bool:
 
 
 class CSPReportToAttributionTest(unittest.TestCase):
-    def test_child_attached_to_own_header(self) -> None:
-        message = process(
-            [
-                (b"Content-Security-Policy", b"script-src 'self'"),
-                (b"Content-Security-Policy-Report-Only", b"script-src 'self'; report-to rep"),
-            ]
-        )
+    def assert_attribution(self, headers: List[Tuple[bytes, bytes]]) -> None:
+        message = process(headers)
         parents = [n for n in message.notes if isinstance(n, CONTENT_SECURITY_POLICY)]
         self.assertEqual(len(parents), 2)
         with_child = [p for p in parents if has_report_to_child(p)]
         self.assertEqual(len(with_child), 1)
         self.assertIn("reporting only", with_child[0].summary)
+
+    def test_enforced_header_first(self) -> None:
+        self.assert_attribution(
+            [
+                (b"Content-Security-Policy", b"script-src 'self'"),
+                (b"Content-Security-Policy-Report-Only", b"script-src 'self'; report-to rep"),
+            ]
+        )
+
+    def test_report_only_header_first(self) -> None:
+        self.assert_attribution(
+            [
+                (b"Content-Security-Policy-Report-Only", b"script-src 'self'; report-to rep"),
+                (b"Content-Security-Policy", b"script-src 'self'"),
+            ]
+        )
+
+
+class CSPSyntaxPositionTest(unittest.TestCase):
+    """BAD_SYNTAX_DETAILED must blame the offending byte, not whitespace before it."""
+
+    def problem(self, value: bytes) -> str:
+        message = process([(b"Content-Security-Policy", value)])
+        problems = [
+            str(n.vars["problem"]) for n in message.notes if isinstance(n, BAD_SYNTAX_DETAILED)
+        ]
+        self.assertEqual(len(problems), 1)
+        return problems[0]
+
+    def test_after_value(self) -> None:
+        self.assertEqual(
+            self.problem(b"script-src 'self' \x80"),
+            "The invalid character '\x80' was found at position 19.",
+        )
+
+    def test_after_name(self) -> None:
+        self.assertEqual(
+            self.problem(b"script-src \t\x80"),
+            "The invalid character '\x80' was found at position 13.",
+        )
+
+    def test_after_semicolon(self) -> None:
+        self.assertEqual(
+            self.problem(b"script-src 'self'; \x80"),
+            "The invalid character ' ' was found at position 19.",
+        )
+
+
+if __name__ == "__main__":
+    unittest.main()

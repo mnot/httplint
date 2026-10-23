@@ -22,7 +22,12 @@ DIRECTIVE_VALUE_CHARS = r"[\x21-\x2B\x2D-\x3A\x3C-\x7E]+"
 DIRECTIVE_VALUE = rf"(?: {DIRECTIVE_VALUE_CHARS} (?: {rfc9110.RWS} {DIRECTIVE_VALUE_CHARS} )* )"
 
 
-csp_directive = rf"(?: {DIRECTIVE_NAME} (?: {rfc9110.RWS} {DIRECTIVE_VALUE} )? )"  # pylint: disable=invalid-name
+# Whitespace after a directive is only consumed when a character other than SP, HTAB or ";" follows
+# it. That keeps it from overlapping the OWS before ";" and the trailing \s* added by
+# HttpListField, while still putting the error position of a bad byte after the whitespace.
+TRAILING_WS = r"(?: [ \t]+ (?= [^ \t;] ) )?"
+
+csp_directive = rf"(?: {DIRECTIVE_NAME} (?: {rfc9110.RWS} {DIRECTIVE_VALUE} )? {TRAILING_WS} )"  # pylint: disable=invalid-name
 
 # Directives whose value is not a source list, so source-list checks do not apply.
 NON_SOURCE_LIST_DIRECTIVES = {
@@ -157,7 +162,8 @@ sources of content that browsers are allowed to load on a page."""
             )
 
     def post_check(self, add_note: AddNoteMethodType) -> None:
-        if not self.value:
+        # evaluate() sets the parent note whenever there is a value.
+        if not self.value or self._parent_note is None:
             return
 
         reporting_endpoints_field = self.message.headers.parsed.get("reporting-endpoints")
@@ -174,19 +180,11 @@ sources of content that browsers are allowed to load on a page."""
                 if value in known_endpoints:
                     continue
 
-                if self._parent_note:
-                    self._parent_note.add_child(
-                        CSP_REPORT_TO_MISSING,
-                        endpoint=value,
-                        report_only_text=self.report_only_text,
-                    )
-                else:
-                    # Fallback if parent not found (should be rare)
-                    add_note(
-                        CSP_REPORT_TO_MISSING,
-                        endpoint=value,
-                        report_only_text=self.report_only_text,
-                    )
+                self._parent_note.add_child(
+                    CSP_REPORT_TO_MISSING,
+                    endpoint=value,
+                    report_only_text=self.report_only_text,
+                )
 
     def _make_list(self, items: list[str]) -> MarkdownSafe:
         safe = [inline_safe(item) for item in items]
