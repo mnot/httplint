@@ -158,11 +158,12 @@ class ResponseCacheChecker:
             self.has_explicit_freshness = True
             freshness_hdrs.append("field-expires")
             base_time = self.date_value or (int(self.response_time) if self.response_time else None)
-            if base_time is None:
+            if base_time is None and self.expires_value is not None:
                 # Freshness is explicit, but with no Date or start time it can't be computed.
                 self.freshness_unknown = True
             else:
-                expires_lifetime = (self.expires_value or 0) - base_time
+                # An unparseable Expires is stale whatever the clock says.
+                expires_lifetime = (self.expires_value or 0) - (base_time or 0)
                 self.freshness_lifetime_private = expires_lifetime
                 self.freshness_lifetime_shared = expires_lifetime
         if "max-age" in self.cc_dict:

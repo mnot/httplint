@@ -125,6 +125,22 @@ class TestCacheFreshness(unittest.TestCase):
         self.assertNotIn(FRESHNESS_FRESH, notes)
         self.assertNotIn(FRESHNESS_STALE_ALREADY, notes)
 
+    def test_invalid_expires_without_clock_is_already_stale(self):
+        notes = self._expires_notes([
+            (b"Expires", b"0"),
+            (b"Content-Length", b"2"),
+        ])
+        self.assertIn(FRESHNESS_STALE_ALREADY, notes)
+        self.assertNotIn(FRESHNESS_HEURISTIC, notes)
+
+    def test_invalid_expires_with_date_is_already_stale(self):
+        notes = self._expires_notes([
+            (b"Date", b"Mon, 20 Oct 2025 00:00:00 GMT"),
+            (b"Expires", b"0"),
+            (b"Content-Length", b"2"),
+        ])
+        self.assertIn(FRESHNESS_STALE_ALREADY, notes)
+
     def test_expires_with_s_maxage_leaves_private_lifetime_unknown(self):
         notes = self._expires_notes([
             (b"Expires", b"Tue, 21 Oct 2025 00:00:00 GMT"),
