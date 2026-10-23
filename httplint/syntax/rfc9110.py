@@ -12,7 +12,7 @@ from .rfc3986 import (
     authority,
 )
 from .rfc3986 import host as uri_host
-from .rfc3986 import path_abempty, port, query, relative_part, segment
+from .rfc3986 import IP_literal, path_abempty, port, query, relative_part, segment
 from .rfc5234 import (
     ALPHA,
     DIGIT,
@@ -624,12 +624,12 @@ pseudonym = token
 received_protocol = rf"(?: (?: {protocol_name} / )? {protocol_version} )"
 
 #   received-by = pseudonym [ ":" port ]
-
 #
-# RFC 7230 had "uri-host [ ":" port ]" here. uri-host is still accepted (as is an IPv6 literal),
-# so that nothing the old rule accepted starts to fail.
+# An IP-literal (from RFC 7230's uri-host) is also accepted, so that `Via: 1.1 [::1]` still
+# passes. The two alternatives can't match the same text (a pseudonym is a token and an IP-literal starts with
+# "["), which keeps this linear; a uri-host alternative overlaps the token and doesn't.
 
-received_by = rf"(?: (?: {pseudonym} | {uri_host} ) (?: : {port} )? )"
+received_by = rf"(?: (?: {pseudonym} | {IP_literal} ) (?: : {port} )? )"
 
 #   Via = [ ( received-protocol RWS received-by [ RWS comment ] )
 #           *( OWS "," OWS ( received-protocol RWS received-by [ RWS comment ] ) ) ]

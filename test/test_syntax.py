@@ -150,6 +150,14 @@ class SyntaxBacktrackingTest(unittest.TestCase):
         for label, response, name, value in cases:
             lint = lint_response if response else lint_request
             self.check(label, lint, name, value)
+        for label, unit in [
+            ("host:port", "1.1 a:80, "),
+            ("host", "1.1 a, "),
+            ("IP literal", "1.1 [::1]:80, "),
+            ("host:port comment", "1.1 a.b:80 (x (y)), "),
+        ]:
+            self.check_rule(f"Via {label}", rfc9110.Via, unit * 24 + "\x01")
+            self.check_rule(f"Via {label} long", rfc9110.Via, unit * 2000 + "\x01")
         self.check_rule("header-field", rfc9112.header_field, "A: " + "a b " * 2000 + "\x01")
         self.check_rule("field-value", rfc9110.field_value, "a b " * 2000 + "\x01")
         self.check_rule("field-value words", rfc9110.field_value, "aaa " * 24 + "\x01")
@@ -543,21 +551,27 @@ class SyntaxTranslationTest(unittest.TestCase):
     def test_received_by(self) -> None:
         host, port = rfc9110.uri_host, rfc9110.port
         old = rf"(?: (?: {host} (?: : {port} )? ) | {rfc9110.pseudonym} )"
-        for value in strings(["a", "1", "#", "^", ":", "[", "]", "%", "."], 5):
+        for value in strings(["a", "1", "#", ":", "[", "]", "(", "=", ".", "%"], 5):
             with self.subTest(value=value):
                 was, now = fullmatch(old, value), fullmatch(rfc9110.received_by, value)
-                if was:
-                    self.assertTrue(now)
-                elif now:
+                if was and not now:
+                    # RFC 9110 has no empty received-by, and a pseudonym is a token: no "(" or "=".
+                    self.assertTrue(value == "" or value[0] == ":" or "(" in value or "=" in value)
+                elif now and not was:
                     # A token that isn't a host has a character that a host can't have.
-                    self.assertTrue(any(c in value for c in "#^%"), value)
+                    self.assertTrue(any(c in value for c in "#%"), value)
         for value in ["a#b:80", "a#b", "a^b", "example.org:8080", "[::1]:80", "[::1]", "a:"]:
             with self.subTest(value=value):
                 self.assertTrue(fullmatch(rfc9110.received_by, value))
-        for value in ["a:b", "a b", "a#b:c"]:
+        for value in ["a:b", "a b", "a#b:c", "", ":80", "a(b)", "a=b", "a,b", "a;b", "[::1", "[a]"]:
             with self.subTest(value=value):
                 self.assertFalse(fullmatch(rfc9110.received_by, value))
+        # What the old rule accepted that RFC 9110 doesn't, and the new one rejects.
+        for value in ["", ":80", "a(b)", "a=b", "a;b", "a,b"]:
+            with self.subTest(value=value):
+                self.assertTrue(fullmatch(old, value))
         self.assertTrue(matches(rfc9110.Via, "1.1 a#b:80 (a comment), 1.0 [::1]"))
+        self.assertFalse(matches(rfc9110.Via, "1.1 :80"))
         self.assertNotIn("BAD_SYNTAX_DETAILED", field_notes(True, b"Via", b"1.1 a#b:80"))
 
     def test_transfer_encoding_list(self) -> None:
