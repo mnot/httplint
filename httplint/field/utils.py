@@ -853,15 +853,23 @@ def is_number(value: Any) -> bool:
 
 # --- coding_acceptable: whether Accept-Encoding allows a content coding ------------------------
 
+# RFC 9110 Section 8.4.1: a recipient SHOULD consider these legacy names equivalent.
+CODING_ALIASES = {"x-gzip": "gzip", "x-compress": "compress"}
+
+
 def coding_acceptable(accept_encoding: List[Tuple[str, ParamDictType]], coding: str) -> bool:
     """
     Whether a request's parsed Accept-Encoding allows ``coding`` (RFC 9110 Section 12.5.3):
     an explicit entry decides, then ``*``, and q=0 means not acceptable. An invalid q is
-    treated as absent.
+    treated as absent. ``x-gzip`` and ``x-compress`` are equivalent
+    to ``gzip`` and ``compress``, both in the request and as ``coding``; if the request gives
+    conflicting entries for the same coding, the first wins.
     """
     explicit: Dict[str, Optional[float]] = {}
     for entry_coding, params in accept_encoding:
-        explicit.setdefault(entry_coding, parse_qvalue(dict(params), None))
+        name = CODING_ALIASES.get(entry_coding, entry_coding)
+        explicit.setdefault(name, parse_qvalue(dict(params), None))
+    coding = CODING_ALIASES.get(coding, coding)
     if coding in explicit:
         return explicit[coding] != 0.0
     if "*" in explicit:

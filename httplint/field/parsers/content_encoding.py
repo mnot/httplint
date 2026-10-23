@@ -281,3 +281,68 @@ class DictionaryCompressedVaryCoveredTest(FieldTest[AnyMessageLinterProtocol]):
             CachingProtocol, SimpleNamespace(store_shared=True, store_private=True)
         )
         message.headers.parsed["vary"] = ["accept-encoding", "available-dictionary"]
+
+
+class ContentEncodingXGzipTest(FieldTest[AnyMessageLinterProtocol]):
+    "x-gzip is equivalent to gzip (RFC 9110 Section 8.4.1.3)."
+
+    name = "Content-Encoding"
+    inputs = [b"x-gzip"]
+    expected_out = ["x-gzip"]
+    expected_notes: NoteClassListType = []
+
+    def set_response_context(self, message: ResponseLinterProtocol) -> None:
+        assert message.request is not None
+        message.request.headers.process([(b"accept-encoding", b"gzip")])
+
+
+class ContentEncodingXGzipRequestTest(FieldTest[AnyMessageLinterProtocol]):
+    "The alias works the other way too: gzip is acceptable when the request lists x-gzip."
+
+    name = "Content-Encoding"
+    inputs = [b"gzip"]
+    expected_out = ["gzip"]
+    expected_notes: NoteClassListType = []
+
+    def set_response_context(self, message: ResponseLinterProtocol) -> None:
+        assert message.request is not None
+        message.request.headers.process([(b"accept-encoding", b"x-gzip")])
+
+
+class ContentEncodingXGzipQZeroTest(FieldTest[AnyMessageLinterProtocol]):
+    "A q=0 on gzip refuses x-gzip as well, even though a wildcard would otherwise allow it."
+
+    name = "Content-Encoding"
+    inputs = [b"x-gzip"]
+    expected_out = ["x-gzip"]
+    expected_notes: NoteClassListType = [ENCODING_UNWANTED]
+
+    def set_response_context(self, message: ResponseLinterProtocol) -> None:
+        assert message.request is not None
+        message.request.headers.process([(b"accept-encoding", b"gzip;q=0, *;q=1")])
+
+
+class ContentEncodingXCompressTest(FieldTest[AnyMessageLinterProtocol]):
+    "x-compress is equivalent to compress (RFC 9110 Section 8.4.1.1)."
+
+    name = "Content-Encoding"
+    inputs = [b"x-compress"]
+    expected_out = ["x-compress"]
+    expected_notes: NoteClassListType = []
+
+    def set_response_context(self, message: ResponseLinterProtocol) -> None:
+        assert message.request is not None
+        message.request.headers.process([(b"accept-encoding", b"compress")])
+
+
+class ContentEncodingXGzipNotCompressTest(FieldTest[AnyMessageLinterProtocol]):
+    "Guard: the aliases don't cross over; x-gzip is not acceptable to a client that lists compress."
+
+    name = "Content-Encoding"
+    inputs = [b"x-gzip"]
+    expected_out = ["x-gzip"]
+    expected_notes: NoteClassListType = [ENCODING_UNWANTED]
+
+    def set_response_context(self, message: ResponseLinterProtocol) -> None:
+        assert message.request is not None
+        message.request.headers.process([(b"accept-encoding", b"compress")])
