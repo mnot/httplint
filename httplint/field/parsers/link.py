@@ -58,7 +58,7 @@ statement of the form "[context IRI] has a [relation type] resource at [target I
             for token in rel.lower().split():
                 if token not in hints:
                     continue
-                resolved = resolve_url(base_uri, link_value)
+                resolved = resolve_url(link_value, base_uri)
                 if resolved is None:
                     add_note(LINK_BAD_TARGET_URI, rel=token, link=link_value)
                     continue

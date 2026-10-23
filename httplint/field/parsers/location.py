@@ -39,7 +39,7 @@ In `201` (Created) responses, it identifies a newly created resource."""
             ]:
                 add_note(LOCATION_UNDEFINED)
         if not re.match(rf"^\s*{rfc3986.URI}\s*$", field_value, re.VERBOSE):
-            resolved = resolve_url(self.message.base_uri, field_value)
+            resolved = resolve_url(field_value, self.message.base_uri)
             if resolved is None:
                 add_note(LOCATION_BAD_URI, uri=field_value)
             else:

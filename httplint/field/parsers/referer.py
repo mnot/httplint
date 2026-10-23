@@ -33,10 +33,11 @@ resource from which the target URI was obtained (i.e., the "referrer")."""
 
         try:
             # Compare like with like: the request's URI has been through iri_to_uri
-            parsed_referer = resolve_url("", iri_to_uri(referer_uri))
+            referer_uri = iri_to_uri(referer_uri)
         except (ValueError, UnicodeError):
             return  # Already handled by URI syntax checks
-        parsed_request = resolve_url("", request_uri)
+        parsed_referer = resolve_url(referer_uri)
+        parsed_request = resolve_url(request_uri)
         if parsed_referer is None or parsed_request is None:
             return  # Already handled by URI syntax checks
 

@@ -14,7 +14,7 @@ from httplint.types import (
 
 def endpoint_problem(base_uri: str, url: str) -> Optional[Type[Note]]:
     "The note class describing what's wrong with a reporting endpoint URL, or None if it's fine."
-    parsed = resolve_url(base_uri, url)
+    parsed = resolve_url(url, base_uri)
     if parsed is None:
         return BAD_REPORTING_ENDPOINT_URL
     if parsed.scheme and not is_secure(parsed):

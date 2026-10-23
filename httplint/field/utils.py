@@ -596,8 +596,8 @@ specification](https://www.rfc-editor.org/rfc/rfc9110.html#name-obsolete-date-fo
 # --- Speculation-Rules and NEL
 
 
-def resolve_url(base: str, url: str) -> Optional[SplitResult]:
-    "Resolve url against base and split it; None if urllib rejects it (e.g., a bad IPv6 host)."
+def resolve_url(url: str, base: str = "") -> Optional[SplitResult]:
+    "Resolve url against base (if any) and split it; None if urllib rejects it (e.g., bad IPv6)."
     try:
         return urlsplit(urljoin(base, url))
     except ValueError:

@@ -35,7 +35,7 @@ point to speculation rules files."""
                 )
                 continue
 
-            parsed = resolve_url(self.message.base_uri, url)
+            parsed = resolve_url(url, self.message.base_uri)
             if parsed is None:
                 add_note(SPECULATION_RULE_BAD_URL, url=url)
             elif parsed.scheme and not is_secure(parsed):
