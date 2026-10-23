@@ -1,7 +1,7 @@
 import unittest
 from typing import Any, Dict, List, Tuple, Type
 
-from httplint.field.utils import is_negative_integer, parse_delta_seconds
+from httplint.field.utils import is_negative_integer, parse_delta_seconds, parse_digits
 from httplint.message import REQUEST_TARGET_FORM, HttpRequestLinter
 from httplint.note import Note
 
@@ -43,6 +43,12 @@ class TestParseDeltaSeconds(unittest.TestCase):
         self.assertEqual(self.run_parse("9" * 100_000, max_digits=4000), (None, [(BAD, {})]))
         self.assertEqual(self.run_parse("0" * 100_000, max_digits=4000), (0, []))
         self.assertEqual(self.run_parse("_" * 100_000, max_digits=4000), (None, [(BAD, {})]))
+
+    def test_parse_digits(self) -> None:
+        self.assertEqual(parse_digits("0" * 5000 + "443", max_digits=5), 443)
+        self.assertEqual(parse_digits("99999", max_digits=5), 99999)
+        for value in ["", "-1", "+1", "1_0", "999999", "٥"]:
+            self.assertIsNone(parse_digits(value, max_digits=5), repr(value))
 
     def test_is_negative_integer(self) -> None:
         for value in ["-1", "-0", "-" + "9" * 5000]:

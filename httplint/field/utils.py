@@ -593,6 +593,20 @@ specification](https://www.rfc-editor.org/rfc/rfc9110.html#name-obsolete-date-fo
 # --- parse_delta_seconds: non-negative integer field values ---------------------------------
 
 
+def parse_digits(value: str, max_digits: int = 20) -> Optional[int]:
+    """
+    Parse `value` as DIGIT+ (ASCII only; no sign, underscore or whitespace), or return None if it
+    isn't, or has more than `max_digits` significant digits (leading zeros don't count).
+
+    This keeps int()'s leniency and its 4300-digit limit away from wire values.
+    """
+    if value.isascii() and value.isdigit():
+        digits = value.lstrip("0") or "0"
+        if len(digits) <= max_digits:
+            return int(digits)
+    return None
+
+
 def parse_delta_seconds(
     value: str,
     add_note: AddNoteMethodType,
@@ -601,19 +615,15 @@ def parse_delta_seconds(
     **note_vars: Any,
 ) -> Optional[int]:
     """
-    Parse `value` as DIGIT+ (ASCII only; no sign, underscore or whitespace), as used for
-    delta-seconds and similar values.
+    Parse `value` with parse_digits(), as used for delta-seconds and similar values.
 
-    If it isn't, or has more than `max_digits` significant digits (leading zeros don't count),
-    add `bad_note` (with `note_vars`) and return None. This keeps int()'s leniency and its
-    4300-digit limit out of the caller; range checks stay with the caller.
+    On failure, add `bad_note` (with `note_vars`) and return None. Range checks stay with the
+    caller.
     """
-    if value.isascii() and value.isdigit():
-        digits = value.lstrip("0") or "0"
-        if len(digits) <= max_digits:
-            return int(digits)
-    add_note(bad_note, **note_vars)
-    return None
+    result = parse_digits(value, max_digits)
+    if result is None:
+        add_note(bad_note, **note_vars)
+    return result
 
 
 def is_negative_integer(value: str) -> bool:
