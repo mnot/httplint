@@ -19,7 +19,9 @@ BIT = r"[01]"
 # CHAR           =  %x01-7F
 #                     ; any 7-bit US-ASCII character,
 #                     ;  excluding NUL
-#
+
+CHAR = r"[\x01-\x7F]"
+
 # CR             =  %x0D
 #                     ; carriage return
 

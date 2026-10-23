@@ -19,6 +19,7 @@ from httplint.field.tests import FakeResponseLinter
 from httplint.note import Note, categories, levels
 from httplint.syntax import (
     rfc3986,
+    rfc5234,
     rfc5322,
     rfc5646,
     rfc5987,
@@ -1043,6 +1044,16 @@ class InvalidCharProblemTest(unittest.TestCase):
         self.assertEqual(
             invalid_char_problem("ab", 2), "The value ended unexpectedly at position 3."
         )
+
+
+class SyntaxCoreRulesTest(unittest.TestCase):
+    "The RFC 5234 core rules are all present (audit, issue #303)."
+
+    def test_char(self) -> None:
+        "CHAR was missing; it is %x01-7F."
+        for code in range(256):
+            with self.subTest(code=code):
+                self.assertEqual(fullmatch(rfc5234.CHAR, chr(code)), 1 <= code <= 0x7F)
 
 
 def run_regex_check() -> None:
