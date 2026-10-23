@@ -6,7 +6,6 @@ Regex for RFC9112
 
 from .rfc3986 import (
     absolute_URI,
-    authority,
     query,
     segment,
 )
@@ -25,9 +24,11 @@ from .rfc9110 import (
     field_name,
     field_value,
     list_rule,
+    port,
     quoted_string,
     token,
     transfer_coding,
+    uri_host,
 )
 
 SPEC_URL = "http://httpwg.org/specs/rfc9112"
@@ -94,13 +95,14 @@ Transfer_Encoding = list_rule(transfer_coding)
 
 ## Message
 
-#   HTTP-name = %x48.54.54.50 ; HTTP
+#   HTTP-name = %s"HTTP"
+#             ; case-sensitive (RFC 9112 Appendix A has %x48.54.54.50 ; HTTP)
 
 HTTP_name = r"(?-i:HTTP)"
 
 #   HTTP-version = HTTP-name "/" DIGIT "." DIGIT
 
-HTTP_version = rf"{HTTP_name} / {DIGIT} \. {DIGIT}"
+HTTP_version = rf"(?: {HTTP_name} / {DIGIT} \. {DIGIT} )"
 
 #   method = token
 
@@ -118,9 +120,9 @@ absolute_path = rf"(?: / {segment} )+"
 
 asterisk_form = r"\*"
 
-#   authority-form = authority
+#   authority-form = uri-host ":" port
 
-authority_form = authority
+authority_form = rf"(?: {uri_host} : {port} )"
 
 #   origin-form = absolute-path [ "?" query ]
 
@@ -130,9 +132,9 @@ origin_form = rf"(?: {absolute_path} (?: \? {query} )? )"
 
 request_target = rf"(?: {origin_form} | {absolute_form} | {authority_form} | {asterisk_form} )"
 
-#   request-line = method SP request-target SP HTTP-version CRLF
+#   request-line = method SP request-target SP HTTP-version
 
-request_line = rf"(?: {method} [ ] {request_target} [ ] {HTTP_version} {CRLF} )"
+request_line = rf"(?: {method} {SP} {request_target} {SP} {HTTP_version} )"
 
 #   status-code = 3DIGIT
 
@@ -141,13 +143,13 @@ status_code = rf"(?: {DIGIT}{{3}} )"
 #   obs-text = %x80-FF
 obs_text = r"[\x80-\xff]"
 
-#   reason-phrase = *( HTAB / SP / VCHAR / obs-text )
+#   reason-phrase = 1*( HTAB / SP / VCHAR / obs-text )
 
-reason_phrase = rf"(?: {HTAB} | {SP} | {VCHAR} | {obs_text} )*"
+reason_phrase = rf"(?: (?: {HTAB} | {SP} | {VCHAR} | {obs_text} )+ )"
 
-#   status-line = HTTP-version SP status-code SP reason-phrase CRLF
+#   status-line = HTTP-version SP status-code SP [ reason-phrase ]
 
-status_line = rf"(?: {HTTP_version} [ ] {status_code} [ ] {reason_phrase} {CRLF} )"
+status_line = rf"(?: {HTTP_version} {SP} {status_code} {SP} (?: {reason_phrase} )? )"
 
 #   start-line = request-line / status-line
 
@@ -157,8 +159,9 @@ start_line = rf"(?: {request_line} | {status_line} )"
 
 message_body = rf"(?: {OCTET}* )"
 
-#   HTTP-message = start-line CRLF *( field-line CRLF ) CRLF [ message-body ]
-#
-# Here start-line includes its own CRLF, as in RFC 7230.
+#   HTTP-message = start-line CRLF
+#                  *( field-line CRLF )
+#                  CRLF
+#                  [ message-body ]
 
-HTTP_message = rf"(?: {start_line} (?: {field_line} {CRLF} )* {CRLF} (?: {message_body} )? )"
+HTTP_message = rf"(?: {start_line} {CRLF} (?: {field_line} {CRLF} )* {CRLF} (?: {message_body} )? )"
