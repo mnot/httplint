@@ -3,9 +3,10 @@ import re
 import sys
 import time
 import unittest
-from typing import List, Tuple
+from typing import Callable, List, Tuple
 
 from httplint import HttpRequestLinter, HttpResponseLinter, syntax
+from httplint.syntax import rfc9110, rfc9112
 
 
 def check_regex() -> None:
@@ -57,7 +58,7 @@ def lint_target(target: bytes) -> None:
 class SyntaxBacktrackingTest(unittest.TestCase):
     """Pathological non-matching inputs must fail in bounded time."""
 
-    def check(self, label: str, func, *args) -> None:  # type: ignore[no-untyped-def]
+    def check(self, label: str, func: Callable[..., None], *args: bytes) -> None:
         with self.subTest(label):
             start = time.monotonic()
             func(*args)
@@ -86,16 +87,84 @@ class SyntaxBacktrackingTest(unittest.TestCase):
             self.check(label, lint, name, value)
 
     def test_range(self) -> None:
-        value = b"bytes=" + b",".join([b"0-1"] * 22) + b",\x7f"
+        value = b"bytes=" + b",".join([b"0-1"] * 24) + b",\x7f"
         self.check("Range", lint_request, b"Range", value)
 
     def test_partial_uri(self) -> None:
-        value = b"a" * 10000 + b"<"
+        value = b"a" * 15000 + b"<"
         self.check("Content-Location", lint_response, b"Content-Location", value)
         self.check("Referer", lint_request, b"Referer", value)
 
     def test_origin_form(self) -> None:
-        self.check("request target", lint_target, b"/" + b"a" * 10000 + b"%zz")
+        self.check("request target", lint_target, b"/" + b"a" * 15000 + b"%zz")
+
+
+def matches(rule: str, value: str) -> bool:
+    return re.match(rf"^\s*(?:{rule})\s*$", value, re.VERBOSE | re.IGNORECASE) is not None
+
+
+class SyntaxAcceptRejectTest(unittest.TestCase):
+    """The backtracking rewrites must accept and reject what they did before."""
+
+    def check(self, rule: str, accepted: List[str], rejected: List[str]) -> None:
+        for value in accepted:
+            with self.subTest(value=value):
+                self.assertTrue(matches(rule, value))
+        for value in rejected:
+            with self.subTest(value=value):
+                self.assertFalse(matches(rule, value))
+
+    def test_parameters(self) -> None:
+        self.check(
+            rfc9110.media_type,
+            [
+                "text/plain",
+                "text/plain;",
+                "text/plain; ;",
+                "text/plain; ; a=b",
+                "text/plain;a=b",
+                "text/plain ; a=b ;c=d",
+                'text/plain; a="x\\"y"',
+                'text/plain; a="b;c"; ; d=e',
+                "text/plain \t;\t",
+            ],
+            [
+                "text/plain; a",
+                "text/plain; a=",
+                "text/plain; =b",
+                "text/plain a=b",
+                'text/plain; a="x',
+                'text/plain; a="x\\"',
+                "text/plain; a=b c=d",
+                "text/plain; ; \x80",
+            ],
+        )
+        self.check(
+            rfc9110.expectation,
+            ["100-continue", "a=b; ;c=d", 'a="b"; c="d\\"e"'],
+            ["a=b; c", 'a="b', "a=b ; ; c="],
+        )
+
+    def test_range(self) -> None:
+        self.check(
+            rfc9110.Range,
+            ["bytes=0-1", "bytes=0-", "bytes=-1", "bytes=0-1,-1", "bytes=0-1, 2-3", "bytes=a"],
+            ["bytes=", "bytes=0-1,", "bytes=0 -1", "bytes=0-1,\x7f", "0-1"],
+        )
+
+    def test_origin_form(self) -> None:
+        self.check(
+            rfc9112.origin_form,
+            ["/", "/a/b", "//x", "/a?", "/a?b=c", "/a?b/c?d", "/a??"],
+            ["a", "?a", "/a b", "/a#b", "/a?b c", "/%zz", "/a?%zz"],
+        )
+
+    def test_partial_uri(self) -> None:
+        self.check(
+            rfc9110.partial_URI,
+            ["", "a", "/a", "a/b:c", "./a:b", "/a?b=c", "a?b:c", "//host/p?q"],
+            ["1:2", "a:b", "//a:a b", "a b"],
+        )
 
 
 def run_regex_check() -> None:
