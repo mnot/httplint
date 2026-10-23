@@ -1056,6 +1056,85 @@ class SyntaxCoreRulesTest(unittest.TestCase):
                 self.assertEqual(fullmatch(rfc5234.CHAR, chr(code)), 1 <= code <= 0x7F)
 
 
+class SyntaxLanguageTagAuditTest(unittest.TestCase):
+    """
+    The rfc5646 rules irregular, regular, extension and privateuse were bare alternations or
+    sequences, which break when quantified or placed in a sequence; they are now grouped (#303).
+    Language-Tag itself accepts what it did.
+    """
+
+    @staticmethod
+    def ungrouped(rule: str) -> str:
+        "The rule as it was before it was grouped."
+        body = rule.strip()
+        assert body.startswith("(?:") and body.endswith(")")
+        return body[3:-1]
+
+    def test_differential(self) -> None:
+        names = ["irregular", "regular", "extension", "privateuse"]
+        old = {name: self.ungrouped(getattr(rfc5646, name)) for name in names}
+        old_grandfathered = rf"(?: {old['irregular']} | {old['regular']} )"
+        old_langtag = rf"""(?:
+            {rfc5646.language}
+            (?: \- {rfc5646.script} )?
+            (?: \- {rfc5646.region} )?
+            (?: \- {rfc5646.variant} )*
+            (?: \- {old['extension']} )*
+            (?: \- {old['privateuse']} )?
+        )"""
+        old_tag = rf"(?: {old_langtag} | {old['privateuse']} | {old_grandfathered} )"
+        subtags = ["en", "i", "ami", "zh", "min", "nan", "GB", "oed", "x", "a", "bb", "sgn", "BE"]
+        subtags += ["FR", "art", "lojban", "1996", "Latn"]
+        accepted = 0
+        for count in range(1, 4):
+            for combo in itertools.product(subtags, repeat=count):
+                value = "-".join(combo)
+                was, now = matches(old_tag, value), matches(rfc5646.Language_Tag, value)
+                with self.subTest(value=value):
+                    self.assertEqual(was, now)
+                accepted += now
+        self.assertGreater(accepted, 100)
+        for value in ["i-ami", "zh-min-nan", "en-GB-oed", "sgn-BE-FR", "art-lojban", "x-a"]:
+            with self.subTest(value=value):
+                self.assertTrue(matches(rfc5646.Language_Tag, value))
+
+    def test_rules_can_be_composed(self) -> None:
+        "Each of the four rules is one unit: quantifiable, and safe inside a larger sequence."
+        for name, value in [
+            ("irregular", "i-ami"),
+            ("regular", "zh-min-nan"),
+            ("extension", "a-bb"),
+            ("privateuse", "x-a"),
+        ]:
+            rule = getattr(rfc5646, name)
+            old = self.ungrouped(rule)
+            with self.subTest(name=name):
+                self.assertTrue(fullmatch(rf"<{rule}>", f"<{value}>"))
+                self.assertTrue(fullmatch(rf"(?:{rule}/)+", f"{value}/{value}/"))
+                if name in ("irregular", "regular"):
+                    # The bare alternation splits the "<" and ">" into the first and last branch.
+                    self.assertFalse(fullmatch(rf"<{old}>", f"<{value}>"))
+
+
+class SyntaxLanguageTagBacktrackingTest(unittest.TestCase):
+    "Guard: Language-Tag stays linear after the rules were grouped (it passes on main too)."
+
+    def test_adversarial(self) -> None:
+        n = 4000
+        for label, value in [
+            ("grandfathered prefix", "i-" * n),
+            ("zh-min", "zh-min" + "-nan" * n),
+            ("extensions", "en" + "-a-bb" * n + "!"),
+            ("private use", "x" + "-abcdefgh" * n + "!"),
+        ]:
+            compiled = re.compile(rf"^\s*(?:{rfc5646.Language_Tag})\s*$", re.VERBOSE | re.IGNORECASE)
+            with self.subTest(label):
+                start = time.monotonic()
+                compiled.match(value)
+                elapsed = time.monotonic() - start
+                self.assertLess(elapsed, TIME_LIMIT, f"{label}: {elapsed:.2f}s")
+
+
 def run_regex_check() -> None:
     print("Checking Syntax...")
     count, modules, errors = check_regex()

@@ -1,7 +1,8 @@
 """
 Regex for RFC5646
 
-These regex are directly derived from the collected ABNF in RFC5646.
+These regex are directly derived from the ABNF in RFC5646, Section 2.1 (the RFC has no
+collected-ABNF appendix).
 
 They should be processed with re.VERBOSE.
 """
@@ -33,7 +34,7 @@ alphanum = rf"(?: {ALPHA} | {DIGIT} )"
 #               / "sgn-BE-NL"
 #               / "sgn-CH-DE"
 
-irregular = r"""
+irregular = r"""(?:
   en-GB-oed
 | i-ami
 | i-bnn
@@ -51,7 +52,7 @@ irregular = r"""
 | sgn-BE-FR
 | sgn-BE-NL
 | sgn-CH-DE
-"""
+)"""
 
 # regular       = "art-lojban"        ; these tags match the 'langtag'
 #               / "cel-gaulish"       ; production, but their subtags
@@ -63,7 +64,7 @@ irregular = r"""
 #               / "zh-min-nan"        ; subtag or sequence of subtags
 #               / "zh-xiang"
 
-regular = r"""
+regular = r"""(?:
 art\-lojban
 | cel\-gaulish
 | no\-bok
@@ -73,7 +74,7 @@ art\-lojban
 | zh\-min
 | zh\-min\-nan
 | zh\-xiang
-"""
+)"""
 
 # grandfathered = irregular           ; non-redundant tags registered
 #               / regular             ; during the RFC 3066 era
@@ -122,11 +123,11 @@ singleton = rf"(?: {DIGIT} | [\x41-\x57\x59-\x5a\x61-\x77\x79-\x7a] )"
 
 # extension     = singleton 1*("-" (2*8alphanum))
 
-extension = rf"{singleton} (?: \- {alphanum}{{2,8}} ){{1,}}"
+extension = rf"(?: {singleton} (?: \- {alphanum}{{2,8}} ){{1,}} )"
 
 # privateuse    = "x" 1*("-" (1*8alphanum))
 
-privateuse = rf"x (?: \- {alphanum}{{1,8}} ){{1,}}"
+privateuse = rf"(?: x (?: \- {alphanum}{{1,8}} ){{1,}} )"
 
 # langtag       = language
 #                 ["-" script]
