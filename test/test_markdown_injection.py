@@ -157,7 +157,11 @@ class EmptyCodeSpanTest(unittest.TestCase):
         for param in ("detail", "key"):
             with self.subTest(param=param):
                 value = f'""; {param}="{HTML}"'
-                self.check_escaped(detail_text(b"Cache-Status", value.encode("ascii")))
+                detail = detail_text(b"Cache-Status", value.encode("ascii"))
+                self.check_escaped(detail)
+                # Separating the bullets from the target line stopped the escaping failure,
+                # but an empty target still renders as an empty code span.
+                self.assertNotIn("``", detail)
 
     # Known bug, tracked in https://github.com/mnot/httplint/issues/277.
     # Remove expectedFailure when that issue is fixed.

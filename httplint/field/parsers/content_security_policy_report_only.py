@@ -4,6 +4,7 @@ from httplint.field.parsers.content_security_policy import (
     content_security_policy,
 )
 from httplint.field.tests import FieldTest
+from httplint.note import MarkdownSafe
 from httplint.types import (
     NoteClassListType,
     ResponseLinterProtocol,
@@ -18,7 +19,9 @@ the effects of a content security policy without enforcing it."""
     reference = "https://www.w3.org/TR/CSP3/"
     deprecated = False
     report_only_string = " for reporting only"
-    report_only_text = "\n\nBrowsers will only report violations of this policy, not enforce it."
+    report_only_text = MarkdownSafe(
+        "\n\nBrowsers will only report violations of this policy, not enforce it."
+    )
 
 
 class CSPROTest(FieldTest[ResponseLinterProtocol]):
