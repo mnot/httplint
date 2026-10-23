@@ -130,8 +130,10 @@ statement of the form "[context IRI] has a [relation type] resource at [target I
             hints_plain = ", ".join(present)
             lines = []
             for rel_name, targets in present.items():
-                safe = [inline_safe(t) for t in targets]
-                lines.append(f"- `{rel_name}`: {', '.join(f'`{t}`' for t in safe)}")
+                shown = [
+                    f"`{safe}`" if (safe := inline_safe(t)).strip() else "(empty)" for t in targets
+                ]
+                lines.append(f"- `{rel_name}`: {', '.join(shown)}")
             add_note(
                 LINK_RESOURCE_HINTS,
                 hints=hints_plain,
@@ -541,3 +543,12 @@ class UnclosedBracketThenLinkTest(FieldTest[AnyMessageLinterProtocol]):
         ("/b", {"rel": "prev"}),
     ]
     expected_notes: NoteClassListType = [BAD_SYNTAX]
+
+
+class EmptyTargetLinkTest(FieldTest[AnyMessageLinterProtocol]):
+    "An empty URI-Reference is valid; the hint note shows a placeholder, not an empty code span."
+
+    name = "Link"
+    inputs = [b"<>; rel=preload"]
+    expected_out = [("", {"rel": "preload"})]
+    expected_notes: NoteClassListType = [LINK_RESOURCE_HINTS]
