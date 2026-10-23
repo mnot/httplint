@@ -148,7 +148,9 @@ class HttpMessageLinter:
                     )
         else:
             if self.content_length and not self.no_content:
-                self.notes.add("message", CONTENT_NOT_ALLOWED)
+                self.notes.add(
+                    "message", CONTENT_NOT_ALLOWED, message=translate(L_("This message"))
+                )
         self.post_checks()
 
         for section in [self.headers, self.trailers]:
@@ -166,6 +168,15 @@ class HttpMessageLinter:
         "Say whether this message can have content."
         return True
 
+    def has_full_representation(self) -> bool:
+        "Say whether this message's content is a full representation of the resource."
+        return self.can_have_content()
+
+    @property
+    def content_decoded(self) -> bool:
+        "Say whether the content coding(s) were undone, so the content is available to check."
+        return self.decoded.content_available
+
     def post_checks(self) -> None:
         "Post-parsing checks to perform."
 
@@ -176,7 +187,12 @@ class HttpMessageLinter:
         Capture a sample of the decoded content, noting whether it had to
         be cut short so charset checks know it may end mid-character even
         when the full content doesn't.
+
+        Nothing is captured if a content coding couldn't be undone, since the
+        chunks are then not the representation.
         """
+        if not self.content_decoded:
+            return
         room = self.content_sample_size - len(self.content_sample)
         if room > 0:
             self.content_sample += chunk[:room]
@@ -371,11 +387,18 @@ class HttpResponseLinter(HttpMessageLinter):
                 self.notes.add("status", STATUS_PHRASE_ENCODING)
 
     def can_have_content(self) -> bool:
+        "Say whether this response can have content (RFC 9110, Section 6.4.1)."
         if self.is_head_response:
             return False
-        if self.status_code in [304]:
+        if self.status_code is not None and (
+            self.status_code in (204, 205, 304) or 100 <= self.status_code <= 199
+        ):
             return False
         return True
+
+    def has_full_representation(self) -> bool:
+        "Say whether this response's content is a full representation (so, not a 206)."
+        return self.can_have_content() and self.status_code != 206
 
     def post_checks(self) -> None:
         check_preflight_response(self)
@@ -411,7 +434,7 @@ class CONTENT_NOT_ALLOWED(Note):
     category = categories.GENERAL
     level = levels.BAD
     _summary = "%(message)s can not have content."
-    _note = """\
+    _text = """\
 HTTP does not allow this message to have content; including it can cause security and
 interoperability issues.
 """
