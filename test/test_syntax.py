@@ -23,8 +23,10 @@ from httplint.syntax import (
     rfc5322,
     rfc5646,
     rfc5987,
+    rfc6838,
     rfc8288,
     rfc9110,
+    rfc9111,
     rfc9112,
     rfc9651,
 )
@@ -1700,6 +1702,65 @@ class SyntaxStructuredFieldAuditTest(unittest.TestCase):
                 compiled.match(value)
                 elapsed = time.monotonic() - start
                 self.assertLess(elapsed, TIME_LIMIT, f"{label}: {elapsed:.2f}s")
+
+
+
+class SyntaxCachingAuditTest(unittest.TestCase):
+    """
+    Guards for the audit of rfc9111 and rfc6838 against RFC 9111 Appendix A and RFC 6838
+    section 4.2 (issue #303). Both were already right, so these pass on main too; only the
+    comments about where Pragma and Warning come from (RFC 7234) changed.
+    """
+
+    def test_cache_control(self) -> None:
+        for value in ["", "no-cache", "max-age=5, no-cache", 'private="a, b"', "a=b ,c"]:
+            with self.subTest(value=value):
+                self.assertTrue(matches(rfc9111.Cache_Control, value))
+        for value in ["max-age=", "=5", "a,,b", "a b", ",a", "a;b"]:
+            with self.subTest(value=value):
+                self.assertFalse(matches(rfc9111.Cache_Control, value))
+
+    def test_age_and_pragma(self) -> None:
+        for value in ["0", "12345", "00"]:
+            with self.subTest(value=value):
+                self.assertTrue(matches(rfc9111.Age, value))
+        for value in ["", "-1", "1.5", "a"]:
+            with self.subTest(value=value):
+                self.assertFalse(matches(rfc9111.Age, value))
+        for value in ["no-cache", "no-cache, foo=bar", 'foo="b ar"', "x"]:
+            with self.subTest(value=value):
+                self.assertTrue(matches(rfc9111.Pragma, value))
+        for value in ["", "no-cache,", "=a"]:
+            with self.subTest(value=value):
+                self.assertFalse(matches(rfc9111.Pragma, value))
+
+    def test_warning(self) -> None:
+        date = '"Mon, 01 Jan 2000 00:00:00 GMT"'
+        for value in [
+            '199 example.org:80 "text"',
+            f'110 anderson-1.3.37 "Response is stale" {date}',
+            '299 [::1] "x", 199 a "y"',
+        ]:
+            with self.subTest(value=value):
+                self.assertTrue(matches(rfc9111.Warning_, value))
+        for value in ['19 a "x"', '199 a x', '199  a "x"', '199 a "x" "y"', "199 a"]:
+            with self.subTest(value=value):
+                self.assertFalse(matches(rfc9111.Warning_, value))
+
+    def test_media_type_names(self) -> None:
+        "restricted-name = restricted-name-first *126restricted-name-chars."
+        first = set("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")
+        chars = first | set("!#$&-^_.+")
+        for code in range(256):
+            char = chr(code)
+            with self.subTest(char=repr(char)):
+                self.assertEqual(fullmatch(rfc6838.restricted_name_first, char), char in first)
+                self.assertEqual(fullmatch(rfc6838.restricted_name_chars, char), char in chars)
+        self.assertTrue(fullmatch(rfc6838.type_name, "a" * 127))
+        self.assertFalse(fullmatch(rfc6838.type_name, "a" * 128))
+        self.assertFalse(fullmatch(rfc6838.subtype_name, ""))
+        self.assertFalse(fullmatch(rfc6838.subtype_name, "+a"))
+        self.assertTrue(fullmatch(rfc6838.subtype_name, "vnd.a+json"))
 
 
 def run_regex_check() -> None:
