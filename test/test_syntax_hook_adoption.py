@@ -11,6 +11,12 @@ from httplint.field.parsers.accept import ACCEPT_BAD_SYNTAX
 from httplint.field.parsers.accept_language import ACCEPT_LANGUAGE_BAD_SYNTAX
 from httplint.field.parsers.accept_patch import ACCEPT_PATCH_BAD_SYNTAX
 from httplint.field.parsers.accept_post import ACCEPT_POST_BAD_SYNTAX
+from httplint.field.parsers.access_control_max_age import (
+    CORS_MAX_AGE_INVALID,
+    CORS_MAX_AGE_NEGATIVE,
+)
+from httplint.field.parsers.age import AGE_NEGATIVE, AGE_NOT_INT
+from httplint.field.cors import CORS_PREFLIGHT_ONLY
 from httplint.field.tests import FakeRequestLinter, FakeResponseLinter
 from httplint.note import Note
 
@@ -82,6 +88,32 @@ class AcceptLanguageTest(unittest.TestCase):
         self.assertEqual(notes[0], ACCEPT_LANGUAGE_BAD_SYNTAX)
         self.assertEqual(len(notes), 2)
         self.assertIn(notes[1], (BAD_SYNTAX, BAD_SYNTAX_DETAILED))
+
+
+class DeltaSecondsTest(unittest.TestCase):
+    "Guards: Age and Access-Control-Max-Age give one note per bad value, as they did with the flag."
+
+    def test_age(self) -> None:
+        for value, expected in [
+            ("foo", [AGE_NOT_INT]),
+            ("1.5", [AGE_NOT_INT]),
+            ("1 0", [AGE_NOT_INT]),
+            ("-5", [AGE_NEGATIVE]),
+            ("5", []),
+        ]:
+            with self.subTest(value=value):
+                self.assertEqual(note_classes(FakeResponseLinter, "Age", value), expected)
+
+    def test_access_control_max_age(self) -> None:
+        for value, expected in [
+            ("foo", [CORS_MAX_AGE_INVALID]),
+            ("1.5", [CORS_MAX_AGE_INVALID]),
+            ("-5", [CORS_MAX_AGE_NEGATIVE]),
+            ("5", []),
+        ]:
+            with self.subTest(value=value):
+                notes = note_classes(FakeResponseLinter, "Access-Control-Max-Age", value)
+                self.assertEqual([n for n in notes if n is not CORS_PREFLIGHT_ONLY], expected)
 
 
 if __name__ == "__main__":
