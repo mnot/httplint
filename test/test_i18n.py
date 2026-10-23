@@ -33,7 +33,7 @@ class TestI18n(unittest.TestCase):
 
     def test_unknown_locale(self) -> None:
         delta = timedelta(hours=1)
-        for name in ["xx", "en-US", "../x", "C"]:
+        for name in ["xx", "../x", "C", "xx-YY"]:
             with set_locale(name):
                 self.assertEqual(get_locale(), "en")
                 self.assertEqual(translate("ahead"), "ahead")
@@ -56,6 +56,22 @@ class TestI18n(unittest.TestCase):
         self.assertLessEqual(set(i18n._translations_cache), shipped | {""})
         with set_locale("fr_fr"):
             self.assertEqual(translate("ahead"), "en avance")
+
+    def test_hyphenated_locales(self) -> None:
+        delta = timedelta(hours=1)
+        for name in ["fr-FR", "FR-fr", "fr_FR"]:
+            with set_locale(name):
+                self.assertEqual(translate("ahead"), "en avance", name)
+                self.assertIn("1 heure", format_timedelta(delta).replace("\xa0", " "))
+        with set_locale("zh-CN"):
+            self.assertEqual(get_locale(), "zh_CN")
+            self.assertNotEqual(translate("ahead"), "ahead")
+        with set_locale("en-US"):
+            self.assertEqual(get_locale(), "en_US")
+            self.assertIn("1 hour", format_timedelta(delta))
+        with set_locale("xx-YY"):
+            self.assertEqual(get_locale(), "en")
+        self.assertLessEqual(set(i18n._translations_cache), {"", "es", "fr", "ja", "zh"})
 
 
 if __name__ == "__main__":

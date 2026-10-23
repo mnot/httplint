@@ -22,6 +22,7 @@ def _resolve_locale(locale_name: Optional[str]) -> Tuple[str, str]:
     """
     if not locale_name:
         return "en", ""
+    locale_name = locale_name.replace("-", "_")  # accept the Accept-Language form
     try:
         language = Locale.parse(locale_name).language
     except (ValueError, UnknownLocaleError):
