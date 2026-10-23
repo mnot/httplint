@@ -106,7 +106,7 @@ class StatusListRenderTest(unittest.TestCase):
         self.assertNotIn("{}", detail)
 
     def test_proxy_status_unknown_error_value_is_shown(self) -> None:
-        "An error value with no description is listed as is."
+        "An error value with no description is listed as is, as a bullet in the list."
         note = _one([(b"Proxy-Status", b"Foo; error=not_a_real_error")], PROXY_STATUS)
         self.assertIn(
             "<li><code>error</code>: <code>not_a_real_error</code></li>", str(note.detail)
