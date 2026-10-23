@@ -548,8 +548,15 @@ product = rf"(?: {token} (?: / {product_version} )? )"
 ctext = rf"(?: {HTAB} | {SP} | [\x21-\x27] | [\x2A-\x5b] | [\x5D-\x7E] | {obs_text} )"
 
 #   comment = "(" *( ctext / quoted-pair / comment ) ")"
+#
+# A regular expression can't recurse, so the nesting is unrolled: a comment can contain
+# comments to two further levels, and those can't contain any.
 
-comment = rf"(?: \( (?: {ctext} | {quoted_pair} )* \) )"
+comment_0 = rf"(?: \( (?: {ctext} | {quoted_pair} )* \) )"
+
+comment_1 = rf"(?: \( (?: {ctext} | {quoted_pair} | {comment_0} )* \) )"
+
+comment = rf"(?: \( (?: {ctext} | {quoted_pair} | {comment_1} )* \) )"
 
 #   Server = product *( RWS ( product / comment ) )
 
@@ -613,7 +620,11 @@ received_protocol = rf"(?: (?: {protocol_name} / )? {protocol_version} )"
 
 #   received-by = pseudonym [ ":" port ]
 
-received_by = rf"(?: (?: {uri_host} (?: : {port} )? ) | {pseudonym} )"
+#
+# RFC 7230 had "uri-host [ ":" port ]" here. uri-host is still accepted (as is an IPv6 literal),
+# so that nothing the old rule accepted starts to fail.
+
+received_by = rf"(?: (?: {pseudonym} | {uri_host} ) (?: : {port} )? )"
 
 #   Via = [ ( received-protocol RWS received-by [ RWS comment ] )
 #           *( OWS "," OWS ( received-protocol RWS received-by [ RWS comment ] ) ) ]
@@ -636,11 +647,17 @@ field_vchar = rf"(?: {VCHAR} | {obs_text} )"
 
 #   field-content = field-vchar [ 1*( SP / HTAB / field-vchar ) field-vchar ]
 
-field_content = rf"(?: {field_vchar} (?: (?: {SP} | {HTAB} )+ {field_vchar} )? )"
+field_content = rf"(?: {field_vchar} (?: (?: {SP} | {HTAB} | {field_vchar} )+ {field_vchar} )? )"
 
 #   field-value = *field-content
 
-field_value = rf"(?: {field_content} )*"
+#
+# Written out, not as a repetition of field-content: a field-content can be split into several
+# field-contents in many ways, so "*field-content" backtracks exponentially on non-matching
+# input. The accepted language is the same: empty, or any run of field-vchar, SP and HTAB
+# that starts and ends with a field-vchar.
+
+field_value = rf"(?: {field_vchar} (?: (?: {SP} | {HTAB} | {field_vchar} )* {field_vchar} )? )?"
 
 #   http-URI = "http://" authority path-abempty [ "?" query ]
 

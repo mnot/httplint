@@ -49,9 +49,9 @@ chunk_ext_name = token
 
 chunk_ext_val = rf"(?: {token} | {quoted_string} )"
 
-#   chunk-ext = *( ";" chunk-ext-name [ "=" chunk-ext-val ] )
+#   chunk-ext = *( BWS ";" BWS chunk-ext-name [ BWS "=" BWS chunk-ext-val ] )
 
-chunk_ext = rf"(?: \; {chunk_ext_name} (?: \= {chunk_ext_val} )? )"
+chunk_ext = rf"(?: (?: {BWS} \; {BWS} {chunk_ext_name} (?: {BWS} \= {BWS} {chunk_ext_val} )? )* )"
 
 #   chunk-data = 1*OCTET
 
@@ -71,6 +71,11 @@ trailer_part = rf"(?: {header_field} {CRLF} )*"
 
 #   chunked-body = *chunk last-chunk trailer-part CRLF
 
+#
+# Not usable as a regular expression: chunk-data is length-prefixed, so "1*OCTET CRLF" can end
+# at any CRLF and matching a chunked body backtracks exponentially. The "chunk" below is
+# therefore left as the literal text, not {chunk}, which keeps this from being a footgun.
+
 chunked_body = rf"(?: (?: chunk )* {last_chunk} {trailer_part} {CRLF} )"
 
 
@@ -88,9 +93,9 @@ transfer_extension = rf"(?: {token} (?: {OWS} ; {OWS} {transfer_parameter} )* )"
 
 transfer_coding = rf"(?: chunked | compress | deflate | gzip | {transfer_extension} )"
 
-#   Transfer-Encoding = [ transfer-coding *( OWS "," OWS transfer-coding ) ]
+#   Transfer-Encoding = #transfer-coding
 
-Transfer_Encoding = list_rule(transfer_coding, 1)
+Transfer_Encoding = list_rule(transfer_coding)
 
 ## Message
 
@@ -100,7 +105,7 @@ HTTP_name = r"(?-i:HTTP)"
 
 #   HTTP-version = HTTP-name "/" DIGIT "." DIGIT
 
-HTTP_version = rf"{HTTP_name} / {DIGIT} . {DIGIT}"
+HTTP_version = rf"{HTTP_name} / {DIGIT} \. {DIGIT}"
 
 #   method = token
 

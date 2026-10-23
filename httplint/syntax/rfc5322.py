@@ -23,7 +23,7 @@ qcontent = rf"(?: {qtext} | {quoted_pair} )"
 #                     %d93-126 /         ;  "(", ")", or "\"
 #                     obs-ctext
 
-ctext = r"[\x21-\x27\x2a-\x5b\x5d\x7e]"
+ctext = r"[\x21-\x27\x2a-\x5b\x5d-\x7e]"
 
 # ccontent        =   ctext / quoted-pair / comment
 #
