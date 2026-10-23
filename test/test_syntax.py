@@ -1163,16 +1163,22 @@ class SyntaxTranscriptionTest(unittest.TestCase):
         for value in ["-", "1-", "1", "--1", "-a", ""]:
             self.assertFalse(fullmatch(rfc9110.suffix_range, value), value)
         faithful = rf"(?: {rfc9110.int_range} | {rfc9110.suffix_range} | {rfc9110.other_range} )"
-        for value in strings(["0", "9", "-", "a", ",", " ", "\x7f", "\x80"], 5):
-            with self.subTest(value=value):
-                self.assertEqual(fullmatch(faithful, value), fullmatch(rfc9110.range_spec, value))
+        differ = [
+            value
+            for value in strings(["0", "9", "-", "a", ",", " ", "\x7f", "\x80"], 5)
+            if fullmatch(faithful, value) != fullmatch(rfc9110.range_spec, value)
+        ]
+        self.assertEqual(differ, [])
 
     def test_field_value_is_field_content_repeated(self) -> None:
         "Guard: the linear field-value rule accepts what the literal *field-content does."
         literal = rf"(?: {rfc9110.field_content} )*"
-        for value in strings(["a", " ", "\t", "\x80", "\x01", "\x7f"], 6):
-            with self.subTest(value=value):
-                self.assertEqual(fullmatch(literal, value), fullmatch(rfc9110.field_value, value))
+        differ = [
+            value
+            for value in strings(["a", " ", "\t", "\x80", "\x01", "\x7f"], 6)
+            if fullmatch(literal, value) != fullmatch(rfc9110.field_value, value)
+        ]
+        self.assertEqual(differ, [])
 
 
 class SyntaxLinearTimeTest(unittest.TestCase):
@@ -1207,6 +1213,92 @@ class SyntaxLinearTimeTest(unittest.TestCase):
             ("http-URI", rfc9110.http_URI, "http://" + "a@" * n + bad),
         ]:
             self.check_rule(label, rule, value)
+
+
+class SyntaxParametersTest(unittest.TestCase):
+    """
+    parameters = *( OWS ";" OWS [ parameter ] ) accepts whitespace after a bare ";" (issue #303).
+    """
+
+    LITERAL = rf"(?: {rfc9110.OWS} ; {rfc9110.OWS} (?: {rfc9110.parameter} )? )*"
+
+    def test_trailing_whitespace(self) -> None:
+        for value in ["a/b; ", "a/b;\t", "a/b ; ", "a/b;c=d; ", "a/b; ; ", "a/b;  \t ", "a/b;;  "]:
+            with self.subTest(value=value):
+                self.assertTrue(fullmatch(rfc9110.media_type, value))
+                self.assertTrue(fullmatch(rfc9110.Content_Type, value))
+        for value in ["a/b ", "a/b;c=d ", 'a/b;c="d;" ', "a/b; c", "a/b; c ", "a/b ;  x"]:
+            with self.subTest(value=value):
+                self.assertFalse(fullmatch(rfc9110.media_type, value))
+
+    def test_in_a_list(self) -> None:
+        "The whitespace is matched once, whether the parameters or the list take it."
+        accept, expect = str(rfc9110.Accept), str(rfc9110.Expect)
+        self.assertTrue(fullmatch(accept, "a/b; , c/d;  ,e/f; "))
+        self.assertTrue(fullmatch(accept, "a/b;q=1 , c/d; ;q=0.5"))
+        self.assertTrue(fullmatch(expect, "a=b; ,c=d;  "))
+        self.assertFalse(fullmatch(accept, "a/b; ,, c/d"))
+
+    def test_detailed_note_position(self) -> None:
+        """
+        The whitespace after a ";" now belongs to the match, so the invalid character reported
+        for a bad parameter is the start of the parameter, not the whitespace before it.
+        """
+        for response, name, value, problem in [
+            (True, b"Content-Type", b"text/plain; charset = utf-8", "'c' was found at position 13"),
+            (True, b"Content-Type", b"text/plain; \x80", "'\x80' was found at position 13"),
+            (True, b"Content-Type", b"text/plain; ; a b", "'a' was found at position 15"),
+            (True, b"Content-Type", b"text/plain;a b", "'a' was found at position 12"),
+            (False, b"Accept", b"text/html; q = 1", "'q' was found at position 12"),
+            (True, b"Server-Timing", b"db; dur = 5", "'d' was found at position 5"),
+        ]:
+            with self.subTest(value=value):
+                if response:
+                    linter = HttpResponseLinter()
+                    linter.process_response_topline(b"HTTP/1.1", b"200", b"OK")
+                else:
+                    linter = HttpRequestLinter()
+                    linter.process_request_topline(b"GET", b"/", b"HTTP/1.1")
+                linter.process_headers([(name, value)])
+                linter.finish_content(True)
+                problems = [
+                    str(note.vars["problem"])
+                    for note in linter.notes
+                    if isinstance(note, BAD_SYNTAX_DETAILED)
+                ]
+                self.assertEqual(len(problems), 1)
+                self.assertIn(problem, problems[0])
+
+    def test_differential(self) -> None:
+        "Every short string is accepted exactly when the literal ABNF accepts it."
+        literal = re.compile(self.LITERAL, re.VERBOSE | re.IGNORECASE)
+        rule = re.compile(rfc9110.parameters, re.VERBOSE | re.IGNORECASE)
+        differ = [
+            value
+            for value in strings(["a", "=", ";", " ", "\t", '"'], 7)
+            if bool(literal.fullmatch(value)) != bool(rule.fullmatch(value))
+        ]
+        self.assertEqual(differ, [])
+
+    def test_timing(self) -> None:
+        "Guards: the literal rule is exponential on these, and this one must not be."
+        n = 2000
+        cases = [
+            ("bare semicolons", rfc9110.media_type, "a/b" + "; " * n + "\x80"),
+            ("bare, no space", rfc9110.media_type, "a/b" + ";" * n + "\x80"),
+            ("wide gaps", rfc9110.media_type, "a/b" + ";  \t " * n + "\x80"),
+            ("parameters", rfc9110.media_type, "a/b" + "; c=d " * n + "\x80"),
+            ("list", rfc9110.Accept, "a/b; , " * 24 + "\x80"),
+            ("long list", rfc9110.Accept, "a/b; , " * n + "\x80"),
+            ("list, gaps", rfc9110.Accept, "a/b;  \t , " * n + "\x80"),
+            ("Expect list", rfc9110.Expect, "a=b; , " * n + "\x80"),
+        ]
+        for label, rule, value in cases:
+            compiled = re.compile(rf"^\s*(?:{rule})\s*$", re.VERBOSE | re.IGNORECASE)
+            with self.subTest(label):
+                start = time.monotonic()
+                compiled.match(value)
+                self.assertLess(time.monotonic() - start, TIME_LIMIT, label)
 
 
 def run_regex_check() -> None:

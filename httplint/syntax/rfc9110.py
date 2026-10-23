@@ -119,8 +119,17 @@ parameter_value = rf"(?: {token} | {quoted_string} )"
 parameter = rf"(?: {parameter_name} = {parameter_value} )"
 
 #   parameters = *( OWS ";" OWS [ parameter ] )
+#
+# Written so that each run of whitespace can only be matched one way. The literal form
+# *( OWS ";" OWS [ parameter ] ) can match the whitespace after a ";" as that item's second
+# OWS or as the next item's first, so it backtracks exponentially (issue #224). Here the OWS
+# before a parameter belongs to the parameter, and the loop accepts the same strings except
+# for whitespace after a final bare ";", which the last term takes: all of it, so that the
+# OWS of an enclosing list can't also match it, and the term is a choice between "after a ;"
+# and "not after a ;" rather than an optional group, which would also be ambiguous.
 
-parameters = rf"(?: (?: {OWS} ; (?: {OWS} {parameter} )? )* )"
+parameters = rf"""(?: (?: {OWS} ; (?: {OWS} {parameter} )? )*
+                    (?: (?<= ; ) {OWS} (?! {SP} | {HTAB} ) | (?<! ; ) ) )"""
 
 #   qvalue = ( "0" [ "." *3DIGIT ] ) / ( "1" [ "." *3"0" ] )
 
