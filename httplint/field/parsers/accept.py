@@ -4,7 +4,7 @@ from typing import Optional
 from httplint.field import BAD_SYNTAX
 from httplint.field.list_field import HttpListField
 from httplint.field.tests import FieldTest
-from httplint.field.utils import parse_media_type
+from httplint.field.utils import BAD_Q_VALUE, parse_media_type, parse_qvalue
 from httplint.note import Note, categories, levels
 from httplint.syntax import rfc9110
 from httplint.types import (
@@ -42,33 +42,13 @@ acceptable in responses."""
             nostar=["q"],
         )
 
-        q_val: Optional[float] = None
-        if "q" in param_dict:
-            try:
-                q_str = param_dict.pop("q")
-                if q_str is None:
-                    raise ValueError
-                if len(q_str) > 5:  # 0.123
-                    raise ValueError
-                q_val = float(q_str)
-                if not 0.0 <= q_val <= 1.0:
-                    raise ValueError
-            except (ValueError, TypeError):
-                add_note(BAD_Q_VALUE, media_type=media_type)
-                q_val = None  # Discard invalid q
+        raw_params = field_value.partition(";")[2]
+        q_val = parse_qvalue(param_dict, add_note, raw_params, item=media_type)
 
         return AcceptValue(media_type, param_dict, q_val)
 
     def evaluate(self, add_note: AddNoteMethodType) -> None:
         pass
-
-
-class BAD_Q_VALUE(Note):
-    category = categories.CONNEG
-    level = levels.WARN
-    _summary = "The q value on '%(media_type)s' is invalid."
-    _text = """\
-The `q` parameter must be a decimal number between 0 and 1, with at most 3 digits of precision."""
 
 
 class ACCEPT_BAD_SYNTAX(Note):
@@ -108,3 +88,52 @@ class AcceptBadTypeTest(FieldTest[RequestLinterProtocol]):
     inputs = [b"invalid"]
     expected_out = [AcceptValue("invalid", {}, None)]
     expected_notes: NoteClassListType = [ACCEPT_BAD_SYNTAX, BAD_SYNTAX]
+
+
+class AcceptBadQSignTest(FieldTest[RequestLinterProtocol]):
+    name = "Accept"
+    inputs = [b"text/html; q=+1"]
+    expected_out = [AcceptValue("text/html", {}, None)]
+    expected_notes: NoteClassListType = [BAD_Q_VALUE]
+
+
+class AcceptBadQExponentTest(FieldTest[RequestLinterProtocol]):
+    name = "Accept"
+    inputs = [b"text/html; q=1e0"]
+    expected_out = [AcceptValue("text/html", {}, None)]
+    expected_notes: NoteClassListType = [BAD_Q_VALUE]
+
+
+class AcceptBadQNoLeadingDigitTest(FieldTest[RequestLinterProtocol]):
+    name = "Accept"
+    inputs = [b"text/html; q=.5"]
+    expected_out = [AcceptValue("text/html", {}, None)]
+    expected_notes: NoteClassListType = [BAD_Q_VALUE]
+
+
+class AcceptBadQQuotedTest(FieldTest[RequestLinterProtocol]):
+    name = "Accept"
+    inputs = [b'text/html; q="0.5"']
+    expected_out = [AcceptValue("text/html", {}, None)]
+    expected_notes: NoteClassListType = [BAD_Q_VALUE]
+
+
+class AcceptBadQTooPreciseTest(FieldTest[RequestLinterProtocol]):
+    name = "Accept"
+    inputs = [b"text/html; q=0.1234"]
+    expected_out = [AcceptValue("text/html", {}, None)]
+    expected_notes: NoteClassListType = [BAD_Q_VALUE]
+
+
+class AcceptQTrailingDotTest(FieldTest[RequestLinterProtocol]):
+    "rfc9110.qvalue allows a bare '.' after the digit."
+
+    name = "Accept"
+    inputs = [b"text/html; q=1., text/plain; q=0., text/css; q=0.123, text/csv; q=1.000"]
+    expected_out = [
+        AcceptValue("text/html", {}, 1.0),
+        AcceptValue("text/plain", {}, 0.0),
+        AcceptValue("text/css", {}, 0.123),
+        AcceptValue("text/csv", {}, 1.0),
+    ]
+    expected_notes: NoteClassListType = []

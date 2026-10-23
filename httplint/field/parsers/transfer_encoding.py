@@ -13,6 +13,7 @@ from httplint.types import (
     ParamDictType,
     ResponseLinterProtocol,
 )
+from httplint.util import inline_safe
 
 
 class transfer_encoding(HttpListField[AnyMessageLinterProtocol]):
@@ -47,6 +48,8 @@ Transfer codings can only be used in HTTP/1; HTTP/2 and HTTP/3 do not support th
 
     def evaluate(self, add_note: AddNoteMethodType) -> None:
         unwanted = {c[0] for c in self.value if c[0] not in ["chunked", "identity"]}
+        if self.message.message_type == "request":
+            unwanted = set()  # TE only governs what a response may use
         if unwanted:
             # check to see if the client asked for it
             if (
@@ -60,7 +63,7 @@ Transfer codings can only be used in HTTP/1; HTTP/2 and HTTP/3 do not support th
 
         if unwanted:
             for coding in unwanted:
-                add_note(TRANSFER_CODING_UNWANTED, coding=coding)
+                add_note(TRANSFER_CODING_UNWANTED, coding=inline_safe(coding))
         if "identity" in [c[0] for c in self.value]:
             add_note(TRANSFER_CODING_IDENTITY)
 
@@ -163,3 +166,13 @@ class TransferEncodingWantedTest(FieldTest[AnyMessageLinterProtocol]):
         request = FakeRequestLinter()
         request.headers.process([(b"te", b"foo")])
         message.request = request
+
+
+class TransferEncodingRequestTest(FieldTest[AnyMessageLinterProtocol]):
+    "TE negotiation only governs responses; a request's Transfer-Encoding isn't checked against it."
+
+    name = "Transfer-Encoding"
+    inputs = [b"gzip"]
+    expected_out = [("gzip", {})]
+    expected_notes: NoteClassListType = []
+    linter_class = FakeRequestLinter
