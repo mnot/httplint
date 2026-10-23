@@ -158,7 +158,7 @@ class SyntaxBacktrackingTest(unittest.TestCase):
         ]:
             self.check_rule(f"Via {label}", rfc9110.Via, unit * 24 + "\x01")
             self.check_rule(f"Via {label} long", rfc9110.Via, unit * 2000 + "\x01")
-        self.check_rule("header-field", rfc9112.header_field, "A: " + "a b " * 2000 + "\x01")
+        self.check_rule("field-line", rfc9112.field_line, "A: " + "a b " * 2000 + "\x01")
         self.check_rule("field-value", rfc9110.field_value, "a b " * 2000 + "\x01")
         self.check_rule("field-value words", rfc9110.field_value, "aaa " * 24 + "\x01")
         self.check_rule("field-value long words", rfc9110.field_value, "aaa " * 2000 + "\x01")
@@ -550,7 +550,7 @@ class SyntaxTranslationTest(unittest.TestCase):
         for value in ["a a a", "a  b\tc d", "a b c d e"]:
             with self.subTest(value=value):
                 self.assertTrue(fullmatch(rfc9110.field_value, value))
-                self.assertTrue(fullmatch(rfc9112.header_field, f"A: {value}"))
+                self.assertTrue(fullmatch(rfc9112.field_line, f"A: {value}"))
 
     def test_received_by(self) -> None:
         host, port = rfc9110.uri_host, rfc9110.port
@@ -642,6 +642,38 @@ class SyntaxTranslationTest(unittest.TestCase):
         for value in ["HTTP/1x1", "HTTP/1 1", "HTTP/1,1", "HTTP/11", "http/1.1"]:
             with self.subTest(value=value):
                 self.assertFalse(fullmatch(rfc9112.HTTP_version, value))
+
+    def test_chunked_body_is_transcribed(self) -> None:
+        "Never match a body against chunked_body: that backtracks exponentially."
+        re.compile(rfc9112.chunked_body, re.VERBOSE)
+        self.assertIn(rfc9112.chunk, rfc9112.chunked_body)
+        self.assertIn(rfc9112.last_chunk, rfc9112.chunked_body)
+        self.assertIn(rfc9112.trailer_section, rfc9112.chunked_body)
+        self.assertNotIn("(?: chunk )", rfc9112.chunked_body)
+        self.assertFalse(hasattr(rfc9112, "trailer_part"))
+        self.assertFalse(hasattr(rfc9112, "header_field"))
+
+    def test_chunk_rules(self) -> None:
+        for value in ["5\r\nhello\r\n", "A;x=y\r\nabcdefghij\r\n", "1 ; a = b\r\n\r\n\r\n"]:
+            with self.subTest(value=value):
+                self.assertTrue(fullmatch(rfc9112.chunk, value))
+        for value in ["\r\n", "g\r\na\r\n", "1\r\n\r\n"]:
+            with self.subTest(value=value):
+                self.assertFalse(fullmatch(rfc9112.chunk, value))
+        for value in ["0\r\n", "000\r\n", "0;a=b\r\n"]:
+            with self.subTest(value=value):
+                self.assertTrue(fullmatch(rfc9112.last_chunk, value))
+        for value in ["\r\n", "1\r\n", "0\n"]:
+            with self.subTest(value=value):
+                self.assertFalse(fullmatch(rfc9112.last_chunk, value))
+
+    def test_trailer_section(self) -> None:
+        for value in ["", "A: b\r\n", "A: b\r\nC:d \r\n", "A:\r\n"]:
+            with self.subTest(value=value):
+                self.assertTrue(fullmatch(rfc9112.trailer_section, value))
+        for value in ["A: b", "A b\r\n", "\r\n", "A: b\r\n\r\n"]:
+            with self.subTest(value=value):
+                self.assertFalse(fullmatch(rfc9112.trailer_section, value))
 
     def test_chunk_ext(self) -> None:
         for value in ["", ";a", ";a=b", ' ; a = b ;c="d e"', ";a;b=c;d"]:
