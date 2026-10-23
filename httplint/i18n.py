@@ -4,6 +4,7 @@ from contextvars import ContextVar
 from datetime import timedelta
 from typing import Any, Dict, Generator, Optional
 
+from babel import Locale, UnknownLocaleError
 from babel.dates import format_timedelta as babel_format_timedelta
 from babel.support import NullTranslations, Translations
 
@@ -11,12 +12,25 @@ _translations_cache: Dict[str, NullTranslations] = {}
 _locale_var: ContextVar[str] = ContextVar("locale", default="en")
 
 
+def _validate_locale(locale_name: Optional[str]) -> str:
+    """
+    Return locale_name if Babel recognises it, otherwise "en".
+    """
+    if not locale_name:
+        return "en"
+    try:
+        Locale.parse(locale_name)
+    except (ValueError, UnknownLocaleError):
+        return "en"
+    return locale_name
+
+
 @contextmanager
 def set_locale(locale_name: Optional[str]) -> Generator[None, None, None]:
     """
-    Set the locale for the application context.
+    Set the locale for the application context. An unrecognised locale falls back to "en".
     """
-    token = _locale_var.set(locale_name or "en")
+    token = _locale_var.set(_validate_locale(locale_name))
     try:
         yield
     finally:

@@ -2,7 +2,7 @@ import unittest
 from datetime import timedelta
 import time
 
-from httplint.i18n import set_locale, translate, ngettext, format_timedelta
+from httplint.i18n import get_locale, set_locale, translate, ngettext, format_timedelta
 
 class TestI18n(unittest.TestCase):
     def test_context_switching(self) -> None:
@@ -28,6 +28,19 @@ class TestI18n(unittest.TestCase):
             # Babel's default for fr is "1 heure" (possibly with NBSP)
             result = format_timedelta(delta).replace("\xa0", " ")
             self.assertIn("1 heure", result)
+
+    def test_unknown_locale(self) -> None:
+        delta = timedelta(hours=1)
+        for name in ["xx", "en-US", "../x", "C"]:
+            with set_locale(name):
+                self.assertEqual(get_locale(), "en")
+                self.assertEqual(translate("ahead"), "ahead")
+                self.assertIn("1 hour", format_timedelta(delta))
+
+    def test_known_locale_kept(self) -> None:
+        with set_locale("en_US"):
+            self.assertEqual(get_locale(), "en_US")
+            self.assertIn("1 hour", format_timedelta(timedelta(hours=1)))
 
 
 if __name__ == "__main__":
