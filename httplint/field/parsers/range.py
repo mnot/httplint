@@ -1,8 +1,12 @@
-from dataclasses import dataclass
-from typing import List, Optional, Tuple
+import re
+import unittest
+from dataclasses import dataclass, field
+from typing import Any, Dict, List, NoReturn, Optional, Tuple, Type
 
+from httplint.field.section import FIELD_VALUE_ENCODING
 from httplint.field.singleton_field import SingletonField
-from httplint.field.tests import FieldTest
+from httplint.field.tests import FakeRequestLinter, FieldTest
+from httplint.field.utils import RE_FLAGS, parse_digits
 from httplint.note import Note, categories, levels
 from httplint.syntax import rfc9110
 from httplint.types import AddNoteMethodType, NoteClassListType, RequestLinterProtocol
@@ -12,6 +16,13 @@ from httplint.types import AddNoteMethodType, NoteClassListType, RequestLinterPr
 class RangeValue:
     unit: str
     ranges: List[Tuple[Optional[int], Optional[int]]]
+    other_ranges: List[str] = field(default_factory=list)  # range-specs, for non-bytes units
+
+
+RANGE_UNIT_RE = re.compile(rfc9110.range_unit, RE_FLAGS)
+OTHER_RANGE_RE = re.compile(rfc9110.other_range, RE_FLAGS)
+OWS = " \t"
+MAX_DIGITS = 20
 
 
 class range(SingletonField[RequestLinterProtocol]):  # pylint: disable=redefined-builtin
@@ -21,63 +32,46 @@ The `Range` header field on a GET request modifies the method semantics to reque
 parts of the representation that are specified."""
     reference = f"{rfc9110.SPEC_URL}#field.range"
     syntax = rfc9110.Range
+    # parse() reports syntax problems itself, and always rejects the value after RANGE_BAD_SYNTAX,
+    # so that one defect gives one note.
     report_syntax = False
     category = categories.RANGE
     deprecated = False
 
     def parse(self, field_value: str, add_note: AddNoteMethodType) -> Optional[RangeValue]:
-        try:
-            unit, rest = field_value.split("=", 1)
-        except ValueError:
-            add_note(
-                RANGE_BAD_SYNTAX,
-                ref_uri=self.reference,
-                problem="the range specifier must contain an equals sign",
-            )
-            raise
+        unit, sep, rest = field_value.partition("=")
+        if not sep:
+            self._bad_syntax(add_note, "the range specifier must contain an equals sign")
+        if not RANGE_UNIT_RE.fullmatch(unit):
+            self._bad_syntax(add_note, "the range unit must be a token")
+
+        if unit.lower() != "bytes":
+            return self._parse_other(unit, rest, add_note)
 
         ranges: List[Tuple[Optional[int], Optional[int]]] = []
         for rng in rest.split(","):
-            rng = rng.strip()
-            if "-" not in rng:
-                add_note(
-                    RANGE_BAD_SYNTAX,
-                    ref_uri=self.reference,
-                    problem="the range specifier must contain a hyphen",
+            rng = rng.strip(OWS)
+            if not rng:
+                self._bad_syntax(
+                    add_note, "the range set must not contain an empty range specifier"
                 )
-                raise ValueError
+            if "-" not in rng:
+                self._bad_syntax(add_note, "the range specifier must contain a hyphen")
 
             first_str, last_str = rng.split("-", 1)
             first_byte_pos: Optional[int] = None
             last_byte_pos: Optional[int] = None
 
             if first_str:
-                if not first_str.isdigit():
-                    add_note(
-                        RANGE_BAD_SYNTAX,
-                        ref_uri=self.reference,
-                        problem="the first position in the range must be an integer",
-                    )
-                    raise ValueError
-                first_byte_pos = int(first_str)
+                first_byte_pos = self._parse_position(first_str, "first", add_note)
 
             if last_str:
-                if not last_str.isdigit():
-                    add_note(
-                        RANGE_BAD_SYNTAX,
-                        ref_uri=self.reference,
-                        problem="the last position in the range must be an integer",
-                    )
-                    raise ValueError
-                last_byte_pos = int(last_str)
+                last_byte_pos = self._parse_position(last_str, "last", add_note)
 
             if first_byte_pos is None and last_byte_pos is None:
-                add_note(
-                    RANGE_BAD_SYNTAX,
-                    ref_uri=self.reference,
-                    problem="at least one of the first or last positions must be specified",
+                self._bad_syntax(
+                    add_note, "at least one of the first or last positions must be specified"
                 )
-                raise ValueError
 
             if (
                 first_byte_pos is not None
@@ -89,6 +83,40 @@ parts of the representation that are specified."""
             ranges.append((first_byte_pos, last_byte_pos))
 
         return RangeValue(unit, ranges)
+
+    def _parse_other(
+        self, unit: str, rest: str, add_note: AddNoteMethodType
+    ) -> Optional[RangeValue]:
+        "Range units other than bytes: each range-spec is an opaque other-range."
+        other_ranges: List[str] = []
+        for rng in rest.split(","):
+            rng = rng.strip(OWS)
+            if not rng:
+                self._bad_syntax(
+                    add_note, "the range set must not contain an empty range specifier"
+                )
+            if not OTHER_RANGE_RE.fullmatch(rng):
+                self._bad_syntax(
+                    add_note, "the range specifier contains a character that isn't allowed"
+                )
+            other_ranges.append(rng)
+        return RangeValue(unit, [], other_ranges)
+
+    def _parse_position(self, value: str, which: str, add_note: AddNoteMethodType) -> int:
+        result = parse_digits(value, MAX_DIGITS)
+        if result is None:
+            if value.isascii() and value.isdigit():
+                problem = (
+                    f"the {which} position in the range can't have more than {MAX_DIGITS} digits"
+                )
+            else:
+                problem = f"the {which} position in the range must be an integer"
+            self._bad_syntax(add_note, problem)
+        return result
+
+    def _bad_syntax(self, add_note: AddNoteMethodType, problem: str) -> NoReturn:
+        add_note(RANGE_BAD_SYNTAX, ref_uri=self.reference, problem=problem)
+        raise ValueError
 
 
 class RANGE_INVALID(Note):
@@ -153,3 +181,132 @@ class RangeNoSplitTest(FieldTest[RequestLinterProtocol]):
     inputs = [b"bytes"]
     expected_out = None
     expected_notes: NoteClassListType = [RANGE_BAD_SYNTAX]
+
+
+class RangeOtherUnitTest(FieldTest[RequestLinterProtocol]):
+    name = "Range"
+    inputs = [b"pages=1-3, 5"]
+    expected_out = RangeValue("pages", [], ["1-3", "5"])
+
+
+class RangeOtherUnitSingleTest(FieldTest[RequestLinterProtocol]):
+    name = "Range"
+    inputs = [b"pages=1"]
+    expected_out = RangeValue("pages", [], ["1"])
+
+
+class RangeUnitCaseTest(FieldTest[RequestLinterProtocol]):
+    name = "Range"
+    inputs = [b"Bytes=0-1"]
+    expected_out = RangeValue("Bytes", [(0, 1)])
+
+
+class RangeOtherUnitBadCharTest(FieldTest[RequestLinterProtocol]):
+    name = "Range"
+    inputs = [b'pages=a"b c']
+    expected_out = None
+    expected_notes: NoteClassListType = [RANGE_BAD_SYNTAX]
+
+
+class RangeEmptyUnitTest(FieldTest[RequestLinterProtocol]):
+    name = "Range"
+    inputs = [b"=0-1"]
+    expected_out = None
+    expected_notes: NoteClassListType = [RANGE_BAD_SYNTAX]
+
+
+class RangeBadUnitTest(FieldTest[RequestLinterProtocol]):
+    name = "Range"
+    inputs = [b"by(tes=0-1"]
+    expected_out = None
+    expected_notes: NoteClassListType = [RANGE_BAD_SYNTAX]
+
+
+class RangeEmptySetTest(FieldTest[RequestLinterProtocol]):
+    name = "Range"
+    inputs = [b"bytes="]
+    expected_out = None
+    expected_notes: NoteClassListType = [RANGE_BAD_SYNTAX]
+
+
+class RangeEmptySpecTest(FieldTest[RequestLinterProtocol]):
+    name = "Range"
+    inputs = [b"bytes=0-1,"]
+    expected_out = None
+    expected_notes: NoteClassListType = [RANGE_BAD_SYNTAX]
+
+
+class RangeEmptyOtherSpecTest(FieldTest[RequestLinterProtocol]):
+    name = "Range"
+    inputs = [b"pages=1,,2"]
+    expected_out = None
+    expected_notes: NoteClassListType = [RANGE_BAD_SYNTAX]
+
+
+class RangeNoPositionsTest(FieldTest[RequestLinterProtocol]):
+    name = "Range"
+    inputs = [b"bytes=-"]
+    expected_out = None
+    expected_notes: NoteClassListType = [RANGE_BAD_SYNTAX]
+
+
+class RangeHugeDigitsTest(FieldTest[RequestLinterProtocol]):
+    name = "Range"
+    inputs = [b"bytes=" + b"1" * 5000 + b"-"]
+    expected_out = None
+    expected_notes: NoteClassListType = [RANGE_BAD_SYNTAX]
+
+
+class RangeHugeLastDigitsTest(FieldTest[RequestLinterProtocol]):
+    name = "Range"
+    inputs = [b"bytes=0-" + b"9" * 5000]
+    expected_out = None
+    expected_notes: NoteClassListType = [RANGE_BAD_SYNTAX]
+
+
+class RangeSuperscriptTest(FieldTest[RequestLinterProtocol]):
+    name = "Range"
+    inputs = [b"bytes=\xb2-"]
+    expected_out = None
+    expected_notes: NoteClassListType = [RANGE_BAD_SYNTAX, FIELD_VALUE_ENCODING]
+
+
+class RangeTooLongBoundaryTest(FieldTest[RequestLinterProtocol]):
+    name = "Range"
+    inputs = [b"bytes=" + b"9" * 21 + b"-"]
+    expected_out = None
+    expected_notes: NoteClassListType = [RANGE_BAD_SYNTAX]
+
+
+class RangeTwentyDigitsTest(FieldTest[RequestLinterProtocol]):
+    name = "Range"
+    inputs = [b"bytes=" + b"9" * 20 + b"-"]
+    expected_out = RangeValue("bytes", [(int("9" * 20), None)])
+
+
+class RangeNoteWordingTest(unittest.TestCase):
+    "Check the `problem` given to RANGE_BAD_SYNTAX, which FieldTest doesn't see."
+
+    def problem(self, value: str) -> str:
+        notes: List[Tuple[Type[Note], Dict[str, Any]]] = []
+        handler = range("Range", FakeRequestLinter())
+
+        def add_note(note: Type[Note], category: Any = None, **vrs: Any) -> Note:
+            notes.append((note, vrs))
+            return note("test", **vrs)
+
+        with self.assertRaises(ValueError):
+            handler.parse(value, add_note)
+        self.assertEqual([n for n, _ in notes], [RANGE_BAD_SYNTAX])
+        return str(notes[0][1]["problem"])
+
+    def test_too_many_digits(self) -> None:
+        self.assertIn("more than 20 digits", self.problem("bytes=" + "9" * 5000 + "-"))
+        self.assertIn("last position", self.problem("bytes=0-" + "9" * 21))
+
+    def test_non_integer(self) -> None:
+        self.assertIn("must be an integer", self.problem("bytes=a-"))
+        self.assertIn("must be an integer", self.problem("bytes=\xb2-"))
+
+    def test_empty_spec(self) -> None:
+        self.assertIn("empty range specifier", self.problem("bytes=0-1,"))
