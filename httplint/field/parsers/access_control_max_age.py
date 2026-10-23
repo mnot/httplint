@@ -1,6 +1,7 @@
 from httplint.field.cors import CORS_PREFLIGHT_ONLY
 from httplint.field.singleton_field import SingletonField
 from httplint.field.tests import FieldTest
+from httplint.field.utils import parse_delta_seconds
 from httplint.note import Note, categories, levels
 from httplint.syntax import rfc9110
 from httplint.types import (
@@ -23,14 +24,13 @@ request (as scoped by the `Access-Control-Allow-Methods` and
     deprecated = False
 
     def parse(self, field_value: str, add_note: AddNoteMethodType) -> int:
-        try:
-            val = int(field_value)
-        except ValueError:
-            add_note(CORS_MAX_AGE_INVALID, ref_uri=self.reference)
-            raise
-
-        if val < 0:
+        if field_value.startswith("-") and field_value[1:].isascii() and field_value[1:].isdigit():
             add_note(CORS_MAX_AGE_NEGATIVE, ref_uri=self.reference)
+            raise ValueError
+        val = parse_delta_seconds(
+            field_value, add_note, CORS_MAX_AGE_INVALID, ref_uri=self.reference
+        )
+        if val is None:
             raise ValueError
         return val
 
@@ -72,3 +72,31 @@ class AccessControlMaxAgeNegativeTest(FieldTest[ResponseLinterProtocol]):
     inputs = [b"-1"]
     expected_out = None
     expected_notes: NoteClassListType = [CORS_MAX_AGE_NEGATIVE, CORS_PREFLIGHT_ONLY]
+
+
+class AccessControlMaxAgeUnderscoreTest(FieldTest[ResponseLinterProtocol]):
+    name = "Access-Control-Max-Age"
+    inputs = [b"1_0"]
+    expected_out = None
+    expected_notes: NoteClassListType = [CORS_MAX_AGE_INVALID, CORS_PREFLIGHT_ONLY]
+
+
+class AccessControlMaxAgePlusTest(FieldTest[ResponseLinterProtocol]):
+    name = "Access-Control-Max-Age"
+    inputs = [b"+5"]
+    expected_out = None
+    expected_notes: NoteClassListType = [CORS_MAX_AGE_INVALID, CORS_PREFLIGHT_ONLY]
+
+
+class AccessControlMaxAgeNegativeZeroTest(FieldTest[ResponseLinterProtocol]):
+    name = "Access-Control-Max-Age"
+    inputs = [b"-0"]
+    expected_out = None
+    expected_notes: NoteClassListType = [CORS_MAX_AGE_NEGATIVE, CORS_PREFLIGHT_ONLY]
+
+
+class AccessControlMaxAgeHugeTest(FieldTest[ResponseLinterProtocol]):
+    name = "Access-Control-Max-Age"
+    inputs = [b"9" * 5000]
+    expected_out = None
+    expected_notes: NoteClassListType = [CORS_MAX_AGE_INVALID, CORS_PREFLIGHT_ONLY]

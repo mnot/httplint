@@ -588,3 +588,29 @@ HTTP has a number of defined date formats for historical reasons. This header is
 format that are now obsolete. See [the
 specification](https://www.rfc-editor.org/rfc/rfc9110.html#name-obsolete-date-formats) for more information.
 """
+
+
+# --- parse_delta_seconds: non-negative integer field values ---------------------------------
+
+
+def parse_delta_seconds(
+    value: str,
+    add_note: AddNoteMethodType,
+    bad_note: Type[Note],
+    max_digits: int = 20,
+    **note_vars: Any,
+) -> Optional[int]:
+    """
+    Parse `value` as DIGIT+ (ASCII only; no sign, underscore or whitespace), as used for
+    delta-seconds and similar values.
+
+    If it isn't, or has more than `max_digits` significant digits (leading zeros don't count),
+    add `bad_note` (with `note_vars`) and return None. This keeps int()'s leniency and its
+    4300-digit limit out of the caller; range checks stay with the caller.
+    """
+    if value.isascii() and value.isdigit():
+        digits = value.lstrip("0") or "0"
+        if len(digits) <= max_digits:
+            return int(digits)
+    add_note(bad_note, **note_vars)
+    return None
