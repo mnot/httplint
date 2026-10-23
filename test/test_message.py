@@ -101,9 +101,6 @@ class TestMessageLinter(unittest.TestCase):
         self.assertFalse(any(n.category == REFERER_SECURE_TO_INSECURE.category for n in notes))
         self.assertFalse(any(n.category == REFERER_SECURE_TO_DIFFERENT_ORIGIN.category for n in notes))
 
-if __name__ == "__main__":
-    unittest.main()
-
 
 class TestFieldSection(unittest.TestCase):
     @staticmethod
@@ -138,6 +135,14 @@ class TestFieldSection(unittest.TestCase):
         self.assertIn("date", linter.headers.parsed)
         self.assertNotIn("DATE_CLOCKLESS", [name for _, name in subjects])
 
+    def test_whitespace_only_field_name(self):
+        linter = HttpResponseLinter()
+        linter.process_response_topline(b"HTTP/1.1", b"200", b"OK")
+        linter.process_headers([(b" ", b"foo")])
+        names = [name for _, name in self._subjects(linter)]
+        self.assertNotIn("FIELD_NAME_WHITESPACE", names)
+        self.assertIn("FIELD_NAME_BAD_SYNTAX", names)
+
     def test_field_name_without_whitespace_has_no_note(self):
         linter = HttpResponseLinter()
         linter.process_response_topline(b"HTTP/1.1", b"200", b"OK")
@@ -160,3 +165,7 @@ class TestFieldFinder(unittest.TestCase):
 
     def test_real_field_class_found(self):
         self.assertIsNotNone(HttpFieldFinder.find_handler_class("Content-Type"))
+
+
+if __name__ == "__main__":
+    unittest.main()

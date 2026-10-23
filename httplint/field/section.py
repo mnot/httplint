@@ -62,8 +62,9 @@ class FieldSection:
 
             stripped_name = str_name.strip(" \t")
             if stripped_name != str_name:
+                if stripped_name:  # an all-whitespace name fails the syntax check instead
+                    add_note(FIELD_NAME_WHITESPACE, field_name=stripped_name)
                 str_name = stripped_name
-                add_note(FIELD_NAME_WHITESPACE, field_name=str_name)
             self.text.append((str_name, str_value))
 
             handler = self._finder.find_handler(str_name)
