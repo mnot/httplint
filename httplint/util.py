@@ -184,11 +184,11 @@ def markdown_context(text: str, index: int, context_chars: int = 20) -> Markdown
     lines = excerpt.splitlines(keepends=True)
     if not lines or lines[-1].splitlines()[:1] != [lines[-1]]:
         lines.append("")  # excerpt is empty or ends with a line break
+    pointer_line = 0
     line_start = 0
-    for pointer_line, line in enumerate(lines):
-        if offset < line_start + len(line) or pointer_line == len(lines) - 1:
-            break
-        line_start += len(line)
+    while pointer_line < len(lines) - 1 and offset >= line_start + len(lines[pointer_line]):
+        line_start += len(lines[pointer_line])
+        pointer_line += 1
     pointer = " " * (offset - line_start) + "^"
 
     text_lines = [line.splitlines()[0] if line.splitlines() else "" for line in lines]

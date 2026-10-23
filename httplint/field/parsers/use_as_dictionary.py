@@ -129,6 +129,6 @@ class UseAsDictionaryBareMatchDestTest(FieldTest[ResponseLinterProtocol]):
 
 class UseAsDictionaryNoMatchTest(FieldTest[ResponseLinterProtocol]):
     name = "Use-As-Dictionary"
-    inputs = [b"id=\"abc\""]
+    inputs = [b'id="abc"']
     expected_out = {"id": ("abc", {})}
     expected_notes: NoteClassListType = [USE_AS_DICTIONARY_NO_MATCH]
