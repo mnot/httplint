@@ -17,6 +17,7 @@ class authorization(CredentialsField[RequestLinterProtocol]):
 The `Authorization` header field allows a user agent to authenticate itself with an origin server
 -- usually, but not necessarily, after receiving a 401 (Unauthorized) response."""
     reference = f"{rfc9110.SPEC_URL}#field.authorization"
+    # Documents the grammar; CredentialsField parses it itself, so nothing matches against this.
     syntax = rfc9110.Authorization
     category = categories.SECURITY
     deprecated = False
@@ -73,4 +74,41 @@ class AuthorizationSecondSchemeTest(FieldTest[RequestLinterProtocol]):
     name = "Authorization"
     inputs = [b"Basic QWxhZGRpbjpvcGVuIHNlc2FtZQ==, Digest username=foo"]
     expected_out = ("Basic", "QWxhZGRpbjpvcGVuIHNlc2FtZQ==")
+    expected_notes: NoteClassListType = [BAD_SYNTAX_DETAILED]
+
+
+class AuthorizationEmptyTest(FieldTest[RequestLinterProtocol]):
+    "Credentials aren't a list: an empty value is a syntax error."
+
+    name = "Authorization"
+    inputs = [b""]
+    expected_out = None
+    expected_notes: NoteClassListType = [BAD_SYNTAX_DETAILED]
+
+
+class AuthorizationLeadingCommaTest(FieldTest[RequestLinterProtocol]):
+    name = "Authorization"
+    inputs = [b", Basic abc"]
+    expected_out = None
+    expected_notes: NoteClassListType = [BAD_SYNTAX_DETAILED]
+
+
+class AuthorizationOnlyCommaTest(FieldTest[RequestLinterProtocol]):
+    name = "Authorization"
+    inputs = [b","]
+    expected_out = None
+    expected_notes: NoteClassListType = [BAD_SYNTAX_DETAILED]
+
+
+class AuthorizationTrailingCommaTest(FieldTest[RequestLinterProtocol]):
+    name = "Authorization"
+    inputs = [b"Basic abc,"]
+    expected_out = ("Basic", "abc")
+    expected_notes: NoteClassListType = [BAD_SYNTAX_DETAILED]
+
+
+class AuthorizationTrailingJunkTest(FieldTest[RequestLinterProtocol]):
+    name = "Authorization"
+    inputs = [b"Basic abc extra"]
+    expected_out = None
     expected_notes: NoteClassListType = [BAD_SYNTAX_DETAILED]

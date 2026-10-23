@@ -11,6 +11,7 @@ class proxy_authenticate(ChallengeField[ResponseLinterProtocol]):
 The `Proxy-Authenticate` response header consists of a challenge that indicates the authentication
 scheme and parameters applicable to the proxy for this request-target."""
     reference = f"{rfc9110.SPEC_URL}#field.proxy-authenticate"
+    # Documents the grammar; ChallengeField parses it itself, so nothing matches against this.
     syntax = rfc9110.Proxy_Authenticate
     deprecated = False
 

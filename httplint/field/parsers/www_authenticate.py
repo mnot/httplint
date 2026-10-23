@@ -10,6 +10,7 @@ class www_authenticate(ChallengeField[ResponseLinterProtocol]):
 The `WWW-Authenticate` response header consists of at least one challenge that
 indicates the authentication scheme(s) and parameters applicable."""
     reference = f"{rfc9110.SPEC_URL}#field.www-authenticate"
+    # Documents the grammar; ChallengeField parses it itself, so nothing matches against this.
     syntax = rfc9110.WWW_Authenticate
     deprecated = False
 

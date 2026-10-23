@@ -19,6 +19,10 @@ _AUTH_PARAM_RE = re.compile(
     rf"(?: (?P<token> {rfc9110.token} ) | (?P<quoted> {rfc9110.quoted_string} ) )",
     RE_FLAGS,
 )
+_AUTH_PARAM_START_RE = re.compile(
+    rf"{rfc9110.token} {rfc9110.BWS} = {rfc9110.BWS}",
+    RE_FLAGS,
+)
 _QUOTED_PAIR_RE = re.compile(r"\\(.)", re.DOTALL)
 _OWS_CHARS = " \t"
 
@@ -55,7 +59,9 @@ def _parse_params(text: str, pos: int, params: Dict[str, str]) -> Tuple[int, boo
         else:
             return pos, False
         if not param:
-            return pos, False
+            # Blame the value if the name and "=" are fine (e.g. an unterminated quote).
+            name_and_equals = _AUTH_PARAM_START_RE.match(text, pos)
+            return (name_and_equals.end() if name_and_equals else pos), False
         first = False
         quoted = param.group("quoted")
         params.setdefault(
@@ -69,10 +75,15 @@ def _parse_params(text: str, pos: int, params: Dict[str, str]) -> Tuple[int, boo
         pos = param.end()
 
 
-def parse_challenges(text: str) -> Tuple[List[Challenge], List[int], Optional[int]]:
+def parse_challenges(
+    text: str, single: bool = False
+) -> Tuple[List[Challenge], List[int], Optional[int]]:
     """
-    Parse ``text`` as ``#challenge`` (RFC 9110 Section 11.6.1); credentials are the same
-    grammar, with one element.
+    Parse ``text`` as ``#challenge`` (RFC 9110 Section 11.6.1).
+
+    If ``single`` is true, parse it as one ``credentials`` (Section 11.6.2) instead, which
+    has the challenge grammar but isn't a list: it can't be empty, start with a comma, or
+    have anything after the first element except empty elements in its auth-param list.
 
     Returns the challenges, the index at which each starts, and the index of the first
     syntax error, or None if there isn't one. Challenges before an error are returned, as
@@ -86,7 +97,12 @@ def parse_challenges(text: str) -> Tuple[List[Challenge], List[int], Optional[in
     size = len(text)
     challenges: List[Challenge] = []
     starts: List[int] = []
-    pos = _skip(text, 0, _OWS_CHARS + ",")
+    if single:
+        pos = 0
+        if not text:
+            return challenges, starts, 0
+    else:
+        pos = _skip(text, 0, _OWS_CHARS + ",")
     while pos < size:
         scheme_match = _TOKEN_RE.match(text, pos)
         if not scheme_match:
@@ -107,7 +123,10 @@ def parse_challenges(text: str) -> Tuple[List[Challenge], List[int], Optional[in
             else:
                 params: Dict[str, str] = {}
                 value = params
+                params_start = pos
                 pos, clean = _parse_params(text, pos, params)
+                if token68 and not clean and pos == params_start:
+                    pos = after  # the token68 is fine; blame what follows it
         else:
             pos = _skip(text, pos, _OWS_CHARS)
             clean = pos >= size or text[pos] == ","
@@ -118,21 +137,20 @@ def parse_challenges(text: str) -> Tuple[List[Challenge], List[int], Optional[in
             starts.pop()
         if not clean:
             return challenges, starts, pos
+        if single:
+            # Anything left is a comma after a token68 or bare scheme, or a second challenge.
+            return challenges, starts, (pos if pos < size else None)
         pos = _skip(text, pos, _OWS_CHARS + ",")
     return challenges, starts, None
 
 
 def _parse_field_line(
-    field: HttpField[TMessage], field_value: str, offset: int, max_elements: int = 0
+    field: HttpField[TMessage], field_value: str, offset: int, single: bool = False
 ) -> List[Challenge]:
     """
     Parse one field line for ``field``, reporting a syntax error if there is one.
-    ``max_elements`` limits the number of challenges; 0 means no limit.
     """
-    challenges, starts, error = parse_challenges(field_value)
-    if 0 < max_elements < len(challenges):
-        error = starts[max_elements]
-        challenges = challenges[:max_elements]
+    challenges, _, error = parse_challenges(field_value, single)
     if error is not None:
         if error < len(field_value):
             problem = (
@@ -173,8 +191,8 @@ class CredentialsField(HttpField[TMessage], Generic[TMessage]):
     """
     A HTTP field containing credentials (RFC 9110 Section 11.6.2), such as Authorization.
 
-    Credentials have the same grammar as a single challenge, and the field can only occur
-    once. The value is one ``(scheme, token68 | {param: value})`` tuple, or None if there is
+    Credentials have the same grammar as a single challenge, but aren't a list, and the field
+    can only occur once. The value is one ``(scheme, token68 | {param: value})`` tuple, or None if there is
     nothing usable.
 
     No scheme-specific checks are made here; subclasses can add them in ``evaluate``.
@@ -194,7 +212,7 @@ class CredentialsField(HttpField[TMessage], Generic[TMessage]):
         if len(self.raw_values) > 1:
             add_note(SINGLE_HEADER_REPEAT)
         field_value, offset = self.raw_values[0]
-        parsed = _parse_field_line(self, field_value, offset, max_elements=1)
+        parsed = _parse_field_line(self, field_value.strip(), offset, single=True)
         self.value = parsed[0] if parsed else None
         if self.value is not None:
             self.evaluate(add_note)
