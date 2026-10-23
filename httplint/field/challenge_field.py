@@ -9,7 +9,9 @@ from httplint.types import AddNoteMethodType, TMessage
 from httplint.util import inline_safe, markdown_context
 
 # A challenge or set of credentials: the auth-scheme, and either a token68 or a dictionary of
-# auth-params (names lowercased, values unquoted; the first instance of a repeated name wins).
+# auth-params. The scheme and param names are lowercased (both are case-insensitive), values
+# are unquoted, and the first instance of a repeated name wins. The original spelling of the
+# scheme is still available in the section's raw_fields.
 Challenge = Tuple[str, Union[str, Dict[str, str]]]
 
 _TOKEN_RE = re.compile(rfc9110.auth_scheme, RE_FLAGS)
@@ -75,38 +77,58 @@ def _parse_params(text: str, pos: int, params: Dict[str, str]) -> Tuple[int, boo
         pos = param.end()
 
 
-def parse_challenges(
-    text: str, single: bool = False
-) -> Tuple[List[Challenge], List[int], Optional[int]]:
+def _skip_to_comma(text: str, pos: int) -> int:
+    "Return the index of the next comma at or after pos that isn't inside a quoted-string."
+    size = len(text)
+    while pos < size:
+        char = text[pos]
+        if char == ",":
+            return pos
+        if char == '"':
+            # An unterminated quote has no closing quote, so it swallows the rest of the text.
+            pos += 1
+            while pos < size and text[pos] != '"':
+                pos += 2 if text[pos] == "\\" else 1
+            if pos >= size:
+                return size
+        pos += 1
+    return size
+
+
+def _resync(text: str, error: int) -> int:
     """
-    Parse ``text`` as ``#challenge`` (RFC 9110 Section 11.6.1).
-
-    If ``single`` is true, parse it as one ``credentials`` (Section 11.6.2) instead, which
-    has the challenge grammar but isn't a list: it can't be empty, start with a comma, or
-    have anything after the first element except empty elements in its auth-param list.
-
-    Returns the challenges, the index at which each starts, and the index of the first
-    syntax error, or None if there isn't one. Challenges before an error are returned, as
-    is the challenge containing it if it has a token68 or at least one auth-param.
-
-    A challenge's auth-params are comma-separated, as are challenges, so a comma is
-    followed by an auth-param (``token BWS "="``) if it continues the challenge, or by a
-    new challenge otherwise. This is linear: each position is examined a bounded number
-    of times, and none of the regexes can backtrack across a position.
+    Where to resume parsing a list after a syntax error at ``error``: the start of the next
+    element that isn't an auth-param. Auth-params after the error are leftovers of the
+    broken challenge, so they are skipped rather than reported again.
     """
     size = len(text)
-    challenges: List[Challenge] = []
-    starts: List[int] = []
+    pos = _skip_to_comma(text, error)
+    while pos < size:
+        pos = _skip(text, pos, _OWS_CHARS + ",")
+        param = _AUTH_PARAM_RE.match(text, pos) if pos < size else None
+        if not param:
+            return pos
+        pos = _skip_to_comma(text, param.end())
+    return size
+
+
+def _parse_run(
+    text: str, pos: int, single: bool, challenges: List[Challenge], starts: List[int]
+) -> Optional[int]:
+    """
+    Parse challenges from ``pos`` until the end of ``text`` or a syntax error, appending to
+    ``challenges`` and ``starts``. Returns the index of the error, or None.
+    """
+    size = len(text)
     if single:
-        pos = 0
         if not text:
-            return challenges, starts, 0
+            return 0
     else:
-        pos = _skip(text, 0, _OWS_CHARS + ",")
+        pos = _skip(text, pos, _OWS_CHARS + ",")
     while pos < size:
         scheme_match = _TOKEN_RE.match(text, pos)
         if not scheme_match:
-            return challenges, starts, pos
+            return pos
         starts.append(pos)
         scheme = scheme_match.group()
         pos = scheme_match.end()
@@ -132,26 +154,64 @@ def parse_challenges(
             clean = pos >= size or text[pos] == ","
 
         if value or clean:
-            challenges.append((scheme, value))
+            challenges.append((scheme.lower(), value))
         else:
             starts.pop()
         if not clean:
-            return challenges, starts, pos
+            return pos
         if single:
             # Anything left is a comma after a token68 or bare scheme, or a second challenge.
-            return challenges, starts, (pos if pos < size else None)
+            return pos if pos < size else None
         pos = _skip(text, pos, _OWS_CHARS + ",")
-    return challenges, starts, None
+    return None
+
+
+def parse_challenges(
+    text: str, single: bool = False
+) -> Tuple[List[Challenge], List[int], List[int]]:
+    """
+    Parse ``text`` as ``#challenge`` (RFC 9110 Section 11.6.1).
+
+    If ``single`` is true, parse it as one ``credentials`` (Section 11.6.2) instead, which
+    has the challenge grammar but isn't a list: it can't be empty, start with a comma, or
+    have anything after the first element except empty elements in its auth-param list.
+
+    Returns the challenges, the index at which each starts, and the index of each syntax
+    error (none if the text is valid). A challenge containing an error is kept if it has a
+    token68 or at least one auth-param.
+
+    After an error in a list, parsing resumes at the next comma outside a quoted-string (see
+    ``_resync``), so later challenges are still found and each defect gets its own error.
+    Credentials stop at the first error.
+
+    A challenge's auth-params are comma-separated, as are challenges, so a comma is
+    followed by an auth-param (``token BWS "="``) if it continues the challenge, or by a
+    new challenge otherwise. This is linear: each position is examined a bounded number
+    of times, and none of the regexes can backtrack across a position.
+    """
+    challenges: List[Challenge] = []
+    starts: List[int] = []
+    errors: List[int] = []
+    pos = 0
+    while True:
+        error = _parse_run(text, pos, single, challenges, starts)
+        if error is None:
+            break
+        errors.append(error)
+        pos = _resync(text, error)
+        if single or pos >= len(text):
+            break
+    return challenges, starts, errors
 
 
 def _parse_field_line(
     field: HttpField[TMessage], field_value: str, offset: int, single: bool = False
 ) -> List[Challenge]:
     """
-    Parse one field line for ``field``, reporting a syntax error if there is one.
+    Parse one field line for ``field``, reporting each syntax error.
     """
-    challenges, _, error = parse_challenges(field_value, single)
-    if error is not None:
+    challenges, _, errors = parse_challenges(field_value, single)
+    for error in errors:
         if error < len(field_value):
             problem = (
                 f"The invalid character '{inline_safe(field_value[error])}' "
@@ -177,8 +237,9 @@ class ChallengeField(HttpField[TMessage], Generic[TMessage]):
     A HTTP field containing challenges (RFC 9110 Section 11.6.1), such as WWW-Authenticate.
 
     These aren't comma-separated lists: a challenge's auth-params are themselves separated
-    by commas. The value is a list of ``(scheme, token68 | {param: value})`` tuples; see
-    ``parse_challenges``.
+    by commas. The value is a list of ``(scheme, token68 | {param: value})`` tuples with the
+    scheme lowercased; see ``parse_challenges``. The scheme's original spelling is in the
+    section's ``raw_fields``.
 
     No scheme-specific checks are made here; subclasses can add them in ``evaluate``.
     """
@@ -192,7 +253,8 @@ class CredentialsField(HttpField[TMessage], Generic[TMessage]):
     A HTTP field containing credentials (RFC 9110 Section 11.6.2), such as Authorization.
 
     Credentials have the same grammar as a single challenge, but aren't a list, and the field
-    can only occur once. The value is one ``(scheme, token68 | {param: value})`` tuple, or
+    can only occur once. The value is one ``(scheme, token68 | {param: value})`` tuple with
+    the scheme lowercased (its original spelling is in the section's ``raw_fields``), or
     None if there is nothing usable.
 
     No scheme-specific checks are made here; subclasses can add them in ``evaluate``.

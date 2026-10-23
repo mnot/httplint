@@ -19,12 +19,21 @@ scheme and parameters applicable to the proxy for this request-target."""
 class ProxyAuthenticateTest(FieldTest[ResponseLinterProtocol]):
     name = "Proxy-Authenticate"
     inputs = [b'Basic realm="proxy", charset="UTF-8"']
-    expected_out = [("Basic", {"realm": "proxy", "charset": "UTF-8"})]
+    expected_out = [("basic", {"realm": "proxy", "charset": "UTF-8"})]
     expected_notes: NoteClassListType = []
 
 
 class ProxyAuthenticateBadSyntaxTest(FieldTest[ResponseLinterProtocol]):
     name = "Proxy-Authenticate"
     inputs = [b'Basic realm="proxy" charset="UTF-8"']
-    expected_out = [("Basic", {"realm": "proxy"})]
+    expected_out = [("basic", {"realm": "proxy"})]
+    expected_notes: NoteClassListType = [BAD_SYNTAX_DETAILED]
+
+
+class ProxyAuthenticateResyncTest(FieldTest[ResponseLinterProtocol]):
+    "A syntax error doesn't lose the challenges after it."
+
+    name = "Proxy-Authenticate"
+    inputs = [b"Basic realm=My Realm, Digest a=b"]
+    expected_out = [("basic", {"realm": "My"}), ("digest", {"a": "b"})]
     expected_notes: NoteClassListType = [BAD_SYNTAX_DETAILED]

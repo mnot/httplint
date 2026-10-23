@@ -22,7 +22,7 @@ The `Proxy-Authorization` header field allows a user agent to authenticate itsel
 class ProxyAuthorizationTest(FieldTest[RequestLinterProtocol]):
     name = "Proxy-Authorization"
     inputs = [b"Basic QWxhZGRpbjpvcGVuIHNlc2FtZQ=="]
-    expected_out = ("Basic", "QWxhZGRpbjpvcGVuIHNlc2FtZQ==")
+    expected_out = ("basic", "QWxhZGRpbjpvcGVuIHNlc2FtZQ==")
 
 
 class ProxyAuthorizationEmptyTest(FieldTest[RequestLinterProtocol]):
@@ -44,5 +44,5 @@ class ProxyAuthorizationLeadingCommaTest(FieldTest[RequestLinterProtocol]):
 class ProxyAuthorizationTrailingCommaTest(FieldTest[RequestLinterProtocol]):
     name = "Proxy-Authorization"
     inputs = [b"Basic abc,"]
-    expected_out = ("Basic", "abc")
+    expected_out = ("basic", "abc")
     expected_notes: NoteClassListType = [BAD_SYNTAX_DETAILED]

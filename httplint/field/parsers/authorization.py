@@ -31,7 +31,7 @@ class AuthorizationTest(FieldTest[RequestLinterProtocol]):
 
     name = "Authorization"
     inputs = [b"Basic QWxhZGRpbjpvcGVuIHNlc2FtZQ=="]
-    expected_out = ("Basic", "QWxhZGRpbjpvcGVuIHNlc2FtZQ==")
+    expected_out = ("basic", "QWxhZGRpbjpvcGVuIHNlc2FtZQ==")
 
 
 class AuthorizationDigestTest(FieldTest[RequestLinterProtocol]):
@@ -46,7 +46,7 @@ class AuthorizationDigestTest(FieldTest[RequestLinterProtocol]):
         b'opaque="FQhe/qaU925kfnzjCev0ciny7QMkPqMAFRtzCUYo5tdS"'
     ]
     expected_out = (
-        "Digest",
+        "digest",
         {
             "username": "Mufasa",
             "realm": "http-auth@example.org",
@@ -64,7 +64,7 @@ class AuthorizationDigestTest(FieldTest[RequestLinterProtocol]):
 class AuthorizationRepeatTest(FieldTest[RequestLinterProtocol]):
     name = "Authorization"
     inputs = [b"Basic QWxhZGRpbjpvcGVuIHNlc2FtZQ==", b"Basic Zm9vOmJhcg=="]
-    expected_out = ("Basic", "QWxhZGRpbjpvcGVuIHNlc2FtZQ==")
+    expected_out = ("basic", "QWxhZGRpbjpvcGVuIHNlc2FtZQ==")
     expected_notes: NoteClassListType = [SINGLE_HEADER_REPEAT]
 
 
@@ -73,7 +73,7 @@ class AuthorizationSecondSchemeTest(FieldTest[RequestLinterProtocol]):
 
     name = "Authorization"
     inputs = [b"Basic QWxhZGRpbjpvcGVuIHNlc2FtZQ==, Digest username=foo"]
-    expected_out = ("Basic", "QWxhZGRpbjpvcGVuIHNlc2FtZQ==")
+    expected_out = ("basic", "QWxhZGRpbjpvcGVuIHNlc2FtZQ==")
     expected_notes: NoteClassListType = [BAD_SYNTAX_DETAILED]
 
 
@@ -103,7 +103,7 @@ class AuthorizationOnlyCommaTest(FieldTest[RequestLinterProtocol]):
 class AuthorizationTrailingCommaTest(FieldTest[RequestLinterProtocol]):
     name = "Authorization"
     inputs = [b"Basic abc,"]
-    expected_out = ("Basic", "abc")
+    expected_out = ("basic", "abc")
     expected_notes: NoteClassListType = [BAD_SYNTAX_DETAILED]
 
 

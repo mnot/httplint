@@ -1,3 +1,4 @@
+from httplint.field import BAD_SYNTAX_DETAILED
 from httplint.field.challenge_field import ChallengeField
 from httplint.field.tests import FieldTest
 from httplint.syntax import rfc9110
@@ -18,7 +19,7 @@ indicates the authentication scheme(s) and parameters applicable."""
 class WWWAuthenticateTest(FieldTest[ResponseLinterProtocol]):
     name = "WWW-Authenticate"
     inputs = [b'Basic realm="WallyWorld"']
-    expected_out = [("Basic", {"realm": "WallyWorld"})]
+    expected_out = [("basic", {"realm": "WallyWorld"})]
     expected_notes: NoteClassListType = []
 
 
@@ -27,7 +28,7 @@ class WWWAuthenticateParamsTest(FieldTest[ResponseLinterProtocol]):
 
     name = "WWW-Authenticate"
     inputs = [b'Basic realm="foo", charset="UTF-8"']
-    expected_out = [("Basic", {"realm": "foo", "charset": "UTF-8"})]
+    expected_out = [("basic", {"realm": "foo", "charset": "UTF-8"})]
     expected_notes: NoteClassListType = []
 
 
@@ -42,7 +43,7 @@ class WWWAuthenticateDigestTest(FieldTest[ResponseLinterProtocol]):
     ]
     expected_out = [
         (
-            "Digest",
+            "digest",
             {
                 "realm": "http-auth@example.org",
                 "qop": "auth, auth-int",
@@ -64,9 +65,18 @@ class WWWAuthenticateMultipleTest(FieldTest[ResponseLinterProtocol]):
         b"Negotiate abc==, Bearer",
     ]
     expected_out = [
-        ("Newauth", {"realm": "apps", "type": "1", "title": 'Login to "apps"'}),
-        ("Basic", {"realm": "simple"}),
-        ("Negotiate", "abc=="),
-        ("Bearer", {}),
+        ("newauth", {"realm": "apps", "type": "1", "title": 'Login to "apps"'}),
+        ("basic", {"realm": "simple"}),
+        ("negotiate", "abc=="),
+        ("bearer", {}),
     ]
     expected_notes: NoteClassListType = []
+
+
+class WWWAuthenticateResyncTest(FieldTest[ResponseLinterProtocol]):
+    "A syntax error doesn't lose the challenges after it."
+
+    name = "WWW-Authenticate"
+    inputs = [b"Basic realm=My Realm, Digest a=b"]
+    expected_out = [("basic", {"realm": "My"}), ("digest", {"a": "b"})]
+    expected_notes: NoteClassListType = [BAD_SYNTAX_DETAILED]
