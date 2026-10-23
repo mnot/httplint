@@ -150,14 +150,39 @@ class EmptyCodeSpanTest(unittest.TestCase):
                     self.assertIn(escaped, detail)
                 self.assertEqual("(empty)" in detail, nameless)
 
-    # Known bug, tracked in https://github.com/mnot/httplint/issues/276.
-    # Remove expectedFailure when that issue is fixed.
-    @unittest.expectedFailure
     def test_cache_status_empty_target(self) -> None:
-        for param in ("detail", "key"):
-            with self.subTest(param=param):
-                value = f'""; {param}="{HTML}"'
-                self.check_escaped(detail_text(b"Cache-Status", value.encode("ascii")))
+        for target in ('""', '"`"', '"``"'):
+            for param in ("detail", "key", "fwd", "foo"):
+                with self.subTest(target=target, param=param):
+                    value = f'{target}; {param}="{HTML}"'
+                    self.check_escaped(detail_text(b"Cache-Status", value.encode("ascii")))
+
+    def test_cache_status_empty_target_among_others(self) -> None:
+        value = f'a; detail="x", ""; detail="{HTML}", b; detail="{HTML}"'
+        self.check_escaped(detail_text(b"Cache-Status", value.encode("ascii")))
+
+    def test_sf_empty_bad_param_value(self) -> None:
+        # The bad-value notes put the value in a code span of their own.
+        for name, param in ((b"Cache-Status", "fwd"), (b"Proxy-Status", "error")):
+            with self.subTest(field=name):
+                value = f'a; {param}=""; foo="{HTML}"'
+                detail = detail_text(name, value.encode("ascii"))
+                self.check_escaped(detail)
+                self.assertNotIn("``", detail)
+                self.assertIn("<code>(empty)</code>", detail)
+
+    def test_cache_control_empty_value(self) -> None:
+        for directive in ("max-age", "s-maxage", "stale-if-error"):
+            with self.subTest(directive=directive):
+                value = f"{directive}=, foo={HTML}"
+                detail = detail_text(b"Cache-Control", value.encode("ascii"))
+                self.assertNotIn("``", detail)
+                self.assertIn("<code>(empty)</code> was found", detail)
+
+    def test_cache_control_bare_value(self) -> None:
+        detail = detail_text(b"Cache-Control", b"max-age")
+        self.assertNotIn("None", detail)
+        self.assertIn("requires a value", detail)
 
     # Known bug, tracked in https://github.com/mnot/httplint/issues/277.
     # Remove expectedFailure when that issue is fixed.
