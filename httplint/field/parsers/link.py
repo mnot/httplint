@@ -546,7 +546,7 @@ class UnclosedBracketThenLinkTest(FieldTest[AnyMessageLinterProtocol]):
 
 
 class EmptyTargetLinkTest(FieldTest[AnyMessageLinterProtocol]):
-    "An empty URI-Reference is valid; the hint note shows a placeholder, not an empty code span."
+    "Guard: an empty URI-Reference is valid. The note text is tested in test_markdown_injection."
 
     name = "Link"
     inputs = [b"<>; rel=preload"]
