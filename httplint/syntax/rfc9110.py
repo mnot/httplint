@@ -211,12 +211,15 @@ Authentication_Info = list_rule(auth_param)
 token68 = rf"(?: (?: {ALPHA} | {DIGIT} | \- | \. | _ | \~ | \+ | / )+ =* )"
 
 #   credentials = auth-scheme [ 1*SP ( token68 / [ auth-param *( OWS "," OWS auth-param ) ] ) ]
+#
+# As for any list (Section 5.6.1), recipients accept empty elements, so the auth-params can
+# start with a comma: "Basic , realm=x".
 
 credentials = rf"""(?: {auth_scheme}
                         (?: {SP}+
                             (?: {token68} |
                                 (?:
-                                    (?: , | {auth_param} )
+                                    (?: , (?: {OWS} {auth_param} )? | {auth_param} )
                                     (?: {OWS} , (?: {OWS} {auth_param} )? )*
                                 )?
                             )
@@ -471,12 +474,14 @@ Location = URI_reference
 Max_Forwards = rf"(?: {DIGIT}+ )"
 
 #   challenge = auth-scheme [ 1*SP ( token68 / [ auth-param *( OWS "," OWS auth-param ) ] ) ]
+#
+# As for credentials, a comma can come before the first auth-param.
 
 challenge = rf"""(?: {auth_scheme}
                         (?: {SP}+
                             (?: {token68} |
                                 (?:
-                                    (?: , | {auth_param} )
+                                    (?: , (?: {OWS} {auth_param} )? | {auth_param} )
                                     (?: {OWS} , (?: {OWS} {auth_param} )? )*
                                 )?
                             )

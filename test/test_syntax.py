@@ -634,6 +634,106 @@ class SyntaxTranslationTest(unittest.TestCase):
                 self.assertFalse(fullmatch(rfc9112.chunk_ext, value))
 
 
+class SyntaxChallengeTest(unittest.TestCase):
+    """
+    The challenge and credentials rules rejected an empty element before the first auth-param
+    (`Basic , realm=x`), which RFC 9110 Section 5.6.1 has recipients accept, and which
+    ChallengeField and CredentialsField do.
+    """
+
+    def old(self) -> str:
+        "The rule as it was."
+        param, token68 = rfc9110.auth_param, rfc9110.token68
+        return rf"""(?: {rfc9110.auth_scheme}
+            (?: {rfc9110.SP}+
+                (?: {token68} |
+                    (?:
+                        (?: , | {param} )
+                        (?: {rfc9110.OWS} , (?: {rfc9110.OWS} {param} )? )*
+                    )?
+                )
+            )?
+        )"""
+
+    def reference(self) -> str:
+        "The rule written as [ auth-param ] *( OWS ',' [ OWS auth-param ] )."
+        param, ows = rfc9110.auth_param, rfc9110.OWS
+        return rf"""(?: {rfc9110.auth_scheme}
+            (?: {rfc9110.SP}+
+                (?: {rfc9110.token68} |
+                    (?: {param}? (?: {ows} , (?: {ows} {param} )? )* )
+                )
+            )?
+        )"""
+
+    def test_differential(self) -> None:
+        old, reference = self.old(), self.reference()
+        self.assertEqual(
+            len({re.sub(r"\s+", "", r) for r in (rfc9110.challenge, rfc9110.credentials)}), 1
+        )
+        newly_accepted = 0
+        for tail in strings([" ", "a", "=", ",", '"'], 7):
+            value = "A" + tail
+            with self.subTest(value=value):
+                was, now = fullmatch(old, value), fullmatch(rfc9110.challenge, value)
+                self.assertEqual(now, fullmatch(rfc9110.credentials, value))
+                self.assertEqual(now, fullmatch(reference, value))
+                if was:
+                    self.assertTrue(now)
+                elif now:
+                    newly_accepted += 1
+                    self.assertIn(",", value)
+        self.assertGreater(newly_accepted, 20)
+
+    def test_accept_reject(self) -> None:
+        for rule in [rfc9110.challenge, rfc9110.credentials]:
+            for value in [
+                "Basic , realm=x",
+                "Basic ,realm=x",
+                "Basic ,, realm=x",
+                "Basic , , realm=x, charset=y",
+                'Basic ,  realm="x" ,, charset=y,',
+                "Basic realm=x",
+                "Basic realm=x,",
+                "Basic ,",
+                "Basic",
+                "Basic abc=",
+                "Bearer abc.def",
+            ]:
+                with self.subTest(rule=rule[:30], value=value):
+                    self.assertTrue(fullmatch(rule, value))
+            for value in ["Basic realm=x charset=y", "Basic , realm", "Basic,realm=x", "", " , a=b"]:
+                with self.subTest(rule=rule[:30], value=value):
+                    self.assertFalse(fullmatch(rule, value))
+        self.assertTrue(matches(rfc9110.WWW_Authenticate, "Basic , realm=x, Digest a=b"))
+        self.assertTrue(matches(rfc9110.Proxy_Authenticate, "Basic , realm=x, Digest , a=b"))
+        self.assertTrue(matches(rfc9110.Authorization, "Basic , realm=x"))
+
+    def test_fields_accept_it(self) -> None:
+        "Guard: the fields parse these themselves, and already accepted them."
+        for response, name in [(True, b"WWW-Authenticate"), (False, b"Authorization")]:
+            self.assertNotIn("BAD_SYNTAX", field_notes(response, name, b"Basic , realm=x"))
+            self.assertNotIn("BAD_SYNTAX_DETAILED", field_notes(response, name, b"Basic , realm=x"))
+
+    def test_timing(self) -> None:
+        "Guard: the rule has no new ambiguity."
+        values = [
+            "A " + ", " * 2000 + "\x80",
+            "A ," + " " * 2000 + "\x80",
+            "A " + "a=b, " * 24 + "\x80",
+            "A " + ", a=b " * 24 + "\x80",
+            "A" + " " * 2000 + "\x80",
+            "A , " + "a=b ,  " * 2000 + "\x80",
+        ]
+        for rule in [rfc9110.challenge, rfc9110.credentials]:
+            compiled = re.compile(rf"^\s*(?:{rule})\s*$", re.VERBOSE | re.IGNORECASE)
+            for value in values:
+                with self.subTest(value=value[:20]):
+                    start = time.monotonic()
+                    compiled.match(value)
+                    self.assertLess(time.monotonic() - start, TIME_LIMIT)
+
+
 def run_regex_check() -> None:
     print("Checking Syntax...")
     count, modules, errors = check_regex()
