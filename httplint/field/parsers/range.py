@@ -1,10 +1,11 @@
 import re
+import unittest
 from dataclasses import dataclass, field
-from typing import List, NoReturn, Optional, Tuple
+from typing import Any, Dict, List, NoReturn, Optional, Tuple, Type
 
 from httplint.field.section import FIELD_VALUE_ENCODING
 from httplint.field.singleton_field import SingletonField
-from httplint.field.tests import FieldTest
+from httplint.field.tests import FakeRequestLinter, FieldTest
 from httplint.field.utils import RE_FLAGS, parse_digits
 from httplint.note import Note, categories, levels
 from httplint.syntax import rfc9110
@@ -21,6 +22,7 @@ class RangeValue:
 RANGE_UNIT_RE = re.compile(rfc9110.range_unit, RE_FLAGS)
 OTHER_RANGE_RE = re.compile(rfc9110.other_range, RE_FLAGS)
 OWS = " \t"
+MAX_DIGITS = 20
 
 
 class range(SingletonField[RequestLinterProtocol]):  # pylint: disable=redefined-builtin
@@ -30,6 +32,8 @@ The `Range` header field on a GET request modifies the method semantics to reque
 parts of the representation that are specified."""
     reference = f"{rfc9110.SPEC_URL}#field.range"
     syntax = rfc9110.Range
+    # parse() reports syntax problems itself, and always rejects the value after RANGE_BAD_SYNTAX,
+    # so that one defect gives one note.
     report_syntax = False
     category = categories.RANGE
     deprecated = False
@@ -59,14 +63,10 @@ parts of the representation that are specified."""
             last_byte_pos: Optional[int] = None
 
             if first_str:
-                first_byte_pos = parse_digits(first_str)
-                if first_byte_pos is None:
-                    self._bad_syntax(add_note, "the first position in the range must be an integer")
+                first_byte_pos = self._parse_position(first_str, "first", add_note)
 
             if last_str:
-                last_byte_pos = parse_digits(last_str)
-                if last_byte_pos is None:
-                    self._bad_syntax(add_note, "the last position in the range must be an integer")
+                last_byte_pos = self._parse_position(last_str, "last", add_note)
 
             if first_byte_pos is None and last_byte_pos is None:
                 self._bad_syntax(
@@ -101,6 +101,18 @@ parts of the representation that are specified."""
                 )
             other_ranges.append(rng)
         return RangeValue(unit, [], other_ranges)
+
+    def _parse_position(self, value: str, which: str, add_note: AddNoteMethodType) -> int:
+        result = parse_digits(value, MAX_DIGITS)
+        if result is None:
+            if value.isascii() and value.isdigit():
+                problem = (
+                    f"the {which} position in the range can't have more than {MAX_DIGITS} digits"
+                )
+            else:
+                problem = f"the {which} position in the range must be an integer"
+            self._bad_syntax(add_note, problem)
+        return result
 
     def _bad_syntax(self, add_note: AddNoteMethodType, problem: str) -> NoReturn:
         add_note(RANGE_BAD_SYNTAX, ref_uri=self.reference, problem=problem)
@@ -257,3 +269,44 @@ class RangeSuperscriptTest(FieldTest[RequestLinterProtocol]):
     inputs = [b"bytes=\xb2-"]
     expected_out = None
     expected_notes: NoteClassListType = [RANGE_BAD_SYNTAX, FIELD_VALUE_ENCODING]
+
+
+class RangeTooLongBoundaryTest(FieldTest[RequestLinterProtocol]):
+    name = "Range"
+    inputs = [b"bytes=" + b"9" * 21 + b"-"]
+    expected_out = None
+    expected_notes: NoteClassListType = [RANGE_BAD_SYNTAX]
+
+
+class RangeTwentyDigitsTest(FieldTest[RequestLinterProtocol]):
+    name = "Range"
+    inputs = [b"bytes=" + b"9" * 20 + b"-"]
+    expected_out = RangeValue("bytes", [(int("9" * 20), None)])
+
+
+class RangeNoteWordingTest(unittest.TestCase):
+    "Check the `problem` given to RANGE_BAD_SYNTAX, which FieldTest doesn't see."
+
+    def problem(self, value: str) -> str:
+        notes: List[Tuple[Type[Note], Dict[str, Any]]] = []
+        handler = range("Range", FakeRequestLinter())
+
+        def add_note(note: Type[Note], category: Any = None, **vrs: Any) -> Note:
+            notes.append((note, vrs))
+            return note("test", **vrs)
+
+        with self.assertRaises(ValueError):
+            handler.parse(value, add_note)
+        self.assertEqual([n for n, _ in notes], [RANGE_BAD_SYNTAX])
+        return str(notes[0][1]["problem"])
+
+    def test_too_many_digits(self) -> None:
+        self.assertIn("more than 20 digits", self.problem("bytes=" + "9" * 5000 + "-"))
+        self.assertIn("last position", self.problem("bytes=0-" + "9" * 21))
+
+    def test_non_integer(self) -> None:
+        self.assertIn("must be an integer", self.problem("bytes=a-"))
+        self.assertIn("must be an integer", self.problem("bytes=\xb2-"))
+
+    def test_empty_spec(self) -> None:
+        self.assertIn("empty range specifier", self.problem("bytes=0-1,"))

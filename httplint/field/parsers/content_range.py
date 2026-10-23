@@ -1,14 +1,20 @@
 import re
+import unittest
 from dataclasses import dataclass
 from typing import (
+    Any,
+    Dict,
+    List,
+    NoReturn,
     Optional,
     Tuple,
+    Type,
 )
 
 from httplint.field import BAD_SYNTAX
 from httplint.field.section import FIELD_VALUE_ENCODING
 from httplint.field.singleton_field import SingletonField
-from httplint.field.tests import FieldTest
+from httplint.field.tests import FakeResponseLinter, FieldTest
 from httplint.field.utils import RE_FLAGS, parse_digits
 from httplint.note import Note, categories, levels
 from httplint.syntax import rfc9110
@@ -30,6 +36,15 @@ class ContentRangeValue:
 UNIT_RE = re.compile(rfc9110.range_unit, RE_FLAGS)
 MISSING_UNIT_RE = re.compile(r"(?:[0-9]+-[0-9]+|\*)/(?:[0-9]+|\*)")
 WHITESPACE_RE = re.compile(r"\s")
+MAX_DIGITS = 20
+EXCERPT_CHARS = 40
+
+
+def excerpt(value: str) -> str:
+    "Shorten a wire value so that a hostile one doesn't bloat a note."
+    if len(value) > EXCERPT_CHARS:
+        return value[:EXCERPT_CHARS] + "..."
+    return value
 
 
 class content_range(SingletonField[ResponseLinterProtocol]):
@@ -40,6 +55,8 @@ where in the full response content the partial content is located. It is also us
 in `416` (Requested Range Not Satisfiable) responses."""
     reference = f"{rfc9110.SPEC_URL}#field.content-range"
     syntax = rfc9110.Content_Range
+    # parse() reports syntax problems itself, and always rejects the value after BAD_SYNTAX, so
+    # that one defect gives one note (the more specific notes cover the other defects).
     report_syntax = False
     deprecated = False
 
@@ -50,12 +67,10 @@ in `416` (Requested Range Not Satisfiable) responses."""
         if not sep:
             if MISSING_UNIT_RE.fullmatch(field_value):
                 add_note(CONTENT_RANGE_MISSING_UNIT)
-            else:
-                self._bad_syntax(add_note)
-            raise ValueError
+                raise ValueError
+            self._bad_syntax(add_note)
         if not UNIT_RE.fullmatch(unit):
             self._bad_syntax(add_note)
-            raise ValueError
 
         try:
             rng, len_str = rest.split("/", 1)
@@ -66,7 +81,6 @@ in `416` (Requested Range Not Satisfiable) responses."""
         # Empty parts and stray whitespace aren't covered by the more specific notes below
         if not rng or not len_str or WHITESPACE_RE.search(rng + len_str):
             self._bad_syntax(add_note)
-            raise ValueError
 
         if rng == "*" and len_str == "*":
             add_note(CONTENT_RANGE_INVALID_ASTERISK)
@@ -96,8 +110,9 @@ in `416` (Requested Range Not Satisfiable) responses."""
 
         return ContentRangeValue(unit, first_byte_pos, last_byte_pos, complete_length)
 
-    def _bad_syntax(self, add_note: AddNoteMethodType) -> None:
+    def _bad_syntax(self, add_note: AddNoteMethodType) -> NoReturn:
         add_note(BAD_SYNTAX, ref_uri=self.reference)
+        raise ValueError
 
     def _status_code(self) -> Optional[int]:
         if getattr(self.message, "message_type", None) == "response":
@@ -116,9 +131,12 @@ in `416` (Requested Range Not Satisfiable) responses."""
         return self._parse_integer(len_str, add_note)
 
     def _parse_integer(self, value: str, add_note: AddNoteMethodType) -> Optional[int]:
-        result = parse_digits(value)
+        result = parse_digits(value, MAX_DIGITS)
         if result is None:
-            add_note(RANGE_INVALID_INTEGER, value=value)
+            if value.isascii() and value.isdigit():
+                add_note(RANGE_INTEGER_TOO_LONG, value=excerpt(value), max_digits=MAX_DIGITS)
+            else:
+                add_note(RANGE_INVALID_INTEGER, value=excerpt(value))
         return result
 
     def _parse_range_spec(
@@ -128,13 +146,12 @@ in `416` (Requested Range Not Satisfiable) responses."""
             return None, None
 
         if "-" not in rng:
-            add_note(RANGE_MISSING_HYPHEN, value=rng)
+            add_note(RANGE_MISSING_HYPHEN, value=excerpt(rng))
             return None, None
 
         first_str, last_str = rng.split("-", 1)
         if not first_str or not last_str:
             self._bad_syntax(add_note)
-            return None, None
         first = self._parse_integer(first_str, add_note)
         if first is None:
             return None, None
@@ -207,6 +224,15 @@ class RANGE_INVALID_INTEGER(Note):
     _summary = "The Content-Range header contains a non-integer value."
     _text = """\
 The value `%(value)s` is not a valid integer."""
+
+
+class RANGE_INTEGER_TOO_LONG(Note):
+    category = categories.RANGE
+    level = levels.BAD
+    _summary = "The Content-Range header contains an integer with too many digits."
+    _text = """\
+The value `%(value)s` has more than %(max_digits)s digits, which is more than recipients can be
+expected to handle."""
 
 
 class RANGE_INVALID(Note):
@@ -381,7 +407,7 @@ class ContentRangeDoubleSpaceTest(FieldTest[ResponseLinterProtocol]):
         message.status_code = 206
 
 
-class ContentRangeExtraFieldTest(FieldTest[ResponseLinterProtocol]):
+class ContentRangeTrailingTokenTest(FieldTest[ResponseLinterProtocol]):
     name = "Content-Range"
     inputs = [b"bytes 1-100/200 extra"]
     expected_out = None
@@ -465,7 +491,7 @@ class ContentRangeHugeFirstTest(FieldTest[ResponseLinterProtocol]):
     name = "Content-Range"
     inputs = [b"bytes " + b"1" * 5000 + b"-6000/7000"]
     expected_out = None
-    expected_notes: NoteClassListType = [RANGE_INVALID_INTEGER]
+    expected_notes: NoteClassListType = [RANGE_INTEGER_TOO_LONG]
 
     def set_response_context(self, message: ResponseLinterProtocol) -> None:
         message.status_code = 206
@@ -475,7 +501,7 @@ class ContentRangeHugeLastTest(FieldTest[ResponseLinterProtocol]):
     name = "Content-Range"
     inputs = [b"bytes 1-" + b"9" * 5000 + b"/7000"]
     expected_out = None
-    expected_notes: NoteClassListType = [RANGE_INVALID_INTEGER]
+    expected_notes: NoteClassListType = [RANGE_INTEGER_TOO_LONG]
 
     def set_response_context(self, message: ResponseLinterProtocol) -> None:
         message.status_code = 206
@@ -485,7 +511,7 @@ class ContentRangeHugeLengthTest(FieldTest[ResponseLinterProtocol]):
     name = "Content-Range"
     inputs = [b"bytes 1-100/" + b"9" * 5000]
     expected_out = None
-    expected_notes: NoteClassListType = [RANGE_INVALID_INTEGER]
+    expected_notes: NoteClassListType = [RANGE_INTEGER_TOO_LONG]
 
     def set_response_context(self, message: ResponseLinterProtocol) -> None:
         message.status_code = 206
@@ -499,3 +525,62 @@ class ContentRangeSuperscriptTest(FieldTest[ResponseLinterProtocol]):
 
     def set_response_context(self, message: ResponseLinterProtocol) -> None:
         message.status_code = 206
+
+
+class ContentRangeTooLongBoundaryTest(FieldTest[ResponseLinterProtocol]):
+    name = "Content-Range"
+    inputs = [b"bytes 1-100/" + b"9" * 21]
+    expected_out = None
+    expected_notes: NoteClassListType = [RANGE_INTEGER_TOO_LONG]
+
+    def set_response_context(self, message: ResponseLinterProtocol) -> None:
+        message.status_code = 206
+
+
+class ContentRangeTwentyDigitsTest(FieldTest[ResponseLinterProtocol]):
+    name = "Content-Range"
+    inputs = [b"bytes 1-100/" + b"9" * 20]
+    expected_out = ContentRangeValue("bytes", 1, 100, int("9" * 20))
+
+    def set_response_context(self, message: ResponseLinterProtocol) -> None:
+        message.status_code = 206
+
+
+class ContentRangeNoteWordingTest(unittest.TestCase):
+    "Check the variables the integer and hyphen notes are given, which FieldTest doesn't see."
+
+    def parse(self, value: str) -> List[Tuple[Type[Note], Dict[str, Any]]]:
+        message = FakeResponseLinter()
+        message.status_code = 206
+        notes: List[Tuple[Type[Note], Dict[str, Any]]] = []
+        handler = content_range("Content-Range", message)
+
+        def add_note(note: Type[Note], category: Any = None, **vrs: Any) -> Note:
+            notes.append((note, vrs))
+            return note("test", **vrs)
+
+        with self.assertRaises(ValueError):
+            handler.parse(value, add_note)
+        return notes
+
+    def test_too_long(self) -> None:
+        notes = self.parse("bytes 1-100/" + "9" * 5000)
+        self.assertEqual([n for n, _ in notes], [RANGE_INTEGER_TOO_LONG])
+        value = notes[0][1]["value"]
+        self.assertTrue(value.startswith("9" * 40))
+        self.assertLess(len(value), 50)
+        self.assertEqual(notes[0][1]["max_digits"], 20)
+
+    def test_invalid_shortened(self) -> None:
+        notes = self.parse("bytes 1-100/" + "x" * 5000)
+        self.assertEqual([n for n, _ in notes], [RANGE_INVALID_INTEGER])
+        self.assertLess(len(notes[0][1]["value"]), 50)
+
+    def test_hyphen_shortened(self) -> None:
+        notes = self.parse("bytes " + "1" * 5000 + "/200")
+        self.assertEqual([n for n, _ in notes], [RANGE_MISSING_HYPHEN])
+        self.assertLess(len(notes[0][1]["value"]), 50)
+
+    def test_short_unchanged(self) -> None:
+        notes = self.parse("bytes 1-100/abc")
+        self.assertEqual(notes, [(RANGE_INVALID_INTEGER, {"value": "abc"})])
