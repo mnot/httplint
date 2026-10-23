@@ -1372,6 +1372,89 @@ class SyntaxExtValueAuditTest(unittest.TestCase):
         self.assertTrue(rfc5987.SPEC_URL.endswith("rfc8187"))
 
 
+
+class SyntaxLinkAuditTest(unittest.TestCase):
+    """
+    Audit of rfc8288 against RFC 8288 section 3 (issue #303). The ABNF block (Link, link-value,
+    link-param) was already right, apart from link-param's leading BWS, which is deliberately
+    inside the optional group (see the rule's comment). The relation-type, anchor, hreflang and
+    type rules that the RFC gives in prose were missing.
+    """
+
+    def test_relation_types(self) -> None:
+        for value in ["next", "a1", "a.b-c", "http://example.net/foo", "a:b", "x1.2-3"]:
+            with self.subTest(value=value):
+                self.assertTrue(fullmatch(rfc8288.relation_type, value))
+        for value in ["", "1a", "a_b", "-a", ".a", "a b", "Next", "a:b c"]:
+            with self.subTest(value=value):
+                self.assertFalse(fullmatch(rfc8288.relation_type, value))
+
+    def test_rel_value(self) -> None:
+        for value in [
+            "next",
+            "next prev",
+            "start http://example.net/relation/other",
+            "http://a/ http://b/",
+            "a  b",
+            "a   b c",
+        ]:
+            with self.subTest(value=value):
+                self.assertTrue(fullmatch(rfc8288.rel_param_value, value))
+        for value in ["", "next ", " next", "next\tprev", "next,prev", "1 a", "next  Prev"]:
+            with self.subTest(value=value):
+                self.assertFalse(fullmatch(rfc8288.rel_param_value, value))
+
+    def test_other_parameter_values(self) -> None:
+        for value in ["#foo", "http://a/b?c#d", "../a", ""]:
+            with self.subTest(value=value):
+                self.assertTrue(fullmatch(rfc8288.anchor_param_value, value))
+        self.assertFalse(fullmatch(rfc8288.anchor_param_value, "a b"))
+        for value in ["en", "de-CH", "x-private", "i-ami"]:
+            with self.subTest(value=value):
+                self.assertTrue(fullmatch(rfc8288.hreflang_param_value, value))
+        self.assertFalse(fullmatch(rfc8288.hreflang_param_value, "en_US"))
+        for value in ["text/html", "application/vnd.a+json", "a/b"]:
+            with self.subTest(value=value):
+                self.assertTrue(fullmatch(rfc8288.type_param_value, value))
+        for value in ["text", "text/", "/html", "text/html; charset=utf-8", "te xt/html"]:
+            with self.subTest(value=value):
+                self.assertFalse(fullmatch(rfc8288.type_param_value, value))
+
+    def test_link_field_unchanged(self) -> None:
+        "Guard: Link itself still takes the values the ABNF block allows."
+        for value in [
+            '<a>; rel="next"',
+            "<a>;rel=next ; title=x",
+            '<a>; rel = "next", <b>; rel=prev',
+            "<a>;a;b",
+            "",
+        ]:
+            with self.subTest(value=value):
+                self.assertTrue(matches(rfc8288.Link, value))
+        for value in ["a", "<a", "<a>;", "<a>; =b", "<a>,", "<a> b"]:
+            with self.subTest(value=value):
+                self.assertFalse(matches(rfc8288.Link, value))
+
+    def test_adversarial(self) -> None:
+        "Linear time on non-matching input for the new rules."
+        n = 3000
+        cases = [
+            ("rel types", rfc8288.rel_param_value, "next " * n + "\x00"),
+            ("rel types, long spaces", rfc8288.rel_param_value, "next" + " " * n + "\x00"),
+            ("rel URIs", rfc8288.rel_param_value, "http://a/b " * n + "\x00"),
+            ("rel type chars", rfc8288.rel_param_value, "a" * n + "_"),
+            ("rel URI chars", rfc8288.rel_param_value, "a:" + "b" * n + " "),
+            ("type", rfc8288.type_param_value, "a/" + "b" * n + " "),
+        ]
+        for label, rule, value in cases:
+            compiled = re.compile(rf"^\s*(?:{rule})\s*$", re.VERBOSE | re.IGNORECASE)
+            with self.subTest(label):
+                start = time.monotonic()
+                compiled.match(value)
+                elapsed = time.monotonic() - start
+                self.assertLess(elapsed, TIME_LIMIT, f"{label}: {elapsed:.2f}s")
+
+
 def run_regex_check() -> None:
     print("Checking Syntax...")
     count, modules, errors = check_regex()
