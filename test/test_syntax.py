@@ -769,7 +769,12 @@ class SyntaxTranslationTest(unittest.TestCase):
                 self.assertEqual(
                     fullmatch(old, value + "\r\n"), fullmatch(rfc9112.status_line, value), value
                 )
-        for value in ["HTTP/1.1 200 OK", "HTTP/1.1 200 ", "HTTP/1.1 404 Not\tFound \x80", "HTTP/1.0 200 a"]:
+        for value in [
+            "HTTP/1.1 200 OK",
+            "HTTP/1.1 200 ",
+            "HTTP/1.1 404 Not\tFound \x80",
+            "HTTP/1.0 200 a",
+        ]:
             self.assertTrue(fullmatch(rfc9112.status_line, value))
         # The space after the status code is required even when there is no reason-phrase.
         for value in ["HTTP/1.1 200", "HTTP/1.1 20 OK", "HTTP/1.1 200 OK\r\n", "HTTP/1.1 200 \x01"]:
@@ -819,7 +824,12 @@ class SyntaxTranslationTest(unittest.TestCase):
             "HTTP/1.1 200 OK\r\n\r\n\x00\xff",
         ]:
             self.assertTrue(fullmatch(rfc9112.HTTP_message, value))
-        for value in ["GET / HTTP/1.1\r\n", "GET / HTTP/1.1\r\n\r", "GET / HTTP/1.1\r\n A\r\n\r\n", "\r\n\r\n"]:
+        for value in [
+            "GET / HTTP/1.1\r\n",
+            "GET / HTTP/1.1\r\n\r",
+            "GET / HTTP/1.1\r\n A\r\n\r\n",
+            "\r\n\r\n",
+        ]:
             self.assertFalse(fullmatch(rfc9112.HTTP_message, value))
         # The one change in language is the authority-form's, via request-target.
         old_message = rf"(?: {self.OLD_REQUEST_LINE} (?: {rfc9112.field_line} {rfc9112.CRLF} )* {rfc9112.CRLF} (?: {rfc9112.message_body} )? )"
