@@ -1,8 +1,9 @@
-from urllib.parse import urlparse
+import re
 
 from httplint.field import BAD_SYNTAX
 from httplint.field.singleton_field import SingletonField
 from httplint.field.tests import FieldTest
+from httplint.field.utils import RE_FLAGS, is_secure, resolve_url
 from httplint.note import Note, categories, levels
 from httplint.syntax import rfc9110
 from httplint.types import (
@@ -20,7 +21,22 @@ The `Referer` [sic] header field allows the user agent to specify a URI Referenc
 resource from which the target URI was obtained (i.e., the "referrer")."""
     reference = f"{rfc9110.SPEC_URL}#field.referer"
     syntax = rfc9110.Referer
+    report_syntax = False  # parse() reports it, unless REFERER_BAD_URI covers the same defect
     deprecated = False
+
+    def parse(self, field_value: str, add_note: AddNoteMethodType) -> str:
+        bad_uri = False
+        try:
+            bad_uri = resolve_url(iri_to_uri(field_value)) is None
+        except UnicodeError:
+            pass  # IDNA problems aren't reported here
+        except ValueError:
+            bad_uri = True
+        if bad_uri:
+            add_note(REFERER_BAD_URI, uri=field_value)
+        elif not re.match(rf"^\s*(?:{self.syntax})\s*$", field_value, RE_FLAGS):
+            add_note(BAD_SYNTAX, ref_uri=self.reference)
+        return field_value
 
     def evaluate(self, add_note: AddNoteMethodType) -> None:
         if getattr(self.message, "message_type", None) != "request":
@@ -34,12 +50,15 @@ resource from which the target URI was obtained (i.e., the "referrer")."""
 
         try:
             # Compare like with like: the request's URI has been through iri_to_uri
-            parsed_referer = urlparse(iri_to_uri(referer_uri))
-            parsed_request = urlparse(request_uri)
+            referer_uri = iri_to_uri(referer_uri)
         except (ValueError, UnicodeError):
-            return  # Already handled by URI syntax checks
+            return  # reported by parse()
+        parsed_referer = resolve_url(referer_uri)
+        parsed_request = resolve_url(request_uri)
+        if parsed_referer is None or parsed_request is None:
+            return  # reported by parse(), or a bad request URI
 
-        if parsed_referer.scheme.lower() in ["https", "wss"]:
+        if is_secure(parsed_referer):
             if parsed_request.scheme.lower() in ["http", "ws"]:
                 add_note(REFERER_SECURE_TO_INSECURE)
 
@@ -48,6 +67,15 @@ resource from which the target URI was obtained (i.e., the "referrer")."""
 
             if referer_origin != request_origin:
                 add_note(REFERER_SECURE_TO_DIFFERENT_ORIGIN)
+
+
+class REFERER_BAD_URI(Note):
+    category = categories.GENERAL
+    level = levels.BAD
+    _summary = "The Referer header isn't a valid URI."
+    _text = """\
+The `Referer` header's value, `%(uri)s`, can't be parsed as a URI (for example, it may have a
+malformed IP address in its host), so recipients can't make use of it."""
 
 
 class REFERER_SECURE_TO_INSECURE(Note):
@@ -92,3 +120,25 @@ class RefererColonSegmentTest(FieldTest[RequestLinterProtocol]):
     inputs = [b"1:2"]
     expected_out = "1:2"
     expected_notes: NoteClassListType = [BAD_SYNTAX]
+
+
+class RefererBadURITest(FieldTest[RequestLinterProtocol]):
+    name = "Referer"
+    inputs = [b"https://[::1"]
+    expected_out = "https://[::1"
+    expected_notes: NoteClassListType = [REFERER_BAD_URI]
+
+    def set_request_context(self, message: RequestLinterProtocol) -> None:
+        message.uri = "http://example.com/"
+
+
+class RefererBadSyntaxTest(FieldTest[RequestLinterProtocol]):
+    "A syntax error that isn't an unresolvable URI is still BAD_SYNTAX."
+
+    name = "Referer"
+    inputs = [b"http://example.com/a b"]
+    expected_out = "http://example.com/a b"
+    expected_notes: NoteClassListType = [BAD_SYNTAX]
+
+    def set_request_context(self, message: RequestLinterProtocol) -> None:
+        message.uri = "http://example.com/"

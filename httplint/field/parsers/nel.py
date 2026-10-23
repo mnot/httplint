@@ -1,8 +1,11 @@
 from typing import Any, List, Set
-from urllib.parse import urljoin, urlsplit
 
 from httplint.field.json_field import BAD_JSON, JsonField
-from httplint.field.parsers.reporting_endpoints import ENDPOINT_NOT_SECURE
+from httplint.field.parsers.reporting_endpoints import (
+    BAD_REPORTING_ENDPOINT_URL,
+    ENDPOINT_NOT_SECURE,
+    endpoint_problem,
+)
 from httplint.field.tests import FieldTest
 from httplint.note import MarkdownSafe, Note, categories, levels
 from httplint.types import (
@@ -20,11 +23,8 @@ def _valid_reporting_endpoints(field_value: Any, base_uri: str) -> Set[str]:
         url = item[0]
         if not isinstance(url, str):
             continue
-        target = urljoin(base_uri, url)
-        scheme = urlsplit(target).scheme.lower()
-        if scheme and scheme not in ("https", "wss"):
-            continue
-        valid.add(name)
+        if endpoint_problem(base_uri, url) is None:
+            valid.add(name)
     return valid
 
 
@@ -289,3 +289,13 @@ class NelReportToInsecureTest(FieldTest[ResponseLinterProtocol]):
 
     def set_response_context(self, message: ResponseLinterProtocol) -> None:
         message.headers.process([(b"Reporting-Endpoints", b'group1="http://example.com/reports"')])
+
+
+class NelReportToBadURLTest(FieldTest[ResponseLinterProtocol]):
+    name = "NEL"
+    inputs = [b'{"report_to": "group1", "max_age": 100}']
+    expected_out = [{"report_to": "group1", "max_age": 100}]
+    expected_notes: NoteClassListType = [BAD_REPORTING_ENDPOINT_URL]
+
+    def set_response_context(self, message: ResponseLinterProtocol) -> None:
+        message.headers.process([(b"Reporting-Endpoints", b'group1="http://["')])
