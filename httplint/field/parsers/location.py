@@ -1,12 +1,14 @@
 import re
-from urllib.parse import urljoin
 
+from httplint.field import BAD_SYNTAX
 from httplint.field.singleton_field import SingletonField
 from httplint.field.tests import FieldTest
+from httplint.field.utils import RE_FLAGS, resolve_url
 from httplint.note import Note, categories, levels
 from httplint.syntax import rfc3986, rfc9110
 from httplint.types import (
     AddNoteMethodType,
+    NoteClassListType,
     ResponseLinterProtocol,
 )
 
@@ -20,6 +22,7 @@ to complete the request.
 In `201` (Created) responses, it identifies a newly created resource."""
     reference = f"{rfc9110.SPEC_URL}#field.location"
     syntax = rfc9110.Location
+    report_syntax = False  # parse() reports it, unless LOCATION_BAD_URI covers the same defect
     deprecated = False
 
     def parse(self, field_value: str, add_note: AddNoteMethodType) -> str:
@@ -36,11 +39,16 @@ In `201` (Created) responses, it identifies a newly created resource."""
                 308,
             ]:
                 add_note(LOCATION_UNDEFINED)
+        bad_uri = False
         if not re.match(rf"^\s*{rfc3986.URI}\s*$", field_value, re.VERBOSE):
-            add_note(
-                LOCATION_NOT_ABSOLUTE,
-                full_uri=urljoin(self.message.base_uri, field_value),
-            )
+            resolved = resolve_url(field_value, self.message.base_uri)
+            if resolved is None:
+                bad_uri = True
+                add_note(LOCATION_BAD_URI, uri=field_value)
+            else:
+                add_note(LOCATION_NOT_ABSOLUTE, full_uri=resolved.geturl())
+        if not bad_uri and not re.match(rf"^\s*(?:{self.syntax})\s*$", field_value, RE_FLAGS):
+            add_note(BAD_SYNTAX, ref_uri=self.reference)
         return field_value
 
 
@@ -57,6 +65,15 @@ be interoperable.
 
 Sometimes `Location` is confused with `Content-Location`, which indicates a URI for the payload of
 the message that it appears in."""
+
+
+class LOCATION_BAD_URI(Note):
+    category = categories.GENERAL
+    level = levels.BAD
+    _summary = "The Location header isn't a valid URI."
+    _text = """\
+The `Location` header's value, `%(uri)s`, can't be resolved as a URI (for example, it may have a
+malformed IP address in its host), so clients won't be able to follow it."""
 
 
 class LOCATION_NOT_ABSOLUTE(Note):
@@ -78,3 +95,35 @@ class LocationTest(FieldTest[ResponseLinterProtocol]):
 
     def set_response_context(self, message: ResponseLinterProtocol) -> None:
         message.status_code = 300
+
+
+class LocationBadURITest(FieldTest[ResponseLinterProtocol]):
+    name = "Location"
+    inputs = [b"http://["]
+    expected_out = "http://["
+    expected_notes: NoteClassListType = [LOCATION_BAD_URI]
+
+    def set_response_context(self, message: ResponseLinterProtocol) -> None:
+        message.status_code = 302
+
+
+class LocationRelativeTest(FieldTest[ResponseLinterProtocol]):
+    name = "Location"
+    inputs = [b"/other"]
+    expected_out = "/other"
+    expected_notes: NoteClassListType = [LOCATION_NOT_ABSOLUTE]
+
+    def set_response_context(self, message: ResponseLinterProtocol) -> None:
+        message.status_code = 302
+
+
+class LocationBadSyntaxTest(FieldTest[ResponseLinterProtocol]):
+    "A syntax error that isn't an unresolvable URI is still BAD_SYNTAX."
+
+    name = "Location"
+    inputs = [b"http://example.com/a b"]
+    expected_out = "http://example.com/a b"
+    expected_notes: NoteClassListType = [BAD_SYNTAX, LOCATION_NOT_ABSOLUTE]
+
+    def set_response_context(self, message: ResponseLinterProtocol) -> None:
+        message.status_code = 302
