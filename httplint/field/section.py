@@ -26,7 +26,12 @@ class FieldSection:
     def __init__(self, message: LinterProtocol, is_trailer: bool = False) -> None:
         self.message = weakref.proxy(message)
         self.is_trailer = is_trailer
-        self.text: StrFieldListType = []  # unicode version of the field tuples, names stripped
+        # Normalised view of the field lines: names stripped of surrounding whitespace, values
+        # decoded to str. Index-aligned with raw_fields.
+        self.text: StrFieldListType = []
+        # The field lines exactly as received, (name, value) bytes; entry i corresponds to
+        # text[i] and to the subject "offset-i" on notes.
+        self.raw_fields: RawFieldListType = []
         self.parsed: FieldDictType = {}  # dictionary of parsed field values
         self.size: int = 0  # size of textual field block w/o delimiters, in bytes
         self.handlers: Dict[str, HttpField[Any]] = {}
@@ -63,9 +68,10 @@ class FieldSection:
             stripped_name = str_name.strip(" \t")
             if stripped_name != str_name:
                 if stripped_name:  # an all-whitespace name fails the syntax check instead
-                    add_note(FIELD_NAME_WHITESPACE, field_name=stripped_name)
+                    add_note(FIELD_NAME_WHITESPACE, field_name=stripped_name, sent_name=str_name)
                 str_name = stripped_name
             self.text.append((str_name, str_value))
+            self.raw_fields.append((name, value))
 
             handler = self._finder.find_handler(str_name)
             field_add_note = partial(

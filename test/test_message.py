@@ -135,6 +135,41 @@ class TestFieldSection(unittest.TestCase):
         self.assertIn("date", linter.headers.parsed)
         self.assertNotIn("DATE_CLOCKLESS", [name for _, name in subjects])
 
+    def test_raw_fields_name_recoverable_and_aligned(self):
+        linter = HttpResponseLinter()
+        linter.process_response_topline(b"HTTP/1.1", b"200", b"OK")
+        linter.process_headers(
+            [(b"Server", b"x"), (b" Date ", b"Mon, 01 Jan 2024 00:00:00 GMT"), (b"Age", b"1")]
+        )
+        headers = linter.headers
+        self.assertEqual(headers.raw_fields[1][0], b" Date ")
+        self.assertEqual(headers.text[1][0], "Date")
+        self.assertEqual(len(headers.raw_fields), len(headers.text))
+        note = [n for n in linter.notes if type(n).__name__ == "FIELD_NAME_WHITESPACE"][0]
+        self.assertEqual(note.subject, "offset-1")
+        self.assertEqual(note.vars["field_name"], "Date")
+        self.assertEqual(note.vars["sent_name"], " Date ")
+
+    def test_raw_fields_value_recoverable(self):
+        linter = HttpResponseLinter()
+        linter.process_response_topline(b"HTTP/1.1", b"200", b"OK")
+        linter.process_headers([(b"Server", b"caf\xe9")])
+        headers = linter.headers
+        self.assertEqual(headers.text[0], ("Server", "caf\xe9"))
+        self.assertEqual(headers.raw_fields[0], (b"Server", b"caf\xe9"))
+
+    def test_raw_fields_aligned_after_rejected_field(self):
+        linter = HttpRequestLinter()
+        linter.process_request_topline(b"GET", b"/", b"1.1")
+        raw = [(b"Age", b"abc"), (b" Accept ", b"text/html;;q=x"), (b"Bad Name", b"v")]
+        linter.process_headers(raw)
+        headers = linter.headers
+        self.assertEqual(headers.raw_fields, raw)
+        self.assertEqual([n for n, _ in headers.text], ["Age", "Accept", "Bad Name"])
+        subjects = self._subjects(linter)
+        self.assertIn(("offset-1", "BAD_Q_VALUE"), subjects)
+        self.assertIn(("offset-2", "FIELD_NAME_BAD_SYNTAX"), subjects)
+
     def test_whitespace_only_field_name(self):
         linter = HttpResponseLinter()
         linter.process_response_topline(b"HTTP/1.1", b"200", b"OK")
