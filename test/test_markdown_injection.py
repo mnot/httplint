@@ -82,6 +82,72 @@ class OtherSitesInjectionTest(unittest.TestCase):
         self.assertNotIn("<img", detail_text(b"Set-Cookie", value.encode("utf-8")))
 
 
+class EmptyCodeSpanTest(unittest.TestCase):
+    """
+    A hand-built code span whose content is empty ends up as two adjacent
+    backticks, which Markdown reads as an opener that closes at the *next*
+    backtick -- turning a later span's value into bare, unescaped prose.
+    Wire values that are empty (or that inline_safe strips to empty) must
+    never produce one.
+    """
+
+    def check_escaped(self, detail: str) -> None:
+        self.assertNotIn("<img", detail)
+        self.assertIn("&lt;img", detail)
+
+    def test_proxy_status_empty_target(self) -> None:
+        for target in ('""', '"`"', '"``"'):
+            for param in ("details", "next-hop", "error", "foo"):
+                with self.subTest(target=target, param=param):
+                    value = f'{target}; {param}="{HTML}"'
+                    self.check_escaped(detail_text(b"Proxy-Status", value.encode("ascii")))
+
+    def test_proxy_status_empty_target_among_others(self) -> None:
+        value = f'a; details="x", ""; details="{HTML}", b; details="{HTML}"'
+        self.check_escaped(detail_text(b"Proxy-Status", value.encode("ascii")))
+
+    def test_set_cookie_hardened_nameless(self) -> None:
+        hardened = "Secure; HttpOnly; SameSite=Lax"
+        # Cookie names can't contain "=" or ";", so the payload can't use HTML.
+        payload = "<script>alert(1)</script>"
+        named = f"{payload}=1; {hardened}"
+        for first, second in (
+            (f"foo; {hardened}", named),
+            (named, f"foo; {hardened}"),
+            (f"`=1; {hardened}", named),
+            (f"foo; {hardened}", f"bar; {hardened}"),
+        ):
+            with self.subTest(first=first, second=second):
+                linter = HttpResponseLinter()
+                linter.process_response_topline(b"HTTP/1.1", b"200", b"OK")
+                linter.process_headers(
+                    [
+                        (b"Set-Cookie", first.encode("utf-8")),
+                        (b"Set-Cookie", second.encode("utf-8")),
+                    ]
+                )
+                linter.finish_content(True)
+                detail = "\n".join(
+                    str(n.detail) for n in linter.notes if "HARDENED" in n.__class__.__name__
+                )
+                self.assertIn("<code>", detail)
+                self.assertNotIn("<script", detail)
+
+    # The same shape of bug exists at these sites, which are outside the scope of
+    # the Proxy-Status / Set-Cookie fix. Remove expectedFailure when they are fixed.
+    @unittest.expectedFailure
+    def test_cache_status_empty_target(self) -> None:
+        for param in ("detail", "key"):
+            with self.subTest(param=param):
+                value = f'""; {param}="{HTML}"'
+                self.check_escaped(detail_text(b"Cache-Status", value.encode("ascii")))
+
+    @unittest.expectedFailure
+    def test_link_resource_hint_empty_target(self) -> None:
+        value = f"<>; rel=preload, <{HTML}>; rel=preload"
+        self.check_escaped(detail_text(b"Link", value.encode("ascii")))
+
+
 class InlineSafeTest(unittest.TestCase):
     def test_strips_backtick_nul_and_line_breaks(self) -> None:
         raw = "a`b\x00c\nd\re\x0bf\x0cg\x1ch\x1di\x1ej\x85k l m"
@@ -90,6 +156,11 @@ class InlineSafeTest(unittest.TestCase):
     def test_markdown_list_items_stay_single_line(self) -> None:
         out = markdown_list(["a\nb`c", "d e"])
         self.assertEqual(str(out), "- abc\n- de")
+
+    def test_markdown_list_empty_item_stays_in_its_own_block(self) -> None:
+        # An empty item must not let the next item's code span be misparsed.
+        out = markdown_list(["`", f"{HTML}"], markup="`")
+        self.assertEqual(str(out), f"- ``\n- `{HTML}`")
 
 
 if __name__ == "__main__":
