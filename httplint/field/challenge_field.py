@@ -192,8 +192,8 @@ class CredentialsField(HttpField[TMessage], Generic[TMessage]):
     A HTTP field containing credentials (RFC 9110 Section 11.6.2), such as Authorization.
 
     Credentials have the same grammar as a single challenge, but aren't a list, and the field
-    can only occur once. The value is one ``(scheme, token68 | {param: value})`` tuple, or None if there is
-    nothing usable.
+    can only occur once. The value is one ``(scheme, token68 | {param: value})`` tuple, or
+    None if there is nothing usable.
 
     No scheme-specific checks are made here; subclasses can add them in ``evaluate``.
     """
