@@ -1,6 +1,6 @@
-from httplint.field.singleton_field import SingletonField
+from httplint.field.date_field import HttpDateField
 from httplint.field.tests import FieldTest
-from httplint.field.utils import BAD_DATE_SYNTAX, parse_http_date
+from httplint.field.utils import BAD_DATE_SYNTAX
 from httplint.note import Note, categories, levels
 from httplint.syntax import rfc9110
 from httplint.types import (
@@ -11,25 +11,21 @@ from httplint.types import (
 from httplint.util import relative_time
 
 
-class last_modified(SingletonField[ResponseLinterProtocol]):
+class last_modified(HttpDateField[ResponseLinterProtocol]):
     canonical_name = "Last-Modified"
     description = """\
 The `Last-Modified` response header indicates the time that the origin server believes the
 representation was last modified."""
     reference = f"{rfc9110.SPEC_URL}#field.last-modified"
-    syntax = False  # rfc9110.Last_Modified
     category = categories.CACHING
     deprecated = False
-
-    def parse(self, field_value: str, add_note: AddNoteMethodType) -> int:
-        return parse_http_date(field_value, add_note, category=self.category)
 
     def evaluate(self, add_note: AddNoteMethodType) -> None:
         date_value = self.message.headers.parsed.get("date", None)
         lm_value = self.value
-        if lm_value:
-            serv_date = date_value or self.message.start_time
-            if not serv_date:
+        if lm_value is not None:
+            serv_date = date_value if date_value is not None else self.message.start_time
+            if serv_date is None:
                 return  # cannot determine relative time without a server timestamp
             if lm_value > serv_date:
                 add_note(LM_FUTURE)
@@ -77,5 +73,42 @@ class BadLMTest(FieldTest[ResponseLinterProtocol]):
 class BlankLMTest(FieldTest[ResponseLinterProtocol]):
     name = "Last-Modified"
     inputs = [b""]
+    expected_out = None
+    expected_notes: NoteClassListType = [BAD_DATE_SYNTAX]
+
+
+class LMEpochTest(FieldTest[ResponseLinterProtocol]):
+    name = "Last-Modified"
+    inputs = [b"Thu, 01 Jan 1970 00:00:00 GMT"]
+    expected_out = 0
+    expected_notes: NoteClassListType = [LM_PRESENT]
+
+    def set_response_context(self, message: ResponseLinterProtocol) -> None:
+        message.start_time = 1_000_000_000.0
+
+
+class LMEpochDateTest(FieldTest[ResponseLinterProtocol]):
+    "An epoch Date is the server's time, not something to fall back from."
+
+    name = "Last-Modified"
+    inputs = [b"Fri, 02 Jan 1970 00:00:00 GMT"]
+    expected_out = 86400
+    expected_notes: NoteClassListType = [LM_FUTURE]
+
+    def set_response_context(self, message: ResponseLinterProtocol) -> None:
+        message.start_time = 1_000_000_000.0
+        message.headers.parsed["date"] = 0
+
+
+class LMYearZeroTest(FieldTest[ResponseLinterProtocol]):
+    name = "Last-Modified"
+    inputs = [b"Mon, 01 Jan 0000 00:00:00 GMT"]
+    expected_out = None
+    expected_notes: NoteClassListType = [BAD_DATE_SYNTAX]
+
+
+class LMImpossibleTest(FieldTest[ResponseLinterProtocol]):
+    name = "Last-Modified"
+    inputs = [b"Mon, 31 Feb 2011 25:61:61 GMT"]
     expected_out = None
     expected_notes: NoteClassListType = [BAD_DATE_SYNTAX]

@@ -66,6 +66,11 @@ def checkFieldClass(field_cls):
     errors = 0
     message = FakeResponseLinter()
     field = field_cls("warning", None)
+    # Intermediate bases outside the parsers (e.g., HttpDateField) aren't fields.
+    if not field_cls.__module__.startswith("httplint.field.parsers") and not any(
+        hasattr(field, attr) for attr in ("reference", "description")
+    ):
+        return 0
     attrs = dir(field)
     checks = [
         ("canonical_name", [str], True),

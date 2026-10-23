@@ -1,29 +1,37 @@
-from httplint.field.singleton_field import SingletonField
+from httplint.field.date_field import HttpDateField
 from httplint.field.tests import FieldTest
+from httplint.field.utils import BAD_DATE_SYNTAX, DATE_OBSOLETE
 from httplint.note import categories
 from httplint.syntax import rfc9110
-from httplint.types import (
-    AddNoteMethodType,
-    RequestLinterProtocol,
-)
+from httplint.types import NoteClassListType, RequestLinterProtocol
 
 
-class if_unmodified_since(SingletonField[RequestLinterProtocol]):
+class if_unmodified_since(HttpDateField[RequestLinterProtocol]):
     canonical_name = "If-Unmodified-Since"
     description = """\
 The `If-Unmodified-Since` header field makes the request method conditional on the selected
 representation's last modification date being earlier than or equal to the date provided in the
 field-value."""
     reference = f"{rfc9110.SPEC_URL}#field.if-unmodified-since"
-    syntax = rfc9110.If_Unmodified_Since
     category = categories.VALIDATION
     deprecated = False
-
-    def evaluate(self, add_note: AddNoteMethodType) -> None:
-        pass
 
 
 class IfUnmodifiedSinceTest(FieldTest[RequestLinterProtocol]):
     name = "If-Unmodified-Since"
     inputs = [b"Sat, 29 Oct 1994 19:43:31 GMT"]
-    expected_out = "Sat, 29 Oct 1994 19:43:31 GMT"
+    expected_out = 783459811
+
+
+class IfUnmodifiedSinceObsoleteTest(FieldTest[RequestLinterProtocol]):
+    name = "If-Unmodified-Since"
+    inputs = [b"Saturday, 29-Oct-94 19:43:31 GMT"]
+    expected_out = 783459811
+    expected_notes: NoteClassListType = [DATE_OBSOLETE]
+
+
+class IfUnmodifiedSinceBadTest(FieldTest[RequestLinterProtocol]):
+    name = "If-Unmodified-Since"
+    inputs = [b"yesterday"]
+    expected_out = None
+    expected_notes: NoteClassListType = [BAD_DATE_SYNTAX]

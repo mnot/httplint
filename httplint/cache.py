@@ -111,7 +111,7 @@ class ResponseCacheChecker:
             if (
                 "public" in self.cc_dict
                 or "private" in self.cc_dict
-                or self.expires_value
+                or self.expires_value is not None
                 or "max-age" in self.cc_dict
                 or self._response.status_code in HEURISTIC_CACHEABLE_STATUS
             ):
@@ -125,7 +125,7 @@ class ResponseCacheChecker:
         return True
 
     def check_age(self) -> bool:
-        if self.response_time and self.date_value and self.date_value > 0:
+        if self.response_time and self.date_value is not None:
             apparent_age = max(0, int(self.response_time) - self.date_value)
         else:
             apparent_age = 0
@@ -156,9 +156,9 @@ class ResponseCacheChecker:
             # An invalid Expires header means it's automatically stale
             self.has_explicit_freshness = True
             freshness_hdrs.append("field-expires")
-            expires_lifetime = self.freshness_lifetime_shared = (self.expires_value or 0) - (
-                self.date_value or int(self.response_time)
-            )
+            expires = self.expires_value if self.expires_value is not None else 0
+            date = self.date_value if self.date_value is not None else int(self.response_time)
+            expires_lifetime = self.freshness_lifetime_shared = expires - date
             self.freshness_lifetime_private = expires_lifetime
             self.freshness_lifetime_shared = expires_lifetime
         if "max-age" in self.cc_dict:

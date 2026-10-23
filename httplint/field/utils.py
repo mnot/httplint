@@ -119,14 +119,24 @@ def parse_http_date(
         add_note(DATE_OBSOLETE, category=category)
     date_tuple = lib_parsedate(value)
     if date_tuple is None:
+        add_note(BAD_DATE_SYNTAX, category=category)
         raise ValueError
-    # http://sourceforge.net/tracker/index.php?func=detail&aid=1194222&group_id=5470&atid=105470
-    if date_tuple[0] < 100:
-        if date_tuple[0] > 68:
-            date_tuple = (date_tuple[0] + 1900,) + date_tuple[1:]
-        else:
-            date_tuple = (date_tuple[0] + 2000,) + date_tuple[1:]
-    return calendar.timegm(date_tuple)
+    # IMF-fixdate and asctime-date have four-digit years, which parsedate would
+    # otherwise treat as two-digit ones ("0000" -> 2000); rfc850-date's own two-digit
+    # years are handled by parsedate (pivot at 68).
+    year_match = re.search(r"(?<!\d)\d{4}(?!\d)", value)
+    year, month, day, hour, minute, second = date_tuple[:6]
+    if year_match:
+        year = int(year_match.group())
+    # Out-of-range fields would be silently normalised by timegm.
+    if year < 1 or not 1 <= month <= 12 or day < 1 or day > calendar.monthrange(year, month)[1]:
+        add_note(BAD_DATE_SYNTAX, category=category)
+        raise ValueError
+    # A second of 60 is a leap second.
+    if hour > 23 or minute > 59 or second > 60:
+        add_note(BAD_DATE_SYNTAX, category=category)
+        raise ValueError
+    return calendar.timegm((year, month, day, hour, minute, second))
 
 
 def unquote_string(instr: str) -> str:
@@ -651,3 +661,55 @@ def is_negative_integer(value: str) -> bool:
     "True if `value` is '-' followed by ASCII DIGIT+; for choosing a more specific note."
     magnitude = value[1:]
     return value.startswith("-") and magnitude.isascii() and magnitude.isdigit()
+
+
+# --- parse_entity_tag: entity-tags for ETag, If-Match, If-None-Match and If-Range ---------------
+
+
+def is_entity_tag(value: str) -> bool:
+    "Whether ``value`` matches the entity-tag syntax."
+    return re.match(rf"^\s*{rfc9110.entity_tag}\s*$", value, RE_FLAGS) is not None
+
+
+def parse_entity_tag(value: str, add_note: AddNoteMethodType) -> Tuple[bool, str]:
+    """
+    Parse an entity-tag into (weak, opaque-tag), with the opaque tag unquoted.
+
+    The ``W/`` prefix is case-sensitive (RFC 9110, Section 8.8.3). A lower-case ``w/``
+    raises ValueError, with ENTITY_TAG_WEAK_CASE unless the value is bad in some other way
+    (which the field's syntax check reports). Quoting isn't checked here either.
+    """
+    if value[:2] == "W/":
+        return (True, unquote_string(value[2:]))
+    if value[:2].lower() == "w/":
+        if is_entity_tag(value):
+            add_note(ENTITY_TAG_WEAK_CASE)
+        raise ValueError
+    return (False, unquote_string(value))
+
+
+class ENTITY_TAG_WEAK_CASE(Note):
+    category = categories.GENERAL
+    level = levels.WARN
+    _summary = "The %(field_name)s field's entity tag has a lower-case weak indicator."
+    _text = """\
+An entity tag is weak when it starts with `W/`, and that prefix is case-sensitive: a lower-case
+`w/` isn't the weak indicator. Recipients can therefore treat the whole value as an invalid tag,
+or as a strong tag that happens to start with `w/`.
+
+See [the HTTP specification](https://www.rfc-editor.org/rfc/rfc9110.html#name-etag) for more
+information."""
+
+
+class ENTITY_TAG_LIST_STAR(Note):
+    category = categories.VALIDATION
+    level = levels.WARN
+    _summary = "The %(field_name)s field mixes `*` with entity tags."
+    _text = """\
+The `*` in the `%(field_name)s` field matches any current representation, so it is only valid
+on its own: the field's value is either `*` or a list of entity tags
+([RFC 9110, Section 13.1.1](https://www.rfc-editor.org/rfc/rfc9110.html#name-if-match) and
+[Section 13.1.2](https://www.rfc-editor.org/rfc/rfc9110.html#name-if-none-match)).
+
+Recipients may handle a list that includes both in different ways; send either `*` or the
+entity tags."""
