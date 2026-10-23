@@ -264,13 +264,16 @@ _QUOTED_PAIR_CHAR = _char_set(
 )
 
 
-def split_list_field(field_value: str) -> List[str]:
+def split_list_field(field_value: str, comments: bool = False) -> List[str]:
     """
     Split a field value on commas, as the #rule needs.
 
     Commas inside a quoted-string don't split. A quote that doesn't start a valid
     quoted-string is an ordinary character of its item, so the malformed item reaches the
     field's own syntax check instead of being dropped.
+
+    With `comments`, commas inside a parenthesised comment (nested to any depth) don't
+    split either; an unmatched "(" is an ordinary character, as with a stray quote.
 
     This is linear; an earlier regex-based version backtracked quadratically.
     """
@@ -293,6 +296,8 @@ def split_list_field(field_value: str) -> List[str]:
         elif char == "\\" and idx + 1 < size and field_value[idx + 1] in _QUOTED_PAIR_CHAR:
             quote_end[idx] = quote_end[idx + 2]
         run_end[idx] = idx if char == "," else run_end[idx + 1]
+    if comments:
+        return _split_outside_comments(field_value, quote_end)
     items: List[str] = []
     pos = 0
     while pos < size:
@@ -849,3 +854,60 @@ def sf_type_matches(value: Any, expected: Any) -> bool:
 def is_number(value: Any) -> bool:
     "True if `value` is an int or a float, but not a bool."
     return isinstance(value, (int, float)) and not isinstance(value, bool)
+
+
+# --- _split_outside_comments: comma splitting that respects "(" comments ")" -------------------
+
+
+def _split_outside_comments(field_value: str, quote_end: List[int]) -> List[str]:
+    """
+    Split on commas outside quoted-strings (per `quote_end`, see `split_list_field`) and
+    comments. Comments nest, and a quoted-pair inside one can escape a parenthesis; a "(" with
+    no matching ")" is an ordinary character. Linear: each "(" is matched once, and the match
+    is remembered if the scan has to start over after it.
+    """
+    size = len(field_value)
+    comment_end: Dict[int, int] = {}
+
+    def find_comment_end(start: int) -> int:
+        "Index just after the ')' matching the '(' at `start`, or -1 if there is none."
+        if start not in comment_end:
+            stack = [start]
+            idx = start + 1
+            while idx < size and stack:
+                char = field_value[idx]
+                if char == "\\" and idx + 1 < size and field_value[idx + 1] in _QUOTED_PAIR_CHAR:
+                    idx += 2
+                    continue
+                if char == "(":
+                    stack.append(idx)
+                elif char == ")":
+                    comment_end[stack.pop()] = idx + 1
+                idx += 1
+            for unmatched in stack:
+                comment_end[unmatched] = -1
+        return comment_end[start]
+
+    items: List[str] = []
+    item_start = 0
+    idx = 0
+    while idx < size:
+        char = field_value[idx]
+        if char == ",":
+            item = field_value[item_start:idx].strip()
+            if item:
+                items.append(item)
+            item_start = idx + 1
+            idx += 1
+        elif char == '"':
+            after = quote_end[idx + 1]
+            idx = after if after >= 0 else idx + 1
+        elif char == "(":
+            after = find_comment_end(idx)
+            idx = after if after >= 0 else idx + 1
+        else:
+            idx += 1
+    item = field_value[item_start:].strip()
+    if item:
+        items.append(item)
+    return items
