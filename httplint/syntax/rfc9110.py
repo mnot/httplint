@@ -33,7 +33,7 @@ SPEC_URL = "http://httpwg.org/specs/rfc9110"
 
 #   OWS = *( SP / HTAB )
 
-OWS = rf"(?: {SP} | {HTAB} )*"
+OWS = rf"(?: (?: {SP} | {HTAB} )* )"
 
 #   BWS = OWS
 
@@ -41,7 +41,7 @@ BWS = OWS
 
 #   RWS = 1*( SP / HTAB )
 
-RWS = rf"(?: {SP} | {HTAB} )+"
+RWS = rf"(?: (?: {SP} | {HTAB} )+ )"
 
 #   obs-text = %x80-FF
 
@@ -56,7 +56,7 @@ tchar = (
 
 #   token = 1*tchar
 
-token = rf"{tchar}+"
+token = rf"(?: {tchar}+ )"
 
 #   qdtext = HTAB / SP / "!" / %x23-5B ; '#'-'['
 #    / %x5D-7E ; ']'-'~'
@@ -88,21 +88,22 @@ class list_rule:
         self.minimum = minimum
 
     def __str__(self) -> str:
+        # The element is grouped so that an alternation or a sequence in it can't change
+        # how the list around it is parsed.
+        element = f"(?: {self.element} )"
         if self.minimum and self.minimum == 1:
             # 1#element => element *( OWS "," OWS element )
             return r"(?: {element} (?: {OWS} , {OWS} {element} )* )".format(
-                element=self.element, OWS=OWS
+                element=element, OWS=OWS
             )
         if self.minimum and self.minimum > 1:
             # <n>#<m>element => element <n-1>*<m-1>( OWS "," OWS element )
             adj_min = self.minimum - 1
             return r"(?: {element} (?: {OWS} , {OWS} {element} ){{{adj_min},}} )".format(
-                element=self.element, OWS=OWS, adj_min=adj_min
+                element=element, OWS=OWS, adj_min=adj_min
             )
         # element => [ 1#element ]
-        return r"(?: {element} (?: {OWS} , {OWS} {element} )* )?".format(
-            element=self.element, OWS=OWS
-        )
+        return r"(?: {element} (?: {OWS} , {OWS} {element} )* )?".format(element=element, OWS=OWS)
 
 
 #   parameter-name = token
@@ -119,7 +120,7 @@ parameter = rf"(?: {parameter_name} = {parameter_value} )"
 
 #   parameters = *( OWS ";" OWS [ parameter ] )
 
-parameters = rf"(?: {OWS} ; (?: {OWS} {parameter} )? )*"
+parameters = rf"(?: (?: {OWS} ; (?: {OWS} {parameter} )? )* )"
 
 #   qvalue = ( "0" [ "." *3DIGIT ] ) / ( "1" [ "." *3"0" ] )
 
@@ -253,7 +254,7 @@ Content_Language = list_rule(language_tag)
 
 #   Content-Length = 1*DIGIT
 
-Content_Length = rf"{DIGIT}+"
+Content_Length = rf"(?: {DIGIT}+ )"
 
 #   absolute-URI = <absolute-URI, see [URI], Section 4.3>
 
@@ -271,11 +272,11 @@ Content_Location = rf"(?: {absolute_URI} | {partial_URI} )"
 
 #   first-pos = 1*DIGIT
 
-first_pos = rf"{DIGIT}+"
+first_pos = rf"(?: {DIGIT}+ )"
 
 #   last-pos = 1*DIGIT
 
-last_pos = rf"{DIGIT}+"
+last_pos = rf"(?: {DIGIT}+ )"
 
 #   incl-range = first-pos "-" last-pos
 
@@ -283,7 +284,7 @@ incl_range = rf"(?: {first_pos} \- {last_pos} )"
 
 #   complete-length = 1*DIGIT
 
-complete_length = rf"{DIGIT}+"
+complete_length = rf"(?: {DIGIT}+ )"
 
 #   range-resp = incl-range "/" ( complete-length / "*" )
 
@@ -404,7 +405,8 @@ Date = HTTP_date
 
 weak = r"(?-i: \x57\x2F )"
 
-#   etagc = "!" / %x23-7E ; '#'-'~' / obs-text
+#   etagc = "!" / %x23-7E ; '#'-'~'
+#    / obs-text
 
 etagc = rf"(?: ! | [\x23-\x7E] | {obs_text} )"
 
@@ -438,7 +440,7 @@ From = mailbox
 
 #   Host = uri-host [ ":" port ]
 
-Host = rf"{uri_host} (?: : {port} )?"
+Host = rf"(?: {uri_host} (?: : {port} )? )"
 
 #   If-Match = "*" / [ entity-tag *( OWS "," OWS entity-tag ) ]
 
@@ -505,12 +507,25 @@ Proxy_Authorization = credentials
 #    / %x2D-7E ; '-'-'~'
 #   )
 
-other_range = r"(?: [\x21-\x2B] | [\x2D-\x7E] )+"
+other_range = r"(?: (?: [\x21-\x2B] | [\x2D-\x7E] )+ )"
+
+#   int-range = first-pos "-" [ last-pos ]
+
+int_range = rf"(?: {first_pos} \- {last_pos}? )"
+
+#   suffix-length = 1*DIGIT
+
+suffix_length = rf"(?: {DIGIT}+ )"
+
+#   suffix-range = "-" suffix-length
+
+suffix_range = rf"(?: \- {suffix_length} )"
 
 #   range-spec = int-range / suffix-range / other-range
 
 # other-range is a superset of int-range and suffix-range, so alternating them only adds
 # ambiguous parses (exponential backtracking); other-range alone accepts the same strings.
+# int_range and suffix_range are transcribed above but not used for that reason.
 
 range_spec = other_range
 
@@ -647,7 +662,7 @@ WWW_Authenticate = list_rule(challenge)
 
 #   absolute-path = 1*( "/" segment )
 
-absolute_path = rf"(?: / {segment} )+"
+absolute_path = rf"(?: (?: / {segment} )+ )"
 
 #   authority = <authority, see [URI], Section 3.2>
 
@@ -660,14 +675,16 @@ field_vchar = rf"(?: {VCHAR} | {obs_text} )"
 field_content = rf"(?: {field_vchar} (?: (?: {SP} | {HTAB} | {field_vchar} )+ {field_vchar} )? )"
 
 #   field-value = *field-content
-
 #
-# Written out, not as a repetition of field-content: a field-content can be split into several
-# field-contents in many ways, so "*field-content" backtracks exponentially on non-matching
-# input. The accepted language is the same: empty, or any run of field-vchar, SP and HTAB
-# that starts and ends with a field-vchar.
+# Deliberately not a literal "*field-content": a run of field-vchar can be split into
+# field-contents in many ways, so that backtracks exponentially on input that doesn't match.
+# This accepts the same language (SyntaxTranscriptionTest checks it against the literal rule on
+# short strings): empty, or any run of field-vchar, SP and HTAB that starts and ends with a
+# field-vchar.
 
-field_value = rf"(?: {field_vchar} (?: (?: {SP} | {HTAB} | {field_vchar} )* {field_vchar} )? )?"
+field_value = (
+    rf"(?: (?: {field_vchar} (?: (?: {SP} | {HTAB} | {field_vchar} )* {field_vchar} )? )? )"
+)
 
 #   http-URI = "http://" authority path-abempty [ "?" query ]
 

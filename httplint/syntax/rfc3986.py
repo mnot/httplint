@@ -16,7 +16,7 @@ They should be processed with re.VERBOSE.
 from .rfc5234 import ALPHA, DIGIT, HEXDIG
 
 #   pct-encoded   = "%" HEXDIG HEXDIG
-pct_encoded = rf" % {HEXDIG} {HEXDIG}"
+pct_encoded = rf"(?: % {HEXDIG} {HEXDIG} )"
 
 #   unreserved    = ALPHA / DIGIT / "-" / "." / "_" / "~"
 unreserved = rf"(?: {ALPHA} | {DIGIT} | \- | \. | _ | ~ )"
@@ -39,7 +39,7 @@ reserved = rf"(?: {gen_delims} | {sub_delims} )"
 ### scheme
 
 #   scheme        = ALPHA *( ALPHA / DIGIT / "+" / "-" / "." )
-scheme = rf"{ALPHA} (?: {ALPHA} | {DIGIT} | \+ | \- | \. )*"
+scheme = rf"(?: {ALPHA} (?: {ALPHA} | {DIGIT} | \+ | \- | \. )* )"
 
 
 ### authority
@@ -58,10 +58,10 @@ dec_octet = rf"""(?: {DIGIT} |
 """
 
 #  IPv4address   = dec-octet "." dec-octet "." dec-octet "." dec-octet
-IPv4address = rf"{dec_octet} \. {dec_octet} \. {dec_octet} \. {dec_octet}"
+IPv4address = rf"(?: {dec_octet} \. {dec_octet} \. {dec_octet} \. {dec_octet} )"
 
 #  h16           = 1*4HEXDIG
-h16 = rf"(?: {HEXDIG} ){{1,4}}"
+h16 = rf"(?: (?: {HEXDIG} ){{1,4}} )"
 
 #  ls32          = ( h16 ":" h16 ) / IPv4address
 ls32 = rf"(?: (?: {h16} : {h16} ) | {IPv4address} )"
@@ -88,53 +88,53 @@ IPv6address = rf"""(?:                                       (?: {h16} : ){{6}} 
 """
 
 #   IPvFuture     = "v" 1*HEXDIG "." 1*( unreserved / sub-delims / ":" )
-IPvFuture = rf"v {HEXDIG}+ \. (?: {unreserved} | {sub_delims} | : )+"
+IPvFuture = rf"(?: v {HEXDIG}+ \. (?: {unreserved} | {sub_delims} | : )+ )"
 
 #   IP-literal    = "[" ( IPv6address / IPvFuture  ) "]"
-IP_literal = rf"\[ (?: {IPv6address} | {IPvFuture} ) \]"
+IP_literal = rf"(?: \[ (?: {IPv6address} | {IPvFuture} ) \] )"
 
 #   reg-name      = *( unreserved / pct-encoded / sub-delims )
-reg_name = rf"(?: {unreserved} | {pct_encoded} | {sub_delims} )*"
+reg_name = rf"(?: (?: {unreserved} | {pct_encoded} | {sub_delims} )* )"
 
 #   userinfo      = *( unreserved / pct-encoded / sub-delims / ":" )
-userinfo = rf"(?: {unreserved} | {pct_encoded} | {sub_delims} | : )*"
+userinfo = rf"(?: (?: {unreserved} | {pct_encoded} | {sub_delims} | : )* )"
 
 #   host          = IP-literal / IPv4address / reg-name
 host = rf"(?: {IP_literal} | {IPv4address} | {reg_name} )"
 
 #   port          = *DIGIT
-port = rf"(?: {DIGIT} )*"
+port = rf"(?: (?: {DIGIT} )* )"
 
 #   authority     = [ userinfo "@" ] host [ ":" port ]
-authority = rf"(?: {userinfo} @)? {host} (?: : {port})?"
+authority = rf"(?: (?: {userinfo} @ )? {host} (?: : {port} )? )"
 
 
 ### Path
 
 #   segment       = *pchar
-segment = rf"{pchar}*"
+segment = rf"(?: {pchar}* )"
 
 #   segment-nz    = 1*pchar
-segment_nz = rf"{pchar}+"
+segment_nz = rf"(?: {pchar}+ )"
 
 #   segment-nz-nc = 1*( unreserved / pct-encoded / sub-delims / "@" )
 #                 ; non-zero-length segment without any colon ":"
-segment_nz_nc = rf"(?: {unreserved} | {pct_encoded} | {sub_delims} | @ )+"
+segment_nz_nc = rf"(?: (?: {unreserved} | {pct_encoded} | {sub_delims} | @ )+ )"
 
 #   path-abempty  = *( "/" segment )
-path_abempty = rf"(?: / {segment} )*"
+path_abempty = rf"(?: (?: / {segment} )* )"
 
 #   path-absolute = "/" [ segment-nz *( "/" segment ) ]
-path_absolute = rf"/ (?: {segment_nz} (?: / {segment} )* )?"
+path_absolute = rf"(?: / (?: {segment_nz} (?: / {segment} )* )? )"
 
 #   path-noscheme = segment-nz-nc *( "/" segment )
-path_noscheme = rf"{segment_nz_nc} (?: / {segment} )*"
+path_noscheme = rf"(?: {segment_nz_nc} (?: / {segment} )* )"
 
 #   path-rootless = segment-nz *( "/" segment )
-path_rootless = rf"{segment_nz} (?: / {segment} )*"
+path_rootless = rf"(?: {segment_nz} (?: / {segment} )* )"
 
 #   path-empty    = 0<pchar>
-path_empty = rf"{pchar}{{0}}"
+path_empty = rf"(?: (?: {pchar} ){{0}} )"
 
 #   path          = path-abempty    ; begins with "/" or is empty
 #                 / path-absolute   ; begins with "/" but not "//"
@@ -153,10 +153,10 @@ path = rf"""(?:  {path_abempty} |
 ### Query and Fragment
 
 #   query         = *( pchar / "/" / "?" )
-query = rf"(?: {pchar} | / | \? )*"
+query = rf"(?: (?: {pchar} | / | \? )* )"
 
 #   fragment      = *( pchar / "/" / "?" )
-fragment = rf"(?: {pchar} | / | \? )*"
+fragment = rf"(?: (?: {pchar} | / | \? )* )"
 
 
 ### URIs
@@ -184,7 +184,7 @@ relative_part = rf"""(?: (?: // {authority} {path_abempty} ) |
 """
 
 #   relative-ref  = relative-part [ "?" query ] [ "#" fragment ]
-relative_ref = rf"{relative_part} (?: \? {query})? (?: \# {fragment})?"
+relative_ref = rf"(?: {relative_part} (?: \? {query} )? (?: \# {fragment} )? )"
 
 #   URI           = scheme ":" hier-part [ "?" query ] [ "#" fragment ]
 URI = rf"(?: {scheme} : {hier_part} (?: \? {query} )? (?: \# {fragment} )? )"

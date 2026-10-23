@@ -1045,6 +1045,170 @@ class InvalidCharProblemTest(unittest.TestCase):
         )
 
 
+# The rule names in RFC 9110 Appendix A and RFC 3986 Appendix A. Python names replace "-" with
+# "_"; ABNF_NAMES lists the exceptions.
+RFC9110_RULES = """
+Accept Accept-Charset Accept-Encoding Accept-Language Accept-Ranges Allow Authentication-Info
+Authorization BWS Connection Content-Encoding Content-Language Content-Length Content-Location
+Content-Range Content-Type Date ETag Expect From GMT HTTP-date Host IMF-fixdate If-Match
+If-Modified-Since If-None-Match If-Range If-Unmodified-Since Last-Modified Location Max-Forwards
+OWS Proxy-Authenticate Proxy-Authentication-Info Proxy-Authorization RWS Range Referer
+Retry-After Server TE Trailer URI-reference Upgrade User-Agent Vary Via WWW-Authenticate
+absolute-URI absolute-path acceptable-ranges asctime-date auth-param auth-scheme authority
+challenge codings comment complete-length connection-option content-coding credentials ctext
+date1 date2 date3 day day-name day-name-l delay-seconds entity-tag etagc expectation
+field-content field-name field-value field-vchar first-pos hour http-URI https-URI incl-range
+int-range language-range language-tag last-pos mailbox media-range media-type method minute
+month obs-date obs-text opaque-tag other-range parameter parameter-name parameter-value
+parameters partial-URI path-abempty port product product-version protocol protocol-name
+protocol-version pseudonym qdtext query quoted-pair quoted-string qvalue range-resp range-set
+range-spec range-unit ranges-specifier received-by received-protocol relative-part rfc850-date
+second segment subtype suffix-length suffix-range t-codings tchar time-of-day token token68
+transfer-coding transfer-parameter type unsatisfied-range uri-host weak weight year
+""".split()
+
+RFC3986_RULES = """
+URI hier-part URI-reference absolute-URI relative-ref relative-part scheme authority userinfo
+host port IP-literal IPvFuture IPv6address h16 ls32 IPv4address dec-octet reg-name path
+path-abempty path-absolute path-noscheme path-rootless path-empty segment segment-nz
+segment-nz-nc pchar query fragment pct-encoded unreserved reserved gen-delims sub-delims
+""".split()
+
+ABNF_NAMES = {"type": "_type"}
+
+
+def is_single_atom(rule: str) -> bool:
+    """
+    True if the pattern is one character class or one group with nothing after it, so it can be
+    put inside another pattern, or have a quantifier added, without changing its meaning.
+    """
+    text = rule.strip()
+    if text.startswith("["):
+        end = 1
+        while end < len(text) and text[end] != "]":
+            end += 2 if text[end] == "\\" else 1
+        return end == len(text) - 1
+    if not text.startswith("("):
+        return False
+    depth = 0
+    in_class = False
+    index = 0
+    while index < len(text):
+        char = text[index]
+        if char == "\\":
+            index += 1
+        elif in_class:
+            in_class = char != "]"
+        elif char == "[":
+            in_class = True
+        elif char == "(":
+            depth += 1
+        elif char == ")":
+            depth -= 1
+            if depth == 0:
+                return index == len(text) - 1
+        index += 1
+    return False
+
+
+class SyntaxTranscriptionTest(unittest.TestCase):
+    """
+    rfc9110.py and rfc3986.py are complete, composable transcriptions of the ABNF (issue #303).
+    """
+
+    def test_every_rule_is_present(self) -> None:
+        for module, names in [(rfc9110, RFC9110_RULES), (rfc3986, RFC3986_RULES)]:
+            for name in names:
+                attr = ABNF_NAMES.get(name, name.replace("-", "_"))
+                with self.subTest(rule=name):
+                    self.assertTrue(hasattr(module, attr), f"{module.__name__}.{attr}")
+
+    def test_rules_are_single_atoms(self) -> None:
+        """
+        Every string rule is one group or class. Rules that are a bare sequence, alternation or
+        repetition (pct-encoded, scheme, IPv4address, token, ...) are only safe where they happen
+        to be used today: "{rule}?" or "{rule}|x" silently means something else.
+        """
+        for module in [rfc9110, rfc3986]:
+            for name, value in vars(module).items():
+                if isinstance(value, str) and not name.startswith("__") and name != "SPEC_URL":
+                    with self.subTest(rule=f"{module.__name__}.{name}"):
+                        self.assertTrue(is_single_atom(value), value[:80])
+
+    def test_ungrouped_rules_misused(self) -> None:
+        "The rules named in #303, composed the way a new user might: optionally, or repeated."
+        for rule in [rfc3986.pct_encoded, rfc3986.scheme, rfc3986.IPv4address]:
+            with self.subTest(rule=rule[:30]):
+                self.assertTrue(fullmatch(rf"{rule}?", ""))
+        self.assertTrue(fullmatch(rf"{rfc3986.pct_encoded}+", "%41%42"))
+        self.assertTrue(fullmatch(rf"{rfc3986.IPv4address}{{2}}", "1.2.3.41.2.3.4"))
+        self.assertTrue(fullmatch(rf"x|{rfc3986.scheme}", "ab+"))
+        self.assertFalse(fullmatch(rf"{rfc3986.scheme}x", "ab"))
+
+    def test_is_single_atom(self) -> None:
+        "Guard for the helper above."
+        for good in ["(?: a b )", "[a-z]", r"(?: \) [)] \\ (?: x )* )", "(?-i: a | b )"]:
+            self.assertTrue(is_single_atom(good), good)
+        for bad in ["a b", "(?: a )*", "(?: a ) (?: b )", "a | b", "(?: a )?", "[a] [b]", ""]:
+            self.assertFalse(is_single_atom(bad), bad)
+
+    def test_range_spec_parts(self) -> None:
+        "int-range and suffix-range are transcribed, but range-spec is other-range alone."
+        for value in ["0-", "0-9", "10-20"]:
+            self.assertTrue(fullmatch(rfc9110.int_range, value), value)
+        for value in ["-", "-9", "0", "a-", "0-a", "0--", ""]:
+            self.assertFalse(fullmatch(rfc9110.int_range, value), value)
+        for value in ["-1", "-100"]:
+            self.assertTrue(fullmatch(rfc9110.suffix_range, value), value)
+        for value in ["-", "1-", "1", "--1", "-a", ""]:
+            self.assertFalse(fullmatch(rfc9110.suffix_range, value), value)
+        faithful = rf"(?: {rfc9110.int_range} | {rfc9110.suffix_range} | {rfc9110.other_range} )"
+        for value in strings(["0", "9", "-", "a", ",", " ", "\x7f", "\x80"], 5):
+            with self.subTest(value=value):
+                self.assertEqual(fullmatch(faithful, value), fullmatch(rfc9110.range_spec, value))
+
+    def test_field_value_is_field_content_repeated(self) -> None:
+        "Guard: the linear field-value rule accepts what the literal *field-content does."
+        literal = rf"(?: {rfc9110.field_content} )*"
+        for value in strings(["a", " ", "\t", "\x80", "\x01", "\x7f"], 6):
+            with self.subTest(value=value):
+                self.assertEqual(fullmatch(literal, value), fullmatch(rfc9110.field_value, value))
+
+
+class SyntaxLinearTimeTest(unittest.TestCase):
+    "Time limits for the rules audited for #303 (as for SyntaxBacktrackingTest.check_rule)."
+
+    def check_rule(self, label: str, rule: str, value: str) -> None:
+        compiled = re.compile(rf"^\s*(?:{rule})\s*$", re.VERBOSE | re.IGNORECASE)
+        with self.subTest(label):
+            start = time.monotonic()
+            compiled.match(value)
+            elapsed = time.monotonic() - start
+            self.assertLess(elapsed, TIME_LIMIT, f"{label}: {elapsed:.2f}s")
+
+    def test_uri_rules(self) -> None:
+        "Guards: grouping the rfc3986 rules changed no timing; main is fast on these too."
+        n = 3000
+        bad = "\x01"
+        for label, rule, value in [
+            ("userinfo", rfc3986.URI, "http://" + "a:" * n + bad),
+            ("host dots", rfc3986.URI, "http://" + "1." * n + bad),
+            ("IPv4 look-alikes", rfc3986.URI, "http://" + "1.2.3." * n + bad),
+            ("port", rfc3986.URI, "http://a:" + "1" * n + bad),
+            ("IPv6", rfc3986.URI, "http://[" + "1:" * n + bad),
+            ("IPv6 compression", rfc3986.URI, "http://[" + "1::" * n + bad),
+            ("IPvFuture", rfc3986.IP_literal, "[v1." + "a:" * n + bad),
+            ("path", rfc3986.URI, "http://a/" + "b/" * n + bad),
+            ("pct-encoded", rfc3986.URI, "http://a/" + "%41" * n + bad),
+            ("query", rfc3986.URI, "http://a/?" + "b/?" * n + bad),
+            ("relative-ref", rfc3986.URI_reference, "a/" * n + bad),
+            ("scheme", rfc3986.URI_reference, "a+" * n + bad),
+            ("Host", rfc9110.Host, "[::1]:" + "1" * n + bad),
+            ("http-URI", rfc9110.http_URI, "http://" + "a@" * n + bad),
+        ]:
+            self.check_rule(label, rule, value)
+
+
 def run_regex_check() -> None:
     print("Checking Syntax...")
     count, modules, errors = check_regex()
