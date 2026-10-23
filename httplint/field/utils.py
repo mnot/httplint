@@ -119,14 +119,24 @@ def parse_http_date(
         add_note(DATE_OBSOLETE, category=category)
     date_tuple = lib_parsedate(value)
     if date_tuple is None:
+        add_note(BAD_DATE_SYNTAX, category=category)
         raise ValueError
-    # http://sourceforge.net/tracker/index.php?func=detail&aid=1194222&group_id=5470&atid=105470
-    if date_tuple[0] < 100:
-        if date_tuple[0] > 68:
-            date_tuple = (date_tuple[0] + 1900,) + date_tuple[1:]
-        else:
-            date_tuple = (date_tuple[0] + 2000,) + date_tuple[1:]
-    return calendar.timegm(date_tuple)
+    # IMF-fixdate and asctime-date have four-digit years, which parsedate would
+    # otherwise treat as two-digit ones ("0000" -> 2000); rfc850-date's own two-digit
+    # years are handled by parsedate (pivot at 68).
+    year_match = re.search(r"(?<!\d)\d{4}(?!\d)", value)
+    year, month, day, hour, minute, second = date_tuple[:6]
+    if year_match:
+        year = int(year_match.group())
+    # Out-of-range fields would be silently normalised by timegm.
+    if year < 1 or not 1 <= month <= 12 or day < 1 or day > calendar.monthrange(year, month)[1]:
+        add_note(BAD_DATE_SYNTAX, category=category)
+        raise ValueError
+    # A second of 60 is a leap second.
+    if hour > 23 or minute > 59 or second > 60:
+        add_note(BAD_DATE_SYNTAX, category=category)
+        raise ValueError
+    return calendar.timegm((year, month, day, hour, minute, second))
 
 
 def unquote_string(instr: str) -> str:
@@ -594,6 +604,72 @@ specification](https://www.rfc-editor.org/rfc/rfc9110.html#name-obsolete-date-fo
 """
 
 
+# ---- Content negotiation helpers: q-values and Vary coverage ----------------------------
+
+
+class BAD_Q_VALUE(Note):
+    category = categories.CONNEG
+    level = levels.WARN
+    _summary = "The q value on '%(item)s' is invalid."
+    _text = """\
+The `q` parameter must be a decimal number between 0 and 1, with at most 3 digits after the
+decimal point (for example, `0.5`). A sign, an exponent, quotes, or a missing leading digit
+aren't allowed."""
+
+
+def _q_is_quoted(raw_params: str) -> bool:
+    "Is the first q parameter in ``raw_params`` a quoted-string?"
+    for segment in split_params(raw_params):
+        name, _, value = segment.partition("=")
+        if name.lower() == "q":
+            return value.startswith('"')
+    return False
+
+
+def parse_qvalue(
+    params: ParamDictType,
+    add_note: Optional[AddNoteMethodType],
+    raw_params: str = "",
+    **note_vars: Any,
+) -> Optional[float]:
+    """
+    Remove the ``q`` parameter from ``params`` and return it as a float, or None if it
+    is absent or invalid.
+
+    The value must match ``rfc9110.qvalue``. An invalid value is reported with
+    ``BAD_Q_VALUE`` (passing ``note_vars`` to it, which should include ``item``), unless
+    ``add_note`` is None; use that where the field's syntax check has already flagged it.
+
+    ``parse_params`` unquotes values, but a q-value can't be a quoted-string; pass the
+    parameter text as ``raw_params`` to have that detected too.
+    """
+    if "q" not in params:
+        return None
+    q_str = params.pop("q")
+    if (
+        q_str is not None
+        and not _q_is_quoted(raw_params)
+        and re.fullmatch(rfc9110.qvalue, q_str, RE_FLAGS)
+    ):
+        return float(q_str)
+    if add_note is not None:
+        add_note(BAD_Q_VALUE, **note_vars)
+    return None
+
+
+def vary_covers(message: Any, name: str) -> bool:
+    """
+    Does the message's Vary header cover the request header ``name``? That is the case
+    if it lists the name (case-insensitively) or is ``*``.
+
+    Callers check cacheability first, and ``Vary: *`` makes a response uncacheable, so the
+    ``*`` branch is rarely reached; it keeps the helper correct for callers that don't.
+    """
+    vary_values = message.headers.parsed.get("vary") or ()
+    values = {str(v).lower() for v in vary_values}
+    return "*" in values or name.lower() in values
+
+
 # --- resolve_url: URL resolution shared by Link, Location, Referer, Reporting-Endpoints,
 # --- Speculation-Rules and NEL
 
@@ -651,3 +727,55 @@ def is_negative_integer(value: str) -> bool:
     "True if `value` is '-' followed by ASCII DIGIT+; for choosing a more specific note."
     magnitude = value[1:]
     return value.startswith("-") and magnitude.isascii() and magnitude.isdigit()
+
+
+# --- parse_entity_tag: entity-tags for ETag, If-Match, If-None-Match and If-Range ---------------
+
+
+def is_entity_tag(value: str) -> bool:
+    "Whether ``value`` matches the entity-tag syntax."
+    return re.match(rf"^\s*{rfc9110.entity_tag}\s*$", value, RE_FLAGS) is not None
+
+
+def parse_entity_tag(value: str, add_note: AddNoteMethodType) -> Tuple[bool, str]:
+    """
+    Parse an entity-tag into (weak, opaque-tag), with the opaque tag unquoted.
+
+    The ``W/`` prefix is case-sensitive (RFC 9110, Section 8.8.3). A lower-case ``w/``
+    raises ValueError, with ENTITY_TAG_WEAK_CASE unless the value is bad in some other way
+    (which the field's syntax check reports). Quoting isn't checked here either.
+    """
+    if value[:2] == "W/":
+        return (True, unquote_string(value[2:]))
+    if value[:2].lower() == "w/":
+        if is_entity_tag(value):
+            add_note(ENTITY_TAG_WEAK_CASE)
+        raise ValueError
+    return (False, unquote_string(value))
+
+
+class ENTITY_TAG_WEAK_CASE(Note):
+    category = categories.GENERAL
+    level = levels.WARN
+    _summary = "The %(field_name)s field's entity tag has a lower-case weak indicator."
+    _text = """\
+An entity tag is weak when it starts with `W/`, and that prefix is case-sensitive: a lower-case
+`w/` isn't the weak indicator. Recipients can therefore treat the whole value as an invalid tag,
+or as a strong tag that happens to start with `w/`.
+
+See [the HTTP specification](https://www.rfc-editor.org/rfc/rfc9110.html#name-etag) for more
+information."""
+
+
+class ENTITY_TAG_LIST_STAR(Note):
+    category = categories.VALIDATION
+    level = levels.WARN
+    _summary = "The %(field_name)s field mixes `*` with entity tags."
+    _text = """\
+The `*` in the `%(field_name)s` field matches any current representation, so it is only valid
+on its own: the field's value is either `*` or a list of entity tags
+([RFC 9110, Section 13.1.1](https://www.rfc-editor.org/rfc/rfc9110.html#name-if-match) and
+[Section 13.1.2](https://www.rfc-editor.org/rfc/rfc9110.html#name-if-none-match)).
+
+Recipients may handle a list that includes both in different ways; send either `*` or the
+entity tags."""

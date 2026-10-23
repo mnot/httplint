@@ -1,4 +1,4 @@
-from typing import Tuple
+from typing import Set, Tuple
 
 from httplint.field import BAD_SYNTAX
 from httplint.field.list_field import HttpListField
@@ -46,7 +46,12 @@ Transfer codings can only be used in HTTP/1; HTTP/2 and HTTP/3 do not support th
         return coding, param_dict
 
     def evaluate(self, add_note: AddNoteMethodType) -> None:
-        unwanted = {c[0] for c in self.value if c[0] not in ["chunked", "identity"]}
+        # TE only governs what a response may use, so requests aren't checked.
+        unwanted: Set[str] = (
+            set()
+            if self.message.message_type == "request"
+            else {c[0] for c in self.value if c[0] not in ["chunked", "identity"]}
+        )
         if unwanted:
             # check to see if the client asked for it
             if (
@@ -163,3 +168,13 @@ class TransferEncodingWantedTest(FieldTest[AnyMessageLinterProtocol]):
         request = FakeRequestLinter()
         request.headers.process([(b"te", b"foo")])
         message.request = request
+
+
+class TransferEncodingRequestTest(FieldTest[AnyMessageLinterProtocol]):
+    "TE negotiation only governs responses; a request's Transfer-Encoding isn't checked against it."
+
+    name = "Transfer-Encoding"
+    inputs = [b"gzip"]
+    expected_out = [("gzip", {})]
+    expected_notes: NoteClassListType = []
+    linter_class = FakeRequestLinter

@@ -1,6 +1,8 @@
 # pylint: disable=too-many-branches,too-many-statements
 
 
+from typing import Optional
+
 from httplint.note import Note, categories, levels
 from httplint.types import ResponseLinterProtocol
 from httplint.util import MAX_DELTA_SECONDS, relative_time
@@ -111,7 +113,7 @@ class ResponseCacheChecker:
             if (
                 "public" in self.cc_dict
                 or "private" in self.cc_dict
-                or self.expires_value
+                or self.expires_value is not None
                 or "max-age" in self.cc_dict
                 or self._response.status_code in HEURISTIC_CACHEABLE_STATUS
             ):
@@ -125,7 +127,7 @@ class ResponseCacheChecker:
         return True
 
     def check_age(self) -> bool:
-        if self.response_time and self.date_value and self.date_value > 0:
+        if self.response_time and self.date_value is not None:
             apparent_age = max(0, int(self.response_time) - self.date_value)
         else:
             apparent_age = 0
@@ -157,13 +159,19 @@ class ResponseCacheChecker:
             # An invalid Expires header means it's automatically stale
             self.has_explicit_freshness = True
             freshness_hdrs.append("field-expires")
-            base_time = self.date_value or (int(self.response_time) if self.response_time else None)
+            if self.date_value is not None:
+                base_time: Optional[int] = self.date_value
+            elif self.response_time:
+                base_time = int(self.response_time)
+            else:
+                base_time = None
             if base_time is None and self.expires_value is not None:
                 # Freshness is explicit, but with no Date or start time it can't be computed.
                 self.freshness_unknown = True
             else:
                 # An unparseable Expires is stale whatever the clock says.
-                expires_lifetime = (self.expires_value or 0) - (base_time or 0)
+                expires = self.expires_value if self.expires_value is not None else 0
+                expires_lifetime = expires - (base_time if base_time is not None else 0)
                 self.freshness_lifetime_private = expires_lifetime
                 self.freshness_lifetime_shared = expires_lifetime
         if "max-age" in self.cc_dict:

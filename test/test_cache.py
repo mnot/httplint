@@ -193,5 +193,86 @@ class TestCacheFreshness(unittest.TestCase):
         self.assertIn(STALE_IF_ERROR, notes)
 
 
+class TestExpiresStorable(unittest.TestCase):
+    def notes_for(self, expires):
+        linter = HttpResponseLinter()
+        linter.process_response_topline(b"HTTP/1.1", b"404", b"Not Found")
+        linter.process_headers(
+            [
+                (b"Date", b"Tue, 15 Nov 1994 08:12:31 GMT"),
+                (b"Expires", expires),
+            ]
+        )
+        linter.finish_content(True)
+        return [n.__class__ for n in linter.notes]
+
+    def test_epoch_expires_makes_storable(self):
+        from httplint.cache import STORE_STORABLE, STORE_UNSTORABLE
+
+        notes = self.notes_for(b"Thu, 01 Jan 1970 00:00:00 GMT")
+        self.assertIn(STORE_STORABLE, notes)
+        self.assertNotIn(STORE_UNSTORABLE, notes)
+
+    def test_expires_makes_storable(self):
+        from httplint.cache import STORE_STORABLE, STORE_UNSTORABLE
+
+        notes = self.notes_for(b"Fri, 01 Jan 1971 00:00:00 GMT")
+        self.assertIn(STORE_STORABLE, notes)
+        self.assertNotIn(STORE_UNSTORABLE, notes)
+
+    def test_bad_expires_is_unstorable(self):
+        from httplint.cache import STORE_STORABLE, STORE_UNSTORABLE
+
+        notes = self.notes_for(b"nonsense")
+        self.assertIn(STORE_UNSTORABLE, notes)
+        self.assertNotIn(STORE_STORABLE, notes)
+
+
+class TestEpochDates(unittest.TestCase):
+    def check(self, headers, start_time):
+        linter = HttpResponseLinter()
+        linter.start_time = start_time
+        linter.process_response_topline(b"HTTP/1.1", b"200", b"OK")
+        linter.process_headers(headers)
+        linter.finish_content(True)
+        return linter
+
+    def test_epoch_date_gives_apparent_age(self):
+        from httplint.cache import CURRENT_AGE
+
+        linter = self.check(
+            [
+                (b"Date", b"Thu, 01 Jan 1970 00:00:00 GMT"),
+                (b"Expires", b"Thu, 01 Jan 1970 01:00:00 GMT"),
+            ],
+            1800,
+        )
+        self.assertEqual(linter.caching.age, 1800)
+        self.assertEqual(linter.caching.freshness_lifetime_private, 3600)
+        self.assertIn(CURRENT_AGE, [n.__class__ for n in linter.notes])
+
+    def test_epoch_expires_is_a_timestamp(self):
+        linter = self.check(
+            [
+                (b"Date", b"Thu, 01 Jan 1970 00:16:40 GMT"),
+                (b"Expires", b"Thu, 01 Jan 1970 00:00:00 GMT"),
+            ],
+            1000,
+        )
+        self.assertEqual(linter.caching.freshness_lifetime_private, -1000)
+        self.assertIn(FRESHNESS_STALE_ALREADY, [n.__class__ for n in linter.notes])
+
+    def test_invalid_expires_is_stale(self):
+        linter = self.check(
+            [
+                (b"Date", b"Thu, 01 Jan 1970 00:16:40 GMT"),
+                (b"Expires", b"nonsense"),
+            ],
+            1000,
+        )
+        self.assertEqual(linter.caching.freshness_lifetime_private, -1000)
+        self.assertIn(FRESHNESS_STALE_ALREADY, [n.__class__ for n in linter.notes])
+
+
 if __name__ == "__main__":
     unittest.main()

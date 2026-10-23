@@ -2,7 +2,7 @@ import binascii
 import hashlib
 import weakref
 import zlib
-from typing import Any, Callable, Dict, List, Optional, Union
+from typing import Any, Callable, Dict, Iterator, List, Optional, Union
 
 import brotli
 
@@ -16,6 +16,23 @@ MAX_BROTLI_OUTPUT_PIECE = 1024 * 1024
 MAX_GZIP_HEADER_BYTES = 128 * 1024
 
 
+MAX_INFLATE_PIECE = 1024 * 1024
+
+
+def _inflate(inflater: Any, data: bytes) -> Iterator[bytes]:
+    "Yield the output of a zlib decompressobj in pieces of at most MAX_INFLATE_PIECE bytes."
+    out = inflater.decompress(data, MAX_INFLATE_PIECE)
+    while True:
+        if out:
+            yield out
+        tail = inflater.unconsumed_tail
+        if not tail:
+            return
+        out = inflater.decompress(tail, MAX_INFLATE_PIECE)
+        if not out:
+            return
+
+
 class ContentEncodingProcessor:
     def __init__(self, message: LinterProtocol) -> None:
         self.message = weakref.proxy(message)
@@ -26,6 +43,7 @@ class ContentEncodingProcessor:
         self._hash_processor = hashlib.new("md5", usedforsecurity=False)
 
         self.decode_ok: bool = True
+        self._content_available: Optional[bool] = None
 
         # Pipeline is built lazily to ensure headers are parsed
         self.pipeline: Optional[Callable[[bytes], None]] = None
@@ -39,6 +57,17 @@ class ContentEncodingProcessor:
 
     def finish_content(self) -> None:
         self.hash = self._hash_processor.digest()
+
+    @property
+    def content_available(self) -> bool:
+        """
+        False if any content coding can't be undone here (e.g., zstd), in which case
+        the decoded stream isn't the representation and content-based checks should skip.
+        """
+        if self._content_available is None:
+            codings = self.message.headers.parsed.get("content-encoding", [])
+            self._content_available = all(coding in CODING_PROCESSORS for coding in codings)
+        return self._content_available
 
     def _build_pipeline(self) -> None:
         # Build the pipeline
@@ -58,12 +87,13 @@ class ContentEncodingProcessor:
         # Iterate forward regarding processing order.
 
         for coding in content_codings:
-            if coding in ["gzip", "x-gzip"]:
-                self.pipeline = GzipProcessor(self.message, self.pipeline)
-            elif coding == "br":
-                self.pipeline = BrotliProcessor(self.message, self.pipeline)
-            else:
-                pass
+            if coding not in CODING_PROCESSORS:
+                # Can't be undone, and anything applied before it is hidden behind it.
+                self.pipeline = sink
+                continue
+            processor = CODING_PROCESSORS[coding]
+            if processor is not None:
+                self.pipeline = processor(self.message, self.pipeline)
 
     def _sink_process(self, chunk: bytes) -> None:
         self._hash_processor.update(chunk)
@@ -129,29 +159,14 @@ class GzipProcessor:
             # We clear the buffer.
             self._gzip_header_buffer = bytearray()
 
-        max_chunk_size = 1024 * 1024
         try:
-            decompressed = self._gzip_processor.decompress(chunk, max_chunk_size)
-            if decompressed:
+            for decompressed in _inflate(self._gzip_processor, chunk):
                 self._decompressed += len(decompressed)
                 if self._decompressed > MAX_DECOMPRESSED_BYTES:
                     self.message.notes.add("field-content-encoding", DECOMPRESSION_LIMIT)
                     self.ok = False
                     return
                 self.next_processor(decompressed)
-
-            while self._gzip_processor.unconsumed_tail:
-                tail = self._gzip_processor.unconsumed_tail
-                decompressed = self._gzip_processor.decompress(tail, max_chunk_size)
-                if decompressed:
-                    self._decompressed += len(decompressed)
-                    if self._decompressed > MAX_DECOMPRESSED_BYTES:
-                        self.message.notes.add("field-content-encoding", DECOMPRESSION_LIMIT)
-                        self.ok = False
-                        return
-                    self.next_processor(decompressed)
-                else:
-                    break
 
         except zlib.error as zlib_error:
             self.message.notes.add(
@@ -218,6 +233,68 @@ class GzipProcessor:
         return bytes(content[offset:])
 
 
+class DeflateProcessor:
+    """
+    The `deflate` content coding is nominally zlib-wrapped, but some servers send raw
+    deflate; like browsers, use zlib when the header looks like one and raw otherwise.
+    """
+
+    def __init__(self, message: LinterProtocol, next_processor: Callable[[bytes], None]) -> None:
+        self.message = message
+        self.next_processor = next_processor
+        self._processor: Optional[Any] = None
+        self._header_buffer = bytearray()
+        self._decompressed = 0
+        self._eof = False
+        self.ok = True
+
+    @staticmethod
+    def _looks_like_zlib(header: Union[bytes, bytearray]) -> bool:
+        "A zlib header (RFC 1950): deflate method, window of at most 32K, valid check bits."
+        return (
+            (header[0] & 0x0F) == 8
+            and (header[0] >> 4) <= 7
+            and ((header[0] << 8) | header[1]) % 31 == 0
+        )
+
+    def __call__(self, chunk: bytes) -> None:
+        if not self.ok or self._eof:
+            return
+
+        if self._processor is None:
+            self._header_buffer += chunk
+            if len(self._header_buffer) < 2:
+                return
+            wbits = (
+                zlib.MAX_WBITS if self._looks_like_zlib(self._header_buffer) else -zlib.MAX_WBITS
+            )
+            self._processor = zlib.decompressobj(wbits)
+            chunk = bytes(self._header_buffer)
+            self._header_buffer = bytearray()
+
+        try:
+            for decompressed in _inflate(self._processor, chunk):
+                self._decompressed += len(decompressed)
+                if self._decompressed > MAX_DECOMPRESSED_BYTES:
+                    self.message.notes.add("field-content-encoding", DECOMPRESSION_LIMIT)
+                    self.ok = False
+                    return
+                self.next_processor(decompressed)
+            if self._processor.eof:
+                # Bytes after the end of the stream are ignored; don't let them accumulate.
+                self._eof = True
+                self._processor = None
+        except zlib.error as zlib_error:
+            self.message.notes.add(
+                "field-content-encoding",
+                BAD_DEFLATE,
+                zlib_error=str(zlib_error),
+                ok_deflate_len=f_num(self._decompressed),
+                chunk_sample=display_bytes(chunk),
+            )
+            self.ok = False
+
+
 class BrotliProcessor:
     def __init__(self, message: LinterProtocol, next_processor: Callable[[bytes], None]) -> None:
         self.message = message
@@ -259,6 +336,19 @@ class BrotliProcessor:
             self.ok = False
 
 
+# The content codings that can be undone, and what undoes each; anything else (zstd, compress)
+# is left encoded. `identity` is a no-op.
+CODING_PROCESSORS: Dict[
+    str, Optional[Callable[[LinterProtocol, Callable[[bytes], None]], Callable[[bytes], None]]]
+] = {
+    "gzip": GzipProcessor,
+    "x-gzip": GzipProcessor,
+    "deflate": DeflateProcessor,
+    "br": BrotliProcessor,
+    "identity": None,
+}
+
+
 class DECOMPRESSION_LIMIT(Note):
     category = categories.CONNEG
     level = levels.BAD
@@ -288,6 +378,21 @@ wire. However, this response could not be decompressed; the error encountered wa
 "`%(zlib_error)s`".
 
 %(ok_zlib_len)s bytes were decompressed successfully before this; the erroneous chunk starts with (in hex):
+
+    %(chunk_sample)s
+"""
+
+
+class BAD_DEFLATE(Note):
+    category = categories.CONNEG
+    level = levels.BAD
+    _summary = "This message was compressed using Deflate, but the data was corrupt."
+    _text = """\
+Deflate-compressed responses use zlib compression to reduce the number of bytes transferred on the
+wire. However, this response could not be decompressed; the error encountered was
+"`%(zlib_error)s`".
+
+%(ok_deflate_len)s bytes were decompressed successfully before this; the erroneous chunk starts with (in hex):
 
     %(chunk_sample)s
 """

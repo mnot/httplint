@@ -1,10 +1,11 @@
 from types import SimpleNamespace
-from typing import cast
+from typing import List, cast
 
 from http_sf import Token
 
 from httplint.field.structured_field import StructuredField
 from httplint.field.tests import FakeRequestLinter, FieldTest
+from httplint.field.utils import vary_covers
 from httplint.note import Note, categories, levels
 from httplint.types import (
     AddNoteMethodType,
@@ -49,13 +50,12 @@ willing to process."""
         if hasattr(self.message, "caching") and (
             self.message.caching.store_shared or self.message.caching.store_private
         ):
-            vary_header = self.message.headers.parsed.get("vary", [])
-            missing_vary = []
-            for item in self.value:
-                # item is (value, params)
-                field_name = item[0]
-                if field_name not in vary_header:
-                    missing_vary.append(str(field_name))
+            # Only Tokens are field names; anything else already got ACCEPT_CH_BAD_TYPE.
+            missing_vary = [
+                str(item[0])
+                for item in self.value
+                if isinstance(item[0], Token) and not vary_covers(self.message, str(item[0]))
+            ]
 
             if missing_vary:
                 add_note(
@@ -136,3 +136,74 @@ class AcceptCHMissingVaryTest(FieldTest[ResponseLinterProtocol]):
         message.caching = cast(
             CachingProtocol, SimpleNamespace(store_shared=True, store_private=True)
         )
+
+
+def _cacheable_context(message: ResponseLinterProtocol, vary: List[str]) -> None:
+    message.caching = cast(CachingProtocol, SimpleNamespace(store_shared=True, store_private=True))
+    message.headers.parsed["vary"] = vary
+
+
+class AcceptCHVaryMixedCaseTest(FieldTest[ResponseLinterProtocol]):
+    "Vary values are lowercased; Accept-CH tokens aren't."
+
+    name = "Accept-CH"
+    inputs = [b"Sec-CH-UA, Sec-CH-UA-Mobile"]
+    expected_out = [(Token("Sec-CH-UA"), {}), (Token("Sec-CH-UA-Mobile"), {})]
+    expected_notes: NoteClassListType = []
+
+    def set_response_context(self, message: ResponseLinterProtocol) -> None:
+        _cacheable_context(message, ["sec-ch-ua", "sec-ch-ua-mobile"])
+
+
+class AcceptCHVaryStarTest(FieldTest[ResponseLinterProtocol]):
+    name = "Accept-CH"
+    inputs = [b"Sec-CH-UA"]
+    expected_out = [(Token("Sec-CH-UA"), {})]
+    expected_notes: NoteClassListType = []
+
+    def set_response_context(self, message: ResponseLinterProtocol) -> None:
+        _cacheable_context(message, ["*"])
+
+
+class AcceptCHVaryPartialTest(FieldTest[ResponseLinterProtocol]):
+    "Guard: main also reports this."
+
+    name = "Accept-CH"
+    inputs = [b"Sec-CH-UA, Sec-CH-UA-Mobile"]
+    expected_out = [(Token("Sec-CH-UA"), {}), (Token("Sec-CH-UA-Mobile"), {})]
+    expected_notes: NoteClassListType = [ACCEPT_CH_MISSING_VARY]
+
+    def set_response_context(self, message: ResponseLinterProtocol) -> None:
+        _cacheable_context(message, ["sec-ch-ua"])
+
+
+class AcceptCHNonTokenVaryIntegerTest(FieldTest[ResponseLinterProtocol]):
+    "A non-Token item gets ACCEPT_CH_BAD_TYPE only, not ACCEPT_CH_MISSING_VARY as well."
+
+    name = "Accept-CH"
+    inputs = [b"1"]
+    expected_out = [(1, {})]
+    expected_notes: NoteClassListType = [ACCEPT_CH_BAD_TYPE]
+
+    def set_response_context(self, message: ResponseLinterProtocol) -> None:
+        _cacheable_context(message, [])
+
+
+class AcceptCHNonTokenVaryBinaryTest(FieldTest[ResponseLinterProtocol]):
+    name = "Accept-CH"
+    inputs = [b":YWJj:"]
+    expected_out = [(b"abc", {})]
+    expected_notes: NoteClassListType = [ACCEPT_CH_BAD_TYPE]
+
+    def set_response_context(self, message: ResponseLinterProtocol) -> None:
+        _cacheable_context(message, [])
+
+
+class AcceptCHNonTokenVaryEmptyStringTest(FieldTest[ResponseLinterProtocol]):
+    name = "Accept-CH"
+    inputs = [b'""']
+    expected_out = [("", {})]
+    expected_notes: NoteClassListType = [ACCEPT_CH_BAD_TYPE]
+
+    def set_response_context(self, message: ResponseLinterProtocol) -> None:
+        _cacheable_context(message, [])

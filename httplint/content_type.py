@@ -20,11 +20,9 @@ def verify_content_type(linter: LinterProtocol) -> None:
     if not linter.content_hash:
         return
 
-    # Don't verify content type for responses that don't carry a full representation
-    status_code = getattr(linter, "status_code", None)
-    if status_code in [204, 205, 304, 206] + list(range(100, 199)) or getattr(
-        linter, "is_head_response", False
-    ):
+    # Don't verify content type for responses that don't carry a full representation,
+    # or whose content coding wasn't undone.
+    if not linter.has_full_representation() or not linter.content_decoded:
         return
 
     # Get the declared content type

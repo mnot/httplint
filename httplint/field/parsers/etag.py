@@ -3,7 +3,7 @@ from typing import Tuple
 from httplint.field import BAD_SYNTAX
 from httplint.field.singleton_field import SingletonField
 from httplint.field.tests import FieldTest
-from httplint.field.utils import unquote_string
+from httplint.field.utils import ENTITY_TAG_WEAK_CASE, parse_entity_tag
 from httplint.note import categories
 from httplint.syntax import rfc9110
 from httplint.types import (
@@ -23,9 +23,7 @@ The `ETag` header provides an opaque identifier for the representation."""
     deprecated = False
 
     def parse(self, field_value: str, add_note: AddNoteMethodType) -> Tuple[bool, str]:
-        if field_value[:2] == "W/":
-            return (True, unquote_string(field_value[2:]))
-        return (False, unquote_string(field_value))
+        return parse_entity_tag(field_value, add_note)
 
 
 class ETagTest(FieldTest[AnyMessageLinterProtocol]):
@@ -45,3 +43,10 @@ class UnquotedETagTest(FieldTest[AnyMessageLinterProtocol]):
     inputs = [b"foo"]
     expected_out = (False, "foo")
     expected_notes: NoteClassListType = [BAD_SYNTAX]
+
+
+class LowerCaseWeakETagTest(FieldTest[AnyMessageLinterProtocol]):
+    name = "ETag"
+    inputs = [b'w/"foo"']
+    expected_out = None
+    expected_notes: NoteClassListType = [ENTITY_TAG_WEAK_CASE]

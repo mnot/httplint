@@ -1,19 +1,20 @@
-from httplint.field.singleton_field import SingletonField
+from httplint.field.date_field import HttpDateField
 from httplint.field.tests import FieldTest
-from httplint.field.utils import BAD_DATE_SYNTAX, parse_http_date
+from httplint.field.utils import BAD_DATE_SYNTAX
 from httplint.note import Note, categories, levels
 from httplint.syntax import rfc9110
 from httplint.types import (
     AddNoteMethodType,
     AnyMessageLinterProtocol,
     NoteClassListType,
+    ResponseLinterProtocol,
 )
 from httplint.util import relative_time
 
 MAX_CLOCK_SKEW = 5  # seconds
 
 
-class date(SingletonField[AnyMessageLinterProtocol]):
+class date(HttpDateField[AnyMessageLinterProtocol]):
     canonical_name = "Date"
     description = """\
 The `Date` header represents the time when the message was generated, regardless of caching that
@@ -21,14 +22,10 @@ happened since.
 
 It is used by caches as input to expiration calculations, and to detect clock drift."""
     reference = f"{rfc9110.SPEC_URL}#field.date"
-    syntax = False  # rfc9110.Date
     deprecated = False
 
-    def parse(self, field_value: str, add_note: AddNoteMethodType) -> int:
-        return parse_http_date(field_value, add_note, category=self.category)
-
     def evaluate(self, add_note: AddNoteMethodType) -> None:
-        if self.message.message_type == "response" and self.message.start_time and self.value:
+        if self.message.message_type == "response" and self.message.start_time is not None:
             age_value = self.message.headers.parsed.get("age", 0) or 0
             skew = self.value - int(self.message.start_time) + age_value
             if age_value > MAX_CLOCK_SKEW > (age_value - skew):
@@ -102,5 +99,29 @@ class BadDateTest(FieldTest[AnyMessageLinterProtocol]):
 class BlankDateTest(FieldTest[AnyMessageLinterProtocol]):
     name = "Date"
     inputs = [b""]
+    expected_out = None
+    expected_notes: NoteClassListType = [BAD_DATE_SYNTAX]
+
+
+class DateEpochTest(FieldTest[AnyMessageLinterProtocol]):
+    name = "Date"
+    inputs = [b"Thu, 01 Jan 1970 00:00:00 GMT"]
+    expected_out = 0
+    expected_notes: NoteClassListType = [DATE_INCORRECT]
+
+    def set_response_context(self, message: ResponseLinterProtocol) -> None:
+        message.start_time = 1_000_000_000.0
+
+
+class DateYearZeroTest(FieldTest[AnyMessageLinterProtocol]):
+    name = "Date"
+    inputs = [b"Mon, 01 Jan 0000 00:00:00 GMT"]
+    expected_out = None
+    expected_notes: NoteClassListType = [BAD_DATE_SYNTAX]
+
+
+class DateImpossibleTest(FieldTest[AnyMessageLinterProtocol]):
+    name = "Date"
+    inputs = [b"Mon, 31 Feb 2011 25:61:61 GMT"]
     expected_out = None
     expected_notes: NoteClassListType = [BAD_DATE_SYNTAX]

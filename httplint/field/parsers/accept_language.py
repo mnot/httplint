@@ -4,7 +4,7 @@ from typing import Optional
 from httplint.field import BAD_SYNTAX
 from httplint.field.list_field import HttpListField
 from httplint.field.tests import FieldTest
-from httplint.field.utils import parse_params
+from httplint.field.utils import parse_params, parse_qvalue
 from httplint.note import Note, categories, levels
 from httplint.syntax import rfc9110
 from httplint.types import (
@@ -39,20 +39,8 @@ preferred in the response."""
         language = language.lower()
         param_dict = parse_params(param_str, add_note, ["q"], delim=";")
 
-        q_val: Optional[float] = None
-        if "q" in param_dict:
-            q_str = param_dict.pop("q")
-            try:
-                if q_str is None:
-                    raise ValueError
-                if len(q_str) > 5:
-                    raise ValueError
-                q_val = float(q_str)
-                if not 0.0 <= q_val <= 1.0:
-                    raise ValueError
-            except (ValueError, TypeError):
-                add_note(BAD_Q_VALUE, language=language)
-                q_val = None
+        # An invalid q-value fails the field's syntax check, which has already reported it.
+        q_val = parse_qvalue(param_dict, None, param_str)
 
         if param_dict:
             # RFC 9110 only defines q parameter for Accept-Language
@@ -62,14 +50,6 @@ preferred in the response."""
 
     def evaluate(self, add_note: AddNoteMethodType) -> None:
         pass
-
-
-class BAD_Q_VALUE(Note):
-    category = categories.CONNEG
-    level = levels.WARN
-    _summary = "The q value on '{language}' is invalid."
-    _text = """\
-The `q` parameter must be a decimal number between 0 and 1, with at most 3 digits of precision."""
 
 
 class ACCEPT_LANGUAGE_BAD_SYNTAX(Note):
@@ -102,4 +82,32 @@ class AcceptLanguageBadQTest(FieldTest[RequestLinterProtocol]):
     name = "Accept-Language"
     inputs = [b"en; q=abc"]
     expected_out = [AcceptLanguageValue("en", None)]
-    expected_notes: NoteClassListType = [BAD_Q_VALUE, BAD_SYNTAX]
+    expected_notes: NoteClassListType = [BAD_SYNTAX]  # one note: the syntax check reports it
+
+
+class AcceptLanguageBadQSignTest(FieldTest[RequestLinterProtocol]):
+    name = "Accept-Language"
+    inputs = [b"en; q=+1"]
+    expected_out = [AcceptLanguageValue("en", None)]
+    expected_notes: NoteClassListType = [BAD_SYNTAX]
+
+
+class AcceptLanguageBadQQuotedTest(FieldTest[RequestLinterProtocol]):
+    name = "Accept-Language"
+    inputs = [b'en; q="0.5"']
+    expected_out = [AcceptLanguageValue("en", None)]
+    expected_notes: NoteClassListType = [BAD_SYNTAX]
+
+
+class AcceptLanguageBadQRangeTest(FieldTest[RequestLinterProtocol]):
+    name = "Accept-Language"
+    inputs = [b"en; q=1.5"]
+    expected_out = [AcceptLanguageValue("en", None)]
+    expected_notes: NoteClassListType = [BAD_SYNTAX]
+
+
+class AcceptLanguageQTrailingDotTest(FieldTest[RequestLinterProtocol]):
+    name = "Accept-Language"
+    inputs = [b"en; q=1., fr; q=0.123"]
+    expected_out = [AcceptLanguageValue("en", 1.0), AcceptLanguageValue("fr", 0.123)]
+    expected_notes: NoteClassListType = []

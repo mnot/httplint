@@ -1,24 +1,20 @@
-from httplint.field.singleton_field import SingletonField
+from httplint.field.date_field import HttpDateField
 from httplint.field.tests import FieldTest
-from httplint.field.utils import BAD_DATE_SYNTAX, parse_http_date
+from httplint.field.utils import BAD_DATE_SYNTAX
 from httplint.note import Note, categories, levels
 from httplint.types import AddNoteMethodType, NoteClassListType, ResponseLinterProtocol
 
 
-class sunset(SingletonField[ResponseLinterProtocol]):
+class sunset(HttpDateField[ResponseLinterProtocol]):
     canonical_name = "Sunset"
     description = """\
 The `Sunset` header field indicates that the resource is likely to become unresponsive at the
 specified timestamp."""
     reference = "https://www.rfc-editor.org/rfc/rfc8594.html"
-    syntax = False
     deprecated = False
 
-    def parse(self, field_value: str, add_note: AddNoteMethodType) -> int:
-        return parse_http_date(field_value, add_note, category=self.category)
-
     def evaluate(self, add_note: AddNoteMethodType) -> None:
-        if self.message.start_time and self.value and self.value < self.message.start_time:
+        if self.message.start_time is not None and self.value < self.message.start_time:
             add_note(SUNSET_PAST)
 
 
@@ -50,5 +46,22 @@ class SunsetPastTest(FieldTest[ResponseLinterProtocol]):
 class SunsetBadSyntaxTest(FieldTest[ResponseLinterProtocol]):
     name = "Sunset"
     inputs = [b"not a date"]
+    expected_out = None
+    expected_notes: NoteClassListType = [BAD_DATE_SYNTAX]
+
+
+class SunsetEpochTest(FieldTest[ResponseLinterProtocol]):
+    name = "Sunset"
+    inputs = [b"Thu, 01 Jan 1970 00:00:00 GMT"]
+    expected_out = 0
+    expected_notes: NoteClassListType = [SUNSET_PAST]
+
+    def set_response_context(self, message: ResponseLinterProtocol) -> None:
+        message.start_time = 1000000000
+
+
+class SunsetYearZeroTest(FieldTest[ResponseLinterProtocol]):
+    name = "Sunset"
+    inputs = [b"Mon, 01 Jan 0000 00:00:00 GMT"]
     expected_out = None
     expected_notes: NoteClassListType = [BAD_DATE_SYNTAX]
