@@ -26,6 +26,9 @@ from .rfc5646 import Language_Tag
 
 SPEC_URL = "http://httpwg.org/specs/rfc9110"
 
+# Fields are matched with re.IGNORECASE, but ABNF literals written as %x values are
+# case-sensitive. Those (weak, day-name, month, GMT) are wrapped in (?-i: ... ).
+
 
 #   OWS = *( SP / HTAB )
 
@@ -306,7 +309,7 @@ day = rf"(?: {DIGIT} {DIGIT} )"
 #    / %x53.61.74 ; Sat
 #    / %x53.75.6E ; Sun
 
-day_name = r"(?: Mon | Tue | Wed | Thu | Fri | Sat | Sun )"
+day_name = r"(?-i: Mon | Tue | Wed | Thu | Fri | Sat | Sun )"
 
 #   month = %x4A.61.6E ; Jan
 #    / %x46.65.62 ; Feb
@@ -321,7 +324,7 @@ day_name = r"(?: Mon | Tue | Wed | Thu | Fri | Sat | Sun )"
 #    / %x4E.6F.76 ; Nov
 #    / %x44.65.63 ; Dec
 
-month = r"(?: Jan | Feb | Mar | Apr | May | Jun | Jul | Aug | Sep | Oct | Nov | Dec )"
+month = r"(?-i: Jan | Feb | Mar | Apr | May | Jun | Jul | Aug | Sep | Oct | Nov | Dec )"
 
 #   year = 4DIGIT
 
@@ -349,7 +352,7 @@ time_of_day = rf"(?: {hour} : {minute} : {second} )"
 
 #   GMT = %x47.4D.54 ; GMT
 
-GMT = r"(?: GMT )"
+GMT = r"(?-i: GMT )"
 
 #   IMF-fixdate = day-name "," SP date1 SP time-of-day SP GMT
 
@@ -363,7 +366,7 @@ IMF_fixdate = rf"(?: {day_name} , {SP} {date1} {SP} {time_of_day} {SP} {GMT} )"
 #    / %x53.61.74.75.72.64.61.79 ; Saturday
 #    / %x53.75.6E.64.61.79 ; Sunday
 
-day_name_l = r"(?: Monday | Tuesday | Wednesday | Thursday | Friday | Saturday | Sunday )"
+day_name_l = r"(?-i: Monday | Tuesday | Wednesday | Thursday | Friday | Saturday | Sunday )"
 
 #   date2 = day "-" month "-" 2DIGIT
 
@@ -395,7 +398,7 @@ Date = HTTP_date
 
 #   weak = %x57.2F ; W/
 
-weak = r"(?: \x57\x2F )"
+weak = r"(?-i: \x57\x2F )"
 
 #   etagc = "!" / %x23-7E ; '#'-'~' / obs-text
 

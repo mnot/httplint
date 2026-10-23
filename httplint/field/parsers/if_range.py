@@ -125,7 +125,7 @@ class IfRangeLowerCaseWeakTest(FieldTest[RequestLinterProtocol]):
     name = "If-Range"
     inputs = [b'w/"xyzzy"']
     expected_out = None
-    expected_notes: NoteClassListType = [ENTITY_TAG_WEAK_CASE]
+    expected_notes: NoteClassListType = [BAD_SYNTAX, ENTITY_TAG_WEAK_CASE]
 
 
 class IfRangeLowerCaseWeakUnquotedTest(FieldTest[RequestLinterProtocol]):

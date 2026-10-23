@@ -6,7 +6,7 @@ import unittest
 from typing import Callable, List, Tuple
 
 from httplint import HttpRequestLinter, HttpResponseLinter, syntax
-from httplint.syntax import rfc9110, rfc9112
+from httplint.syntax import rfc9110, rfc9112, rfc9651
 
 
 def check_regex() -> None:
@@ -165,6 +165,102 @@ class SyntaxAcceptRejectTest(unittest.TestCase):
             ["", "a", "/a", "a/b:c", "./a:b", "/a?b=c", "a?b:c", "//host/p?q"],
             ["1:2", "a:b", "//a:a b", "a b"],
         )
+
+
+def case_variants(value: str) -> List[str]:
+    "The value, in lower and upper case, and with each letter's case flipped in turn."
+    variants = [value, value.lower(), value.upper()]
+    for i, char in enumerate(value):
+        if char.isalpha():
+            variants.append(value[:i] + char.swapcase() + value[i + 1 :])
+    return variants
+
+
+class SyntaxCaseSensitiveTest(unittest.TestCase):
+    """
+    Fields match with re.IGNORECASE; %x literals in the ABNF are case-sensitive.
+
+    The old rule is the new one with its (?-i: ... ) groups made ordinary groups, so every
+    difference between them has to be a case variant that the new rule rejects.
+    """
+
+    def old(self, rule: str) -> str:
+        self.assertIn("(?-i:", rule)
+        return rule.replace("(?-i:", "(?:")
+
+    def check(self, rule: str, value: str, mutable: str = "") -> None:
+        """
+        The old rule accepts every case variant of `value`; the new one accepts `value`, and
+        only the variants whose changed letter falls inside `mutable` (the part that isn't a
+        case-sensitive literal).
+        """
+        old = self.old(rule)
+        self.assertTrue(matches(rule, value))
+        for i, char in enumerate(value):
+            if not char.isalpha():
+                continue
+            variant = value[:i] + char.swapcase() + value[i + 1 :]
+            with self.subTest(variant=variant):
+                self.assertTrue(matches(old, variant))
+                in_mutable = mutable != "" and value.find(mutable) <= i < value.find(mutable) + len(
+                    mutable
+                )
+                self.assertEqual(matches(rule, variant), in_mutable)
+        for variant in (value.lower(), value.upper()):
+            with self.subTest(variant=variant):
+                self.assertTrue(matches(old, variant))
+                if variant != value and not mutable:
+                    self.assertFalse(matches(rule, variant))
+
+    def test_http_date(self) -> None:
+        for value in [
+            "Mon, 01 Jan 2000 00:00:00 GMT",
+            "Monday, 01-Jan-00 00:00:00 GMT",
+            "Mon Jan  1 00:00:00 2000",
+            "Sun, 31 Dec 1999 23:59:59 GMT",
+        ]:
+            with self.subTest(value=value):
+                self.check(rfc9110.HTTP_date, value)
+
+    def test_http_date_rejects_lower_case(self) -> None:
+        for value in [
+            "mon, 01 jan 2000 00:00:00 gmt",
+            "Mon, 01 Jan 2000 00:00:00 gmt",
+            "Mon, 01 jan 2000 00:00:00 GMT",
+            "mon, 01 Jan 2000 00:00:00 GMT",
+            "MON, 01 JAN 2000 00:00:00 GMT",
+            "monday, 01-jan-00 00:00:00 GMT",
+            "mon jan  1 00:00:00 2000",
+        ]:
+            with self.subTest(value=value):
+                self.assertFalse(matches(rfc9110.HTTP_date, value))
+
+    def test_entity_tag(self) -> None:
+        # The opaque tag is case-insensitive here only because etagc accepts both cases.
+        self.check(rfc9110.entity_tag, 'W/"foo"', mutable='"foo"')
+        self.check(rfc9110.ETag, 'W/"Foo"', mutable='"Foo"')
+        self.assertTrue(matches(rfc9110.entity_tag, '"foo"'))
+        self.assertTrue(matches(rfc9110.entity_tag, '"w/foo"'))
+        self.assertFalse(matches(rfc9110.entity_tag, 'w/"foo"'))
+        self.assertFalse(matches(rfc9110.If_None_Match, 'w/"foo"'))
+        self.assertFalse(matches(rfc9110.If_None_Match, '"a", w/"foo"'))
+        self.assertTrue(matches(rfc9110.If_None_Match, '"a", W/"foo"'))
+        self.assertFalse(matches(rfc9110.If_Range, 'w/"foo"'))
+
+    def test_http_name(self) -> None:
+        self.check(rfc9112.HTTP_name, "HTTP")
+        self.assertFalse(matches(rfc9112.HTTP_name, "http"))
+
+    def test_structured_field_key(self) -> None:
+        for value in ["a", "*a", "a-b.c_d*", "a1"]:
+            with self.subTest(value=value):
+                self.assertTrue(matches(rfc9651.key, value))
+        for value in ["A", "Foo", "fOo", "*A", "a-B"]:
+            with self.subTest(value=value):
+                self.assertFalse(matches(rfc9651.key, value))
+        self.assertFalse(matches(rfc9651.sf_dictionary, "Foo=1"))
+        self.assertTrue(matches(rfc9651.sf_dictionary, "foo=1, bar=Baz"))
+        self.assertFalse(matches(rfc9651.sf_item, "a;Foo=1"))
 
 
 def run_regex_check() -> None:

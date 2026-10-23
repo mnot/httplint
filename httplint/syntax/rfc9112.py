@@ -96,7 +96,7 @@ Transfer_Encoding = list_rule(transfer_coding, 1)
 
 #   HTTP-name = %x48.54.54.50 ; HTTP
 
-HTTP_name = r"HTTP"
+HTTP_name = r"(?-i:HTTP)"
 
 #   HTTP-version = HTTP-name "/" DIGIT "." DIGIT
 

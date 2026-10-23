@@ -744,11 +744,14 @@ def parse_entity_tag(value: str, add_note: AddNoteMethodType) -> Tuple[bool, str
     The ``W/`` prefix is case-sensitive (RFC 9110, Section 8.8.3). A lower-case ``w/``
     raises ValueError, with ENTITY_TAG_WEAK_CASE unless the value is bad in some other way
     (which the field's syntax check reports). Quoting isn't checked here either.
+
+    The field's syntax check also rejects a lower-case ``w/``, so it is reported as well.
     """
     if value[:2] == "W/":
         return (True, unquote_string(value[2:]))
     if value[:2].lower() == "w/":
-        if is_entity_tag(value):
+        # The syntax is case-sensitive, so test the value as it would be with a capital W.
+        if is_entity_tag("W/" + value[2:]):
             add_note(ENTITY_TAG_WEAK_CASE)
         raise ValueError
     return (False, unquote_string(value))

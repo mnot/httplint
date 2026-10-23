@@ -49,7 +49,7 @@ class IfMatchLowerCaseWeakTest(FieldTest[RequestLinterProtocol]):
     name = "If-Match"
     inputs = [b'w/"xyzzy", "r2d2xxxx"']
     expected_out = [(False, "r2d2xxxx")]
-    expected_notes: NoteClassListType = [ENTITY_TAG_WEAK_CASE]
+    expected_notes: NoteClassListType = [BAD_SYNTAX, ENTITY_TAG_WEAK_CASE]
 
 
 class IfMatchStarFirstTest(FieldTest[RequestLinterProtocol]):

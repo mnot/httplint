@@ -46,7 +46,7 @@ bare_item = (
 
 # key = ( lcalpha / "*" ) *( lcalpha / DIGIT / "_" / "-" / "." / "*" )
 # lcalpha = %x61-7A ; a-z
-key = r"[a-z*][a-z0-9_\-.*]*"
+key = r"(?-i:[a-z*][a-z0-9_\-.*]*)"
 
 # param-key = key
 param_key = key

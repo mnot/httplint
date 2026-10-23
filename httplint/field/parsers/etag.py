@@ -49,4 +49,4 @@ class LowerCaseWeakETagTest(FieldTest[AnyMessageLinterProtocol]):
     name = "ETag"
     inputs = [b'w/"foo"']
     expected_out = None
-    expected_notes: NoteClassListType = [ENTITY_TAG_WEAK_CASE]
+    expected_notes: NoteClassListType = [BAD_SYNTAX, ENTITY_TAG_WEAK_CASE]
