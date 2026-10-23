@@ -1,11 +1,10 @@
 import re
 from typing import Tuple
-from urllib.parse import urljoin, urlsplit
 
 from httplint.field import BAD_SYNTAX
 from httplint.field.list_field import HttpListField
 from httplint.field.tests import FieldTest
-from httplint.field.utils import PARAM_REPEATS, PARAM_STAR_ERROR, parse_params
+from httplint.field.utils import PARAM_REPEATS, PARAM_STAR_ERROR, parse_params, resolve_url
 from httplint.note import MarkdownSafe, Note, categories, levels
 from httplint.syntax import rfc3986, rfc8288, rfc9110
 from httplint.types import (
@@ -59,7 +58,11 @@ statement of the form "[context IRI] has a [relation type] resource at [target I
             for token in rel.lower().split():
                 if token not in hints:
                     continue
-                scheme = urlsplit(urljoin(base_uri, link_value)).scheme.lower()
+                resolved = resolve_url(base_uri, link_value)
+                if resolved is None:
+                    add_note(LINK_BAD_TARGET_URI, rel=token, link=link_value)
+                    continue
+                scheme = resolved.scheme.lower()
                 if scheme and scheme not in ("http", "https"):
                     bad_targets.append((token, link_value, scheme))
                 else:
@@ -96,6 +99,15 @@ related resources before the current response is fully processed:
 `preload` triggers the browser to fetch a resource needed for the current page; `preconnect`
 opens a connection (DNS + TCP + TLS) to an origin in advance; `dns-prefetch` performs a DNS
 lookup only. Used appropriately, these hints can reduce critical-path latency."""
+
+
+class LINK_BAD_TARGET_URI(Note):
+    category = categories.GENERAL
+    level = levels.BAD
+    _summary = "The %(rel)s Link target isn't a valid URI."
+    _text = """\
+The `Link` header advertises a `%(rel)s` resource hint for `%(link)s`, but that isn't a valid URI
+(for example, it may have a malformed IP address in its host). Browsers will ignore this hint."""
 
 
 class LINK_BAD_HINT_TARGET(Note):
@@ -271,3 +283,17 @@ class RepeatedRejectedTitleStarLinkTest(FieldTest[AnyMessageLinterProtocol]):
     inputs = [b"</foo>; rel=ex; title*=bogus; title*=UTF-8''%41"]
     expected_out = [("/foo", {"rel": "ex"})]
     expected_notes: NoteClassListType = [PARAM_STAR_ERROR, PARAM_REPEATS]
+
+
+class MalformedIPv6PreloadLinkTest(FieldTest[AnyMessageLinterProtocol]):
+    name = "Link"
+    inputs = [b"<http://[::1>; rel=preload"]
+    expected_out = [("http://[::1", {"rel": "preload"})]
+    expected_notes: NoteClassListType = [BAD_SYNTAX, LINK_BAD_TARGET_URI]
+
+
+class MalformedIPv6PreconnectLinkTest(FieldTest[AnyMessageLinterProtocol]):
+    name = "Link"
+    inputs = [b"<http://[::1]x>; rel=preconnect"]
+    expected_out = [("http://[::1]x", {"rel": "preconnect"})]
+    expected_notes: NoteClassListType = [BAD_SYNTAX, LINK_BAD_TARGET_URI]

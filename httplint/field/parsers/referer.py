@@ -1,11 +1,12 @@
-from urllib.parse import urlparse
-
+from httplint.field import BAD_SYNTAX
 from httplint.field.singleton_field import SingletonField
 from httplint.field.tests import FieldTest
+from httplint.field.utils import is_secure, resolve_url
 from httplint.note import Note, categories, levels
 from httplint.syntax import rfc9110
 from httplint.types import (
     AddNoteMethodType,
+    NoteClassListType,
     RequestLinterProtocol,
 )
 from httplint.util import iri_to_uri
@@ -32,12 +33,14 @@ resource from which the target URI was obtained (i.e., the "referrer")."""
 
         try:
             # Compare like with like: the request's URI has been through iri_to_uri
-            parsed_referer = urlparse(iri_to_uri(referer_uri))
-            parsed_request = urlparse(request_uri)
+            parsed_referer = resolve_url("", iri_to_uri(referer_uri))
         except (ValueError, UnicodeError):
             return  # Already handled by URI syntax checks
+        parsed_request = resolve_url("", request_uri)
+        if parsed_referer is None or parsed_request is None:
+            return  # Already handled by URI syntax checks
 
-        if parsed_referer.scheme.lower() in ["https", "wss"]:
+        if is_secure(parsed_referer):
             if parsed_request.scheme.lower() in ["http", "ws"]:
                 add_note(REFERER_SECURE_TO_INSECURE)
 
@@ -77,3 +80,13 @@ class RefererTest(FieldTest[RequestLinterProtocol]):
     name = "Referer"
     inputs = [b"http://www.example.org/hypertext/Overview.html"]
     expected_out = "http://www.example.org/hypertext/Overview.html"
+
+
+class RefererBadURITest(FieldTest[RequestLinterProtocol]):
+    name = "Referer"
+    inputs = [b"https://[::1"]
+    expected_out = "https://[::1"
+    expected_notes: NoteClassListType = [BAD_SYNTAX]
+
+    def set_request_context(self, message: RequestLinterProtocol) -> None:
+        message.uri = "http://example.com/"

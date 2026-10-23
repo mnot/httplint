@@ -1,8 +1,8 @@
-from typing import Any
-from urllib.parse import urljoin, urlsplit
+from typing import Any, Optional, Type
 
 from httplint.field.structured_field import StructuredField
 from httplint.field.tests import FieldTest
+from httplint.field.utils import is_secure, resolve_url
 from httplint.note import Note, categories, levels
 from httplint.types import (
     AddNoteMethodType,
@@ -10,6 +10,16 @@ from httplint.types import (
     ResponseLinterProtocol,
     SFDictionaryType,
 )
+
+
+def endpoint_problem(base_uri: str, url: str) -> Optional[Type[Note]]:
+    "The note class describing what's wrong with a reporting endpoint URL, or None if it's fine."
+    parsed = resolve_url(base_uri, url)
+    if parsed is None:
+        return BAD_REPORTING_ENDPOINT_URL
+    if parsed.scheme and not is_secure(parsed):
+        return ENDPOINT_NOT_SECURE
+    return None
 
 
 class reporting_endpoints(StructuredField[ResponseLinterProtocol]):
@@ -35,10 +45,9 @@ API."""
                 )
                 continue
 
-            target = urljoin(self.message.base_uri, url)
-            parsed = urlsplit(target)
-            if parsed.scheme and parsed.scheme.lower() not in ["https", "wss"]:
-                add_note(ENDPOINT_NOT_SECURE, name=name, url=url)
+            problem = endpoint_problem(self.message.base_uri, url)
+            if problem is not None:
+                add_note(problem, name=name, url=url)
 
 
 class ENDPOINT_NOT_SECURE(Note):
@@ -47,6 +56,15 @@ class ENDPOINT_NOT_SECURE(Note):
     _summary = "The %(name)s reporting endpoint is not secure."
     _text = """\
 The reporting endpoint `%(name)s` uses an insecure URL (`%(url)s`). Browsers may ignore it."""
+
+
+class BAD_REPORTING_ENDPOINT_URL(Note):
+    category = categories.GENERAL
+    level = levels.BAD
+    _summary = "The %(name)s reporting endpoint isn't a valid URL."
+    _text = """\
+The reporting endpoint `%(name)s` has a URL (`%(url)s`) that can't be resolved (for example, it may
+have a malformed IP address in its host). Browsers will ignore it."""
 
 
 class BAD_REPORTING_ENDPOINT_SYNTAX(Note):
@@ -96,3 +114,10 @@ class ReportingEndpointsInsecureBaseTest(FieldTest[ResponseLinterProtocol]):
 
     def set_response_context(self, message: ResponseLinterProtocol) -> None:
         message.base_uri = "http://example.com/"
+
+
+class ReportingEndpointsBadURLTest(FieldTest[ResponseLinterProtocol]):
+    name = "Reporting-Endpoints"
+    inputs = [b'e="http://["']
+    expected_out: Any = {"e": ("http://[", {})}
+    expected_notes: NoteClassListType = [BAD_REPORTING_ENDPOINT_URL]

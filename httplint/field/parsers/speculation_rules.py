@@ -1,11 +1,11 @@
 from typing import Any
-from urllib.parse import urljoin, urlsplit
 
 from httplint.field.structured_field import (
     STRUCTURED_FIELD_PARSE_ERROR,
     StructuredField,
 )
 from httplint.field.tests import FieldTest
+from httplint.field.utils import is_secure, resolve_url
 from httplint.note import Note, categories, levels
 from httplint.types import (
     AddNoteMethodType,
@@ -35,9 +35,10 @@ point to speculation rules files."""
                 )
                 continue
 
-            target = urljoin(self.message.base_uri, url)
-            parsed = urlsplit(target)
-            if parsed.scheme and parsed.scheme.lower() not in ["https", "wss"]:
+            parsed = resolve_url(self.message.base_uri, url)
+            if parsed is None:
+                add_note(SPECULATION_RULE_BAD_URL, url=url)
+            elif parsed.scheme and not is_secure(parsed):
                 add_note(SPECULATION_RULE_NOT_SECURE, url=url)
 
 
@@ -47,6 +48,15 @@ class SPECULATION_RULE_NOT_SECURE(Note):
     _summary = "The speculation rule URL is not secure."
     _text = """\
 The speculation rule `%(url)s` uses an insecure URL. Browsers may ignore it."""
+
+
+class SPECULATION_RULE_BAD_URL(Note):
+    category = categories.GENERAL
+    level = levels.BAD
+    _summary = "The speculation rule URL isn't valid."
+    _text = """\
+The speculation rule `%(url)s` can't be resolved as a URL (for example, it may have a malformed IP
+address in its host). Browsers will ignore it."""
 
 
 class SPECULATION_RULES_BAD_TYPE(Note):
@@ -113,3 +123,10 @@ class SpeculationRulesInvalidSFTest(FieldTest[ResponseLinterProtocol]):
     inputs = [b"<script>"]
     expected_out: Any = None
     expected_notes: NoteClassListType = [STRUCTURED_FIELD_PARSE_ERROR]
+
+
+class SpeculationRulesBadURLTest(FieldTest[ResponseLinterProtocol]):
+    name = "Speculation-Rules"
+    inputs = [b'"http://["']
+    expected_out: Any = [("http://[", {})]
+    expected_notes: NoteClassListType = [SPECULATION_RULE_BAD_URL]

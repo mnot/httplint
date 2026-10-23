@@ -2,7 +2,9 @@ import calendar
 import re
 from email.utils import parsedate as lib_parsedate
 from typing import Any, Dict, FrozenSet, List, Optional, Set, Tuple, Type, Union
+from urllib.parse import SplitResult
 from urllib.parse import unquote as urlunquote
+from urllib.parse import urljoin, urlsplit
 
 from http_sf import Token
 
@@ -588,3 +590,20 @@ HTTP has a number of defined date formats for historical reasons. This header is
 format that are now obsolete. See [the
 specification](https://www.rfc-editor.org/rfc/rfc9110.html#name-obsolete-date-formats) for more information.
 """
+
+
+# --- resolve_url: URL resolution shared by Link, Location, Referer, Reporting-Endpoints,
+# --- Speculation-Rules and NEL
+
+
+def resolve_url(base: str, url: str) -> Optional[SplitResult]:
+    "Resolve url against base and split it; None if urllib rejects it (e.g., a bad IPv6 host)."
+    try:
+        return urlsplit(urljoin(base, url))
+    except ValueError:
+        return None
+
+
+def is_secure(split: SplitResult) -> bool:
+    "Whether a split URL has a secure scheme (https or wss)."
+    return split.scheme.lower() in ("https", "wss")
