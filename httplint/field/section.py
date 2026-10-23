@@ -26,7 +26,7 @@ class FieldSection:
     def __init__(self, message: LinterProtocol, is_trailer: bool = False) -> None:
         self.message = weakref.proxy(message)
         self.is_trailer = is_trailer
-        self.text: StrFieldListType = []  # unicode version of the field tuples as received
+        self.text: StrFieldListType = []  # unicode version of the field tuples, names stripped
         self.parsed: FieldDictType = {}  # dictionary of parsed field values
         self.size: int = 0  # size of textual field block w/o delimiters, in bytes
         self.handlers: Dict[str, HttpField[Any]] = {}
@@ -59,6 +59,11 @@ class FieldSection:
             except UnicodeError:
                 str_value = value.decode("iso-8859-1", "replace")
                 add_note(FIELD_VALUE_ENCODING, field_name=str_name)
+
+            stripped_name = str_name.strip(" \t")
+            if stripped_name != str_name:
+                str_name = stripped_name
+                add_note(FIELD_NAME_WHITESPACE, field_name=str_name)
             self.text.append((str_name, str_value))
 
             handler = self._finder.find_handler(str_name)
@@ -66,16 +71,14 @@ class FieldSection:
                 add_note,
                 field_name=handler.canonical_name,
             )
-            if not handler.pre_check(field_add_note):
-                continue
-            handler.handle_input(str_value, field_add_note, offset)
-
             if field_size > self.max_field_size:
                 add_note(
                     FIELD_TOO_LARGE,
                     field_name=handler.canonical_name,
                     field_size=f_num(field_size),
                 )
+            if handler.pre_check(field_add_note):
+                handler.handle_input(str_value, field_add_note, offset)
             offset += 1
 
         if self.size > self.max_total_size:
@@ -121,6 +124,16 @@ class FIELD_NAME_ENCODING(Note):
     _summary = "The %(field_name)s field's name contains non-ASCII characters."
     _text = """\
 HTTP field names can only contain ASCII characters."""
+
+
+class FIELD_NAME_WHITESPACE(Note):
+    category = categories.GENERAL
+    level = levels.BAD
+    _summary = "The %(field_name)s field's name has whitespace around it."
+    _text = """\
+HTTP field names can't be surrounded by whitespace; in particular, no whitespace is allowed
+between the field name and the colon. Recipients are required to reject such messages, or to
+remove the whitespace before processing the field. The whitespace has been ignored here."""
 
 
 class FIELD_VALUE_ENCODING(Note):
