@@ -385,9 +385,11 @@ def check_sf_params(
     param_list = []
     for param_name, param_value in params.items():
         safe_value = inline_safe(str(param_value))
+        # An empty code span would swallow the next span's delimiters.
+        shown_value = f"`{safe_value}`" if safe_value else "(empty)"
         if param_name not in known_params:
             add_note(unknown_param_note, param=param_name)
-            param_list.append(f"* `{param_name}`: `{safe_value}`")
+            param_list.append(f"* `{param_name}`: {shown_value}")
         else:
             expected_type = known_params[param_name].get("type")
             if expected_type and not isinstance(param_value, expected_type):
@@ -396,7 +398,7 @@ def check_sf_params(
                     param=param_name,
                     value=param_value,
                 )
-                param_list.append(f"* `{param_name}`: `{safe_value}`")
+                param_list.append(f"* `{param_name}`: {shown_value}")
                 continue
 
             allowed_values = known_params[param_name].get("values")
@@ -406,7 +408,7 @@ def check_sf_params(
                     param=param_name,
                     value=param_value,
                 )
-                param_list.append(f"* `{param_name}`: `{safe_value}`")
+                param_list.append(f"* `{param_name}`: {shown_value}")
                 continue
 
             if "value_desc" in known_params[param_name]:
@@ -414,11 +416,11 @@ def check_sf_params(
                 if desc:
                     param_list.append(f"* {desc}")
                 else:
-                    param_list.append(f"* `{param_name}`: `{safe_value}`")
+                    param_list.append(f"* `{param_name}`: {shown_value}")
             elif "desc" in known_params[param_name]:
                 desc = known_params[param_name]["desc"]
                 if "%s" in desc:
-                    wrapped = f"`{safe_value}`" if safe_value else ""
+                    wrapped = f"`{safe_value}`" if safe_value else "(empty)"
                     param_list.append(f"* {desc % wrapped}")
                 elif param_value:
                     # A static desc with no %s is a flag-style description,
@@ -429,7 +431,7 @@ def check_sf_params(
                 if param_value is True:
                     param_list.append(f"* `{param_name}`")
                 else:
-                    param_list.append(f"* `{param_name}`: `{safe_value}`")
+                    param_list.append(f"* `{param_name}`: {shown_value}")
 
     return "\n".join(param_list)
 
