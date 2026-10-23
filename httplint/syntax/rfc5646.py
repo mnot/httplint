@@ -13,7 +13,7 @@ from .rfc5234 import ALPHA, DIGIT
 
 # alphanum      = (ALPHA / DIGIT)     ; letters and numbers
 
-alphanum = r"(?: {ALPHA} | {DIGIT} )"
+alphanum = rf"(?: {ALPHA} | {DIGIT} )"
 
 # irregular     = "en-GB-oed"         ; irregular tags do not match
 #               / "i-ami"             ; the 'langtag' production and

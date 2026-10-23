@@ -1,4 +1,5 @@
 import importlib
+import itertools
 import re
 import sys
 import time
@@ -6,7 +7,7 @@ import unittest
 from typing import Callable, List, Tuple
 
 from httplint import HttpRequestLinter, HttpResponseLinter, syntax
-from httplint.syntax import rfc9110, rfc9112, rfc9651
+from httplint.syntax import rfc5646, rfc9110, rfc9112, rfc9651
 
 
 def check_regex() -> None:
@@ -97,6 +98,22 @@ class SyntaxBacktrackingTest(unittest.TestCase):
 
     def test_origin_form(self) -> None:
         self.check("request target", lint_target, b"/" + b"a" * 15000 + b"%zz")
+
+    def test_language_tag(self) -> None:
+        "Guard: these rules were dead before the alphanum fix, so main is fast on them too."
+        n = 1500
+        bad = b"\x80"
+        cases = [
+            ("variants", b"en" + b"-abcde" * n + bad),
+            ("short variants", b"en" + b"-1abc" * n + bad),
+            ("extensions", b"en" + b"-a-bb" * n + bad),
+            ("long extensions", b"en" + b"-a-bbbbbbbb-c" * n + bad),
+            ("private use", b"en-x" + b"-abcdefgh" * n + bad),
+            ("extlang", b"en" + b"-abc" * n + bad),
+            ("list", b", ".join([b"en-x-a"] * n) + bad),
+        ]
+        for label, value in cases:
+            self.check(f"Content-Language {label}", lint_response, b"Content-Language", value)
 
 
 def matches(rule: str, value: str) -> bool:
@@ -261,6 +278,95 @@ class SyntaxCaseSensitiveTest(unittest.TestCase):
         self.assertFalse(matches(rfc9651.sf_dictionary, "Foo=1"))
         self.assertTrue(matches(rfc9651.sf_dictionary, "foo=1, bar=Baz"))
         self.assertFalse(matches(rfc9651.sf_item, "a;Foo=1"))
+
+
+class SyntaxLanguageTagTest(unittest.TestCase):
+    "rfc5646.alphanum was missing its f-string prefix (issue #238)."
+
+    old_alphanum = r"(?: {ALPHA} | {DIGIT} )"  # literal text, as it was
+
+    def old_language_tag(self) -> str:
+        "Language-Tag as it was built before the fix."
+        self.assertNotEqual(rfc5646.alphanum, self.old_alphanum)
+        alphanum = self.old_alphanum
+        digit = rfc5646.DIGIT
+        variant = rf"(?: {alphanum}{{5,8}} | (?: {digit} {alphanum}{{3}} ) )"
+        extension = rf"{rfc5646.singleton} (?: \- {alphanum}{{2,8}} ){{1,}}"
+        privateuse = rf"x (?: \- {alphanum}{{1,8}} ){{1,}}"
+        return rf"""(?: (?:
+            {rfc5646.language}
+            (?: \- {rfc5646.script} )?
+            (?: \- {rfc5646.region} )?
+            (?: \- {variant} )*
+            (?: \- {extension} )*
+            (?: \- {privateuse} )?
+        ) | {privateuse} | {rfc5646.grandfathered} )"""
+
+    def test_accepts_extended_tags(self) -> None:
+        for value in [
+            "en-x-foo",
+            "de-CH-1996",
+            "x-foo",
+            "sl-rozaj",
+            "sl-rozaj-biske",
+            "en-u-ca-gregory",
+            "zh-Hant-x-private",
+            "de-CH-x-phonebk",
+            "az-Arab-x-AZE-derbend",
+            "hy-Latn-IT-arevela",
+            "de-DE-u-co-phonebk",
+            "en-a-bbb-x-a-ccc",
+            "qaa-Qaaa-QM-x-southern",
+            "zh-yue-HK",
+            "x-abcdefgh",
+        ]:
+            with self.subTest(value=value):
+                self.assertTrue(matches(rfc5646.Language_Tag, value))
+
+    def test_rejects(self) -> None:
+        for value in [
+            "x-{ALPHA}",
+            "en-{ALPHA}{ALPHA}{ALPHA}{ALPHA}{ALPHA}",
+            "en-x-{DIGIT}",
+            "de-419-DE",
+            "a-DE",
+            "en-",
+            "-en",
+            "en-x",
+            "en-a",
+            "en-x-abcdefghi",
+            "en-abcdefghi",
+            "en--US",
+        ]:
+            with self.subTest(value=value):
+                self.assertFalse(matches(rfc5646.Language_Tag, value))
+
+    def test_differential(self) -> None:
+        "Everything the old rule accepted is still accepted; the new ones are extended tags."
+        old = self.old_language_tag()
+        subtags = ["en", "de", "Latn", "CH", "419", "1996", "x", "u", "ca", "foo", "rozaj"]
+        subtags.append("abcdefghi")
+        newly_accepted = 0
+        for count in range(1, 5):
+            for combo in itertools.product(subtags, repeat=count):
+                value = "-".join(combo)
+                was, now = matches(old, value), matches(rfc5646.Language_Tag, value)
+                with self.subTest(value=value):
+                    if was:
+                        self.assertTrue(now)
+                    elif now:
+                        newly_accepted += 1
+                        # It needs a variant, extension or private-use subtag to be new.
+                        self.assertTrue(
+                            any(
+                                len(sub) == 1
+                                or 5 <= len(sub) <= 8
+                                or (len(sub) == 4 and sub[0].isdigit())
+                                for sub in combo
+                            ),
+                            value,
+                        )
+        self.assertGreater(newly_accepted, 100)
 
 
 def run_regex_check() -> None:
