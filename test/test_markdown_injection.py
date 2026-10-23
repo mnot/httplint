@@ -163,8 +163,10 @@ class EmptyCodeSpanTest(unittest.TestCase):
     # Remove expectedFailure when that issue is fixed.
     @unittest.expectedFailure
     def test_link_resource_hint_empty_target(self) -> None:
-        value = f"<>; rel=preload, <{HTML}>; rel=preload"
+        # A bracketed target ends at the first ">", so the HTML goes in an unbracketed one.
+        value = f"<>; rel=preload, x{HTML}; rel=preload"
         self.check_escaped(detail_text(b"Link", value.encode("ascii")))
+        self.assertNotIn("``", detail_text(b"Link", b"<>; rel=preload"))
 
 
 class InlineSafeTest(unittest.TestCase):

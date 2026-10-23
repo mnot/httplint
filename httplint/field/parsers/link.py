@@ -23,6 +23,22 @@ from httplint.util import inline_safe
 HINT_RELS = ("preload", "preconnect", "dns-prefetch")
 
 
+def split_link_value(field_value: str) -> Tuple[str, str]:
+    """
+    Split a link-value into its target and its parameter string.
+
+    A target in angle brackets ends at the first ">"; a ";" inside it is part of the URI.
+    Anything else isn't a valid link-value, so the target is the text before the first ";",
+    unchanged.
+    """
+    value = field_value.strip()
+    if value.startswith("<") and ">" in value:
+        target, _, rest = value[1:].partition(">")
+        return target, rest.partition(";")[2]
+    target, _, params = value.partition(";")
+    return target.strip(), params
+
+
 class link(HttpListField[AnyMessageLinterProtocol]):
     canonical_name = "Link"
     description = """\
@@ -33,15 +49,17 @@ statement of the form "[context IRI] has a [relation type] resource at [target I
     syntax = rfc8288.Link
     deprecated = False
 
+    def __init__(self, wire_name: str, message: AnyMessageLinterProtocol) -> None:
+        super().__init__(wire_name, message)
+        self.malformed: set[int] = set()  # id() of the params of links with a syntax defect
+        self._params: ParamDictType = {}  # the params parse() last returned
+
     def parse(self, field_value: str, add_note: AddNoteMethodType) -> Tuple[str, ParamDictType]:
-        try:
-            link_value, param_str = field_value.split(";", 1)
-        except ValueError:
-            link_value, param_str = field_value, ""
-        link_value = link_value.strip()[1:-1]  # trim the angle brackets
+        link_value, param_str = split_link_value(field_value)
         param_dict = parse_params(
             param_str, add_note, ["rel", "rev", "anchor", "hreflang", "type", "media"]
         )
+        self._params = param_dict
         self._check_hint_target(link_value, param_dict, add_note)
         if "rel" in param_dict:  # relation_types
             pass
@@ -72,13 +90,20 @@ statement of the form "[context IRI] has a [relation type] resource at [target I
         self.suppress_syntax_note()
         return True
 
+    def _check_syntax(self, value: str, add_note: AddNoteMethodType) -> bool:
+        "The base class checks each link after parse(); remember the ones that fail."
+        conforms = super()._check_syntax(value, add_note)
+        if not conforms:
+            self.malformed.add(id(self._params))
+        return conforms
+
     def evaluate(self, add_note: AddNoteMethodType) -> None:
         hints: dict[str, list[str]] = {rel: [] for rel in HINT_RELS}
         bad_targets: list[Tuple[str, str, str]] = []  # (rel, link, scheme)
         base_uri = getattr(self.message, "base_uri", "") or ""
         for link_value, params in self.value:
             rel = params.get("rel")
-            if not isinstance(rel, str):
+            if not isinstance(rel, str) or id(params) in self.malformed:
                 continue
             for token in rel.lower().split():
                 if token not in hints:
@@ -184,9 +209,11 @@ class BasicLinkTest(FieldTest[AnyMessageLinterProtocol]):
 
 
 class QuotedLinkTest(FieldTest[AnyMessageLinterProtocol]):
+    "Only a target in angle brackets is unwrapped; this one keeps its quotes."
+
     name = "Link"
     inputs = [b'"http://www.example.com/"; rel=example']
-    expected_out = [("http://www.example.com/", {"rel": "example"})]
+    expected_out = [('"http://www.example.com/"', {"rel": "example"})]
     expected_notes: NoteClassListType = [BAD_SYNTAX]
 
 
@@ -333,9 +360,96 @@ class MalformedIPv6OtherRelLinkTest(FieldTest[AnyMessageLinterProtocol]):
 
 
 class BadSyntaxHintLinkTest(FieldTest[AnyMessageLinterProtocol]):
-    "A syntax error that isn't an unresolvable target is still BAD_SYNTAX."
+    "A syntax error that isn't an unresolvable target is still BAD_SYNTAX, with no hint note."
 
     name = "Link"
     inputs = [b"</a b>; rel=preload"]
     expected_out = [("/a b", {"rel": "preload"})]
-    expected_notes: NoteClassListType = [BAD_SYNTAX, LINK_RESOURCE_HINTS]
+    expected_notes: NoteClassListType = [BAD_SYNTAX]
+
+
+class SemicolonInTargetLinkTest(FieldTest[AnyMessageLinterProtocol]):
+    "A ';' inside the angle brackets is part of the URI, not a parameter delimiter."
+
+    name = "Link"
+    inputs = [b"<http://example.com/a;b>; rel=next"]
+    expected_out = [("http://example.com/a;b", {"rel": "next"})]
+
+
+class SemicolonInHintTargetLinkTest(FieldTest[AnyMessageLinterProtocol]):
+    name = "Link"
+    inputs = [b"<http://example.com/a;b=c>; rel=preload; as=script"]
+    expected_out = [("http://example.com/a;b=c", {"rel": "preload", "as": "script"})]
+    expected_notes: NoteClassListType = [LINK_RESOURCE_HINTS]
+
+
+class GreaterThanInParamLinkTest(FieldTest[AnyMessageLinterProtocol]):
+    "Only the first '>' ends the target; later ones belong to the parameters."
+
+    name = "Link"
+    inputs = [b'</foo>; rel=next; title="a>b"']
+    expected_out = [("/foo", {"rel": "next", "title": "a>b"})]
+
+
+class UnbracketedTargetLinkTest(FieldTest[AnyMessageLinterProtocol]):
+    "Without angle brackets nothing is stripped from the target."
+
+    name = "Link"
+    inputs = [b"foo; rel=preload"]
+    expected_out = [("foo", {"rel": "preload"})]
+    expected_notes: NoteClassListType = [BAD_SYNTAX]
+
+
+class UnclosedBracketLinkTest(FieldTest[AnyMessageLinterProtocol]):
+    name = "Link"
+    inputs = [b"<http://example.com/; rel=next"]
+    expected_out = [("<http://example.com/", {"rel": "next"})]
+    expected_notes: NoteClassListType = [BAD_SYNTAX]
+
+
+class TrailingGarbageAfterTargetLinkTest(FieldTest[AnyMessageLinterProtocol]):
+    name = "Link"
+    inputs = [b"</foo>x; rel=next"]
+    expected_out = [("/foo", {"rel": "next"})]
+    expected_notes: NoteClassListType = [BAD_SYNTAX]
+
+
+class UnclosedBracketHintLinkTest(FieldTest[AnyMessageLinterProtocol]):
+    "A malformed link doesn't get the resource hint note."
+
+    name = "Link"
+    inputs = [b"<http://example.com/x; rel=preload"]
+    expected_out = [("<http://example.com/x", {"rel": "preload"})]
+    expected_notes: NoteClassListType = [BAD_SYNTAX]
+
+
+class QuotedHintLinkTest(FieldTest[AnyMessageLinterProtocol]):
+    name = "Link"
+    inputs = [b'"http://example.com/x"; rel=preconnect']
+    expected_out = [('"http://example.com/x"', {"rel": "preconnect"})]
+    expected_notes: NoteClassListType = [BAD_SYNTAX]
+
+
+class UnbracketedHintLinkTest(FieldTest[AnyMessageLinterProtocol]):
+    name = "Link"
+    inputs = [b"http://example.com/x; rel=dns-prefetch"]
+    expected_out = [("http://example.com/x", {"rel": "dns-prefetch"})]
+    expected_notes: NoteClassListType = [BAD_SYNTAX]
+
+
+class TrailingGarbageHintLinkTest(FieldTest[AnyMessageLinterProtocol]):
+    "BAD_SYNTAX_DETAILED, which the base class adds, also means no hint note."
+
+    name = "Link"
+    inputs = [b"</foo>x; rel=preload"]
+    expected_out = [("/foo", {"rel": "preload"})]
+    expected_notes: NoteClassListType = [BAD_SYNTAX]
+
+
+class WellFormedHintLinkTest(FieldTest[AnyMessageLinterProtocol]):
+    "Guard: a well-formed hint link, with other parameters, still gets its note."
+
+    name = "Link"
+    inputs = [b'</a;b.css>; rel="preload"; as=style; type="text/css"']
+    expected_out = [("/a;b.css", {"rel": "preload", "as": "style", "type": "text/css"})]
+    expected_notes: NoteClassListType = [LINK_RESOURCE_HINTS]

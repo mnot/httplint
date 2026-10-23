@@ -357,7 +357,7 @@ class FieldSyntaxNoteTest(unittest.TestCase):
 
     def test_hook_suppresses_whole_value(self) -> None:
         "Pins the per-value scope: the stray '>' in this Link isn't reported separately."
-        found = self.notes(b"Link", b"<http://[::1]>>; rel=dns-prefetch")
+        found = self.notes(b"Link", b"<http://[::1>>; rel=dns-prefetch")
         self.assertIn(LINK_BAD_TARGET_URI, found)
         self.assertFalse(any(issubclass(n, BAD_SYNTAX) for n in found), found)
 
