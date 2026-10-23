@@ -63,9 +63,6 @@ class TokenPolicyField(StructuredField[ResponseLinterProtocol]):
         if not isinstance(report_to, str):
             add_note(POLICY_REPORT_TO_NOT_STRING, report_only=self.report_only_string)
             return
-        if not report_to:
-            return
-
         if report_to not in known_reporting_endpoints(self.message):
             add_note(
                 self.report_to_missing_note,
@@ -81,4 +78,4 @@ class POLICY_REPORT_TO_NOT_STRING(Note):
     _text = """\
 The `report-to` parameter in the `%(field_name)s` header names a reporting endpoint, and has to be
 a String (for example, `report-to="endpoint"`). Browsers may ignore the parameter when it is a
-Token (`report-to=endpoint`) or any other type, so reports would not be sent."""
+Token (`report-to=endpoint`) or any other type."""

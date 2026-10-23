@@ -44,7 +44,8 @@ The `noopener-allow-popups`
 forces the document into a new top-level browsing context, severing any opener
 relationship with the document that opened it, in supporting browsers.
 
-This is not a robust security boundary between same-origin documents.%(report_only_text)s"""
+As the HTML specification notes, this does not create a robust security boundary between
+those same-origin documents.%(report_only_text)s"""
 
 
 class COOP_UNSAFE_NONE(Note):
@@ -190,3 +191,10 @@ class CrossOriginOpenerPolicyUnparseableTest(FieldTest[ResponseLinterProtocol]):
     inputs = [b"same-origin;;"]
     expected_out: Any = None
     expected_notes: NoteClassListType = [STRUCTURED_FIELD_PARSE_ERROR]
+
+
+class CrossOriginOpenerPolicyReportToEmptyTest(FieldTest[ResponseLinterProtocol]):
+    name = "Cross-Origin-Opener-Policy"
+    inputs = [b'same-origin; report-to=""']
+    expected_out: Any = (Token("same-origin"), {"report-to": ""})
+    expected_notes: NoteClassListType = [COOP_SAME_ORIGIN, COOP_REPORT_TO_MISSING]

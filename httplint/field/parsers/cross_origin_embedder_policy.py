@@ -171,3 +171,10 @@ class CrossOriginEmbedderPolicyUnparseableTest(FieldTest[ResponseLinterProtocol]
     inputs = [b"require-corp;;"]
     expected_out: Any = None
     expected_notes: NoteClassListType = [STRUCTURED_FIELD_PARSE_ERROR]
+
+
+class CrossOriginEmbedderPolicyReportToEmptyTest(FieldTest[ResponseLinterProtocol]):
+    name = "Cross-Origin-Embedder-Policy"
+    inputs = [b'require-corp; report-to=""']
+    expected_out: Any = (Token("require-corp"), {"report-to": ""})
+    expected_notes: NoteClassListType = [COEP_REQUIRE_CORP, COEP_REPORT_TO_MISSING]
