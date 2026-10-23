@@ -13,6 +13,10 @@ from httplint.field.utils import split_list_field
 # Generous: linear inputs take well under a second; the quadratic ones took minutes.
 TIME_LIMIT = 5.0
 SIZE = 100_000
+# For the angle-target cache: an uncached search takes 6-12 s at 400,000 repeats on a
+# laptop; the real thing takes 0.2-0.4 s.
+ANGLE_SIZE = 500_000
+ANGLE_LIMIT = 3.0
 
 
 class SplitListFieldTest(unittest.TestCase):
@@ -139,10 +143,24 @@ class AngleTargetSplitTest(unittest.TestCase):
         self.split(value)
         self.assertLess(time.monotonic() - start, TIME_LIMIT)
 
-    def test_linear(self):
-        # Each "<" would otherwise rescan to a distant (or missing) ">".
-        self.assert_fast("<a," * (SIZE // 3))
-        self.assert_fast("<a," * (SIZE // 3) + ">")
+    def assert_fast_for(self, value, limit):
+        start = time.monotonic()
+        self.split(value)
+        self.assertLess(time.monotonic() - start, limit)
+
+    def test_unclosed_brackets_are_linear(self):
+        # Without remembering that there is no ">", each "<" would search to the end:
+        # quadratic, and several seconds at this size (the real thing takes ~0.3 s).
+        self.assert_fast_for("<a," * ANGLE_SIZE, ANGLE_LIMIT)
+        self.assert_fast_for("< a, " * (ANGLE_SIZE // 2), ANGLE_LIMIT)
+
+    def test_distant_closing_bracket_is_linear(self):
+        # Without reusing the ">" already found, each "<" would search to the far end.
+        self.assert_fast_for("<a," * ANGLE_SIZE + ">", ANGLE_LIMIT)
+        self.assert_fast_for("< a, " * (ANGLE_SIZE // 2) + ">", ANGLE_LIMIT)
+
+    def test_other_shapes_are_linear(self):
+        "Guards: these were not slow in any version tried."
         self.assert_fast("<a>," * (SIZE // 4))
         self.assert_fast("<" + "a," * SIZE + ">")
         self.assert_fast(("<" + "a" * 10 + ">, ") * (SIZE // 14))
