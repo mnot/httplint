@@ -70,6 +70,15 @@ class BadLMTest(FieldTest[ResponseLinterProtocol]):
     expected_notes: NoteClassListType = [BAD_DATE_SYNTAX]
 
 
+class LMLowerCaseTest(FieldTest[ResponseLinterProtocol]):
+    "The day name, month and GMT are case-sensitive."
+
+    name = "Last-Modified"
+    inputs = [b"mon, 04 jul 2011 09:08:06 gmt"]
+    expected_out = None
+    expected_notes: NoteClassListType = [BAD_DATE_SYNTAX]
+
+
 class BlankLMTest(FieldTest[ResponseLinterProtocol]):
     name = "Last-Modified"
     inputs = [b""]

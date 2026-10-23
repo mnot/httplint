@@ -31,9 +31,9 @@ from .rfc9110 import (
 
 SPEC_URL = "http://httpwg.org/specs/rfc9112"
 
-#   header-field = field-name ":" OWS field-value OWS
+#   field-line = field-name ":" OWS field-value OWS
 
-header_field = rf"(?: {field_name} : {OWS} {field_value} {OWS} )"
+field_line = rf"(?: {field_name} : {OWS} {field_value} {OWS} )"
 
 ## Chunked Encoding
 
@@ -49,9 +49,9 @@ chunk_ext_name = token
 
 chunk_ext_val = rf"(?: {token} | {quoted_string} )"
 
-#   chunk-ext = *( ";" chunk-ext-name [ "=" chunk-ext-val ] )
+#   chunk-ext = *( BWS ";" BWS chunk-ext-name [ BWS "=" BWS chunk-ext-val ] )
 
-chunk_ext = rf"(?: \; {chunk_ext_name} (?: \= {chunk_ext_val} )? )"
+chunk_ext = rf"(?: (?: {BWS} \; {BWS} {chunk_ext_name} (?: {BWS} \= {BWS} {chunk_ext_val} )? )* )"
 
 #   chunk-data = 1*OCTET
 
@@ -65,13 +65,19 @@ chunk = rf"(?: {chunk_size} (?: {chunk_ext} )? {CRLF} {chunk_data} {CRLF} )"
 
 last_chunk = rf"(?: (?: 0 )+ (?: {chunk_ext} )? {CRLF} )"
 
-#   trailer-part = *( header-field CRLF )
+#   trailer-section = *( field-line CRLF )
 
-trailer_part = rf"(?: {header_field} {CRLF} )*"
+trailer_section = rf"(?: {field_line} {CRLF} )*"
 
-#   chunked-body = *chunk last-chunk trailer-part CRLF
+#   chunked-body = *chunk last-chunk trailer-section CRLF
+#
+# This is a faithful transcription, but it must not be used to match a body. The ABNF says
+# chunk-data is "1*OCTET ; a sequence of chunk-size octets", and the length is prose, not
+# ABNF: OCTET+ can contain CRLF, so a body can be split into chunks in many ways and matching
+# backtracks exponentially when it fails (several seconds at 12 chunks). Chunked bodies are
+# decoded by counting octets, not by regular expression.
 
-chunked_body = rf"(?: (?: chunk )* {last_chunk} {trailer_part} {CRLF} )"
+chunked_body = rf"(?: (?: {chunk} )* {last_chunk} {trailer_section} {CRLF} )"
 
 
 ## Transfer-Encoding
@@ -88,19 +94,19 @@ transfer_extension = rf"(?: {token} (?: {OWS} ; {OWS} {transfer_parameter} )* )"
 
 transfer_coding = rf"(?: chunked | compress | deflate | gzip | {transfer_extension} )"
 
-#   Transfer-Encoding = [ transfer-coding *( OWS "," OWS transfer-coding ) ]
+#   Transfer-Encoding = #transfer-coding
 
-Transfer_Encoding = list_rule(transfer_coding, 1)
+Transfer_Encoding = list_rule(transfer_coding)
 
 ## Message
 
 #   HTTP-name = %x48.54.54.50 ; HTTP
 
-HTTP_name = r"HTTP"
+HTTP_name = r"(?-i:HTTP)"
 
 #   HTTP-version = HTTP-name "/" DIGIT "." DIGIT
 
-HTTP_version = rf"{HTTP_name} / {DIGIT} . {DIGIT}"
+HTTP_version = rf"{HTTP_name} / {DIGIT} \. {DIGIT}"
 
 #   method = token
 
@@ -157,6 +163,8 @@ start_line = rf"(?: {request_line} | {status_line} )"
 
 message_body = rf"(?: {OCTET}* )"
 
-#   HTTP-message = start-line *( header-field CRLF ) CRLF [ message-body ]
+#   HTTP-message = start-line CRLF *( field-line CRLF ) CRLF [ message-body ]
+#
+# Here start-line includes its own CRLF, as in RFC 7230.
 
-HTTP_message = rf"(?: {start_line} (?: {header_field} {CRLF} )* {CRLF} (?: {message_body} )? )"
+HTTP_message = rf"(?: {start_line} (?: {field_line} {CRLF} )* {CRLF} (?: {message_body} )? )"

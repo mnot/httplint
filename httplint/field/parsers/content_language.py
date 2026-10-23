@@ -1,3 +1,4 @@
+from httplint.field import BAD_SYNTAX
 from httplint.field.list_field import HttpListField
 from httplint.field.tests import FieldTest
 from httplint.note import Note, categories, levels
@@ -62,3 +63,27 @@ class ContentLanguageDupTest(FieldTest[AnyMessageLinterProtocol]):
     inputs = [b"en-US, en-US"]
     expected_out = ["en-us", "en-us"]
     expected_notes: NoteClassListType = [CONTENT_LANGUAGE_DUP]
+
+
+class ContentLanguageExtendedTest(FieldTest[AnyMessageLinterProtocol]):
+    "Variant, extension and private-use subtags (the issue #238 reproduction)."
+
+    name = "Content-Language"
+    inputs = [b"en-x-foo, de-CH-1996, sl-rozaj, en-u-ca-gregory, zh-Hant-x-private, x-foo"]
+    expected_out = [
+        "en-x-foo",
+        "de-ch-1996",
+        "sl-rozaj",
+        "en-u-ca-gregory",
+        "zh-hant-x-private",
+        "x-foo",
+    ]
+
+
+class ContentLanguageBracesTest(FieldTest[AnyMessageLinterProtocol]):
+    "The literal text of the unexpanded template isn't a language tag."
+
+    name = "Content-Language"
+    inputs = [b"x-{ALPHA}"]
+    expected_out = ["x-{alpha}"]
+    expected_notes: NoteClassListType = [BAD_SYNTAX]

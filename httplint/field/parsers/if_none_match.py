@@ -23,7 +23,7 @@ any current representation of the target resource."""
     def parse(self, field_value: str, add_note: AddNoteMethodType) -> Union[str, Tuple[bool, str]]:
         if field_value == "*":
             return field_value
-        return parse_entity_tag(field_value, add_note)
+        return parse_entity_tag(field_value, add_note, self.suppress_syntax_note)
 
     def evaluate(self, add_note: AddNoteMethodType) -> None:
         if "*" in self.value and len(self.value) > 1:
@@ -89,4 +89,13 @@ class IfNoneMatchBadValueTest(FieldTest[RequestLinterProtocol]):
     name = "If-None-Match"
     inputs = [b"foo"]
     expected_out = [(False, "foo")]
+    expected_notes: NoteClassListType = [BAD_SYNTAX]
+
+
+class IfNoneMatchLowerCaseWeakUnquotedTest(FieldTest[RequestLinterProtocol]):
+    "Guard: the case isn't the only defect, so only that element gets BAD_SYNTAX, once."
+
+    name = "If-None-Match"
+    inputs = [b'w/xyzzy, "r2d2xxxx"']
+    expected_out = [(False, "r2d2xxxx")]
     expected_notes: NoteClassListType = [BAD_SYNTAX]

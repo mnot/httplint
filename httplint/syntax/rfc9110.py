@@ -7,6 +7,7 @@ Regex for RFC9110
 from typing import Optional
 
 from .rfc3986 import (
+    IP_literal,
     URI_reference,
     absolute_URI,
     authority,
@@ -25,6 +26,9 @@ from .rfc5322 import mailbox
 from .rfc5646 import Language_Tag
 
 SPEC_URL = "http://httpwg.org/specs/rfc9110"
+
+# Fields are matched with re.IGNORECASE, but ABNF literals written as %x values are
+# case-sensitive. Those (weak, day-name, month, GMT) are wrapped in (?-i: ... ).
 
 
 #   OWS = *( SP / HTAB )
@@ -208,12 +212,15 @@ Authentication_Info = list_rule(auth_param)
 token68 = rf"(?: (?: {ALPHA} | {DIGIT} | \- | \. | _ | \~ | \+ | / )+ =* )"
 
 #   credentials = auth-scheme [ 1*SP ( token68 / [ auth-param *( OWS "," OWS auth-param ) ] ) ]
+#
+# As for any list (Section 5.6.1), recipients accept empty elements, so the auth-params can
+# start with a comma: "Basic , realm=x".
 
 credentials = rf"""(?: {auth_scheme}
                         (?: {SP}+
                             (?: {token68} |
                                 (?:
-                                    (?: , | {auth_param} )
+                                    (?: , (?: {OWS} {auth_param} )? | {auth_param} )
                                     (?: {OWS} , (?: {OWS} {auth_param} )? )*
                                 )?
                             )
@@ -306,7 +313,7 @@ day = rf"(?: {DIGIT} {DIGIT} )"
 #    / %x53.61.74 ; Sat
 #    / %x53.75.6E ; Sun
 
-day_name = r"(?: Mon | Tue | Wed | Thu | Fri | Sat | Sun )"
+day_name = r"(?-i: Mon | Tue | Wed | Thu | Fri | Sat | Sun )"
 
 #   month = %x4A.61.6E ; Jan
 #    / %x46.65.62 ; Feb
@@ -321,7 +328,7 @@ day_name = r"(?: Mon | Tue | Wed | Thu | Fri | Sat | Sun )"
 #    / %x4E.6F.76 ; Nov
 #    / %x44.65.63 ; Dec
 
-month = r"(?: Jan | Feb | Mar | Apr | May | Jun | Jul | Aug | Sep | Oct | Nov | Dec )"
+month = r"(?-i: Jan | Feb | Mar | Apr | May | Jun | Jul | Aug | Sep | Oct | Nov | Dec )"
 
 #   year = 4DIGIT
 
@@ -349,7 +356,7 @@ time_of_day = rf"(?: {hour} : {minute} : {second} )"
 
 #   GMT = %x47.4D.54 ; GMT
 
-GMT = r"(?: GMT )"
+GMT = r"(?-i: GMT )"
 
 #   IMF-fixdate = day-name "," SP date1 SP time-of-day SP GMT
 
@@ -363,7 +370,7 @@ IMF_fixdate = rf"(?: {day_name} , {SP} {date1} {SP} {time_of_day} {SP} {GMT} )"
 #    / %x53.61.74.75.72.64.61.79 ; Saturday
 #    / %x53.75.6E.64.61.79 ; Sunday
 
-day_name_l = r"(?: Monday | Tuesday | Wednesday | Thursday | Friday | Saturday | Sunday )"
+day_name_l = r"(?-i: Monday | Tuesday | Wednesday | Thursday | Friday | Saturday | Sunday )"
 
 #   date2 = day "-" month "-" 2DIGIT
 
@@ -395,7 +402,7 @@ Date = HTTP_date
 
 #   weak = %x57.2F ; W/
 
-weak = r"(?: \x57\x2F )"
+weak = r"(?-i: \x57\x2F )"
 
 #   etagc = "!" / %x23-7E ; '#'-'~' / obs-text
 
@@ -468,12 +475,14 @@ Location = URI_reference
 Max_Forwards = rf"(?: {DIGIT}+ )"
 
 #   challenge = auth-scheme [ 1*SP ( token68 / [ auth-param *( OWS "," OWS auth-param ) ] ) ]
+#
+# As for credentials, a comma can come before the first auth-param.
 
 challenge = rf"""(?: {auth_scheme}
                         (?: {SP}+
                             (?: {token68} |
                                 (?:
-                                    (?: , | {auth_param} )
+                                    (?: , (?: {OWS} {auth_param} )? | {auth_param} )
                                     (?: {OWS} , (?: {OWS} {auth_param} )? )*
                                 )?
                             )
@@ -545,8 +554,15 @@ product = rf"(?: {token} (?: / {product_version} )? )"
 ctext = rf"(?: {HTAB} | {SP} | [\x21-\x27] | [\x2A-\x5b] | [\x5D-\x7E] | {obs_text} )"
 
 #   comment = "(" *( ctext / quoted-pair / comment ) ")"
+#
+# A regular expression can't recurse, so the nesting is unrolled: a comment can contain
+# comments to two further levels, and those can't contain any.
 
-comment = rf"(?: \( (?: {ctext} | {quoted_pair} )* \) )"
+comment_0 = rf"(?: \( (?: {ctext} | {quoted_pair} )* \) )"
+
+comment_1 = rf"(?: \( (?: {ctext} | {quoted_pair} | {comment_0} )* \) )"
+
+comment = rf"(?: \( (?: {ctext} | {quoted_pair} | {comment_1} )* \) )"
 
 #   Server = product *( RWS ( product / comment ) )
 
@@ -609,8 +625,16 @@ pseudonym = token
 received_protocol = rf"(?: (?: {protocol_name} / )? {protocol_version} )"
 
 #   received-by = pseudonym [ ":" port ]
+#
+# Deliberate, small deviation from the strict RFC 9110 grammar: an IP-literal is also accepted.
+# pseudonym is a token, which can't express an IPv6 host such as [::1]; RFC 7230 allowed a
+# uri-host here, proxies send IPv6 hosts, and the prose of RFC 9110 Section 7.6.3 still says
+# received-by is normally the host and port. Drop the IP_literal alternative if the RFC is
+# corrected to match. The alternatives can't match the same text (a pseudonym is a token and an
+# IP-literal starts with "["), which keeps this linear; a uri-host alternative overlaps the
+# token and doesn't.
 
-received_by = rf"(?: (?: {uri_host} (?: : {port} )? ) | {pseudonym} )"
+received_by = rf"(?: (?: {pseudonym} | {IP_literal} ) (?: : {port} )? )"
 
 #   Via = [ ( received-protocol RWS received-by [ RWS comment ] )
 #           *( OWS "," OWS ( received-protocol RWS received-by [ RWS comment ] ) ) ]
@@ -633,11 +657,17 @@ field_vchar = rf"(?: {VCHAR} | {obs_text} )"
 
 #   field-content = field-vchar [ 1*( SP / HTAB / field-vchar ) field-vchar ]
 
-field_content = rf"(?: {field_vchar} (?: (?: {SP} | {HTAB} )+ {field_vchar} )? )"
+field_content = rf"(?: {field_vchar} (?: (?: {SP} | {HTAB} | {field_vchar} )+ {field_vchar} )? )"
 
 #   field-value = *field-content
 
-field_value = rf"(?: {field_content} )*"
+#
+# Written out, not as a repetition of field-content: a field-content can be split into several
+# field-contents in many ways, so "*field-content" backtracks exponentially on non-matching
+# input. The accepted language is the same: empty, or any run of field-vchar, SP and HTAB
+# that starts and ends with a field-vchar.
+
+field_value = rf"(?: {field_vchar} (?: (?: {SP} | {HTAB} | {field_vchar} )* {field_vchar} )? )?"
 
 #   http-URI = "http://" authority path-abempty [ "?" query ]
 

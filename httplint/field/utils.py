@@ -1,7 +1,7 @@
 import calendar
 import re
 from email.utils import parsedate as lib_parsedate
-from typing import Any, Dict, FrozenSet, List, Optional, Set, Tuple, Type, Union
+from typing import Any, Callable, Dict, FrozenSet, List, Optional, Set, Tuple, Type, Union
 from urllib.parse import SplitResult
 from urllib.parse import unquote as urlunquote
 from urllib.parse import urljoin, urlsplit
@@ -179,7 +179,7 @@ _PARAMETER_VALUE_RE = re.compile(rfc9110.parameter_value, re.VERBOSE)
 _WHITESPACE_RE = re.compile(r"\s*")
 
 
-def _param_spans(instr: str, delim: str) -> List[Tuple[int, int]]:
+def _param_spans(instr: str, delim: str, bws: bool = False) -> List[Tuple[int, int]]:
     "Where split_params finds its parameters in ``instr``, as (start, end)."
     size = len(instr)
     spans: List[Tuple[int, int]] = []
@@ -190,8 +190,12 @@ def _param_spans(instr: str, delim: str) -> List[Tuple[int, int]]:
             pos += 1
             continue
         name_end = name.end()
-        if name_end < size and instr[name_end] == "=":
-            value = _PARAMETER_VALUE_RE.match(instr, name_end + 1)
+        equals = _WHITESPACE_RE.match(instr, name_end).end() if bws else name_end  # type: ignore[union-attr]
+        if equals < size and instr[equals] == "=":
+            value_start = equals + 1
+            if bws:
+                value_start = _WHITESPACE_RE.match(instr, value_start).end()  # type: ignore[union-attr]
+            value = _PARAMETER_VALUE_RE.match(instr, value_start)
             if value:
                 after = _WHITESPACE_RE.match(instr, value.end()).end()  # type: ignore[union-attr]
                 if after == size or instr.startswith(delim, after):
@@ -202,13 +206,14 @@ def _param_spans(instr: str, delim: str) -> List[Tuple[int, int]]:
     return spans
 
 
-def split_params(instr: str, delim: str = ";") -> List[str]:
+def split_params(instr: str, delim: str = ";", bws: bool = False) -> List[str]:
     """
     Split a parameter list into its ``name=value`` parameters.
 
     ``delim`` is a literal separator, optionally surrounded by whitespace; it must not be
     a token character. Text that isn't a parameter followed by a separator or the end of
-    the string is skipped, so ``a=b c=d`` yields only ``c=d``.
+    the string is skipped, so ``a=b c=d`` yields only ``c=d``. With ``bws``, whitespace is
+    allowed on either side of the ``=`` (the BWS of RFC 8288's link-param).
 
     This is linear, and gives the same results as ``split_string`` called with
     ``rfc9110.parameter``, which backtracked quadratically. A parameter name is always a
@@ -216,7 +221,7 @@ def split_params(instr: str, delim: str = ";") -> List[str]:
     before a separator, so a start that fails would fail at every later point in the
     same run; the scan jumps past the run.
     """
-    return [instr[start:end] for start, end in _param_spans(instr, delim)]
+    return [instr[start:end] for start, end in _param_spans(instr, delim, bws)]
 
 
 def _segment_starts(instr: str, delim: str) -> List[int]:
@@ -304,6 +309,7 @@ def parse_params(
     add_note: AddNoteMethodType,
     nostar: Optional[Union[List[str], bool]] = None,
     delim: str = ";",
+    bws: bool = False,
 ) -> ParamDictType:
     """
     Parse parameters into a dictionary.
@@ -314,14 +320,17 @@ def parse_params(
     instance that isn't a valid ``name=value`` (``dur=`` or a bare ``dur``) or that is
     rejected (a ``title*`` with a bad value): it's still the first, so a later one
     doesn't take its place.
+
+    Whitespace around the ``=`` isn't allowed, except with ``bws`` (Link, whose link-param
+    has BWS there); the key and value are then stripped of it.
     """
-    spans = _param_spans(instr, delim)
+    spans = _param_spans(instr, delim, bws)
     valid_starts = {start for start, _ in spans}
     # Instances in order: each parameter, and each segment that starts with a name but
     # isn't one (which the specs count as an instance too).
     instances: List[Tuple[int, str, Optional[Tuple[int, int]]]] = []
     for start, end in spans:
-        instances.append((start, instr[start:end].split("=", 1)[0].lower(), (start, end)))
+        instances.append((start, instr[start:end].split("=", 1)[0].strip().lower(), (start, end)))
     for start in _segment_starts(instr, delim):
         name = _TOKEN_RE.match(instr, start)
         if name and start not in valid_starts:
@@ -337,7 +346,7 @@ def parse_params(
         seen.add(k_norm)
         if span is None:
             continue
-        key, val = instr[span[0] : span[1]].split("=", 1)
+        key, val = (part.strip() for part in instr[span[0] : span[1]].split("=", 1))
         if val[0] == val[-1] == "'":
             add_note(
                 PARAM_SINGLE_QUOTED,
@@ -737,19 +746,29 @@ def is_entity_tag(value: str) -> bool:
     return re.match(rf"^\s*{rfc9110.entity_tag}\s*$", value, RE_FLAGS) is not None
 
 
-def parse_entity_tag(value: str, add_note: AddNoteMethodType) -> Tuple[bool, str]:
+def parse_entity_tag(
+    value: str,
+    add_note: AddNoteMethodType,
+    suppress_syntax: Optional[Callable[[], None]] = None,
+) -> Tuple[bool, str]:
     """
     Parse an entity-tag into (weak, opaque-tag), with the opaque tag unquoted.
 
     The ``W/`` prefix is case-sensitive (RFC 9110, Section 8.8.3). A lower-case ``w/``
-    raises ValueError, with ENTITY_TAG_WEAK_CASE unless the value is bad in some other way
-    (which the field's syntax check reports). Quoting isn't checked here either.
+    raises ValueError. If the value would be valid with a capital W, the case is its only
+    syntax defect: this adds ENTITY_TAG_WEAK_CASE and calls ``suppress_syntax`` (the field's
+    ``suppress_syntax_note``), so that the value gets that one note and no BAD_SYNTAX. Any
+    other lower-case ``w/`` value is left to the field's syntax check. Quoting isn't checked
+    here.
     """
     if value[:2] == "W/":
         return (True, unquote_string(value[2:]))
     if value[:2].lower() == "w/":
-        if is_entity_tag(value):
+        # The syntax is case-sensitive, so test the value as it would be with a capital W.
+        if is_entity_tag("W/" + value[2:]):
             add_note(ENTITY_TAG_WEAK_CASE)
+            if suppress_syntax is not None:
+                suppress_syntax()
         raise ValueError
     return (False, unquote_string(value))
 

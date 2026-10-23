@@ -12,13 +12,19 @@ They should be processed with re.VERBOSE.
 
 
 from .rfc3986 import URI_reference
-from .rfc9110 import OWS, list_rule, quoted_string, token
+from .rfc9110 import BWS, OWS, list_rule, quoted_string, token
 
 SPEC_URL = "http://httpwg.org/specs/rfc8288"
 
 #  link-param = token BWS [ "=" BWS ( token / quoted-string ) ]
 
-link_param = rf"(?: {token} (?: = (?: {token} | {quoted_string} ) )? )"
+#
+# The first BWS is inside the optional group: outside it, "a ;a ;a" is ambiguous against the
+# "OWS ;" in link-value, and backtracking is exponential on non-matching input. link-value
+# accepts the same language either way, because its "OWS ;" covers the trailing BWS; this
+# rule on its own no longer matches a token followed by BWS ("a ").
+
+link_param = rf"(?: {token} (?: {BWS} = {BWS} (?: {token} | {quoted_string} ) )? )"
 
 #  link-value = "<" URI-Reference ">" *( OWS ";" OWS link-param )
 

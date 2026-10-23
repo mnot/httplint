@@ -23,7 +23,7 @@ The `ETag` header provides an opaque identifier for the representation."""
     deprecated = False
 
     def parse(self, field_value: str, add_note: AddNoteMethodType) -> Tuple[bool, str]:
-        return parse_entity_tag(field_value, add_note)
+        return parse_entity_tag(field_value, add_note, self.suppress_syntax_note)
 
 
 class ETagTest(FieldTest[AnyMessageLinterProtocol]):
@@ -50,3 +50,12 @@ class LowerCaseWeakETagTest(FieldTest[AnyMessageLinterProtocol]):
     inputs = [b'w/"foo"']
     expected_out = None
     expected_notes: NoteClassListType = [ENTITY_TAG_WEAK_CASE]
+
+
+class LowerCaseWeakUnquotedETagTest(FieldTest[AnyMessageLinterProtocol]):
+    "Guard: the case isn't the only defect, so the value gets BAD_SYNTAX, once."
+
+    name = "ETag"
+    inputs = [b"w/foo"]
+    expected_out = None
+    expected_notes: NoteClassListType = [BAD_SYNTAX]

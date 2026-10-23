@@ -34,7 +34,7 @@ pct_encoded = rf"(?: % {HEXDIG} {HEXDIG} )"
 
 attr_char = rf"""(?:
                   {ALPHA} | {DIGIT}
-                | !  | #  | \$ | &  | \+ | -  | \.
+                | !  | \# | \$ | &  | \+ | -  | \.
                 | \^ | _  | `  | \| | ~
 )"""
 
@@ -52,7 +52,7 @@ value_chars = rf"(?: (?: {pct_encoded} | {attr_char} )* )"
 
 mime_charsetc = rf"""(?:
                   {ALPHA} | {DIGIT}
-                | !  | #  | \$ | %  | &
+                | !  | \# | \$ | %  | &
                 | \+ | -  | \^ | _  | `
                 | \{{ | \}} | ~
 )"""
