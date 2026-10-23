@@ -76,6 +76,15 @@ class TestStatus4xx(unittest.TestCase):
 
     @staticmethod
     def _lint_416(request_headers, response_headers, method=b"GET", with_request=True):
+        return [
+            n.__class__
+            for n in TestStatus4xx._notes_416(
+                request_headers, response_headers, method, with_request
+            )
+        ]
+
+    @staticmethod
+    def _notes_416(request_headers, response_headers, method=b"GET", with_request=True):
         from httplint.message import HttpRequestLinter
 
         linter = HttpResponseLinter()
@@ -87,15 +96,28 @@ class TestStatus4xx(unittest.TestCase):
             req.process_headers(request_headers)
             linter.request = req
         linter.finish_content(True)
-        return [n.__class__ for n in linter.notes]
+        return list(linter.notes)
 
     def test_416_missing_content_range(self):
         from httplint.status import STATUS_416_WITHOUT_CONTENT_RANGE
 
-        for rng in (b"bytes=100-200", b"BYTES=100-200", b"bytes=0-1,5-6", b"bytes=-5"):
+        for rng in (
+            b"bytes=0-1",
+            b"bytes=100-200",
+            b"BYTES=100-200",
+            b"bytes=0-1,5-6",
+            b"bytes=-5",
+        ):
             with self.subTest(rng=rng):
                 notes = self._lint_416([(b"Range", rng)], [])
                 self.assertIn(STATUS_416_WITHOUT_CONTENT_RANGE, notes)
+
+    def test_416_missing_content_range_subject(self):
+        from httplint.status import STATUS_416_WITHOUT_CONTENT_RANGE
+
+        notes = self._notes_416([(b"Range", b"bytes=100-200")], [])
+        subjects = [n.subject for n in notes if isinstance(n, STATUS_416_WITHOUT_CONTENT_RANGE)]
+        self.assertEqual(subjects, ["field-content-range"])
 
     def test_416_missing_content_range_level(self):
         from httplint.note import levels
@@ -108,16 +130,14 @@ class TestStatus4xx(unittest.TestCase):
 
         for value in (b"bytes */10", b"bytes 0-5/10", b"garbage"):
             with self.subTest(value=value):
-                notes = self._lint_416(
-                    [(b"Range", b"bytes=100-200")], [(b"Content-Range", value)]
-                )
+                notes = self._lint_416([(b"Range", b"bytes=100-200")], [(b"Content-Range", value)])
                 self.assertNotIn(STATUS_416_WITHOUT_CONTENT_RANGE, notes)
 
     def test_416_missing_content_range_not_flagged_unless_bytes_range(self):
         from httplint.status import STATUS_416_WITHOUT_CONTENT_RANGE
 
         # Guards: other range units, no Range header, and no known request.
-        for rng in (b"items=1-2", b"garbage"):
+        for rng in (b"items=1-2", b"garbage", b"bytes"):
             with self.subTest(rng=rng):
                 notes = self._lint_416([(b"Range", rng)], [])
                 self.assertNotIn(STATUS_416_WITHOUT_CONTENT_RANGE, notes)
@@ -260,7 +280,6 @@ class TestStatus405(unittest.TestCase):
         notes = [n.__class__ for n in linter.notes]
         self.assertNotIn(STATUS_405_METHOD_IN_ALLOW, notes)
         self.assertIn(STATUS_METHOD_NOT_ALLOWED, notes)
-
 
 
 class TestStatus412(unittest.TestCase):

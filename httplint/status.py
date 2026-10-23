@@ -62,10 +62,11 @@ class StatusChecker:
         "Say whether the request is known to have a Range header using the bytes unit."
         if not self.request:
             return False
-        return any(
-            name.lower() == "range" and value.partition("=")[0].strip().lower() == "bytes"
-            for name, value in self.request.headers.text
-        )
+        for name, value in self.request.headers.text:
+            unit, sep, _ = value.partition("=")
+            if name.lower() == "range" and sep and unit.strip().lower() == "bytes":
+                return True
+        return False
 
     def status100(self) -> None:  # Continue
         if self.request and not "100-continue" in get_header(self.request.headers.text, "expect"):
@@ -250,7 +251,7 @@ class StatusChecker:
             and self._byte_range_requested()
             and not any(name.lower() == "content-range" for name, _ in self.response.headers.text)
         ):
-            self.add_note("status", STATUS_416_WITHOUT_CONTENT_RANGE)
+            self.add_note("field-content-range", STATUS_416_WITHOUT_CONTENT_RANGE)
 
     def status417(self) -> None:  # Expectation Failed
         if self.request:
