@@ -211,6 +211,8 @@ def _process_cookie_attribute(  # pylint: disable=too-many-branches,too-many-arg
             return lifetime_note_added
         if digits[0] == "0" and len(digits) > 1:
             add_note(SET_COOKIE_LEADING_ZERO_MAX_AGE, cookie_name=cookie_name)
+        elif negative and parsed != 0:
+            add_note(SET_COOKIE_NEGATIVE_MAX_AGE, cookie_name=cookie_name)
         delta_seconds = -parsed if negative else parsed
         cookie_attribute_list.append(("Max-Age", delta_seconds))
         if delta_seconds > 34560000 and not lifetime_note_added:
@@ -447,6 +449,20 @@ The `max-age` parameter on this `Set-Cookie` header has a leading zero, which th
 grammar doesn't allow.
 
 Browsers may still read it as an ordinary number."""
+
+
+class SET_COOKIE_NEGATIVE_MAX_AGE(Note):
+    category = categories.COOKIES
+    level = levels.INFO
+    _summary = "The %(cookie_name)s cookie has a negative Max-Age."
+    _text = """\
+The `max-age` parameter on this `Set-Cookie` header is negative.
+
+The grammar that servers are to follow
+([RFC6265 section 4.1.1](https://www.rfc-editor.org/rfc/rfc6265.html#section-4.1.1)) only allows
+a `max-age` that starts with a non-zero digit. However, browsers may accept a leading `-`
+([section 5.2.2](https://www.rfc-editor.org/rfc/rfc6265.html#section-5.2.2)), and expire the
+cookie immediately."""
 
 
 class SET_COOKIE_NON_DIGIT_MAX_AGE(Note):
@@ -849,6 +865,35 @@ class MaxAgeNegativeSCTest(FieldTest[ResponseLinterProtocol]):
     name = "Set-Cookie"
     inputs = [b"lang=en-US; Max-Age=-1"]
     expected_out = [("lang", "en-US", [("Max-Age", -1)])]
+    expected_notes: NoteClassListType = [SET_COOKIE_NEGATIVE_MAX_AGE]
+
+
+class MaxAgeNegativeFiveSCTest(MaxAgeNegativeSCTest):
+    inputs = [b"lang=en-US; Max-Age=-5"]
+    expected_out = [("lang", "en-US", [("Max-Age", -5)])]
+
+
+class MaxAgeNegativeZeroSCTest(FieldTest[ResponseLinterProtocol]):
+    "'-0' is zero, like 'Max-Age=0', which has no note."
+
+    name = "Set-Cookie"
+    inputs = [b"lang=en-US; Max-Age=-0"]
+    expected_out = [("lang", "en-US", [("Max-Age", 0)])]
+
+
+class MaxAgePositiveSCTest(FieldTest[ResponseLinterProtocol]):
+    "Guard: a plain positive Max-Age gets no note."
+
+    name = "Set-Cookie"
+    inputs = [b"lang=en-US; Max-Age=5"]
+    expected_out = [("lang", "en-US", [("Max-Age", 5)])]
+
+
+class MaxAgeZeroSCTest(MaxAgePositiveSCTest):
+    "Guard: Max-Age=0 gets no note."
+
+    inputs = [b"lang=en-US; Max-Age=0"]
+    expected_out = [("lang", "en-US", [("Max-Age", 0)])]
 
 
 class MaxAgeNegativeLeadingZeroSCTest(FieldTest[ResponseLinterProtocol]):

@@ -17,10 +17,12 @@ from httplint.util import inline_safe
 sts_dir = rf"(?: {rfc9110.token} (?: {rfc9110.BWS} = {rfc9110.BWS} {rfc9110.parameter_value} )? )"  # pylint: disable=invalid-name
 # RFC 6797 Section 6.1: [ directive ] *( ";" [ directive ] ). Whitespace is matched before a ";"
 # and before a directive, never twice by neighbouring terms, and the match starts with a
-# directive or ";" (the caller strips leading whitespace), so a failed match stays linear. A value
-# with nothing in it at all is still reported as bad syntax.
+# directive or ";" (the caller strips leading whitespace), so a failed match stays linear. A blank
+# value (nothing left once the caller has stripped whitespace) is grammatical too, but is matched
+# by its own alternative, so that no term of the pattern can match nothing before whitespace.
 sts_directives = (  # pylint: disable=invalid-name
-    rf"(?: (?: {sts_dir} | (?= ;) ) (?: {rfc9110.OWS} ; (?: {rfc9110.OWS} {sts_dir} )? )* )"
+    rf"(?: (?: {sts_dir} | (?= ;) ) (?: {rfc9110.OWS} ; (?: {rfc9110.OWS} {sts_dir} )? )*"
+    r" | (?= \Z) )"
 )
 
 
@@ -583,6 +585,42 @@ class HSTSEmptyDirectivesTest(FieldTest[ResponseLinterProtocol]):
 
     def set_response_context(self, message: ResponseLinterProtocol) -> None:
         message.base_uri = "https://www.example.com/"
+
+
+class HSTSBlankTest(FieldTest[ResponseLinterProtocol]):
+    "RFC 6797 Section 6.1 allows no directives at all; HSTS_NO_MAX_AGE is what's wrong with it."
+
+    name = "Strict-Transport-Security"
+    inputs = [b""]
+    expected_out = {"max-age": None, "includesubdomains": False, "preload": False}
+    expected_notes: NoteClassListType = [
+        HSTS_NO_MAX_AGE,
+        HSTS_NO_SUBDOMAINS,
+        HSTS_NO_PRELOAD,
+        HSTS_INVALID,
+    ]
+
+    def set_response_context(self, message: ResponseLinterProtocol) -> None:
+        message.base_uri = "https://www.example.com/"
+
+
+class HSTSWhitespaceOnlyTest(HSTSBlankTest):
+    inputs = [b"   "]
+
+
+class HSTSLoneSemicolonTest(HSTSBlankTest):
+    inputs = [b";"]
+    expected_notes: NoteClassListType = [
+        HSTS_NO_MAX_AGE,
+        HSTS_NO_SUBDOMAINS,
+        HSTS_NO_PRELOAD,
+        HSTS_INVALID,
+        HSTS_TRAILING_SEMICOLON,
+    ]
+
+
+class HSTSSemicolonsOnlyTest(HSTSLoneSemicolonTest):
+    inputs = [b"; ;"]
 
 
 class HSTSLeadingEmptyDirectiveTest(HSTSEmptyDirectivesTest):

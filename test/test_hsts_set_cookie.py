@@ -9,6 +9,8 @@ from httplint import HttpResponseLinter
 from httplint.field.deferred_notes import DeferredNotes
 from httplint.field.parsers.set_cookie import (
     DAY_OF_MONTH_TOKEN,
+    SET_COOKIE_LEADING_ZERO_MAX_AGE,
+    SET_COOKIE_NEGATIVE_MAX_AGE,
     TIME_TOKEN,
     YEAR_TOKEN,
     loose_date_parse,
@@ -23,7 +25,7 @@ from httplint.field.parsers.strict_transport_security import (
     strict_transport_security,
 )
 from httplint.field.utils import RE_FLAGS
-from httplint.note import Note
+from httplint.note import Note, levels
 from httplint.syntax import rfc9110
 
 TIME_LIMIT = 1.0  # seconds; these take milliseconds
@@ -134,8 +136,8 @@ class HSTSSyntaxTest(unittest.TestCase):
         simple_dir = re.compile(r"[a-z-]+(?:\s*=\s*[a-z-]+)?")
 
         def reference(value: str) -> bool:
-            "RFC 6797 Section 6.1, for strings without quotes; but not a blank string."
-            return value.strip() != "" and all(
+            "RFC 6797 Section 6.1, for strings without quotes; a blank value is allowed."
+            return all(
                 s == "" or simple_dir.fullmatch(s) for s in (p.strip() for p in value.split(";"))
             )
 
@@ -167,10 +169,10 @@ class HSTSSyntaxTest(unittest.TestCase):
             "max-age=100 ;",
             ";",
             " ; ; ",
-        ]
-        rejected = [
             "",
             "   ",
+        ]
+        rejected = [
             'max-age="100',
             "=100",
             "max-age=",
@@ -189,6 +191,8 @@ class HSTSSyntaxTest(unittest.TestCase):
         "Regression: a failed match must be linear (an all-optional grammar is not)."
         cases = {
             "leading whitespace": " " * 20000 + "\x80",
+            "leading whitespace 4000": " " * 4000 + "\x80",
+            "leading whitespace 50000": " " * 50000 + "\x80",
             "trailing whitespace": "max-age=1" + " " * 20000 + "\x80",
             "whitespace between semicolons": ";" + " " * 5000 + ";" + " " * 5000 + "\x80",
             "semicolons": "; " * 10000 + "\x80",
@@ -403,6 +407,31 @@ class CookieMaxAgeTest(unittest.TestCase):
 
     def test_negative(self) -> None:
         self.assertEqual(self.attrs(b"a=b; Max-Age=-1"), [("Max-Age", -1)])
+
+    def test_negative_note(self) -> None:
+        "INFO note for '-N'; renders without an empty code span."
+        for raw, expected in [
+            (b"a=b; Max-Age=-1", 1),
+            (b"a=b; Max-Age=-5", 1),
+            (b"a=b; Max-Age=-01", 0),
+            (b"a=b; Max-Age=-0", 0),
+            (b"a=b; Max-Age=0", 0),
+            (b"a=b; Max-Age=5", 0),
+        ]:
+            with self.subTest(raw=raw):
+                _, notes = lint_cookie(raw)
+                found = [n for n in notes if isinstance(n, SET_COOKIE_NEGATIVE_MAX_AGE)]
+                self.assertEqual(len(found), expected)
+                for note in found:
+                    note.vars.update({"field_name": "Set-Cookie"})
+                    self.assertEqual(note.level, levels.INFO)
+                    self.assertTrue(note.summary)
+                    self.assertNotIn("<code></code>", str(note.detail))
+        _, notes = lint_cookie(b"a=b; Max-Age=-01")
+        self.assertEqual(
+            [type(n) for n in notes if "MAX_AGE" in type(n).__name__],
+            [SET_COOKIE_LEADING_ZERO_MAX_AGE],
+        )
 
     def test_huge_keeps_cookie(self) -> None:
         for value in [b"9" * 5000, b"\xb2", b"\xd9\xa5"]:
