@@ -1,4 +1,4 @@
-from typing import Tuple
+from typing import Set, Tuple
 
 from httplint.field import BAD_SYNTAX
 from httplint.field.list_field import HttpListField
@@ -13,7 +13,6 @@ from httplint.types import (
     ParamDictType,
     ResponseLinterProtocol,
 )
-from httplint.util import inline_safe
 
 
 class transfer_encoding(HttpListField[AnyMessageLinterProtocol]):
@@ -47,9 +46,12 @@ Transfer codings can only be used in HTTP/1; HTTP/2 and HTTP/3 do not support th
         return coding, param_dict
 
     def evaluate(self, add_note: AddNoteMethodType) -> None:
-        unwanted = {c[0] for c in self.value if c[0] not in ["chunked", "identity"]}
-        if self.message.message_type == "request":
-            unwanted = set()  # TE only governs what a response may use
+        # TE only governs what a response may use, so requests aren't checked.
+        unwanted: Set[str] = (
+            set()
+            if self.message.message_type == "request"
+            else {c[0] for c in self.value if c[0] not in ["chunked", "identity"]}
+        )
         if unwanted:
             # check to see if the client asked for it
             if (
@@ -63,7 +65,7 @@ Transfer codings can only be used in HTTP/1; HTTP/2 and HTTP/3 do not support th
 
         if unwanted:
             for coding in unwanted:
-                add_note(TRANSFER_CODING_UNWANTED, coding=inline_safe(coding))
+                add_note(TRANSFER_CODING_UNWANTED, coding=coding)
         if "identity" in [c[0] for c in self.value]:
             add_note(TRANSFER_CODING_IDENTITY)
 

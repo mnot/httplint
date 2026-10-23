@@ -651,6 +651,9 @@ def vary_covers(message: Any, name: str) -> bool:
     """
     Does the message's Vary header cover the request header ``name``? That is the case
     if it lists the name (case-insensitively) or is ``*``.
+
+    Callers check cacheability first, and ``Vary: *`` makes a response uncacheable, so the
+    ``*`` branch is rarely reached; it keeps the helper correct for callers that don't.
     """
     vary_values = message.headers.parsed.get("vary") or ()
     values = {str(v).lower() for v in vary_values}

@@ -14,7 +14,6 @@ from httplint.types import (
     ParamDictType,
     ResponseLinterProtocol,
 )
-from httplint.util import inline_safe
 
 
 class content_encoding(HttpListField[AnyMessageLinterProtocol]):
@@ -41,7 +40,7 @@ of its underlying media type; e.g., `gzip` and `deflate`."""
         ):
             accept_encoding = response.request.headers.parsed.get("accept-encoding")
             if accept_encoding is not None and not _coding_acceptable(accept_encoding, coding):
-                add_note(ENCODING_UNWANTED, coding=inline_safe(field_value))
+                add_note(ENCODING_UNWANTED, coding=field_value)
         return coding
 
     def post_check(self, add_note: AddNoteMethodType) -> None:
@@ -95,7 +94,8 @@ class ENCODING_UNWANTED(Note):
     _summary = "This response uses the '%(coding)s' content-coding, but it wasn't requested."
     _text = """\
 This response's `Content-Encoding` header indicates it has the `%(coding)s` content-coding
-applied, but the client didn't indicate support for it in the request.
+applied, but the client didn't ask for it in the request: either it didn't list the coding
+(or `*`) in `Accept-Encoding`, or it gave the coding a `q` value of 0 to refuse it.
 
 Normally, clients ask for the encodings they want in the `Accept-Encoding` request header. Using
 encodings that the client doesn't explicitly request can lead to interoperability problems."""
@@ -181,6 +181,8 @@ class ContentEncodingQZeroTest(FieldTest[AnyMessageLinterProtocol]):
 
 
 class ContentEncodingWildcardQZeroTest(FieldTest[AnyMessageLinterProtocol]):
+    "Guard: main also flags this."
+
     name = "Content-Encoding"
     inputs = [b"gzip"]
     expected_out = ["gzip"]
@@ -192,14 +194,69 @@ class ContentEncodingWildcardQZeroTest(FieldTest[AnyMessageLinterProtocol]):
 
 
 class ContentEncodingExplicitOverridesWildcardTest(FieldTest[AnyMessageLinterProtocol]):
+    "gzip is refused explicitly, br is allowed by the wildcard (main flags br)."
+
     name = "Content-Encoding"
-    inputs = [b"gzip, br"]
-    expected_out = ["gzip", "br"]
-    expected_notes: NoteClassListType = [ENCODING_UNWANTED]  # gzip only
+    inputs = [b"br"]
+    expected_out = ["br"]
+    expected_notes: NoteClassListType = []
 
     def set_response_context(self, message: ResponseLinterProtocol) -> None:
         assert message.request is not None
         message.request.headers.process([(b"accept-encoding", b"gzip;q=0, *;q=0.5")])
+
+
+class ContentEncodingExplicitRefusalOverridesWildcardTest(FieldTest[AnyMessageLinterProtocol]):
+    "Guard: main also flags this."
+
+    name = "Content-Encoding"
+    inputs = [b"gzip"]
+    expected_out = ["gzip"]
+    expected_notes: NoteClassListType = [ENCODING_UNWANTED]
+
+    def set_response_context(self, message: ResponseLinterProtocol) -> None:
+        assert message.request is not None
+        message.request.headers.process([(b"accept-encoding", b"gzip;q=0, *;q=0.5")])
+
+
+class ContentEncodingInvalidQTest(FieldTest[AnyMessageLinterProtocol]):
+    "An invalid q on an Accept-Encoding entry (already a syntax problem) counts as q=1."
+
+    name = "Content-Encoding"
+    inputs = [b"gzip"]
+    expected_out = ["gzip"]
+    expected_notes: NoteClassListType = []
+
+    def set_response_context(self, message: ResponseLinterProtocol) -> None:
+        assert message.request is not None
+        message.request.headers.process([(b"accept-encoding", b"gzip;q=abc")])
+
+
+class ContentEncodingEmptyAcceptEncodingTest(FieldTest[AnyMessageLinterProtocol]):
+    "An empty Accept-Encoding means that only identity is acceptable."
+
+    name = "Content-Encoding"
+    inputs = [b"gzip"]
+    expected_out = ["gzip"]
+    expected_notes: NoteClassListType = [ENCODING_UNWANTED]
+
+    def set_response_context(self, message: ResponseLinterProtocol) -> None:
+        assert message.request is not None
+        message.request.headers.process([(b"accept-encoding", b"")])
+        assert message.request.headers.parsed["accept-encoding"] == []
+
+
+class ContentEncodingEmptyAcceptEncodingIdentityTest(FieldTest[AnyMessageLinterProtocol]):
+    "Guard: main also accepts this."
+
+    name = "Content-Encoding"
+    inputs = [b"identity"]
+    expected_out = ["identity"]
+    expected_notes: NoteClassListType = []
+
+    def set_response_context(self, message: ResponseLinterProtocol) -> None:
+        assert message.request is not None
+        message.request.headers.process([(b"accept-encoding", b"")])
 
 
 class ContentEncodingIdentityTest(FieldTest[AnyMessageLinterProtocol]):

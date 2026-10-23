@@ -119,6 +119,8 @@ class AcceptBadQQuotedTest(FieldTest[RequestLinterProtocol]):
 
 
 class AcceptBadQTooPreciseTest(FieldTest[RequestLinterProtocol]):
+    "Guard: main also rejects this."
+
     name = "Accept"
     inputs = [b"text/html; q=0.1234"]
     expected_out = [AcceptValue("text/html", {}, None)]
@@ -126,7 +128,7 @@ class AcceptBadQTooPreciseTest(FieldTest[RequestLinterProtocol]):
 
 
 class AcceptQTrailingDotTest(FieldTest[RequestLinterProtocol]):
-    "rfc9110.qvalue allows a bare '.' after the digit."
+    "Guard: rfc9110.qvalue allows a bare '.' after the digit, as main does."
 
     name = "Accept"
     inputs = [b"text/html; q=1., text/plain; q=0., text/css; q=0.123, text/csv; q=1.000"]

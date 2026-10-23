@@ -6,7 +6,10 @@ import unittest
 from types import SimpleNamespace
 from typing import Any, List, Optional, Tuple
 
+from httplint.field.parsers.content_encoding import ENCODING_UNWANTED
+from httplint.field.parsers.transfer_encoding import TRANSFER_CODING_UNWANTED
 from httplint.field.utils import BAD_Q_VALUE, parse_qvalue, vary_covers
+from httplint.message import HttpRequestLinter, HttpResponseLinter
 from httplint.types import ParamDictType
 
 
@@ -40,7 +43,20 @@ class ParseQvalueTest(unittest.TestCase):
                 self.assertEqual(self.parse(q_str), (expected, []))
 
     def test_invalid(self) -> None:
-        for q_str in ["+1", "-0", "1e0", ".5", "abc", "", "1.5", "2", "0.1234", "1.001", " 1", "1 "]:
+        for q_str in [
+            "+1",
+            "-0",
+            "1e0",
+            ".5",
+            "abc",
+            "",
+            "1.5",
+            "2",
+            "0.1234",
+            "1.001",
+            " 1",
+            "1 ",
+        ]:
             with self.subTest(q=q_str):
                 result, notes = self.parse(q_str)
                 self.assertIsNone(result)
@@ -100,7 +116,60 @@ class VaryCoversTest(unittest.TestCase):
         self.assertTrue(vary_covers(message_with_vary(["*"]), "anything"))
 
     def test_set(self) -> None:
-        self.assertTrue(vary_covers(message_with_vary({"available-dictionary"}), "Available-Dictionary"))
+        self.assertTrue(
+            vary_covers(message_with_vary({"available-dictionary"}), "Available-Dictionary")
+        )
+
+
+def all_notes(linter: Any) -> List[Any]:
+    found: List[Any] = []
+
+    def walk(notes: Any) -> None:
+        for note in notes:
+            found.append(note)
+            walk(note.subnotes)
+
+    walk(linter.notes)
+    return found
+
+
+class BacktickCodingTest(unittest.TestCase):
+    """
+    A coding made of backticks (legal token characters) must show up as itself, in a
+    non-empty code span, in the unwanted-coding notes.
+    """
+
+    CODINGS = ["`", "``", "``br", "br``"]
+
+    def check(self, note_class: Any, notes: List[Any], coding: str) -> None:
+        found = [n for n in notes if isinstance(n, note_class)]
+        self.assertEqual(len(found), 1, coding)
+        note = found[0]
+        self.assertIn(f"'{coding}'", note.summary)
+        detail = str(note.detail)
+        self.assertIn(f"<code>{coding}</code>", detail)
+        self.assertNotIn("<p>``", detail)
+        self.assertNotIn("<img", detail)
+
+    def test_content_encoding(self) -> None:
+        for coding in self.CODINGS:
+            with self.subTest(coding=coding):
+                request = HttpRequestLinter()
+                request.process_request_topline(b"GET", b"http://example.com/", b"HTTP/1.1")
+                request.process_headers([(b"Accept-Encoding", b"gzip")])
+                response = HttpResponseLinter()
+                response.request = request
+                response.process_response_topline(b"HTTP/1.1", b"200", b"OK")
+                response.process_headers([(b"Content-Encoding", coding.encode("ascii"))])
+                self.check(ENCODING_UNWANTED, all_notes(response), coding)
+
+    def test_transfer_encoding(self) -> None:
+        for coding in self.CODINGS:
+            with self.subTest(coding=coding):
+                response = HttpResponseLinter()
+                response.process_response_topline(b"HTTP/1.1", b"200", b"OK")
+                response.process_headers([(b"Transfer-Encoding", coding.encode("ascii"))])
+                self.check(TRANSFER_CODING_UNWANTED, all_notes(response), coding)
 
 
 if __name__ == "__main__":

@@ -15,7 +15,7 @@ from unittest import mock
 from markupsafe import Markup
 
 from httplint.field import BAD_SYNTAX_DETAILED
-from httplint.field.parsers.accept_ch import ACCEPT_CH_MISSING_VARY
+from httplint.field.parsers.accept_ch import ACCEPT_CH_BAD_TYPE, ACCEPT_CH_MISSING_VARY
 from httplint.field.parsers.accept_query import ACCEPT_QUERY_BAD_SYNTAX
 from httplint.field.parsers.cache_status import CACHE_STATUS
 from httplint.field.parsers.clear_site_data import CSD_PRESENT
@@ -286,15 +286,29 @@ class FormerlyMisclassifiedVarsTest(unittest.TestCase):
     fixes both classes of bug."""
 
     def test_accept_ch_missing_vary_escapes_injected_field_name(self):
-        """Accept-CH lets an SF String bypass its Token type check, reaching
-        `missing_fields` (formerly wrongly marked SF-Token-constrained)."""
-        payload = b'"evil</script><script>alert(1)</script>", Sec-CH-UA'
-        notes = _response_notes([(b"Accept-CH", payload), (b"Vary", b"Accept")])
-        missing_vary_notes = [n for n in notes if isinstance(n, ACCEPT_CH_MISSING_VARY)]
-        self.assertTrue(missing_vary_notes, "ACCEPT_CH_MISSING_VARY was not raised")
-        detail = str(missing_vary_notes[0].detail)
+        """`missing_fields` was formerly wrongly marked SF-Token-constrained;
+        it must escape whatever it is given."""
+        notes = Notes({"field_name": "Accept-CH"})
+        note = notes.add(
+            "test", ACCEPT_CH_MISSING_VARY, missing_fields="evil</script><script>alert(1)</script>"
+        )
+        detail = str(note.detail)
         self.assertNotIn("<script>", detail)
         self.assertIn("&lt;script&gt;", detail)
+
+    def test_accept_ch_non_token_item_not_checked_against_vary(self):
+        """Accept-CH lets an SF String bypass its Token type check. It gets
+        ACCEPT_CH_BAD_TYPE only: the Vary check covers Tokens, so the junk
+        item doesn't reach `missing_fields`."""
+        payload = b'"evil</script><script>alert(1)</script>", Sec-CH-UA'
+        notes = _response_notes([(b"Accept-CH", payload), (b"Vary", b"Accept")])
+        self.assertTrue([n for n in notes if isinstance(n, ACCEPT_CH_BAD_TYPE)])
+        missing_vary_notes = [n for n in notes if isinstance(n, ACCEPT_CH_MISSING_VARY)]
+        self.assertEqual(len(missing_vary_notes), 1)
+        detail = str(missing_vary_notes[0].detail)
+        self.assertNotIn("<script>", detail)
+        self.assertNotIn("evil", detail)
+        self.assertIn("Sec-CH-UA", detail)
 
     def test_cache_status_escapes_injected_target_name(self):
         """The Cache-Status cache name (formerly hand-spliced, unescaped, into

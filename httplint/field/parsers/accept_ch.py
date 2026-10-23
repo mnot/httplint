@@ -50,8 +50,11 @@ willing to process."""
         if hasattr(self.message, "caching") and (
             self.message.caching.store_shared or self.message.caching.store_private
         ):
+            # Only Tokens are field names; anything else already got ACCEPT_CH_BAD_TYPE.
             missing_vary = [
-                str(item[0]) for item in self.value if not vary_covers(self.message, str(item[0]))
+                str(item[0])
+                for item in self.value
+                if isinstance(item[0], Token) and not vary_covers(self.message, str(item[0]))
             ]
 
             if missing_vary:
@@ -163,6 +166,8 @@ class AcceptCHVaryStarTest(FieldTest[ResponseLinterProtocol]):
 
 
 class AcceptCHVaryPartialTest(FieldTest[ResponseLinterProtocol]):
+    "Guard: main also reports this."
+
     name = "Accept-CH"
     inputs = [b"Sec-CH-UA, Sec-CH-UA-Mobile"]
     expected_out = [(Token("Sec-CH-UA"), {}), (Token("Sec-CH-UA-Mobile"), {})]
@@ -170,3 +175,35 @@ class AcceptCHVaryPartialTest(FieldTest[ResponseLinterProtocol]):
 
     def set_response_context(self, message: ResponseLinterProtocol) -> None:
         _cacheable_context(message, ["sec-ch-ua"])
+
+
+class AcceptCHNonTokenVaryIntegerTest(FieldTest[ResponseLinterProtocol]):
+    "A non-Token item gets ACCEPT_CH_BAD_TYPE only, not ACCEPT_CH_MISSING_VARY as well."
+
+    name = "Accept-CH"
+    inputs = [b"1"]
+    expected_out = [(1, {})]
+    expected_notes: NoteClassListType = [ACCEPT_CH_BAD_TYPE]
+
+    def set_response_context(self, message: ResponseLinterProtocol) -> None:
+        _cacheable_context(message, [])
+
+
+class AcceptCHNonTokenVaryBinaryTest(FieldTest[ResponseLinterProtocol]):
+    name = "Accept-CH"
+    inputs = [b":YWJj:"]
+    expected_out = [(b"abc", {})]
+    expected_notes: NoteClassListType = [ACCEPT_CH_BAD_TYPE]
+
+    def set_response_context(self, message: ResponseLinterProtocol) -> None:
+        _cacheable_context(message, [])
+
+
+class AcceptCHNonTokenVaryEmptyStringTest(FieldTest[ResponseLinterProtocol]):
+    name = "Accept-CH"
+    inputs = [b'""']
+    expected_out = [("", {})]
+    expected_notes: NoteClassListType = [ACCEPT_CH_BAD_TYPE]
+
+    def set_response_context(self, message: ResponseLinterProtocol) -> None:
+        _cacheable_context(message, [])
