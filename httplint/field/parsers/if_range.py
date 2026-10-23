@@ -18,6 +18,11 @@ from httplint.syntax import rfc9110
 from httplint.types import AddNoteMethodType, NoteClassListType, RequestLinterProtocol
 
 
+# A date is any value that starts with a day name, in any case: the case is for
+# parse_http_date to report, not for this dispatch to decide.
+_DATE_START_RE = re.compile(r"mon|tue|wed|thu|fri|sat|sun", re.IGNORECASE)
+
+
 class if_range(SingletonField[RequestLinterProtocol]):
     canonical_name = "If-Range"
     description = """\
@@ -39,7 +44,7 @@ entire new representation."""
             if tag[0]:
                 add_note(IF_RANGE_WEAK)
             return tag
-        if re.match(rfc9110.day_name, field_value, RE_FLAGS):
+        if _DATE_START_RE.match(field_value):
             return parse_http_date(field_value, add_note, category=self.category)
         add_note(BAD_SYNTAX, ref_uri=self.reference)
         raise ValueError
@@ -87,6 +92,31 @@ class IfRangeBadDateTest(FieldTest[RequestLinterProtocol]):
 
     name = "If-Range"
     inputs = [b"Mon, 31 Feb 2011 25:61:61 GMT"]
+    expected_out = None
+    expected_notes: NoteClassListType = [BAD_DATE_SYNTAX]
+
+
+class IfRangeLowerCaseDateTest(FieldTest[RequestLinterProtocol]):
+    "The day name, month and GMT are case-sensitive."
+
+    name = "If-Range"
+    inputs = [b"sat, 29 oct 1994 19:43:31 gmt"]
+    expected_out = None
+    expected_notes: NoteClassListType = [BAD_DATE_SYNTAX]
+
+
+class IfRangeLowerCaseMonthTest(FieldTest[RequestLinterProtocol]):
+    "Reported the same way whichever part is in the wrong case."
+
+    name = "If-Range"
+    inputs = [b"Sat, 29 oct 1994 19:43:31 GMT"]
+    expected_out = None
+    expected_notes: NoteClassListType = [BAD_DATE_SYNTAX]
+
+
+class IfRangeUpperCaseDateTest(FieldTest[RequestLinterProtocol]):
+    name = "If-Range"
+    inputs = [b"SAT, 29 OCT 1994 19:43:31 GMT"]
     expected_out = None
     expected_notes: NoteClassListType = [BAD_DATE_SYNTAX]
 
