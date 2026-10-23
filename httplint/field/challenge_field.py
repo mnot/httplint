@@ -6,7 +6,7 @@ from httplint.field.singleton_field import SINGLE_HEADER_REPEAT
 from httplint.field.utils import RE_FLAGS
 from httplint.syntax import rfc9110
 from httplint.types import AddNoteMethodType, TMessage
-from httplint.util import inline_safe, markdown_context
+from httplint.util import invalid_char_problem, markdown_context
 
 # A challenge or set of credentials: the auth-scheme, and either a token68 or a dictionary of
 # auth-params. The scheme and param names are lowercased (both are case-insensitive), values
@@ -212,13 +212,7 @@ def _parse_field_line(
     """
     challenges, _, errors = parse_challenges(field_value, single)
     for error in errors:
-        if error < len(field_value):
-            problem = (
-                f"The invalid character '{inline_safe(field_value[error])}' "
-                f"was found at position {error + 1}."
-            )
-        else:
-            problem = f"The value ended unexpectedly at position {error + 1}."
+        problem = invalid_char_problem(field_value, error)
         field.message.notes.add(
             f"offset-{offset}",
             BAD_SYNTAX_DETAILED,

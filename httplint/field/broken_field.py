@@ -1,9 +1,7 @@
-import re
 from functools import partial
 from typing import Any, Generic, List, Tuple
 
-from httplint.field import BAD_SYNTAX, HttpField
-from httplint.field.utils import RE_FLAGS
+from httplint.field import HttpField
 from httplint.types import AddNoteMethodType, TMessage
 
 
@@ -33,11 +31,9 @@ class BrokenField(HttpField[TMessage], Generic[TMessage]):
                 f"offset-{offset}",
                 field_name=self.canonical_name,
             )
-            if self.syntax:
-                if not re.match(rf"^\s*(?:{self.syntax})\s*$", raw_value, RE_FLAGS):
-                    offset_add_note(BAD_SYNTAX, ref_uri=self.reference)
             try:
-                parsed_values.append(self.parse(raw_value.strip(), offset_add_note))
+                with self._syntax_checked(raw_value, offset_add_note):
+                    parsed_values.append(self.parse(raw_value.strip(), offset_add_note))
             except ValueError:
                 pass
         self.value = parsed_values
