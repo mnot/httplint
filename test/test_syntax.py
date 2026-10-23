@@ -58,10 +58,11 @@ class SyntaxBacktrackingTest(unittest.TestCase):
     """Pathological non-matching inputs must fail in bounded time."""
 
     def check(self, label: str, func, *args) -> None:  # type: ignore[no-untyped-def]
-        start = time.monotonic()
-        func(*args)
-        elapsed = time.monotonic() - start
-        self.assertLess(elapsed, TIME_LIMIT, f"{label}: {elapsed:.2f}s")
+        with self.subTest(label):
+            start = time.monotonic()
+            func(*args)
+            elapsed = time.monotonic() - start
+            self.assertLess(elapsed, TIME_LIMIT, f"{label}: {elapsed:.2f}s")
 
     def test_parameters(self) -> None:
         bad = SEMIS.encode() + b"\x80"
