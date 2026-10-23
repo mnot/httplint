@@ -1,10 +1,10 @@
 from dataclasses import dataclass
-from typing import Optional
+from typing import Any, Optional, Type
 
 from httplint.field import BAD_SYNTAX
 from httplint.field.list_field import HttpListField
 from httplint.field.tests import FieldTest
-from httplint.field.utils import parse_params, parse_qvalue
+from httplint.field.utils import PARAM_REPEATS, parse_params, parse_qvalue
 from httplint.note import Note, categories, levels
 from httplint.syntax import rfc9110
 from httplint.types import (
@@ -37,7 +37,15 @@ preferred in the response."""
             language, param_str = field_value, ""
 
         language = language.lower()
-        param_dict = parse_params(param_str, add_note, ["q"], delim=";")
+        q_repeated = False
+
+        def track(note: Type[Note], category: Optional[Any] = None, **vrs: Any) -> Note:
+            nonlocal q_repeated
+            q_repeated = q_repeated or (note is PARAM_REPEATS and vrs.get("param") == "q")
+            return add_note(note, category, **vrs)
+
+        param_dict = parse_params(param_str, track, ["q"], delim=";")
+        has_q = "q" in param_dict
 
         # An invalid q-value fails the field's syntax check, which has already reported it.
         q_val = parse_qvalue(param_dict, None, param_str)
@@ -45,6 +53,17 @@ preferred in the response."""
         if param_dict:
             # RFC 9110 only defines q parameter for Accept-Language
             add_note(ACCEPT_LANGUAGE_BAD_SYNTAX, ref_uri=self.reference)
+            # That note covers the value's syntax defect only if the language and the q-value
+            # (if any) are fine: they would match with the other parameters removed.
+            weight = f";q={q_val:.3f}" if q_val is not None else ""
+            full, _ = self._syntax_patterns() or (None, None)  # pylint: disable=protected-access
+            if (
+                full is not None
+                and (q_val is not None or not has_q)
+                and not q_repeated
+                and full.match(f"{language.strip()}{weight}")
+            ):
+                self.suppress_syntax_note()
 
         return AcceptLanguageValue(language, q_val)
 
@@ -75,7 +94,7 @@ class AcceptLanguageParamTest(FieldTest[RequestLinterProtocol]):
     name = "Accept-Language"
     inputs = [b"en; foo=bar"]
     expected_out = [AcceptLanguageValue("en", None)]
-    expected_notes: NoteClassListType = [ACCEPT_LANGUAGE_BAD_SYNTAX, BAD_SYNTAX]
+    expected_notes: NoteClassListType = [ACCEPT_LANGUAGE_BAD_SYNTAX]
 
 
 class AcceptLanguageBadQTest(FieldTest[RequestLinterProtocol]):

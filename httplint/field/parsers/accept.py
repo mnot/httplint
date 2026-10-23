@@ -1,7 +1,7 @@
 from dataclasses import dataclass
-from typing import Optional
+from typing import Any, Optional, Tuple, Type
 
-from httplint.field import BAD_SYNTAX
+from httplint.field import HttpField
 from httplint.field.list_field import HttpListField
 from httplint.field.tests import FieldTest
 from httplint.field.utils import BAD_Q_VALUE, parse_media_type, parse_qvalue
@@ -13,6 +13,36 @@ from httplint.types import (
     ParamDictType,
     RequestLinterProtocol,
 )
+
+
+def parse_media_type_once(
+    field: HttpField[Any],
+    field_value: str,
+    add_note: AddNoteMethodType,
+    bad_syntax_note: Type[Note],
+    **kwargs: Any,
+) -> Tuple[str, ParamDictType]:
+    """
+    parse_media_type() for a field that reports a value that isn't shaped like a media type or
+    media range with ``bad_syntax_note``. If that is the value's only syntax defect (it would
+    match the field's syntax with the media type swapped for a valid one), the field's generic
+    syntax note is dropped, so the defect gets one note. A second defect, e.g. in a parameter,
+    still gets the generic note.
+    """
+    reported = False
+
+    def track(note: Type[Note], category: Optional[Any] = None, **vrs: Any) -> Note:
+        nonlocal reported
+        reported = reported or note is bad_syntax_note
+        return add_note(note, category, **vrs)
+
+    result = parse_media_type(field_value, track, bad_syntax_note, field.reference, **kwargs)
+    if reported:
+        _, sep, params = field_value.partition(";")
+        full, _ = field._syntax_patterns() or (None, None)  # pylint: disable=protected-access
+        if full is not None and full.match(f"a/b{sep}{params}"):
+            field.suppress_syntax_note()
+    return result
 
 
 @dataclass
@@ -33,11 +63,11 @@ acceptable in responses."""
     deprecated = False
 
     def parse(self, field_value: str, add_note: AddNoteMethodType) -> AcceptValue:
-        media_type, param_dict = parse_media_type(
+        media_type, param_dict = parse_media_type_once(
+            self,
             field_value,
             add_note,
             ACCEPT_BAD_SYNTAX,
-            self.reference,
             allow_wildcard=True,
             nostar=["q"],
         )
@@ -87,7 +117,7 @@ class AcceptBadTypeTest(FieldTest[RequestLinterProtocol]):
     name = "Accept"
     inputs = [b"invalid"]
     expected_out = [AcceptValue("invalid", {}, None)]
-    expected_notes: NoteClassListType = [ACCEPT_BAD_SYNTAX, BAD_SYNTAX]
+    expected_notes: NoteClassListType = [ACCEPT_BAD_SYNTAX]
 
 
 class AcceptBadQSignTest(FieldTest[RequestLinterProtocol]):
