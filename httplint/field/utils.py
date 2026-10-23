@@ -117,14 +117,24 @@ def parse_http_date(
         add_note(DATE_OBSOLETE, category=category)
     date_tuple = lib_parsedate(value)
     if date_tuple is None:
+        add_note(BAD_DATE_SYNTAX, category=category)
         raise ValueError
-    # http://sourceforge.net/tracker/index.php?func=detail&aid=1194222&group_id=5470&atid=105470
-    if date_tuple[0] < 100:
-        if date_tuple[0] > 68:
-            date_tuple = (date_tuple[0] + 1900,) + date_tuple[1:]
-        else:
-            date_tuple = (date_tuple[0] + 2000,) + date_tuple[1:]
-    return calendar.timegm(date_tuple)
+    # IMF-fixdate and asctime-date have four-digit years, which parsedate would
+    # otherwise treat as two-digit ones ("0000" -> 2000); rfc850-date's own two-digit
+    # years are handled by parsedate (pivot at 68).
+    year_match = re.search(r"(?<!\d)\d{4}(?!\d)", value)
+    year, month, day, hour, minute, second = date_tuple[:6]
+    if year_match:
+        year = int(year_match.group())
+    # Out-of-range fields would be silently normalised by timegm.
+    if year < 1 or not 1 <= month <= 12 or day < 1 or day > calendar.monthrange(year, month)[1]:
+        add_note(BAD_DATE_SYNTAX, category=category)
+        raise ValueError
+    # A second of 60 is a leap second.
+    if hour > 23 or minute > 59 or second > 60:
+        add_note(BAD_DATE_SYNTAX, category=category)
+        raise ValueError
+    return calendar.timegm((year, month, day, hour, minute, second))
 
 
 def unquote_string(instr: str) -> str:
@@ -588,3 +598,25 @@ HTTP has a number of defined date formats for historical reasons. This header is
 format that are now obsolete. See [the
 specification](https://www.rfc-editor.org/rfc/rfc9110.html#name-obsolete-date-formats) for more information.
 """
+
+
+### Entity tags
+
+
+def parse_entity_tag(value: str) -> Tuple[bool, str]:
+    """
+    Parse an entity-tag into (weak, opaque-tag), with the opaque tag unquoted.
+
+    The ``W/`` prefix is case-sensitive (RFC 9110, Section 8.8.3); a lower-case ``w/``
+    raises ValueError. Quoting isn't checked here; that's the field's syntax check.
+    """
+    if value[:2] == "W/":
+        return (True, unquote_string(value[2:]))
+    if value[:2].lower() == "w/":
+        raise ValueError
+    return (False, unquote_string(value))
+
+
+def is_entity_tag(value: str) -> bool:
+    "Whether ``value`` matches the entity-tag syntax."
+    return re.match(rf"^\s*{rfc9110.entity_tag}\s*$", value, RE_FLAGS) is not None
