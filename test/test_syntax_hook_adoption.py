@@ -15,15 +15,25 @@ from httplint.field.parsers.access_control_max_age import (
     CORS_MAX_AGE_INVALID,
     CORS_MAX_AGE_NEGATIVE,
 )
+from httplint.field.parsers.content_range import (
+    CONTENT_RANGE_INVALID_ASTERISK,
+    CONTENT_RANGE_MISSING_SLASH,
+    CONTENT_RANGE_MISSING_UNIT,
+    RANGE_INVALID_INTEGER,
+)
 from httplint.field.parsers.age import AGE_NEGATIVE, AGE_NOT_INT
 from httplint.field.cors import CORS_PREFLIGHT_ONLY
 from httplint.field.tests import FakeRequestLinter, FakeResponseLinter
 from httplint.note import Note
 
 
-def note_classes(linter_class: type, name: str, *values: str) -> List[Type[Note]]:
+def note_classes(
+    linter_class: type, name: str, *values: str, status_code: int = 200
+) -> List[Type[Note]]:
     "The classes of the notes the message gets for these field lines, in order."
     message = linter_class()
+    if isinstance(message, FakeResponseLinter):
+        message.status_code = status_code
     message.headers.process([(name.encode(), value.encode("latin-1")) for value in values])
     message.post_checks()
     return [type(note) for note in message.notes]
@@ -114,6 +124,24 @@ class DeltaSecondsTest(unittest.TestCase):
             with self.subTest(value=value):
                 notes = note_classes(FakeResponseLinter, "Access-Control-Max-Age", value)
                 self.assertEqual([n for n in notes if n is not CORS_PREFLIGHT_ONLY], expected)
+
+
+class ContentRangeTest(unittest.TestCase):
+    "Guards: Content-Range gives one note per rejected value, as it did with the flag."
+
+    def test_one_note_per_rejected_value(self) -> None:
+        for value, expected in [
+            ("0-9/10", [CONTENT_RANGE_MISSING_UNIT]),
+            ("bytes 0-9", [CONTENT_RANGE_MISSING_SLASH]),
+            ("bytes */*", [CONTENT_RANGE_INVALID_ASTERISK]),
+            ("bytes 0-9/x", [RANGE_INVALID_INTEGER]),
+            ("bytes 0-9/", [BAD_SYNTAX]),
+            ("bytes0-9/10", [BAD_SYNTAX]),
+            ("bytes 0-9/10", []),
+        ]:
+            with self.subTest(value=value):
+                notes = note_classes(FakeResponseLinter, "Content-Range", value, status_code=206)
+                self.assertEqual(notes, expected)
 
 
 if __name__ == "__main__":
