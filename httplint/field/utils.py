@@ -1,7 +1,7 @@
 import calendar
 import re
 from email.utils import parsedate as lib_parsedate
-from typing import Any, Dict, FrozenSet, List, Optional, Set, Tuple, Type, Union
+from typing import Any, Callable, Dict, FrozenSet, List, Optional, Set, Tuple, Type, Union
 from urllib.parse import SplitResult
 from urllib.parse import unquote as urlunquote
 from urllib.parse import urljoin, urlsplit
@@ -746,14 +746,20 @@ def is_entity_tag(value: str) -> bool:
     return re.match(rf"^\s*{rfc9110.entity_tag}\s*$", value, RE_FLAGS) is not None
 
 
-def parse_entity_tag(value: str, add_note: AddNoteMethodType) -> Tuple[bool, str]:
+def parse_entity_tag(
+    value: str,
+    add_note: AddNoteMethodType,
+    suppress_syntax: Optional[Callable[[], None]] = None,
+) -> Tuple[bool, str]:
     """
     Parse an entity-tag into (weak, opaque-tag), with the opaque tag unquoted.
 
     The ``W/`` prefix is case-sensitive (RFC 9110, Section 8.8.3). A lower-case ``w/``
-    raises ValueError. The field's syntax check reports the value as invalid, since it isn't
-    an entity-tag; this adds ENTITY_TAG_WEAK_CASE to say why, if the value would be valid
-    with a capital W. Quoting isn't checked here.
+    raises ValueError. If the value would be valid with a capital W, the case is its only
+    syntax defect: this adds ENTITY_TAG_WEAK_CASE and calls ``suppress_syntax`` (the field's
+    ``suppress_syntax_note``), so that the value gets that one note and no BAD_SYNTAX. Any
+    other lower-case ``w/`` value is left to the field's syntax check. Quoting isn't checked
+    here.
     """
     if value[:2] == "W/":
         return (True, unquote_string(value[2:]))
@@ -761,6 +767,8 @@ def parse_entity_tag(value: str, add_note: AddNoteMethodType) -> Tuple[bool, str
         # The syntax is case-sensitive, so test the value as it would be with a capital W.
         if is_entity_tag("W/" + value[2:]):
             add_note(ENTITY_TAG_WEAK_CASE)
+            if suppress_syntax is not None:
+                suppress_syntax()
         raise ValueError
     return (False, unquote_string(value))
 

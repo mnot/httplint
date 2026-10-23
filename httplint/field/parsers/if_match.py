@@ -20,7 +20,7 @@ having a current representation of the target resource."""
     def parse(self, field_value: str, add_note: AddNoteMethodType) -> Union[str, Tuple[bool, str]]:
         if field_value == "*":
             return field_value
-        return parse_entity_tag(field_value, add_note)
+        return parse_entity_tag(field_value, add_note, self.suppress_syntax_note)
 
     def evaluate(self, add_note: AddNoteMethodType) -> None:
         if "*" in self.value and len(self.value) > 1:
@@ -49,7 +49,7 @@ class IfMatchLowerCaseWeakTest(FieldTest[RequestLinterProtocol]):
     name = "If-Match"
     inputs = [b'w/"xyzzy", "r2d2xxxx"']
     expected_out = [(False, "r2d2xxxx")]
-    expected_notes: NoteClassListType = [BAD_SYNTAX, ENTITY_TAG_WEAK_CASE]
+    expected_notes: NoteClassListType = [ENTITY_TAG_WEAK_CASE]
 
 
 class IfMatchStarFirstTest(FieldTest[RequestLinterProtocol]):
@@ -86,4 +86,13 @@ class IfMatchBadValueTest(FieldTest[RequestLinterProtocol]):
     name = "If-Match"
     inputs = [b"foo"]
     expected_out = [(False, "foo")]
+    expected_notes: NoteClassListType = [BAD_SYNTAX]
+
+
+class IfMatchLowerCaseWeakUnquotedTest(FieldTest[RequestLinterProtocol]):
+    "Guard: the case isn't the only defect, so only that element gets BAD_SYNTAX, once."
+
+    name = "If-Match"
+    inputs = [b'w/xyzzy, "r2d2xxxx"']
+    expected_out = [(False, "r2d2xxxx")]
     expected_notes: NoteClassListType = [BAD_SYNTAX]

@@ -1,5 +1,5 @@
 import re
-from typing import Tuple, Union
+from typing import List, Tuple, Union
 
 from httplint.field import BAD_SYNTAX
 from httplint.field.singleton_field import SingletonField
@@ -37,9 +37,15 @@ entire new representation."""
         "If-Range = entity-tag / HTTP-date; returns the date, or (weak, opaque-tag)."
         # An entity-tag starts with a quote or "W/", and an HTTP-date with a day name.
         if re.match(r'(?:"|W/)', field_value, RE_FLAGS):
+            weak_case: List[bool] = []  # set when the case of "w/" is the only defect
+            try:
+                tag = parse_entity_tag(field_value, add_note, lambda: weak_case.append(True))
+            except ValueError:
+                if not weak_case:
+                    add_note(BAD_SYNTAX, ref_uri=self.reference)
+                raise
             if not is_entity_tag(field_value):
                 add_note(BAD_SYNTAX, ref_uri=self.reference)
-            tag = parse_entity_tag(field_value, add_note)
             if tag[0]:
                 add_note(IF_RANGE_WEAK)
             return tag
@@ -154,7 +160,7 @@ class IfRangeLowerCaseWeakTest(FieldTest[RequestLinterProtocol]):
     name = "If-Range"
     inputs = [b'w/"xyzzy"']
     expected_out = None
-    expected_notes: NoteClassListType = [BAD_SYNTAX, ENTITY_TAG_WEAK_CASE]
+    expected_notes: NoteClassListType = [ENTITY_TAG_WEAK_CASE]
 
 
 class IfRangeLowerCaseWeakUnquotedTest(FieldTest[RequestLinterProtocol]):

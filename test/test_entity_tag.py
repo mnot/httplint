@@ -39,6 +39,21 @@ class EntityTagTest(unittest.TestCase):
     def test_lower_case_weak_with_other_defect_is_left_to_syntax_check(self) -> None:
         self.assertEqual(parse("w/foo"), (None, []))
 
+    def test_lower_case_weak_suppresses_the_syntax_note(self) -> None:
+        calls: List[bool] = []
+        with self.assertRaises(ValueError):
+            parse_entity_tag('w/"foo"', lambda note, **kwargs: None, lambda: calls.append(True))
+        self.assertEqual(calls, [True])
+
+    def test_other_defects_do_not_suppress_the_syntax_note(self) -> None:
+        calls: List[bool] = []
+        for value in ["w/foo", 'w/"foo', '"foo"', 'W/"foo"']:
+            try:
+                parse_entity_tag(value, lambda note, **kwargs: None, lambda: calls.append(True))
+            except ValueError:
+                pass
+        self.assertEqual(calls, [])
+
 
 if __name__ == "__main__":
     unittest.main()
