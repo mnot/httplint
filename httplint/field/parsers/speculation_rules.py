@@ -56,7 +56,7 @@ class SPECULATION_RULE_BAD_URL(Note):
     _summary = "The speculation rule URL isn't valid."
     _text = """\
 The speculation rule `%(url)s` can't be resolved as a URL (for example, it may have a malformed IP
-address in its host). Browsers will ignore it."""
+address in its host). Browsers may ignore it."""
 
 
 class SPECULATION_RULES_BAD_TYPE(Note):

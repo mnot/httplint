@@ -64,7 +64,7 @@ class BAD_REPORTING_ENDPOINT_URL(Note):
     _summary = "The %(name)s reporting endpoint isn't a valid URL."
     _text = """\
 The reporting endpoint `%(name)s` has a URL (`%(url)s`) that can't be resolved (for example, it may
-have a malformed IP address in its host). Browsers will ignore it."""
+have a malformed IP address in its host). Browsers may ignore it."""
 
 
 class BAD_REPORTING_ENDPOINT_SYNTAX(Note):
