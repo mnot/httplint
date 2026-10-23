@@ -51,7 +51,6 @@ class HttpField(ABC, Generic[TMessage]):
         str, rfc9110.list_rule, bool
     ]  # Verbose regular expression to match, or False to indicate no syntax.
     report_syntax: bool = True  # If False, a syntax mismatch adds no note at all.
-    max_syntax_length: Optional[int] = None  # Longer values aren't syntax-checked, if set.
     deprecated: bool = False
     no_coverage: bool = False  # Turns off coverage checks.
     message: TMessage
@@ -150,13 +149,14 @@ class HttpField(ABC, Generic[TMessage]):
         value matches) or BAD_SYNTAX (if none does) when it doesn't conform. Returns False if it
         doesn't conform.
 
-        Values longer than `max_syntax_length` aren't checked. Nothing is added if `report_syntax`
-        is False, or if parse() called `suppress_syntax_note()`.
+        Nothing is added if `report_syntax` is False, or if parse() called
+        `suppress_syntax_note()`.
+
+        Every syntax check goes through here, so this is where a length or time guard would go
+        if one is ever needed (FieldSection already limits field sizes with FIELD_TOO_LARGE).
         """
         patterns = self._syntax_patterns()
         if patterns is None:
-            return True
-        if self.max_syntax_length is not None and len(value) > self.max_syntax_length:
             return True
         full, prefix = patterns
         if full.match(value):

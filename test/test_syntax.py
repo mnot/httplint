@@ -314,15 +314,6 @@ class FieldSyntaxCheckTest(unittest.TestCase):
         self.assertIsNone(none._syntax_patterns())  # pylint: disable=protected-access
         self.assertEqual(self.lint(none, "anything"), [])
 
-    def test_max_syntax_length(self) -> None:
-        "Over-long values are skipped by the check; the limit is off by default."
-        self.assertIsNone(HttpField.max_syntax_length)
-        for base in (self.SingletonF, self.BrokenF, self.ListF):
-            with self.subTest(base.__bases__[0].__name__):
-                limited = type("Limited", (base,), {"max_syntax_length": 4})
-                self.assertEqual(self.classes(self.lint(limited, "bbbb")), [BAD_SYNTAX])
-                self.assertEqual(self.lint(limited, "bbbbb"), [])
-
 
 class FieldSyntaxNoteTest(unittest.TestCase):
     """Real fields: one note per defect, and the detailed note for singletons."""
