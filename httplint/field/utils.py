@@ -2,7 +2,9 @@ import calendar
 import re
 from email.utils import parsedate as lib_parsedate
 from typing import Any, Dict, FrozenSet, List, Optional, Set, Tuple, Type, Union
+from urllib.parse import SplitResult
 from urllib.parse import unquote as urlunquote
+from urllib.parse import urljoin, urlsplit
 
 from http_sf import Token
 
@@ -383,9 +385,11 @@ def check_sf_params(
     param_list = []
     for param_name, param_value in params.items():
         safe_value = inline_safe(str(param_value))
+        # An empty code span would swallow the next span's delimiters.
+        shown_value = f"`{safe_value}`" if safe_value else "(empty)"
         if param_name not in known_params:
             add_note(unknown_param_note, param=param_name)
-            param_list.append(f"* `{param_name}`: `{safe_value}`")
+            param_list.append(f"* `{param_name}`: {shown_value}")
         else:
             expected_type = known_params[param_name].get("type")
             if expected_type and not isinstance(param_value, expected_type):
@@ -394,7 +398,7 @@ def check_sf_params(
                     param=param_name,
                     value=param_value,
                 )
-                param_list.append(f"* `{param_name}`: `{safe_value}`")
+                param_list.append(f"* `{param_name}`: {shown_value}")
                 continue
 
             allowed_values = known_params[param_name].get("values")
@@ -404,7 +408,7 @@ def check_sf_params(
                     param=param_name,
                     value=param_value,
                 )
-                param_list.append(f"* `{param_name}`: `{safe_value}`")
+                param_list.append(f"* `{param_name}`: {shown_value}")
                 continue
 
             if "value_desc" in known_params[param_name]:
@@ -412,11 +416,11 @@ def check_sf_params(
                 if desc:
                     param_list.append(f"* {desc}")
                 else:
-                    param_list.append(f"* `{param_name}`: `{safe_value}`")
+                    param_list.append(f"* `{param_name}`: {shown_value}")
             elif "desc" in known_params[param_name]:
                 desc = known_params[param_name]["desc"]
                 if "%s" in desc:
-                    wrapped = f"`{safe_value}`" if safe_value else ""
+                    wrapped = f"`{safe_value}`" if safe_value else "(empty)"
                     param_list.append(f"* {desc % wrapped}")
                 elif param_value:
                     # A static desc with no %s is a flag-style description,
@@ -427,7 +431,7 @@ def check_sf_params(
                 if param_value is True:
                     param_list.append(f"* `{param_name}`")
                 else:
-                    param_list.append(f"* `{param_name}`: `{safe_value}`")
+                    param_list.append(f"* `{param_name}`: {shown_value}")
 
     return "\n".join(param_list)
 
@@ -588,3 +592,62 @@ HTTP has a number of defined date formats for historical reasons. This header is
 format that are now obsolete. See [the
 specification](https://www.rfc-editor.org/rfc/rfc9110.html#name-obsolete-date-formats) for more information.
 """
+
+
+# --- resolve_url: URL resolution shared by Link, Location, Referer, Reporting-Endpoints,
+# --- Speculation-Rules and NEL
+
+
+def resolve_url(url: str, base: str = "") -> Optional[SplitResult]:
+    "Resolve url against base (if any) and split it; None if urllib rejects it (e.g., bad IPv6)."
+    try:
+        return urlsplit(urljoin(base, url))
+    except ValueError:
+        return None
+
+
+def is_secure(split: SplitResult) -> bool:
+    "Whether a split URL has a secure scheme (https or wss)."
+    return split.scheme.lower() in ("https", "wss")
+
+
+# --- parse_delta_seconds: non-negative integer field values ---------------------------------
+
+
+def parse_digits(value: str, max_digits: int = 20) -> Optional[int]:
+    """
+    Parse `value` as DIGIT+ (ASCII only; no sign, underscore or whitespace), or return None if it
+    isn't, or has more than `max_digits` significant digits (leading zeros don't count).
+
+    This keeps int()'s leniency and its 4300-digit limit away from wire values.
+    """
+    if value.isascii() and value.isdigit():
+        digits = value.lstrip("0") or "0"
+        if len(digits) <= max_digits:
+            return int(digits)
+    return None
+
+
+def parse_delta_seconds(
+    value: str,
+    add_note: AddNoteMethodType,
+    bad_note: Type[Note],
+    max_digits: int = 20,
+    **note_vars: Any,
+) -> Optional[int]:
+    """
+    Parse `value` with parse_digits(), as used for delta-seconds and similar values.
+
+    On failure, add `bad_note` (with `note_vars`) and return None. Range checks stay with the
+    caller.
+    """
+    result = parse_digits(value, max_digits)
+    if result is None:
+        add_note(bad_note, **note_vars)
+    return result
+
+
+def is_negative_integer(value: str) -> bool:
+    "True if `value` is '-' followed by ASCII DIGIT+; for choosing a more specific note."
+    magnitude = value[1:]
+    return value.startswith("-") and magnitude.isascii() and magnitude.isdigit()
