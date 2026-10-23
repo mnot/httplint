@@ -1129,13 +1129,14 @@ class SyntaxLanguageTagBacktrackingTest(unittest.TestCase):
             ("extensions", "en" + "-a-bb" * n + "!"),
             ("private use", "x" + "-abcdefgh" * n + "!"),
         ]:
-            compiled = re.compile(rf"^\s*(?:{rfc5646.Language_Tag})\s*$", re.VERBOSE | re.IGNORECASE)
+            compiled = re.compile(
+                rf"^\s*(?:{rfc5646.Language_Tag})\s*$", re.VERBOSE | re.IGNORECASE
+            )
             with self.subTest(label):
                 start = time.monotonic()
                 compiled.match(value)
                 elapsed = time.monotonic() - start
                 self.assertLess(elapsed, TIME_LIMIT, f"{label}: {elapsed:.2f}s")
-
 
 
 class SyntaxRfc5322AuditTest(unittest.TestCase):
@@ -1323,7 +1324,6 @@ class SyntaxRfc5322AuditTest(unittest.TestCase):
                 self.assertLess(elapsed, TIME_LIMIT, f"{label}: {elapsed:.2f}s")
 
 
-
 class SyntaxExtValueAuditTest(unittest.TestCase):
     """
     Guards for the audit of rfc5987 against RFC 8187 section 3.2.1 (issue #303). The ABNF was
@@ -1355,7 +1355,7 @@ class SyntaxExtValueAuditTest(unittest.TestCase):
             with self.subTest(value=value):
                 self.assertTrue(fullmatch(rfc5987.ext_value, value))
         for value in [
-            '"UTF-8\'en\'a"',
+            "\"UTF-8'en'a\"",
             "''a",
             "UTF-8'en'a b",
             "UTF-8'en'a'b",
@@ -1372,7 +1372,6 @@ class SyntaxExtValueAuditTest(unittest.TestCase):
 
     def test_spec_url(self) -> None:
         self.assertTrue(rfc5987.SPEC_URL.endswith("rfc8187"))
-
 
 
 class SyntaxLinkAuditTest(unittest.TestCase):
@@ -1457,7 +1456,6 @@ class SyntaxLinkAuditTest(unittest.TestCase):
                 self.assertLess(elapsed, TIME_LIMIT, f"{label}: {elapsed:.2f}s")
 
 
-
 class SyntaxStructuredFieldAuditTest(unittest.TestCase):
     """
     Audit of rfc9651 against RFC 9651 Appendix C (issue #303). The module is not used by any
@@ -1486,7 +1484,13 @@ class SyntaxStructuredFieldAuditTest(unittest.TestCase):
                     self.assertRegex(inner, r"=[^=]")
                     changed += 1
         self.assertGreater(changed, 50)
-        for value in ["::", ":YQ==:", ":YQ=:", ":YQ:", ":cHJldGVuZCB0aGlzIGlzIGJpbmFyeSBjb250ZW50Lg==:"]:
+        for value in [
+            "::",
+            ":YQ==:",
+            ":YQ=:",
+            ":YQ:",
+            ":cHJldGVuZCB0aGlzIGlzIGJpbmFyeSBjb250ZW50Lg==:",
+        ]:
             with self.subTest(value=value):
                 self.assertTrue(fullmatch(rfc9651.sf_binary, value))
         for value in [":a=b:", ":=a:", ":a b:", ":a", "a:", ":a_b:", ":a-b:"]:
@@ -1545,7 +1549,7 @@ class SyntaxStructuredFieldAuditTest(unittest.TestCase):
             '%"a"b"',
             '%"ü"',
             '%"a',
-            '%a',
+            "%a",
             '"%"x"',
             '% "a"',
             '%"a\x7f"',
@@ -1565,7 +1569,8 @@ class SyntaxStructuredFieldAuditTest(unittest.TestCase):
             value = f'"{chr(code)}"'
             with self.subTest(code=code):
                 self.assertEqual(
-                    fullmatch(rfc9651.sf_string, value), 0x20 <= code <= 0x7E and chr(code) not in '"\\'
+                    fullmatch(rfc9651.sf_string, value),
+                    0x20 <= code <= 0x7E and chr(code) not in '"\\',
                 )
                 self.assertEqual(fullmatch(rfc9651.sf_string, value), fullmatch(old, value))
         for value in ['""', '"a b"', '"\\""', '"\\\\"', '"a\\"b"', '"%"']:
@@ -1582,9 +1587,7 @@ class SyntaxStructuredFieldAuditTest(unittest.TestCase):
             for template in ["{}", "a{}", "{}a"]:
                 value = template.format(chr(code))
                 with self.subTest(value=value):
-                    self.assertEqual(
-                        fullmatch(rfc9651.sf_token, value), fullmatch(composed, value)
-                    )
+                    self.assertEqual(fullmatch(rfc9651.sf_token, value), fullmatch(composed, value))
 
     def test_bare_item_order(self) -> None:
         "bare-item lists sf-integer before sf-decimal; the language is the same either way."
@@ -1594,7 +1597,9 @@ class SyntaxStructuredFieldAuditTest(unittest.TestCase):
             rf"{rfc9651.sf_date} | {rfc9651.sf_displaystring} )"
         )
         old = rf"(?: {reordered} {rfc9651.parameters} )"
-        self.assertLess(rfc9651.bare_item.index(rfc9651.sf_integer), rfc9651.bare_item.index(rfc9651.sf_decimal))
+        self.assertLess(
+            rfc9651.bare_item.index(rfc9651.sf_integer), rfc9651.bare_item.index(rfc9651.sf_decimal)
+        )
         for value in strings(["1", ".", "-", "a", "?", "0", ";", "@", "="], 5):
             with self.subTest(value=value):
                 self.assertEqual(fullmatch(old, value), fullmatch(rfc9651.sf_item, value))
@@ -1639,7 +1644,7 @@ class SyntaxStructuredFieldAuditTest(unittest.TestCase):
                     "sugar, tea, rum",
                     '("foo" "bar"), ("baz"), ("bat" "one"), ()',
                     '("foo"; a=1;b=2);lvl=5, ("bar" "baz");lvl=1',
-                    "abc;a=1;b=2; cde_456, (ghi;jk=4 l);q=\"9\";r=w",
+                    'abc;a=1;b=2; cde_456, (ghi;jk=4 l);q="9";r=w',
                     "1, 2 ,3,4",
                     "( a  b ), (  )",
                 ],
@@ -1654,7 +1659,10 @@ class SyntaxStructuredFieldAuditTest(unittest.TestCase):
                     'a=%"caf%c3%a9", b=@1659578233',
                 ],
             ),
-            (rfc9651.sf_item, ["5", "5; foo=bar", "1; a; b=?0", "@1659578233", '%"d%c3%a9j%c3%a0"']),
+            (
+                rfc9651.sf_item,
+                ["5", "5; foo=bar", "1; a; b=?0", "@1659578233", '%"d%c3%a9j%c3%a0"'],
+            ),
         ]:
             for value in values:
                 with self.subTest(value=value):
@@ -1704,7 +1712,6 @@ class SyntaxStructuredFieldAuditTest(unittest.TestCase):
                 self.assertLess(elapsed, TIME_LIMIT, f"{label}: {elapsed:.2f}s")
 
 
-
 class SyntaxCachingAuditTest(unittest.TestCase):
     """
     Guards for the audit of rfc9111 and rfc6838 against RFC 9111 Appendix A and RFC 6838
@@ -1743,7 +1750,7 @@ class SyntaxCachingAuditTest(unittest.TestCase):
         ]:
             with self.subTest(value=value):
                 self.assertTrue(matches(rfc9111.Warning_, value))
-        for value in ['19 a "x"', '199 a x', '199  a "x"', '199 a "x" "y"', "199 a"]:
+        for value in ['19 a "x"', "199 a x", '199  a "x"', '199 a "x" "y"', "199 a"]:
             with self.subTest(value=value):
                 self.assertFalse(matches(rfc9111.Warning_, value))
 
