@@ -1,17 +1,34 @@
-from typing import Any
+from typing import Any, Optional
 
+from httplint.field import BAD_SYNTAX
+from httplint.field.deferred_notes import DeferredNotes
 from httplint.field.singleton_field import SINGLE_HEADER_REPEAT, SingletonField
 from httplint.field.tests import FieldTest
-from httplint.note import Note, categories, levels
+from httplint.field.utils import parse_delta_seconds, unquote_string
+from httplint.note import MarkdownSafe, Note, categories, levels
 from httplint.syntax import rfc9110
 from httplint.types import (
     AddNoteMethodType,
-    NoteArgsType,
     NoteClassListType,
     ResponseLinterProtocol,
 )
+from httplint.util import inline_safe
 
 sts_dir = rf"(?: {rfc9110.token} (?: {rfc9110.BWS} = {rfc9110.BWS} {rfc9110.parameter_value} )? )"  # pylint: disable=invalid-name
+# RFC 6797 Section 6.1: [ directive ] *( ";" [ directive ] ). Whitespace is matched before a ";"
+# and before a directive, never twice by neighbouring terms, and the match starts with a
+# directive or ";" (the caller strips leading whitespace), so a failed match stays linear. A value
+# with nothing in it at all is still reported as bad syntax: a pattern that could match nothing
+# would make failed matches on long whitespace quadratic.
+sts_directives = (  # pylint: disable=invalid-name
+    rf"(?: (?: {sts_dir} | (?= ;) ) (?: {rfc9110.OWS} ; (?: {rfc9110.OWS} {sts_dir} )? )* )"
+)
+
+
+def _code_span(value: Optional[str]) -> MarkdownSafe:
+    "A wire-supplied value as a code span, or '(empty)' if there's nothing to show."
+    safe = inline_safe(value or "")
+    return MarkdownSafe(f"`{safe}`" if safe else "(empty)")
 
 
 class strict_transport_security(SingletonField[ResponseLinterProtocol]):
@@ -20,15 +37,13 @@ class strict_transport_security(SingletonField[ResponseLinterProtocol]):
 The `Strict-Transport-Security` response header (often abbreviated as HSTS) lets a web site tell
 browsers that it should only be communicated with using HTTPS, instead of using HTTP."""
     reference = "https://www.rfc-editor.org/rfc/rfc6797"
-    syntax = (
-        rf"(?: {sts_dir} (?: {rfc9110.OWS} ; {rfc9110.OWS} {sts_dir} )* (?: {rfc9110.OWS} ;)? )"
-    )
+    syntax = sts_directives
     category = categories.SECURITY
     deprecated = False
 
     def __init__(self, wire_name: str, message: ResponseLinterProtocol) -> None:
         super().__init__(wire_name, message)
-        self._deferred_notes: list[NoteArgsType] = []
+        self._deferred = DeferredNotes()
 
     def parse(self, field_value: str, add_note: AddNoteMethodType) -> dict[str, Any]:
         parsed: dict[str, Any] = {
@@ -37,9 +52,9 @@ browsers that it should only be communicated with using HTTPS, instead of using 
             "preload": False,
         }
         directives = [d.strip() for d in field_value.split(";")]
-        if directives and directives[-1] == "":
+        if len(directives) > 1 and directives[-1] == "":
             directives.pop()
-            self._deferred_notes.append((HSTS_TRAILING_SEMICOLON, {}))
+            self._deferred.defer(HSTS_TRAILING_SEMICOLON)
 
         seen_directives = set()
         for directive in directives:
@@ -47,29 +62,34 @@ browsers that it should only be communicated with using HTTPS, instead of using 
             name = parts[0].strip().lower()
             value = parts[1].strip() if len(parts) > 1 else None
 
+            if name == "":
+                continue  # empty directives are allowed by the grammar
+
             if name in seen_directives:
-                self._deferred_notes.append((HSTS_DUPLICATE_DIRECTIVE, {"directive": name}))
+                self._deferred.defer(HSTS_DUPLICATE_DIRECTIVE, directive=name)
                 continue
             seen_directives.add(name)
 
             if name == "max-age":
-                try:
-                    if value is not None:
-                        parsed["max-age"] = int(value)
-                    else:
-                        raise ValueError
-                except (ValueError, TypeError):
-                    self._deferred_notes.append((HSTS_BAD_MAX_AGE, {"max_age": str(value)}))
+                # directive-value = token / quoted-string; both mean the same (Section 6.2)
+                max_age = _code_span(value)
+                if value is None:
+                    self._deferred.defer(HSTS_BAD_MAX_AGE, max_age=max_age)
+                else:
+                    parsed["max-age"] = parse_delta_seconds(
+                        unquote_string(value),
+                        self._deferred.defer,
+                        HSTS_BAD_MAX_AGE,
+                        max_age=max_age,
+                    )
             elif name == "includesubdomains":
                 parsed["includesubdomains"] = True
                 if value is not None:
-                    self._deferred_notes.append(
-                        (HSTS_VALUE_NOT_ALLOWED, {"directive": "includeSubDomains"})
-                    )
+                    self._deferred.defer(HSTS_VALUE_NOT_ALLOWED, directive="includeSubDomains")
             elif name == "preload":
                 parsed["preload"] = True
                 if value is not None:
-                    self._deferred_notes.append((HSTS_VALUE_NOT_ALLOWED, {"directive": "preload"}))
+                    self._deferred.defer(HSTS_VALUE_NOT_ALLOWED, directive="preload")
             else:
                 # Unknown directive, ignore
                 pass
@@ -102,8 +122,7 @@ browsers that it should only be communicated with using HTTPS, instead of using 
             notes_to_add.append(HSTS_NO_PRELOAD)
 
         if parsed["max-age"] is None:
-            has_bad_max_age = any(n[0] is HSTS_BAD_MAX_AGE for n in self._deferred_notes)
-            if not has_bad_max_age:
+            if HSTS_BAD_MAX_AGE not in self._deferred:
                 notes_to_add.append(HSTS_NO_MAX_AGE)
             is_valid = False
         elif parsed["max-age"] == 0:
@@ -116,12 +135,11 @@ browsers that it should only be communicated with using HTTPS, instead of using 
         else:
             notes_to_add.append(HSTS_NO_SUBDOMAINS)
 
+        # RFC 6797 Section 8.1: over insecure transport the header is ignored, whatever the
+        # status code (a redirect to HTTPS carries no policy).
         if self.message.base_uri and self.message.base_uri.startswith("http:"):
-            if getattr(self.message, "message_type", None) == "response":
-                response = self.message
-                if response.status_code != 301:
-                    notes_to_add.append(HSTS_OVER_HTTP)
-                    is_valid = False
+            notes_to_add.append(HSTS_OVER_HTTP)
+            is_valid = False
 
         invalidating_notes = (
             HSTS_DUPLICATE_DIRECTIVE,
@@ -129,23 +147,15 @@ browsers that it should only be communicated with using HTTPS, instead of using 
             HSTS_VALUE_NOT_ALLOWED,
         )
 
-        for note_cls, _ in self._deferred_notes:
-            if note_cls in invalidating_notes:
-                is_valid = False
-                break
-
-        for note in self.message.notes:
-            if isinstance(note, invalidating_notes):
-                is_valid = False
-                break
+        if self._deferred.has(*invalidating_notes):
+            is_valid = False
 
         if is_valid:
             parent = add_note(HSTS_VALID)
         else:
             parent = add_note(HSTS_INVALID)
 
-        for note_cls, note_kwargs in self._deferred_notes:
-            parent.add_child(note_cls, **note_kwargs)
+        self._deferred.emit(parent.add_child)
 
         for note_cls in notes_to_add:
             parent.add_child(note_cls)
@@ -269,9 +279,8 @@ class HSTS_TRAILING_SEMICOLON(Note):
     level = levels.INFO
     _summary = "The Strict-Transport-Security header has a trailing semicolon."
     _text = """\
-The `Strict-Transport-Security` header contains a trailing semicolon. Technically, this violates
-the grammar, so strict implementations might find it confusing. However, most implementations
-should ignore it."""
+The `Strict-Transport-Security` header ends with a semicolon. The grammar allows this, but some
+implementations may be confused by it."""
 
 
 class HSTS_OVER_HTTP(Note):
@@ -279,8 +288,8 @@ class HSTS_OVER_HTTP(Note):
     level = levels.WARN
     _summary = "The HSTS header is sent over HTTP."
     _text = """\
-The `Strict-Transport-Security` header is ignored when sent over HTTP, unless it's a 301 Redirect.
-It should only be sent over HTTPS."""
+The `Strict-Transport-Security` header is ignored when sent over HTTP, regardless of the status
+code (including a redirect to HTTPS). It should only be sent over HTTPS."""
 
 
 class HSTS_BAD_MAX_AGE(Note):
@@ -289,7 +298,7 @@ class HSTS_BAD_MAX_AGE(Note):
     _summary = "The max-age directive in the HSTS header is invalid."
     _text = """\
 The `max-age` directive in the `Strict-Transport-Security` header must be a non-negative
-integer. The value `%(max_age)s` is not valid."""
+integer. The value %(max_age)s is not valid."""
 
 
 class HSTS_VALUE_NOT_ALLOWED(Note):
@@ -479,3 +488,98 @@ class HSTSTrailingSemicolonTest(FieldTest[ResponseLinterProtocol]):
 
     def set_response_context(self, message: ResponseLinterProtocol) -> None:
         message.base_uri = "https://www.example.com/"
+
+
+class HSTSQuotedMaxAgeTest(FieldTest[ResponseLinterProtocol]):
+    name = "Strict-Transport-Security"
+    inputs = [b'max-age="31536000"; includeSubDomains']
+    expected_out = {"max-age": 31536000, "includesubdomains": True, "preload": False}
+    expected_notes: NoteClassListType = [HSTS_SUBDOMAINS, HSTS_NO_PRELOAD, HSTS_VALID]
+
+    def set_response_context(self, message: ResponseLinterProtocol) -> None:
+        message.base_uri = "https://www.example.com/"
+
+
+class HSTSSignedMaxAgeTest(FieldTest[ResponseLinterProtocol]):
+    name = "Strict-Transport-Security"
+    inputs = [b"max-age=-5"]
+    expected_out = {"max-age": None, "includesubdomains": False, "preload": False}
+    expected_notes: NoteClassListType = [
+        HSTS_BAD_MAX_AGE,
+        HSTS_NO_SUBDOMAINS,
+        HSTS_NO_PRELOAD,
+        HSTS_INVALID,
+    ]
+
+    def set_response_context(self, message: ResponseLinterProtocol) -> None:
+        message.base_uri = "https://www.example.com/"
+
+
+class HSTSPlusMaxAgeTest(HSTSSignedMaxAgeTest):
+    inputs = [b"max-age=+5"]
+
+
+class HSTSUnderscoreMaxAgeTest(HSTSSignedMaxAgeTest):
+    inputs = [b"max-age=1_000"]
+
+
+class HSTSEmptyMaxAgeTest(HSTSSignedMaxAgeTest):
+    "The empty value is also a syntax error, so BAD_SYNTAX comes with it (as it did before)."
+
+    inputs = [b"max-age="]
+    expected_notes: NoteClassListType = [
+        BAD_SYNTAX,
+        HSTS_BAD_MAX_AGE,
+        HSTS_NO_SUBDOMAINS,
+        HSTS_NO_PRELOAD,
+        HSTS_INVALID,
+    ]
+
+
+class HSTSBareMaxAgeTest(HSTSSignedMaxAgeTest):
+    inputs = [b"max-age"]
+
+
+class HSTSEmptyQuotedMaxAgeTest(HSTSSignedMaxAgeTest):
+    inputs = [b'max-age=""']
+
+
+class HSTSHugeMaxAgeTest(HSTSSignedMaxAgeTest):
+    inputs = [b"max-age=" + b"9" * 5000]
+
+
+class HSTSEmptyDirectivesTest(FieldTest[ResponseLinterProtocol]):
+    name = "Strict-Transport-Security"
+    inputs = [b"max-age=100;;; includeSubDomains"]
+    expected_out = {"max-age": 100, "includesubdomains": True, "preload": False}
+    expected_notes: NoteClassListType = [
+        HSTS_SUBDOMAINS,
+        HSTS_NO_PRELOAD,
+        HSTS_SHORT_MAX_AGE,
+        HSTS_VALID,
+    ]
+
+    def set_response_context(self, message: ResponseLinterProtocol) -> None:
+        message.base_uri = "https://www.example.com/"
+
+
+class HSTSLeadingEmptyDirectiveTest(HSTSEmptyDirectivesTest):
+    inputs = [b"; max-age=100; ; includeSubDomains"]
+
+
+class HSTSRedirectOverHttpTest(FieldTest[ResponseLinterProtocol]):
+    "RFC 6797 Section 8.1 has no exception for redirects."
+
+    name = "Strict-Transport-Security"
+    inputs = [b"max-age=31536000"]
+    expected_out = {"max-age": 31536000, "includesubdomains": False, "preload": False}
+    expected_notes: NoteClassListType = [
+        HSTS_OVER_HTTP,
+        HSTS_NO_SUBDOMAINS,
+        HSTS_NO_PRELOAD,
+        HSTS_INVALID,
+    ]
+
+    def set_response_context(self, message: ResponseLinterProtocol) -> None:
+        message.base_uri = "http://www.example.com/"
+        message.status_code = 301

@@ -1,15 +1,17 @@
 from calendar import timegm
 from re import match, split
-from typing import Any, List, Optional, Tuple, Union
+from typing import List, Optional, Tuple, Union
 from urllib.parse import urlsplit
 
 from httplint.field import RFC6265
 from httplint.field.broken_field import BrokenField
+from httplint.field.deferred_notes import DeferredNotes
+from httplint.field.section import FIELD_VALUE_ENCODING
 from httplint.field.tests import FieldTest
+from httplint.field.utils import is_negative_integer, parse_delta_seconds
 from httplint.note import MarkdownSafe, Note, categories, levels
 from httplint.types import (
     AddNoteMethodType,
-    DeferredNoteType,
     NoteClassListType,
     ResponseLinterProtocol,
 )
@@ -34,16 +36,11 @@ requests to the server."""
 
     def __init__(self, wire_name: str, message: ResponseLinterProtocol) -> None:
         super().__init__(wire_name, message)
-        self._deferred_notes: List[DeferredNoteType] = []
+        self._deferred = DeferredNotes()
 
     def parse(self, field_value: str, add_note: AddNoteMethodType) -> CookieType:
-        def deferred_add_note(
-            note: type[Note], category: Optional[Any] = None, **kwargs: Any
-        ) -> Any:
-            self._deferred_notes.append((add_note, note, category, kwargs))
-
         path = urlsplit(self.message.base_uri).path
-        return loose_parse(field_value, path, self.message.start_time, deferred_add_note)
+        return loose_parse(field_value, path, self.message.start_time, self._deferred.via(add_note))
 
     def evaluate(self, add_note: AddNoteMethodType) -> None:
         cookie_names = [c[0] for c in self.value]
@@ -68,8 +65,7 @@ requests to the server."""
                 ),
             )
 
-        for note_adder, note, category, kwargs in self._deferred_notes:
-            note_adder(note, category=category, **kwargs)
+        self._deferred.emit()
 
 
 def _is_hardened(attrs: List[Tuple[str, Union[str, int]]]) -> bool:
@@ -200,12 +196,22 @@ def _process_cookie_attribute(  # pylint: disable=too-many-branches,too-many-arg
         if attribute_value == "":
             add_note(SET_COOKIE_EMPTY_MAX_AGE, cookie_name=cookie_name)
             return lifetime_note_added
-        if attribute_value[0] == "0" and len(attribute_value) > 1:
-            add_note(SET_COOKIE_LEADING_ZERO_MAX_AGE, cookie_name=cookie_name)
-        if not attribute_value.isdigit():
-            add_note(SET_COOKIE_NON_DIGIT_MAX_AGE, cookie_name=cookie_name)
+        # RFC 6265 Section 5.2.2: a leading "-" is allowed (and means "expire now")
+        negative = is_negative_integer(attribute_value)
+        digits = attribute_value[1:] if negative else attribute_value
+        # Generous digit bound: oversized values still get SET_COOKIE_LIFETIME_TOO_LONG.
+        parsed = parse_delta_seconds(
+            digits,
+            add_note,
+            SET_COOKIE_NON_DIGIT_MAX_AGE,
+            max_digits=4000,
+            cookie_name=cookie_name,
+        )
+        if parsed is None:
             return lifetime_note_added
-        delta_seconds = int(attribute_value)
+        if digits[0] == "0" and len(digits) > 1:
+            add_note(SET_COOKIE_LEADING_ZERO_MAX_AGE, cookie_name=cookie_name)
+        delta_seconds = -parsed if negative else parsed
         cookie_attribute_list.append(("Max-Age", delta_seconds))
         if delta_seconds > 34560000 and not lifetime_note_added:
             add_note(
@@ -306,6 +312,10 @@ def check_prefixes(
 
 
 DELIMITER = r"(?:[\x09\x20-\x2F\x3B-\x40\x5B-\x60\x7B-\x7E])"
+# RFC 6265 Section 5.1.1 date-tokens: digits, then a non-digit (or the end of the token).
+TIME_TOKEN = r"^(\d{1,2}:\d{1,2}:\d{1,2})(?!\d)"
+DAY_OF_MONTH_TOKEN = r"^(\d{1,2})(?!\d)"
+YEAR_TOKEN = r"^(\d{2,4})(?!\d)"
 NON_DELIMITER = r"(?:[\x00-\x08\x0A-\x1F0-0\:a-zA-Z\x7F-\xFF])"
 MONTHS = {
     "jan": 1,
@@ -338,7 +348,7 @@ def loose_date_parse(cookie_date: str) -> int:
     for date_token in date_tokens:
         re_match = None
         if not found_time:
-            re_match = match(r"^(\d{2}:\d{2}:\d{2})(?:\D)?", date_token)
+            re_match = match(TIME_TOKEN, date_token)
             if re_match:
                 found_time = True
                 hour_value, minute_value, second_value = [
@@ -346,7 +356,7 @@ def loose_date_parse(cookie_date: str) -> int:
                 ]
                 continue
         if not found_day_of_month:
-            re_match = match(r"^(\d\d?)(?:\D)?", date_token)
+            re_match = match(DAY_OF_MONTH_TOKEN, date_token)
             if re_match:
                 found_day_of_month = True
                 day_of_month_value = int(re_match.group(1))
@@ -356,7 +366,7 @@ def loose_date_parse(cookie_date: str) -> int:
             month_value = MONTHS[date_token[:3].lower()]
             continue
         if not found_year:
-            re_match = match(r"^(\d{2,4})(?:\D)?", date_token)
+            re_match = match(YEAR_TOKEN, date_token)
             if re_match:
                 found_year = True
                 year_value = int(re_match.group(1))
@@ -433,9 +443,10 @@ class SET_COOKIE_LEADING_ZERO_MAX_AGE(Note):
     level = levels.WARN
     _summary = "The %(cookie_name)s cookie has a Max-Age with a leading zero."
     _text = """\
-The `max-age` parameter on this `Set-Cookie` header has a leading zero.
+The `max-age` parameter on this `Set-Cookie` header has a leading zero, which the `Set-Cookie`
+grammar doesn't allow.
 
-Browsers will ignore the `max-age` value as a result."""
+Browsers may still read it as an ordinary number."""
 
 
 class SET_COOKIE_NON_DIGIT_MAX_AGE(Note):
@@ -830,3 +841,89 @@ class SetCookieVersionTest(FieldTest[ResponseLinterProtocol]):
     inputs = [b"a=1; Version=1"]
     expected_out = [("a", "1", [])]
     expected_notes: NoteClassListType = [SET_COOKIE_VERSION]
+
+
+class MaxAgeNegativeSCTest(FieldTest[ResponseLinterProtocol]):
+    "RFC 6265 Section 5.2.2: a leading '-' is allowed, and means expire now."
+
+    name = "Set-Cookie"
+    inputs = [b"lang=en-US; Max-Age=-1"]
+    expected_out = [("lang", "en-US", [("Max-Age", -1)])]
+
+
+class MaxAgeNegativeLeadingZeroSCTest(FieldTest[ResponseLinterProtocol]):
+    name = "Set-Cookie"
+    inputs = [b"lang=en-US; Max-Age=-01"]
+    expected_out = [("lang", "en-US", [("Max-Age", -1)])]
+    expected_notes: NoteClassListType = [SET_COOKIE_LEADING_ZERO_MAX_AGE]
+
+
+class MaxAgeSignOnlySCTest(FieldTest[ResponseLinterProtocol]):
+    name = "Set-Cookie"
+    inputs = [b"lang=en-US; Max-Age=-"]
+    expected_out = [("lang", "en-US", [])]
+    expected_notes: NoteClassListType = [SET_COOKIE_NON_DIGIT_MAX_AGE]
+
+
+class MaxAgePlusSCTest(MaxAgeSignOnlySCTest):
+    inputs = [b"lang=en-US; Max-Age=+5"]
+
+
+class MaxAgeTextSCTest(MaxAgeSignOnlySCTest):
+    inputs = [b"lang=en-US; Max-Age=abc"]
+
+
+class MaxAgeUnicodeDigitSCTest(MaxAgeSignOnlySCTest):
+    "str.isdigit() accepts this, but int() doesn't."
+
+    inputs = [b"lang=en-US; Max-Age=\xb2"]
+    expected_notes: NoteClassListType = [SET_COOKIE_NON_DIGIT_MAX_AGE, FIELD_VALUE_ENCODING]
+
+
+class MaxAgeLeadingZeroTextSCTest(MaxAgeSignOnlySCTest):
+    "One defect, one note."
+
+    inputs = [b"lang=en-US; Max-Age=0a"]
+
+
+class MaxAgeHugeSCTest(FieldTest[ResponseLinterProtocol]):
+    "int() refuses long digit strings; the cookie must still be kept."
+
+    name = "Set-Cookie"
+    inputs = [b"lang=en-US; Max-Age=" + b"9" * 5000]
+    expected_out = [("lang", "en-US", [])]
+    expected_notes: NoteClassListType = [SET_COOKIE_NON_DIGIT_MAX_AGE]
+
+
+class MaxAgeLargeSCTest(FieldTest[ResponseLinterProtocol]):
+    name = "Set-Cookie"
+    inputs = [b"lang=en-US; Max-Age=" + b"9" * 100]
+    expected_out = [("lang", "en-US", [("Max-Age", int("9" * 100))])]
+    expected_notes: NoteClassListType = [SET_COOKIE_LIFETIME_TOO_LONG]
+
+
+class ExpiresShortTimeFieldSCTest(FieldTest[ResponseLinterProtocol]):
+    "time-field = 1*2DIGIT"
+
+    name = "Set-Cookie"
+    inputs = [b"lang=en-US; Expires=Wed, 09 Jun 2021 1:18:14 GMT"]
+    expected_out = [("lang", "en-US", [("Expires", 1623201494)])]
+
+
+class ExpiresLongDaySCTest(FieldTest[ResponseLinterProtocol]):
+    "day-of-month is 1*2DIGIT followed by a non-digit."
+
+    name = "Set-Cookie"
+    inputs = [b"lang=en-US; Expires=Wed, 123 Jun 2021 10:18:14 GMT"]
+    expected_out = [("lang", "en-US", [])]
+    expected_notes: NoteClassListType = [SET_COOKIE_BAD_DATE]
+
+
+class ExpiresLongYearSCTest(ExpiresLongDaySCTest):
+    "year is 2*4DIGIT followed by a non-digit."
+
+    inputs = [b"lang=en-US; Expires=Wed, 09 Jun 20211 10:18:14 GMT"]
+
+
+class ExpiresLongTimeFieldSCTest(ExpiresLongDaySCTest):
+    inputs = [b"lang=en-US; Expires=Wed, 09 Jun 2021 10:18:145 GMT"]
