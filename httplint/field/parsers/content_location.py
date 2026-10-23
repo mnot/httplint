@@ -1,7 +1,9 @@
+from httplint.field import BAD_SYNTAX
 from httplint.field.singleton_field import SingletonField
 from httplint.field.tests import FieldTest
 from httplint.syntax import rfc9110
 from httplint.types import (
+    NoteClassListType,
     ResponseLinterProtocol,
 )
 
@@ -21,3 +23,16 @@ class ContentLocationTest(FieldTest[ResponseLinterProtocol]):
     name = "Content-Location"
     inputs = [b"/foo"]
     expected_out = "/foo"
+
+
+class ContentLocationColonSegmentTest(FieldTest[ResponseLinterProtocol]):
+    name = "Content-Location"
+    inputs = [b"1:2"]
+    expected_out = "1:2"
+    expected_notes: NoteClassListType = [BAD_SYNTAX]
+
+
+class ContentLocationQueryTest(FieldTest[ResponseLinterProtocol]):
+    name = "Content-Location"
+    inputs = [b"/a?b=c"]
+    expected_out = "/a?b=c"
