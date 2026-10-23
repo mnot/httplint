@@ -121,7 +121,7 @@ parameter = rf"(?: {parameter_name} = {parameter_value} )"
 
 #   parameters = *( OWS ";" OWS [ parameter ] )
 
-parameters = rf"(?: {OWS} ; {OWS} {parameter}? )*"
+parameters = rf"(?: {OWS} ; (?: {OWS} {parameter} )? )*"
 
 #   qvalue = ( "0" [ "." *3DIGIT ] ) / ( "1" [ "." *3"0" ] )
 
@@ -262,7 +262,7 @@ Content_Length = rf"{DIGIT}+"
 
 #   partial-URI = relative-part [ "?" query ]
 
-partial_URI = rf"(?: {relative_part} (?: {query} )? )"
+partial_URI = rf"(?: {relative_part} (?: \? {query} )? )"
 
 #   Content-Location = absolute-URI / partial-URI
 
@@ -518,7 +518,10 @@ other_range = r"(?: [\x21-\x2B] | [\x2D-\x7E] )+"
 
 #   range-spec = int-range / suffix-range / other-range
 
-range_spec = rf"(?: {int_range} | {suffix_range} | {other_range} )"
+# other-range is a superset of int-range and suffix-range, so alternating them only adds
+# ambiguous parses (exponential backtracking); matching other-range alone accepts the same strings.
+
+range_spec = other_range
 
 #   range-set = range-spec *( OWS "," OWS range-spec )
 

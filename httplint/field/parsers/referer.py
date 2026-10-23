@@ -1,11 +1,13 @@
 from urllib.parse import urlparse
 
+from httplint.field import BAD_SYNTAX
 from httplint.field.singleton_field import SingletonField
 from httplint.field.tests import FieldTest
 from httplint.note import Note, categories, levels
 from httplint.syntax import rfc9110
 from httplint.types import (
     AddNoteMethodType,
+    NoteClassListType,
     RequestLinterProtocol,
 )
 from httplint.util import iri_to_uri
@@ -77,3 +79,16 @@ class RefererTest(FieldTest[RequestLinterProtocol]):
     name = "Referer"
     inputs = [b"http://www.example.org/hypertext/Overview.html"]
     expected_out = "http://www.example.org/hypertext/Overview.html"
+
+
+class RefererQueryTest(FieldTest[RequestLinterProtocol]):
+    name = "Referer"
+    inputs = [b"/a?b=c"]
+    expected_out = "/a?b=c"
+
+
+class RefererColonSegmentTest(FieldTest[RequestLinterProtocol]):
+    name = "Referer"
+    inputs = [b"1:2"]
+    expected_out = "1:2"
+    expected_notes: NoteClassListType = [BAD_SYNTAX]
