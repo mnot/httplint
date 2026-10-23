@@ -98,7 +98,7 @@ class HttpField(ABC, Generic[TMessage]):
             cls._valid_in_responses = True
 
     def __init__(self, wire_name: str, message: TMessage) -> None:
-        self.wire_name = wire_name.strip()
+        self.wire_name = wire_name
         self.message = message
         self.norm_name = self.wire_name.lower()
         if not hasattr(self, "canonical_name"):
