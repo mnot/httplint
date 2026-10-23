@@ -33,11 +33,20 @@ class JsonField(HttpField[TMessage], Generic[TMessage]):
     nonstandard_syntax = True
     syntax = False
 
+    def __init__(self, wire_name: str, message: TMessage) -> None:
+        super().__init__(wire_name, message)
+        self._json_parsed = False
+
     def handle_input(self, field_value: str, add_note: AddNoteMethodType, offset: int) -> None:
         self.value.append(field_value)
+        self._json_parsed = False
 
     def finish(self, add_note: AddNoteMethodType) -> None:
         if not self.value:
+            return
+
+        # A further process() call re-finishes every handler; the value is parsed by then.
+        if self._json_parsed:
             return
 
         combined_value = f"[{', '.join(self.value)}]"
@@ -59,6 +68,7 @@ class JsonField(HttpField[TMessage], Generic[TMessage]):
                 add_note(BAD_JSON, error="nested too deeply", category=self.category)
                 self.value = None
 
+        self._json_parsed = True
         super().finish(add_note)
 
 

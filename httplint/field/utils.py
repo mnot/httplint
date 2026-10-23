@@ -10,7 +10,7 @@ from http_sf import Token
 
 from httplint.note import Note, categories, levels
 from httplint.syntax import rfc5234, rfc6838, rfc9110
-from httplint.types import AddNoteMethodType, ParamDictType
+from httplint.types import AddNoteMethodType, LinterProtocol, ParamDictType
 from httplint.util import inline_safe
 
 RE_FLAGS = re.VERBOSE | re.IGNORECASE
@@ -402,7 +402,7 @@ def check_sf_params(
             param_list.append(f"* `{param_name}`: {shown_value}")
         else:
             expected_type = known_params[param_name].get("type")
-            if expected_type and not isinstance(param_value, expected_type):
+            if expected_type and not sf_type_matches(param_value, expected_type):
                 add_note(
                     bad_param_val_note,
                     param=param_name,
@@ -779,3 +779,54 @@ on its own: the field's value is either `*` or a list of entity tags
 
 Recipients may handle a list that includes both in different ways; send either `*` or the
 entity tags."""
+
+
+# --- known_reporting_endpoints: endpoint names for CSP, COEP, COOP and NEL ---------------------
+
+
+def report_to_groups(message: LinterProtocol) -> Set[str]:
+    "Names of the groups defined by `Report-To` (the group member, which defaults to `default`)."
+    groups: Set[str] = set()
+    report_to_value = message.headers.parsed.get("report-to")
+    if not isinstance(report_to_value, list):
+        return groups
+    for group in report_to_value:
+        if not isinstance(group, dict):
+            continue
+        name = group.get("group", "default")
+        if isinstance(name, str):
+            groups.add(name)
+    return groups
+
+
+def known_reporting_endpoints(message: LinterProtocol, include_report_to: bool = False) -> Set[str]:
+    """
+    Names of the endpoints defined by `Reporting-Endpoints`; with `include_report_to`, the
+    groups defined by `Report-To` as well.
+    """
+    endpoints_field = message.headers.parsed.get("reporting-endpoints")
+    known: Set[str] = set(endpoints_field.keys()) if endpoints_field else set()
+    if include_report_to:
+        known |= report_to_groups(message)
+    return known
+
+
+# --- is_integer, sf_type_matches: Booleans aren't integers in JSON and Structured Fields -------
+
+
+def is_integer(value: Any) -> bool:
+    "True if `value` is an integer. Python's bool is an int subclass, but JSON and SF's aren't."
+    return isinstance(value, int) and not isinstance(value, bool)
+
+
+def sf_type_matches(value: Any, expected: Any) -> bool:
+    "isinstance(), except that a bool only matches if bool itself is expected."
+    types = expected if isinstance(expected, tuple) else (expected,)
+    if isinstance(value, bool) and bool not in types:
+        return False
+    return isinstance(value, types)
+
+
+def is_number(value: Any) -> bool:
+    "True if `value` is an int or a float, but not a bool."
+    return isinstance(value, (int, float)) and not isinstance(value, bool)

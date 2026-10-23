@@ -1,6 +1,7 @@
 from httplint.field import FIELD_DEPRECATED
 from httplint.field.json_field import BAD_JSON, JsonField
 from httplint.field.tests import FieldTest
+from httplint.field.utils import is_integer
 from httplint.note import Note, categories, levels
 from httplint.types import AddNoteMethodType, NoteClassListType, ResponseLinterProtocol
 
@@ -25,7 +26,7 @@ It has been replaced by the Reporting-Endpoints header field."""
             # max_age is required
             if "max_age" not in group:
                 add_note(REPORT_TO_MISSING_KEY, key="max_age")
-            elif not isinstance(group["max_age"], int):
+            elif not is_integer(group["max_age"]):
                 add_note(REPORT_TO_BAD_TYPE, key="max_age", expected="integer")
 
             # endpoints is required
@@ -104,3 +105,10 @@ class ReportToBadJsonTest(FieldTest[ResponseLinterProtocol]):
     inputs = [b'{unquoted: "keys"}']
     expected_out = None
     expected_notes: NoteClassListType = [FIELD_DEPRECATED, BAD_JSON]
+
+
+class ReportToBooleanMaxAgeTest(FieldTest[ResponseLinterProtocol]):
+    name = "Report-To"
+    inputs = [b'{"max_age": true, "endpoints": [{"url": "https://a.com"}]}']
+    expected_out = [{"max_age": True, "endpoints": [{"url": "https://a.com"}]}]
+    expected_notes: NoteClassListType = [FIELD_DEPRECATED, REPORT_TO_BAD_TYPE]

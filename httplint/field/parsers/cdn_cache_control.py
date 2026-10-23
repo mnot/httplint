@@ -4,6 +4,7 @@ from httplint.field import RESPONSE_HDR_IN_REQUEST
 from httplint.field.parsers.cache_control import KNOWN_CC
 from httplint.field.structured_field import StructuredField
 from httplint.field.tests import FakeRequestLinter, FieldTest
+from httplint.field.utils import is_integer
 from httplint.note import Note, categories, levels
 from httplint.types import (
     AddNoteMethodType,
@@ -46,7 +47,7 @@ The `CDN-Cache-Control` header field targets cache directives to Content Deliver
                         )
                 elif value_func is int:
                     # Expecting integer
-                    if not isinstance(directive_val, int):
+                    if not is_integer(directive_val):
                         add_note(
                             BAD_CDN_CC_TYPE,
                             bad_directive=directive_name,
@@ -116,3 +117,10 @@ class CDNCacheControlRequestTest(FieldTest[ResponseLinterProtocol]):
     linter_class = FakeRequestLinter
     expected_out = None
     expected_notes: NoteClassListType = [RESPONSE_HDR_IN_REQUEST]
+
+
+class CDNCacheControlBooleanTest(FieldTest[ResponseLinterProtocol]):
+    name = "CDN-Cache-Control"
+    inputs = [b"max-age=?1"]
+    expected_out = {"max-age": (True, {})}
+    expected_notes: NoteClassListType = [CDN_CACHE_CONTROL_PRESENT, BAD_CDN_CC_TYPE]

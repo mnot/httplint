@@ -1,87 +1,15 @@
-# pylint: disable=duplicate-code
 from typing import Any
 
 from http_sf import Token
 
-from httplint.field.structured_field import StructuredField
+from httplint.field.structured_field import STRUCTURED_FIELD_PARSE_ERROR
 from httplint.field.tests import FieldTest
-from httplint.note import Note, categories, levels
-from httplint.types import (
-    AddNoteMethodType,
-    NoteClassListType,
-    ResponseLinterProtocol,
-    SFItemType,
+from httplint.field.token_policy_field import (
+    POLICY_REPORT_TO_NOT_STRING,
+    TokenPolicyField,
 )
-
-
-class cross_origin_opener_policy(StructuredField[ResponseLinterProtocol]):
-    canonical_name = "Cross-Origin-Opener-Policy"
-    description = """\
-The `Cross-Origin-Opener-Policy` header field allows a document to disown its opener, ensuring that
-it doesn't have a reference to the opener's window object."""
-    reference = "https://html.spec.whatwg.org/multipage/origin.html#coop"
-    syntax = False  # Structured Field
-    category = categories.SECURITY
-    deprecated = False
-    sf_type = "item"
-    value: SFItemType
-    report_only_string = ""
-    report_only_text = ""
-
-    def evaluate(self, add_note: AddNoteMethodType) -> None:
-        val = self.value[0]
-        if isinstance(val, Token):
-            if val == "same-origin":
-                add_note(
-                    COOP_SAME_ORIGIN,
-                    report_only=self.report_only_string,
-                    report_only_text=self.report_only_text,
-                )
-            elif val == "same-origin-allow-popups":
-                add_note(
-                    COOP_SAME_ORIGIN_ALLOW_POPUPS,
-                    report_only=self.report_only_string,
-                    report_only_text=self.report_only_text,
-                )
-            elif val == "unsafe-none":
-                add_note(
-                    COOP_UNSAFE_NONE,
-                    report_only=self.report_only_string,
-                    report_only_text=self.report_only_text,
-                )
-            else:
-                add_note(
-                    CROSS_ORIGIN_OPENER_POLICY_BAD_VALUE,
-                    value=val,
-                    report_only=self.report_only_string,
-                )
-        else:
-            add_note(
-                CROSS_ORIGIN_OPENER_POLICY_BAD_VALUE,
-                value=val,
-                report_only=self.report_only_string,
-            )
-
-    def post_check(self, add_note: AddNoteMethodType) -> None:
-
-        # self.value is (item, params)
-        params = self.value[1]
-        report_to = params.get("report-to")
-        if not report_to:
-            return
-
-        reporting_endpoints_field = self.message.headers.parsed.get("reporting-endpoints")
-        reporting_endpoints = (
-            list(reporting_endpoints_field.keys()) if reporting_endpoints_field else []
-        )
-        known_endpoints = set(reporting_endpoints)
-
-        if report_to not in known_endpoints:
-            add_note(
-                COOP_REPORT_TO_MISSING,
-                endpoint=report_to,
-                report_only=self.report_only_string,
-            )
+from httplint.note import Note, categories, levels
+from httplint.types import NoteClassListType, ResponseLinterProtocol
 
 
 class COOP_SAME_ORIGIN(Note):
@@ -106,6 +34,20 @@ isolates the browsing context but maintains a relationship
 with popups that it opens, or that opened it, in supporting browsers.%(report_only_text)s"""
 
 
+class COOP_NOOPENER_ALLOW_POPUPS(Note):
+    category = categories.SECURITY
+    level = levels.GOOD
+    _summary = "This response is always placed in a new browsing context group%(report_only)s."
+    _text = """\
+The `noopener-allow-popups`
+[Cross-Origin Opener Policy](https://html.spec.whatwg.org/multipage/origin.html#coop)
+forces the document into a new top-level browsing context, severing any opener
+relationship with the document that opened it, in supporting browsers.
+
+As the HTML specification notes, this does not create a robust security boundary between
+those same-origin documents.%(report_only_text)s"""
+
+
 class COOP_UNSAFE_NONE(Note):
     category = categories.SECURITY
     level = levels.WARN
@@ -126,7 +68,7 @@ class CROSS_ORIGIN_OPENER_POLICY_BAD_VALUE(Note):
     _summary = "This response's %(field_name)s has an invalid value."
     _text = """\
 The `%(field_name)s` header must be one of `same-origin`, `same-origin-allow-popups`,
-or `unsafe-none`.
+`noopener-allow-popups`, or `unsafe-none`.
 """
 
 
@@ -141,6 +83,22 @@ header specifies a reporting endpoint, but no matching endpoint refers to it in 
 `Reporting-Endpoints` header."""
 
 
+class cross_origin_opener_policy(TokenPolicyField):
+    canonical_name = "Cross-Origin-Opener-Policy"
+    description = """\
+The `Cross-Origin-Opener-Policy` header field allows a document to disown its opener, ensuring that
+it doesn't have a reference to the opener's window object."""
+    reference = "https://html.spec.whatwg.org/multipage/origin.html#coop"
+    policy_notes = {
+        "same-origin": COOP_SAME_ORIGIN,
+        "same-origin-allow-popups": COOP_SAME_ORIGIN_ALLOW_POPUPS,
+        "noopener-allow-popups": COOP_NOOPENER_ALLOW_POPUPS,
+        "unsafe-none": COOP_UNSAFE_NONE,
+    }
+    bad_value_note = CROSS_ORIGIN_OPENER_POLICY_BAD_VALUE
+    report_to_missing_note = COOP_REPORT_TO_MISSING
+
+
 class CrossOriginOpenerPolicySameOriginTest(FieldTest[ResponseLinterProtocol]):
     name = "Cross-Origin-Opener-Policy"
     inputs = [b"same-origin"]
@@ -153,6 +111,13 @@ class CrossOriginOpenerPolicySameOriginAllowPopupsTest(FieldTest[ResponseLinterP
     inputs = [b"same-origin-allow-popups"]
     expected_out: Any = (Token("same-origin-allow-popups"), {})
     expected_notes: NoteClassListType = [COOP_SAME_ORIGIN_ALLOW_POPUPS]
+
+
+class CrossOriginOpenerPolicyNoopenerAllowPopupsTest(FieldTest[ResponseLinterProtocol]):
+    name = "Cross-Origin-Opener-Policy"
+    inputs = [b"noopener-allow-popups"]
+    expected_out: Any = (Token("noopener-allow-popups"), {})
+    expected_notes: NoteClassListType = [COOP_NOOPENER_ALLOW_POPUPS]
 
 
 class CrossOriginOpenerPolicyUnsafeNoneTest(FieldTest[ResponseLinterProtocol]):
@@ -171,7 +136,7 @@ class CrossOriginOpenerPolicyBadValueTest(FieldTest[ResponseLinterProtocol]):
 
 class CrossOriginOpenerPolicyReportToTest(FieldTest[ResponseLinterProtocol]):
     name = "Cross-Origin-Opener-Policy"
-    inputs = [b"same-origin; report-to=endpoint"]
+    inputs = [b'same-origin; report-to="endpoint"']
     expected_out: Any = (Token("same-origin"), {"report-to": "endpoint"})
     expected_notes: NoteClassListType = [COOP_SAME_ORIGIN]
 
@@ -183,6 +148,53 @@ class CrossOriginOpenerPolicyReportToTest(FieldTest[ResponseLinterProtocol]):
 
 class CrossOriginOpenerPolicyReportToMissingTest(FieldTest[ResponseLinterProtocol]):
     name = "Cross-Origin-Opener-Policy"
-    inputs = [b"same-origin; report-to=endpoint"]
+    inputs = [b'same-origin; report-to="endpoint"']
     expected_out: Any = (Token("same-origin"), {"report-to": "endpoint"})
+    expected_notes: NoteClassListType = [COOP_SAME_ORIGIN, COOP_REPORT_TO_MISSING]
+
+
+class CrossOriginOpenerPolicyReportToTokenTest(FieldTest[ResponseLinterProtocol]):
+    name = "Cross-Origin-Opener-Policy"
+    inputs = [b"same-origin; report-to=endpoint"]
+    expected_out: Any = (Token("same-origin"), {"report-to": Token("endpoint")})
+    expected_notes: NoteClassListType = [COOP_SAME_ORIGIN, POLICY_REPORT_TO_NOT_STRING]
+
+    def set_response_context(self, message: ResponseLinterProtocol) -> None:
+        message.headers.process(
+            [(b"Reporting-Endpoints", b'endpoint="https://example.com/reports"')]
+        )
+
+
+class CrossOriginOpenerPolicyReportToIntegerTest(FieldTest[ResponseLinterProtocol]):
+    name = "Cross-Origin-Opener-Policy"
+    inputs = [b"same-origin; report-to=1"]
+    expected_out: Any = (Token("same-origin"), {"report-to": 1})
+    expected_notes: NoteClassListType = [COOP_SAME_ORIGIN, POLICY_REPORT_TO_NOT_STRING]
+
+
+class CrossOriginOpenerPolicyReportToBinaryTest(FieldTest[ResponseLinterProtocol]):
+    name = "Cross-Origin-Opener-Policy"
+    inputs = [b"same-origin; report-to=:AAAA:"]
+    expected_out: Any = (Token("same-origin"), {"report-to": b"\x00\x00\x00"})
+    expected_notes: NoteClassListType = [COOP_SAME_ORIGIN, POLICY_REPORT_TO_NOT_STRING]
+
+
+class CrossOriginOpenerPolicyReportToBooleanTest(FieldTest[ResponseLinterProtocol]):
+    name = "Cross-Origin-Opener-Policy"
+    inputs = [b"same-origin; report-to"]
+    expected_out: Any = (Token("same-origin"), {"report-to": True})
+    expected_notes: NoteClassListType = [COOP_SAME_ORIGIN, POLICY_REPORT_TO_NOT_STRING]
+
+
+class CrossOriginOpenerPolicyUnparseableTest(FieldTest[ResponseLinterProtocol]):
+    name = "Cross-Origin-Opener-Policy"
+    inputs = [b"same-origin;;"]
+    expected_out: Any = None
+    expected_notes: NoteClassListType = [STRUCTURED_FIELD_PARSE_ERROR]
+
+
+class CrossOriginOpenerPolicyReportToEmptyTest(FieldTest[ResponseLinterProtocol]):
+    name = "Cross-Origin-Opener-Policy"
+    inputs = [b'same-origin; report-to=""']
+    expected_out: Any = (Token("same-origin"), {"report-to": ""})
     expected_notes: NoteClassListType = [COOP_SAME_ORIGIN, COOP_REPORT_TO_MISSING]

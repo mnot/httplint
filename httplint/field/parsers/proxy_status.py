@@ -167,3 +167,10 @@ class ProxyStatusBadParamValTest(FieldTest[ResponseLinterProtocol]):
     inputs = [b'ExampleProxy; error="string"']
     expected_out = [(Token("ExampleProxy"), {"error": "string"})]
     expected_notes: NoteClassListType = [PROXY_STATUS_BAD_PARAM_VAL, PROXY_STATUS]
+
+
+class ProxyStatusBooleanIntegerTest(FieldTest[ResponseLinterProtocol]):
+    name = "Proxy-Status"
+    inputs = [b"ExampleProxy; received-status=?1"]
+    expected_out = [(Token("ExampleProxy"), {"received-status": True})]
+    expected_notes: NoteClassListType = [PROXY_STATUS_BAD_PARAM_VAL, PROXY_STATUS]

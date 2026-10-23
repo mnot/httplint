@@ -1,87 +1,15 @@
-# pylint: disable=duplicate-code
 from typing import Any
 
 from http_sf import Token
 
-from httplint.field.structured_field import StructuredField
+from httplint.field.structured_field import STRUCTURED_FIELD_PARSE_ERROR
 from httplint.field.tests import FieldTest
-from httplint.note import Note, categories, levels
-from httplint.types import (
-    AddNoteMethodType,
-    NoteClassListType,
-    ResponseLinterProtocol,
-    SFItemType,
+from httplint.field.token_policy_field import (
+    POLICY_REPORT_TO_NOT_STRING,
+    TokenPolicyField,
 )
-
-
-class cross_origin_embedder_policy(StructuredField[ResponseLinterProtocol]):
-    canonical_name = "Cross-Origin-Embedder-Policy"
-    description = """\
-The `Cross-Origin-Embedder-Policy` header field prevents a document from loading any cross-origin
-resources that don't explicitly grant the document permission (using CORP or CORS)."""
-    reference = "https://html.spec.whatwg.org/multipage/origin.html#coep"
-    syntax = False  # Structured Field
-    category = categories.SECURITY
-    deprecated = False
-    sf_type = "item"
-    value: SFItemType
-    report_only_string = ""
-    report_only_text = ""
-
-    def evaluate(self, add_note: AddNoteMethodType) -> None:
-        val = self.value[0]
-        if isinstance(val, Token):
-            if val == "require-corp":
-                add_note(
-                    COEP_REQUIRE_CORP,
-                    report_only=self.report_only_string,
-                    report_only_text=self.report_only_text,
-                )
-            elif val == "credentialless":
-                add_note(
-                    COEP_CREDENTIALLESS,
-                    report_only=self.report_only_string,
-                    report_only_text=self.report_only_text,
-                )
-            elif val == "unsafe-none":
-                add_note(
-                    COEP_UNSAFE_NONE,
-                    report_only=self.report_only_string,
-                    report_only_text=self.report_only_text,
-                )
-            else:
-                add_note(
-                    CROSS_ORIGIN_EMBEDDER_POLICY_BAD_VALUE,
-                    value=val,
-                    report_only=self.report_only_string,
-                )
-        else:
-            add_note(
-                CROSS_ORIGIN_EMBEDDER_POLICY_BAD_VALUE,
-                value=val,
-                report_only=self.report_only_string,
-            )
-
-    def post_check(self, add_note: AddNoteMethodType) -> None:
-
-        # self.value is (item, params)
-        params = self.value[1]
-        report_to = params.get("report-to")
-        if not report_to:
-            return
-
-        reporting_endpoints_field = self.message.headers.parsed.get("reporting-endpoints")
-        reporting_endpoints = (
-            list(reporting_endpoints_field.keys()) if reporting_endpoints_field else []
-        )
-        known_endpoints = set(reporting_endpoints)
-
-        if report_to not in known_endpoints:
-            add_note(
-                COEP_REPORT_TO_MISSING,
-                endpoint=report_to,
-                report_only=self.report_only_string,
-            )
+from httplint.note import Note, categories, levels
+from httplint.types import NoteClassListType, ResponseLinterProtocol
 
 
 class COEP_REQUIRE_CORP(Note):
@@ -143,6 +71,21 @@ header specifies a reporting endpoint, but no matching endpoint refers to it in 
 `Reporting-Endpoints` header."""
 
 
+class cross_origin_embedder_policy(TokenPolicyField):
+    canonical_name = "Cross-Origin-Embedder-Policy"
+    description = """\
+The `Cross-Origin-Embedder-Policy` header field prevents a document from loading any cross-origin
+resources that don't explicitly grant the document permission (using CORP or CORS)."""
+    reference = "https://html.spec.whatwg.org/multipage/origin.html#coep"
+    policy_notes = {
+        "require-corp": COEP_REQUIRE_CORP,
+        "credentialless": COEP_CREDENTIALLESS,
+        "unsafe-none": COEP_UNSAFE_NONE,
+    }
+    bad_value_note = CROSS_ORIGIN_EMBEDDER_POLICY_BAD_VALUE
+    report_to_missing_note = COEP_REPORT_TO_MISSING
+
+
 class CrossOriginEmbedderPolicyRequireCorpTest(FieldTest[ResponseLinterProtocol]):
     name = "Cross-Origin-Embedder-Policy"
     inputs = [b"require-corp"]
@@ -173,7 +116,7 @@ class CrossOriginEmbedderPolicyBadValueTest(FieldTest[ResponseLinterProtocol]):
 
 class CrossOriginEmbedderPolicyReportToTest(FieldTest[ResponseLinterProtocol]):
     name = "Cross-Origin-Embedder-Policy"
-    inputs = [b"require-corp; report-to=endpoint"]
+    inputs = [b'require-corp; report-to="endpoint"']
     expected_out: Any = (Token("require-corp"), {"report-to": "endpoint"})
     expected_notes: NoteClassListType = [COEP_REQUIRE_CORP]
 
@@ -185,6 +128,53 @@ class CrossOriginEmbedderPolicyReportToTest(FieldTest[ResponseLinterProtocol]):
 
 class CrossOriginEmbedderPolicyReportToMissingTest(FieldTest[ResponseLinterProtocol]):
     name = "Cross-Origin-Embedder-Policy"
-    inputs = [b"require-corp; report-to=endpoint"]
+    inputs = [b'require-corp; report-to="endpoint"']
     expected_out: Any = (Token("require-corp"), {"report-to": "endpoint"})
+    expected_notes: NoteClassListType = [COEP_REQUIRE_CORP, COEP_REPORT_TO_MISSING]
+
+
+class CrossOriginEmbedderPolicyReportToTokenTest(FieldTest[ResponseLinterProtocol]):
+    name = "Cross-Origin-Embedder-Policy"
+    inputs = [b"require-corp; report-to=endpoint"]
+    expected_out: Any = (Token("require-corp"), {"report-to": Token("endpoint")})
+    expected_notes: NoteClassListType = [COEP_REQUIRE_CORP, POLICY_REPORT_TO_NOT_STRING]
+
+    def set_response_context(self, message: ResponseLinterProtocol) -> None:
+        message.headers.process(
+            [(b"Reporting-Endpoints", b'endpoint="https://example.com/reports"')]
+        )
+
+
+class CrossOriginEmbedderPolicyReportToIntegerTest(FieldTest[ResponseLinterProtocol]):
+    name = "Cross-Origin-Embedder-Policy"
+    inputs = [b"require-corp; report-to=1"]
+    expected_out: Any = (Token("require-corp"), {"report-to": 1})
+    expected_notes: NoteClassListType = [COEP_REQUIRE_CORP, POLICY_REPORT_TO_NOT_STRING]
+
+
+class CrossOriginEmbedderPolicyReportToBinaryTest(FieldTest[ResponseLinterProtocol]):
+    name = "Cross-Origin-Embedder-Policy"
+    inputs = [b"require-corp; report-to=:AAAA:"]
+    expected_out: Any = (Token("require-corp"), {"report-to": b"\x00\x00\x00"})
+    expected_notes: NoteClassListType = [COEP_REQUIRE_CORP, POLICY_REPORT_TO_NOT_STRING]
+
+
+class CrossOriginEmbedderPolicyReportToBooleanTest(FieldTest[ResponseLinterProtocol]):
+    name = "Cross-Origin-Embedder-Policy"
+    inputs = [b"require-corp; report-to"]
+    expected_out: Any = (Token("require-corp"), {"report-to": True})
+    expected_notes: NoteClassListType = [COEP_REQUIRE_CORP, POLICY_REPORT_TO_NOT_STRING]
+
+
+class CrossOriginEmbedderPolicyUnparseableTest(FieldTest[ResponseLinterProtocol]):
+    name = "Cross-Origin-Embedder-Policy"
+    inputs = [b"require-corp;;"]
+    expected_out: Any = None
+    expected_notes: NoteClassListType = [STRUCTURED_FIELD_PARSE_ERROR]
+
+
+class CrossOriginEmbedderPolicyReportToEmptyTest(FieldTest[ResponseLinterProtocol]):
+    name = "Cross-Origin-Embedder-Policy"
+    inputs = [b'require-corp; report-to=""']
+    expected_out: Any = (Token("require-corp"), {"report-to": ""})
     expected_notes: NoteClassListType = [COEP_REQUIRE_CORP, COEP_REPORT_TO_MISSING]

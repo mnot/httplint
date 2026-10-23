@@ -8,27 +8,12 @@ from httplint.field.parsers.cross_origin_embedder_policy import (
     cross_origin_embedder_policy,
 )
 from httplint.field.tests import FieldTest
+from httplint.field.token_policy_field import POLICY_REPORT_TO_NOT_STRING
 from httplint.note import Note, categories, levels
 from httplint.types import (
-    AddNoteMethodType,
     NoteClassListType,
     ResponseLinterProtocol,
 )
-
-
-class cross_origin_embedder_policy_report_only(cross_origin_embedder_policy):
-    canonical_name = "Cross-Origin-Embedder-Policy-Report-Only"
-    description = """\
-The `Cross-Origin-Embedder-Policy-Report-Only` header field allows a document to report on
-potential violations of its Cross-Origin Embedder Policy without enforcing them."""
-    reference = "https://html.spec.whatwg.org/multipage/origin.html#coep"
-    report_only_string = " (for reporting only)"
-    report_only_text = "\n\nBrowsers will only report violations of this policy, not enforce it."
-
-    def evaluate(self, add_note: AddNoteMethodType) -> None:
-        if "cross-origin-embedder-policy" in self.message.headers.handlers:
-            add_note(COEP_REPORT_ONLY_DUPLICATE)
-        super().evaluate(add_note)
 
 
 class COEP_REPORT_ONLY_DUPLICATE(Note):
@@ -38,6 +23,18 @@ class COEP_REPORT_ONLY_DUPLICATE(Note):
     _text = """\
 A response should not have both `Cross-Origin-Embedder-Policy` and
 `Cross-Origin-Embedder-Policy-Report-Only` headers. The report-only header will be ignored."""
+
+
+class cross_origin_embedder_policy_report_only(cross_origin_embedder_policy):
+    canonical_name = "Cross-Origin-Embedder-Policy-Report-Only"
+    description = """\
+The `Cross-Origin-Embedder-Policy-Report-Only` header field allows a document to report on
+potential violations of its Cross-Origin Embedder Policy without enforcing them."""
+    reference = "https://html.spec.whatwg.org/multipage/origin.html#coep"
+    enforcing_name = "cross-origin-embedder-policy"
+    report_only_duplicate_note = COEP_REPORT_ONLY_DUPLICATE
+    report_only_string = " (for reporting only)"
+    report_only_text = "\n\nBrowsers will only report violations of this policy, not enforce it."
 
 
 class CrossOriginEmbedderPolicyReportOnlyRequireCorpTest(FieldTest[ResponseLinterProtocol]):
@@ -52,3 +49,15 @@ class CrossOriginEmbedderPolicyReportOnlyBadValueTest(FieldTest[ResponseLinterPr
     inputs = [b"foo"]
     expected_out: Any = (Token("foo"), {})
     expected_notes: NoteClassListType = [CROSS_ORIGIN_EMBEDDER_POLICY_BAD_VALUE]
+
+
+class CrossOriginEmbedderPolicyReportOnlyReportToTokenTest(FieldTest[ResponseLinterProtocol]):
+    name = "Cross-Origin-Embedder-Policy-Report-Only"
+    inputs = [b"require-corp; report-to=endpoint"]
+    expected_out: Any = (Token("require-corp"), {"report-to": Token("endpoint")})
+    expected_notes: NoteClassListType = [COEP_REQUIRE_CORP, POLICY_REPORT_TO_NOT_STRING]
+
+    def set_response_context(self, message: ResponseLinterProtocol) -> None:
+        message.headers.process(
+            [(b"Reporting-Endpoints", b'endpoint="https://example.com/reports"')]
+        )
