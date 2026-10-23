@@ -264,13 +264,17 @@ _QUOTED_PAIR_CHAR = _char_set(
 )
 
 
-def split_list_field(field_value: str) -> List[str]:
+def split_list_field(field_value: str, angle_targets: bool = False) -> List[str]:
     """
     Split a field value on commas, as the #rule needs.
 
     Commas inside a quoted-string don't split. A quote that doesn't start a valid
     quoted-string is an ordinary character of its item, so the malformed item reaches the
     field's own syntax check instead of being dropped.
+
+    With ``angle_targets``, a ``<...>`` at the start of an item (as in Link) is skipped
+    over whole, so commas inside it don't split either. It ends at the first ``>``; if there
+    is none, or another ``<`` comes first, the ``<`` is an ordinary character.
 
     This is linear; an earlier regex-based version backtracked quadratically.
     """
@@ -295,8 +299,18 @@ def split_list_field(field_value: str) -> List[str]:
         run_end[idx] = idx if char == "," else run_end[idx + 1]
     items: List[str] = []
     pos = 0
+    close = -2  # the first ">" after the last "<" we looked at; -1 if none, -2 if unset
     while pos < size:
         stop = run_end[pos]
+        if angle_targets and close != -1:
+            start = pos
+            while start < size and field_value[start].isspace():
+                start += 1
+            if start < size and field_value[start] == "<":
+                if close < start:
+                    close = field_value.find(">", start)
+                if close != -1 and field_value.find("<", start + 1, close) == -1:
+                    stop = run_end[close + 1]
         item = field_value[pos:stop].strip()
         if item:
             items.append(item)

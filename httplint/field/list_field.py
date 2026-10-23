@@ -1,5 +1,5 @@
 from functools import partial
-from typing import Any, Generic, Union
+from typing import Any, Generic, List, Union
 
 from httplint.field import HttpField
 from httplint.field.utils import split_list_field
@@ -26,8 +26,12 @@ class HttpListField(HttpField[TMessage], Generic[TMessage]):
         """
         return field_value
 
+    def split_values(self, field_value: str) -> List[str]:
+        "Split a field line into list elements; fields with unusual delimiters can override."
+        return split_list_field(field_value)
+
     def handle_input(self, field_value: str, add_note: AddNoteMethodType, offset: int) -> None:
-        for value in split_list_field(field_value):
+        for value in self.split_values(field_value):
             offset_add_note = partial(
                 self.message.notes.add,
                 f"offset-{offset}",

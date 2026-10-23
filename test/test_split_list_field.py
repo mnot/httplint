@@ -4,6 +4,7 @@ split_list_field must split on commas outside quoted-strings, in linear time.
 It used to be a regex that backtracked quadratically on some inputs.
 """
 
+import itertools
 import time
 import unittest
 
@@ -80,6 +81,73 @@ class SplitListFieldTest(unittest.TestCase):
         # Regression guards.
         self.assert_fast("a," * SIZE)
         self.assert_fast('"a,b",' * (SIZE // 6))
+
+
+class AngleTargetSplitTest(unittest.TestCase):
+    "angle_targets=True keeps a leading <...> whole, for Link."
+
+    def split(self, value):
+        return split_list_field(value, angle_targets=True)
+
+    def test_comma_in_target(self):
+        self.assertEqual(self.split("<http://a/b,c>; rel=next"), ["<http://a/b,c>; rel=next"])
+        self.assertEqual(self.split("<a,b>, <c,d>"), ["<a,b>", "<c,d>"])
+        self.assertEqual(self.split("<a,,b>"), ["<a,,b>"])
+        self.assertEqual(self.split(" \t<a,b>; rel=x , </c>"), ["<a,b>; rel=x", "</c>"])
+
+    def test_default_is_unchanged(self):
+        self.assertEqual(split_list_field("<a,b>; rel=x"), ["<a", "b>; rel=x"])
+
+    def test_quotes_after_the_target(self):
+        self.assertEqual(self.split('<a,b>; t="x,y", <c>'), ['<a,b>; t="x,y"', "<c>"])
+        self.assertEqual(self.split('<a>; t="x>,<y", <c>'), ['<a>; t="x>,<y"', "<c>"])
+
+    def test_quote_inside_target_does_not_swallow_commas(self):
+        self.assertEqual(self.split('<a"b>, <c"d>'), ['<a"b>', '<c"d>'])
+
+    def test_not_a_bracketed_target(self):
+        # No ">" at all, or another "<" first: ordinary characters, split as usual.
+        self.assertEqual(self.split("<a,b"), ["<a", "b"])
+        self.assertEqual(self.split("<a, <b>"), ["<a", "<b>"])
+        self.assertEqual(self.split("<a,b, <c>, <d"), ["<a", "b", "<c>", "<d"])
+        # Only at the start of an item.
+        self.assertEqual(self.split("x<a,b>"), ["x<a", "b>"])
+        self.assertEqual(self.split('t="<", a,b>'), ['t="<"', "a", "b>"])
+
+    def test_same_as_default_without_angle_brackets(self):
+        alphabet = ['"', "\\", ",", " ", "a", ";", "="]
+        for length in range(7):
+            for chars in itertools.product(alphabet, repeat=length):
+                value = "".join(chars)
+                self.assertEqual(self.split(value), split_list_field(value), value)
+
+    def test_every_split_is_a_split_of_the_default(self):
+        "Joining pieces never loses text: only the commas inside a target change."
+        alphabet = ["<", ">", ",", "a", '"']
+        for length in range(8):
+            for chars in itertools.product(alphabet, repeat=length):
+                value = "".join(chars)
+                got = self.split(value)
+                self.assertEqual(
+                    [c for c in "".join(got) if c != ","],
+                    [c for c in "".join(split_list_field(value)) if c != ","],
+                    value,
+                )
+
+    def assert_fast(self, value):
+        start = time.monotonic()
+        self.split(value)
+        self.assertLess(time.monotonic() - start, TIME_LIMIT)
+
+    def test_linear(self):
+        # Each "<" would otherwise rescan to a distant (or missing) ">".
+        self.assert_fast("<a," * (SIZE // 3))
+        self.assert_fast("<a," * (SIZE // 3) + ">")
+        self.assert_fast("<a>," * (SIZE // 4))
+        self.assert_fast("<" + "a," * SIZE + ">")
+        self.assert_fast(("<" + "a" * 10 + ">, ") * (SIZE // 14))
+        self.assert_fast('<a>"' * (SIZE // 4))
+        self.assert_fast("<>" * SIZE)
 
 
 if __name__ == "__main__":
