@@ -151,6 +151,15 @@ class TestCacheFreshness(unittest.TestCase):
         self.assertNotIn(FRESHNESS_SHARED_PRIVATE, notes)
         self.assertNotIn(FRESHNESS_STALE_ALREADY, notes)
 
+    def test_epoch_date_is_a_real_date_for_expires(self):
+        notes = self._expires_notes([
+            (b"Date", b"Thu, 01 Jan 1970 00:00:00 GMT"),
+            (b"Expires", b"Thu, 01 Jan 1970 01:00:00 GMT"),
+            (b"Content-Length", b"2"),
+        ])
+        self.assertNotIn(FRESHNESS_HEURISTIC, notes)
+        self.assertIn(FRESHNESS_FRESH, notes)
+
     def test_stale_while_revalidate(self):
         from httplint.cache import STALE_WHILE_REVALIDATE
         linter = HttpResponseLinter()
