@@ -162,3 +162,35 @@ class AvailableDictionaryCaseTest(FieldTest[RequestLinterProtocol]):
 
     def set_request_context(self, message: RequestLinterProtocol) -> None:
         message.headers.process([(b"accept-encoding", b"gzip, DCB;q=0.8")])
+
+
+class AvailableDictionaryWildcardQZeroTest(FieldTest[RequestLinterProtocol]):
+    "`*` doesn't make up for an explicit refusal of dcb (dcz isn't listed)."
+
+    name = "Available-Dictionary"
+    inputs = [b":pZGm1Av0IEBKARczz7exkNYsZb8LzaMrV7J32a2fFG4=:"]
+    expected_out: tuple[bytes, dict[str, Any]] = (
+        b"\xa5\x91\xa6\xd4\x0b\xf4 @J\x01\x173\xcf\xb7\xb1\x90\xd6,e\xbf\x0b\xcd\xa3"
+        b"+W\xb2w\xd9\xad\x9f\x14n",
+        {},
+    )
+    expected_notes: NoteClassListType = [AVAILABLE_DICTIONARY_MISSING_AE]
+
+    def set_request_context(self, message: RequestLinterProtocol) -> None:
+        message.headers.process([(b"accept-encoding", b"*, dcb;q=0")])
+
+
+class AvailableDictionaryDczOnlyTest(FieldTest[RequestLinterProtocol]):
+    "Guard: dcz alone is support; main also accepts this."
+
+    name = "Available-Dictionary"
+    inputs = [b":pZGm1Av0IEBKARczz7exkNYsZb8LzaMrV7J32a2fFG4=:"]
+    expected_out: tuple[bytes, dict[str, Any]] = (
+        b"\xa5\x91\xa6\xd4\x0b\xf4 @J\x01\x173\xcf\xb7\xb1\x90\xd6,e\xbf\x0b\xcd\xa3"
+        b"+W\xb2w\xd9\xad\x9f\x14n",
+        {},
+    )
+    expected_notes: NoteClassListType = []
+
+    def set_request_context(self, message: RequestLinterProtocol) -> None:
+        message.headers.process([(b"accept-encoding", b"dcz")])
