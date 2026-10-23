@@ -6,6 +6,8 @@ smuggle raw HTML into note.detail.
 
 import unittest
 
+from markdown import Markdown
+
 from httplint.message import HttpResponseLinter
 from httplint.util import inline_safe, markdown_list
 
@@ -106,16 +108,28 @@ class EmptyCodeSpanTest(unittest.TestCase):
         value = f'a; details="x", ""; details="{HTML}", b; details="{HTML}"'
         self.check_escaped(detail_text(b"Proxy-Status", value.encode("ascii")))
 
+    def test_proxy_status_empty_param_value(self) -> None:
+        for empty in ('""', '"`"', '"``"'):
+            for first in ("foo", "bar", "error=dns_error", "next-hop", "received-status=200"):
+                for second in ("details", "next-hop", "bar", "key"):
+                    with self.subTest(empty=empty, first=first, second=second):
+                        name, _, val = first.partition("=")
+                        head = f"{name}={val}" if val else f"{name}={empty}"
+                        value = f'a; {head}; {second}="{HTML}"'
+                        self.check_escaped(detail_text(b"Proxy-Status", value.encode("ascii")))
+
     def test_set_cookie_hardened_nameless(self) -> None:
         hardened = "Secure; HttpOnly; SameSite=Lax"
         # Cookie names can't contain "=" or ";", so the payload can't use HTML.
         payload = "<script>alert(1)</script>"
         named = f"{payload}=1; {hardened}"
-        for first, second in (
-            (f"foo; {hardened}", named),
-            (named, f"foo; {hardened}"),
-            (f"`=1; {hardened}", named),
-            (f"foo; {hardened}", f"bar; {hardened}"),
+        escaped = "<code>&lt;script&gt;alert(1)&lt;/script&gt;</code>"
+        for first, second, nameless in (
+            (f"foo; {hardened}", named, True),
+            (named, f"foo; {hardened}", True),
+            (f"`=1; {hardened}", named, True),
+            (f"foo; {hardened}", f"bar; {hardened}", True),
+            (f"bar=1; {hardened}", named, False),
         ):
             with self.subTest(first=first, second=second):
                 linter = HttpResponseLinter()
@@ -130,8 +144,11 @@ class EmptyCodeSpanTest(unittest.TestCase):
                 detail = "\n".join(
                     str(n.detail) for n in linter.notes if "HARDENED" in n.__class__.__name__
                 )
-                self.assertIn("<code>", detail)
                 self.assertNotIn("<script", detail)
+                self.assertNotIn("``", detail)
+                if named in (first, second):
+                    self.assertIn(escaped, detail)
+                self.assertEqual("(empty)" in detail, nameless)
 
     # The same shape of bug exists at these sites, which are outside the scope of
     # the Proxy-Status / Set-Cookie fix. Remove expectedFailure when they are fixed.
@@ -157,10 +174,12 @@ class InlineSafeTest(unittest.TestCase):
         out = markdown_list(["a\nb`c", "d e"])
         self.assertEqual(str(out), "- abc\n- de")
 
-    def test_markdown_list_empty_item_stays_in_its_own_block(self) -> None:
-        # An empty item must not let the next item's code span be misparsed.
-        out = markdown_list(["`", f"{HTML}"], markup="`")
-        self.assertEqual(str(out), f"- ``\n- `{HTML}`")
+    def test_markdown_list_empty_items_render_escaped(self) -> None:
+        out = markdown_list(["`", HTML, ""], markup="`")
+        self.assertEqual(str(out), f"- ``\n- `{HTML}`\n- ``")
+        html = Markdown(output_format="html").convert(str(out))
+        self.assertNotIn("<img", html)
+        self.assertIn("&lt;img", html)
 
 
 if __name__ == "__main__":
