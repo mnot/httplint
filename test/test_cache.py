@@ -125,6 +125,16 @@ class TestCacheFreshness(unittest.TestCase):
         self.assertNotIn(FRESHNESS_FRESH, notes)
         self.assertNotIn(FRESHNESS_STALE_ALREADY, notes)
 
+    def test_expires_with_s_maxage_leaves_private_lifetime_unknown(self):
+        notes = self._expires_notes([
+            (b"Expires", b"Tue, 21 Oct 2025 00:00:00 GMT"),
+            (b"Cache-Control", b"s-maxage=5"),
+            (b"Content-Length", b"2"),
+        ])
+        self.assertNotIn(FRESHNESS_HEURISTIC, notes)
+        self.assertNotIn(FRESHNESS_SHARED_PRIVATE, notes)
+        self.assertNotIn(FRESHNESS_STALE_ALREADY, notes)
+
     def test_stale_while_revalidate(self):
         from httplint.cache import STALE_WHILE_REVALIDATE
         linter = HttpResponseLinter()

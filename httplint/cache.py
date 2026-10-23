@@ -175,7 +175,6 @@ class ResponseCacheChecker:
             self.freshness_lifetime_shared = self.cc_dict["s-maxage"]
             freshness_hdrs.append("field-cache-control")
             self.has_explicit_freshness = True
-            self.freshness_unknown = False
 
         freshness_left = self.freshness_lifetime_private - self.age
         freshness_left_str = relative_time(abs(int(freshness_left)), 0, 0)
