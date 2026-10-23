@@ -1,5 +1,7 @@
 from typing import Any, List, Union
 
+from http_sf import Token
+
 from httplint.field.structured_field import StructuredField
 from httplint.field.tests import FieldTest
 from httplint.note import Note, categories, levels
@@ -24,31 +26,26 @@ as a compression dictionary for future requests."""
     value: SFDictionaryType
 
     def evaluate(self, add_note: AddNoteMethodType) -> None:
+        if "match" not in self.value:
+            add_note(USE_AS_DICTIONARY_NO_MATCH)
         for key, val in self.value.items():
             if key == "match":
-                self._check_value_type(val, str, add_note)
+                self._check_value_type(key, val, str, add_note)
             elif key == "match-dest":
-                # Can be a String or Inner List of Strings
-                is_valid = False
-                if isinstance(val[0], str):
-                    is_valid = True
-                elif isinstance(val[0], list):
-                    # Inner List: list of (value, params)
-                    if all(isinstance(i, tuple) and isinstance(i[0], str) for i in val[0]):
-                        is_valid = True
-
-                if not is_valid:
+                # Inner List of Strings: list of (value, params)
+                if not (
+                    isinstance(val[0], list)
+                    and all(isinstance(i, tuple) and isinstance(i[0], str) for i in val[0])
+                ):
                     add_note(USE_AS_DICTIONARY_BAD_MATCH_DEST, got=type(val[0]).__name__)
-
             elif key == "id":
-                self._check_value_type(val, str, add_note)
+                self._check_value_type(key, val, str, add_note)
             elif key == "type":
-                self._check_value_type(val, str, add_note)
-            elif key == "ttl":
-                self._check_value_type(val, int, add_note)
+                self._check_value_type(key, val, Token, add_note)
 
     def _check_value_type(
         self,
+        key: str,
         val: Union[tuple[Any, Any], List[Any]],
         expected_type: type,
         add_note: AddNoteMethodType,
@@ -60,7 +57,7 @@ as a compression dictionary for future requests."""
             # Inner List found where simple Item expected
             add_note(
                 USE_AS_DICTIONARY_BAD_TYPE,
-                param=val,
+                param=key,
                 expected=expected_type.__name__,
                 got="Inner List",
             )
@@ -69,7 +66,7 @@ as a compression dictionary for future requests."""
         if not isinstance(val[0], expected_type):
             add_note(
                 USE_AS_DICTIONARY_BAD_TYPE,
-                param=val[0],
+                param=key,
                 expected=expected_type.__name__,
                 got=type(val[0]).__name__,
             )
@@ -88,18 +85,50 @@ class USE_AS_DICTIONARY_BAD_MATCH_DEST(Note):
     level = levels.WARN
     _summary = "The match-dest parameter has an invalid type."
     _text = """\
-The `match-dest` parameter must be a String or a list of Strings."""
+The `match-dest` parameter must be an Inner List of Strings."""
+
+
+class USE_AS_DICTIONARY_NO_MATCH(Note):
+    category = categories.GENERAL
+    level = levels.WARN
+    _summary = "The Use-As-Dictionary header does not have a match parameter."
+    _text = """\
+The `match` parameter MUST be included for the dictionary to be considered valid, so this
+dictionary will not be used."""
 
 
 class UseAsDictionaryTest(FieldTest[ResponseLinterProtocol]):
     name = "Use-As-Dictionary"
-    inputs = [b'match="/foo/*", ttl=123']
-    expected_out = {"match": ("/foo/*", {}), "ttl": (123, {})}
+    inputs = [b'match="/foo/*", id="abc", type=raw, match-dest=("document" "frame")']
+    expected_out = {
+        "match": ("/foo/*", {}),
+        "id": ("abc", {}),
+        "type": (Token("raw"), {}),
+        "match-dest": ([("document", {}), ("frame", {})], {}),
+    }
     expected_notes: NoteClassListType = []
 
 
 class UseAsDictionaryBadParamTest(FieldTest[ResponseLinterProtocol]):
     name = "Use-As-Dictionary"
-    inputs = [b'match=123, ttl="abc"']
-    expected_out = {"match": (123, {}), "ttl": ("abc", {})}
-    expected_notes: NoteClassListType = [USE_AS_DICTIONARY_BAD_TYPE, USE_AS_DICTIONARY_BAD_TYPE]
+    inputs = [b'match=123, id=456, type="raw"']
+    expected_out = {"match": (123, {}), "id": (456, {}), "type": ("raw", {})}
+    expected_notes: NoteClassListType = [
+        USE_AS_DICTIONARY_BAD_TYPE,
+        USE_AS_DICTIONARY_BAD_TYPE,
+        USE_AS_DICTIONARY_BAD_TYPE,
+    ]
+
+
+class UseAsDictionaryBareMatchDestTest(FieldTest[ResponseLinterProtocol]):
+    name = "Use-As-Dictionary"
+    inputs = [b'match="/foo/*", match-dest="document"']
+    expected_out = {"match": ("/foo/*", {}), "match-dest": ("document", {})}
+    expected_notes: NoteClassListType = [USE_AS_DICTIONARY_BAD_MATCH_DEST]
+
+
+class UseAsDictionaryNoMatchTest(FieldTest[ResponseLinterProtocol]):
+    name = "Use-As-Dictionary"
+    inputs = [b'id="abc"']
+    expected_out = {"id": ("abc", {})}
+    expected_notes: NoteClassListType = [USE_AS_DICTIONARY_NO_MATCH]

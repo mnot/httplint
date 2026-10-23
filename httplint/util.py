@@ -109,18 +109,8 @@ def iri_to_uri(iri: str) -> str:
     return urlunsplit((scheme, authority, path, quer, frag))
 
 
-def f_num(i: int, by1024: bool = False) -> str:
+def f_num(i: int) -> str:
     "Format a number according to the locale."
-    if by1024:
-        kilo = int(i / 1024)
-        mega = int(kilo / 1024)
-        giga = int(mega / 1024)
-        if giga:
-            return locale.format_string("%d", giga, grouping=True) + "g"
-        if mega:
-            return locale.format_string("%d", mega, grouping=True) + "m"
-        if kilo:
-            return locale.format_string("%d", kilo, grouping=True) + "k"
     return locale.format_string("%d", i, grouping=True)
 
 
@@ -188,8 +178,22 @@ def markdown_context(text: str, index: int, context_chars: int = 20) -> Markdown
     start = max(0, index - context_chars)
     end = min(len(text), index + context_chars)
     excerpt = text[start:end]
-    pointer = " " * (index - start) + "^"
-    indented = "\n".join(f"    {line}" for line in f"{excerpt}\n{pointer}".splitlines())
+    offset = index - start
+
+    # The pointer goes under the line that holds the index, at its column within that line.
+    lines = excerpt.splitlines(keepends=True)
+    if not lines or lines[-1].splitlines()[:1] != [lines[-1]]:
+        lines.append("")  # excerpt is empty or ends with a line break
+    pointer_line = 0
+    line_start = 0
+    while pointer_line < len(lines) - 1 and offset >= line_start + len(lines[pointer_line]):
+        line_start += len(lines[pointer_line])
+        pointer_line += 1
+    pointer = " " * (offset - line_start) + "^"
+
+    text_lines = [line.splitlines()[0] if line.splitlines() else "" for line in lines]
+    text_lines.insert(pointer_line + 1, pointer)
+    indented = "\n".join(f"    {line}" for line in text_lines)
     return MarkdownSafe(f"\n\n{indented}")
 
 

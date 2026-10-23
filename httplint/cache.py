@@ -1,6 +1,8 @@
 # pylint: disable=too-many-branches,too-many-statements
 
 
+from typing import Optional
+
 from httplint.note import Note, categories, levels
 from httplint.types import ResponseLinterProtocol
 from httplint.util import MAX_DELTA_SECONDS, relative_time
@@ -152,20 +154,32 @@ class ResponseCacheChecker:
         self.has_explicit_freshness = False
         self.has_heuristic_freshness = False
         freshness_hdrs = ["field-date"]
-        if expires_hdr_present and self.response_time:
+        self.freshness_unknown = False
+        if expires_hdr_present:
             # An invalid Expires header means it's automatically stale
             self.has_explicit_freshness = True
             freshness_hdrs.append("field-expires")
-            expires = self.expires_value if self.expires_value is not None else 0
-            date = self.date_value if self.date_value is not None else int(self.response_time)
-            expires_lifetime = self.freshness_lifetime_shared = expires - date
-            self.freshness_lifetime_private = expires_lifetime
-            self.freshness_lifetime_shared = expires_lifetime
+            if self.date_value is not None:
+                base_time: Optional[int] = self.date_value
+            elif self.response_time:
+                base_time = int(self.response_time)
+            else:
+                base_time = None
+            if base_time is None and self.expires_value is not None:
+                # Freshness is explicit, but with no Date or start time it can't be computed.
+                self.freshness_unknown = True
+            else:
+                # An unparseable Expires is stale whatever the clock says.
+                expires = self.expires_value if self.expires_value is not None else 0
+                expires_lifetime = expires - (base_time if base_time is not None else 0)
+                self.freshness_lifetime_private = expires_lifetime
+                self.freshness_lifetime_shared = expires_lifetime
         if "max-age" in self.cc_dict:
             self.freshness_lifetime_private = self.cc_dict["max-age"]
             self.freshness_lifetime_shared = self.cc_dict["max-age"]
             freshness_hdrs.append("field-cache-control")
             self.has_explicit_freshness = True
+            self.freshness_unknown = False
         if "s-maxage" in self.cc_dict:
             self.freshness_lifetime_shared = self.cc_dict["s-maxage"]
             freshness_hdrs.append("field-cache-control")
@@ -193,7 +207,9 @@ class ResponseCacheChecker:
 
         # explicit freshness
         if self.has_explicit_freshness:
-            if self.freshness_lifetime_shared != self.freshness_lifetime_private:
+            if self.freshness_unknown:
+                pass
+            elif self.freshness_lifetime_shared != self.freshness_lifetime_private:
                 self.notes.add(
                     " ".join(freshness_hdrs),
                     FRESHNESS_SHARED_PRIVATE,
@@ -248,12 +264,12 @@ class ResponseCacheChecker:
         elif "must-revalidate" in self.cc_dict:
             if self.is_fresh:
                 self.notes.add("field-cache-control", FRESH_MUST_REVALIDATE)
-            elif self.has_explicit_freshness:
+            elif self.has_explicit_freshness and not self.freshness_unknown:
                 self.notes.add("field-cache-control", STALE_MUST_REVALIDATE)
         elif "proxy-revalidate" in self.cc_dict or "s-maxage" in self.cc_dict:
             if self.is_shared_fresh:
                 self.notes.add("field-cache-control", FRESH_PROXY_REVALIDATE)
-            elif self.has_explicit_freshness:
+            elif self.has_explicit_freshness and not self.freshness_unknown:
                 self.notes.add("field-cache-control", STALE_PROXY_REVALIDATE)
         else:
             self.notes.add("field-cache-control", STALE_SERVABLE)

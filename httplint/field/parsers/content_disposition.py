@@ -39,7 +39,7 @@ the file, rather than display it."""
         filename_star = param_dict.get("filename*", None)
         if filename and "%" in filename:
             add_note(DISPOSITION_FILENAME_PERCENT)
-        if (filename and "/" in filename) or (filename_star and r"\\" in filename_star):
+        if any(c in v for v in (filename, filename_star) if v for c in "/\\"):
             add_note(DISPOSITION_FILENAME_PATH_CHAR)
         return disposition, param_dict
 
@@ -151,4 +151,25 @@ class FilenamePathCharCDTest(FieldTest[AnyMessageLinterProtocol]):
     name = "Content-Disposition"
     inputs = [b'attachment; filename="/foo.txt"']
     expected_out = ("attachment", {"filename": "/foo.txt"})
+    expected_notes: NoteClassListType = [DISPOSITION_FILENAME_PATH_CHAR]
+
+
+class FilenameBackslashCDTest(FieldTest[AnyMessageLinterProtocol]):
+    name = "Content-Disposition"
+    inputs = [b'attachment; filename="\\\\foo.txt"']
+    expected_out = ("attachment", {"filename": "\\foo.txt"})
+    expected_notes: NoteClassListType = [DISPOSITION_FILENAME_PATH_CHAR]
+
+
+class FilenameStarBackslashCDTest(FieldTest[AnyMessageLinterProtocol]):
+    name = "Content-Disposition"
+    inputs = [b"attachment; filename=foo.txt; filename*=UTF-8''%5Cfoo.txt"]
+    expected_out = ("attachment", {"filename": "foo.txt", "filename*": "\\foo.txt"})
+    expected_notes: NoteClassListType = [DISPOSITION_FILENAME_PATH_CHAR]
+
+
+class FilenameStarSlashCDTest(FieldTest[AnyMessageLinterProtocol]):
+    name = "Content-Disposition"
+    inputs = [b"attachment; filename=foo.txt; filename*=UTF-8''%2Ffoo.txt"]
+    expected_out = ("attachment", {"filename": "foo.txt", "filename*": "/foo.txt"})
     expected_notes: NoteClassListType = [DISPOSITION_FILENAME_PATH_CHAR]

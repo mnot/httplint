@@ -1,3 +1,5 @@
+from typing import Any
+
 from http_sf import Token
 
 from httplint.field.structured_field import StructuredField
@@ -9,6 +11,16 @@ from httplint.types import (
     ResponseLinterProtocol,
     SFDictionaryType,
 )
+
+
+def has_wildcard(val: Any) -> bool:
+    """Is the allowlist the token `*`, or an inner list containing it?"""
+    if isinstance(val, list):
+        return any(
+            isinstance(item, tuple) and isinstance(item[0], Token) and item[0] == "*"
+            for item in val
+        )
+    return isinstance(val, Token) and val == "*"
 
 
 class permissions_policy(StructuredField[ResponseLinterProtocol]):
@@ -34,7 +46,7 @@ The `Permissions-Policy` response header allows a site to control the use of bro
                         continue
                     i_val, _ = item
                     if isinstance(i_val, Token):
-                        if str(i_val) not in ["self", "src"]:
+                        if str(i_val) not in ["self", "src", "*"]:
                             parent.add_child(
                                 PERMISSIONS_POLICY_UNKNOWN_TOKEN,
                                 token=str(i_val),
@@ -67,7 +79,7 @@ The `Permissions-Policy` response header allows a site to control the use of bro
 
             if feature not in SENSITIVE_FEATURES:
                 continue
-            if isinstance(val, Token) and val == "*":
+            if has_wildcard(val):
                 parent.add_child(PERMISSIONS_POLICY_WILDCARD, feature=feature)
 
 
@@ -103,7 +115,7 @@ class PERMISSIONS_POLICY_UNKNOWN_TOKEN(Note):
     _summary = "'%(token)s' is not valid in an allowlist."
     _text = """\
 The token `%(token)s` is not a valid keyword in an allowlist.
-Valid tokens are `self` and `src`."""
+Valid tokens are `self`, `src` and `*`."""
 
 
 class PERMISSIONS_POLICY_QUOTED_KEYWORD(Note):
@@ -167,3 +179,13 @@ class PermissionsPolicyInvalidTest(FieldTest[ResponseLinterProtocol]):
         PERMISSIONS_POLICY_UNKNOWN_TOKEN,
         PERMISSIONS_POLICY_PRESENT,
     ]
+
+
+class PermissionsPolicyWildcardInListTest(FieldTest[ResponseLinterProtocol]):
+    name = "Permissions-Policy"
+    inputs = [b"geolocation=(self *), fullscreen=(*)"]
+    expected_out = {
+        "geolocation": ([(Token("self"), {}), (Token("*"), {})], {}),
+        "fullscreen": ([(Token("*"), {})], {}),
+    }
+    expected_notes: NoteClassListType = [PERMISSIONS_POLICY_WILDCARD, PERMISSIONS_POLICY_PRESENT]
