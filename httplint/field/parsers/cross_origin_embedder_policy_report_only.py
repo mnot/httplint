@@ -8,6 +8,7 @@ from httplint.field.parsers.cross_origin_embedder_policy import (
     cross_origin_embedder_policy,
 )
 from httplint.field.tests import FieldTest
+from httplint.field.token_policy_field import POLICY_REPORT_TO_NOT_STRING
 from httplint.note import Note, categories, levels
 from httplint.types import (
     NoteClassListType,
@@ -48,3 +49,15 @@ class CrossOriginEmbedderPolicyReportOnlyBadValueTest(FieldTest[ResponseLinterPr
     inputs = [b"foo"]
     expected_out: Any = (Token("foo"), {})
     expected_notes: NoteClassListType = [CROSS_ORIGIN_EMBEDDER_POLICY_BAD_VALUE]
+
+
+class CrossOriginEmbedderPolicyReportOnlyReportToTokenTest(FieldTest[ResponseLinterProtocol]):
+    name = "Cross-Origin-Embedder-Policy-Report-Only"
+    inputs = [b"require-corp; report-to=endpoint"]
+    expected_out: Any = (Token("require-corp"), {"report-to": Token("endpoint")})
+    expected_notes: NoteClassListType = [COEP_REQUIRE_CORP, POLICY_REPORT_TO_NOT_STRING]
+
+    def set_response_context(self, message: ResponseLinterProtocol) -> None:
+        message.headers.process(
+            [(b"Reporting-Endpoints", b'endpoint="https://example.com/reports"')]
+        )

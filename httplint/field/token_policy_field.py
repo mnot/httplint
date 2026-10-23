@@ -4,7 +4,7 @@ from http_sf import Token
 
 from httplint.field.structured_field import StructuredField
 from httplint.field.utils import known_reporting_endpoints
-from httplint.note import Note, categories
+from httplint.note import Note, categories, levels
 from httplint.types import AddNoteMethodType, ResponseLinterProtocol, SFItemType
 
 
@@ -54,7 +54,15 @@ class TokenPolicyField(StructuredField[ResponseLinterProtocol]):
     def post_check(self, add_note: AddNoteMethodType) -> None:
         if self.value is None:
             return
-        report_to = self.value[1].get("report-to")
+        params = self.value[1]
+        if "report-to" not in params:
+            return
+        report_to = params["report-to"]
+
+        # HTML only uses the parameter if it is a String, not a Token or anything else.
+        if not isinstance(report_to, str):
+            add_note(POLICY_REPORT_TO_NOT_STRING, report_only=self.report_only_string)
+            return
         if not report_to:
             return
 
@@ -64,3 +72,13 @@ class TokenPolicyField(StructuredField[ResponseLinterProtocol]):
                 endpoint=report_to,
                 report_only=self.report_only_string,
             )
+
+
+class POLICY_REPORT_TO_NOT_STRING(Note):
+    category = categories.SECURITY
+    level = levels.WARN
+    _summary = "The report-to parameter in %(field_name)s isn't a String%(report_only)s."
+    _text = """\
+The `report-to` parameter in the `%(field_name)s` header names a reporting endpoint, and has to be
+a String (for example, `report-to="endpoint"`). Browsers may ignore the parameter when it is a
+Token (`report-to=endpoint`) or any other type, so reports would not be sent."""

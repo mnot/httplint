@@ -2,8 +2,12 @@ from typing import Any
 
 from http_sf import Token
 
+from httplint.field.structured_field import STRUCTURED_FIELD_PARSE_ERROR
 from httplint.field.tests import FieldTest
-from httplint.field.token_policy_field import TokenPolicyField
+from httplint.field.token_policy_field import (
+    POLICY_REPORT_TO_NOT_STRING,
+    TokenPolicyField,
+)
 from httplint.note import Note, categories, levels
 from httplint.types import NoteClassListType, ResponseLinterProtocol
 
@@ -112,7 +116,7 @@ class CrossOriginEmbedderPolicyBadValueTest(FieldTest[ResponseLinterProtocol]):
 
 class CrossOriginEmbedderPolicyReportToTest(FieldTest[ResponseLinterProtocol]):
     name = "Cross-Origin-Embedder-Policy"
-    inputs = [b"require-corp; report-to=endpoint"]
+    inputs = [b'require-corp; report-to="endpoint"']
     expected_out: Any = (Token("require-corp"), {"report-to": "endpoint"})
     expected_notes: NoteClassListType = [COEP_REQUIRE_CORP]
 
@@ -124,6 +128,46 @@ class CrossOriginEmbedderPolicyReportToTest(FieldTest[ResponseLinterProtocol]):
 
 class CrossOriginEmbedderPolicyReportToMissingTest(FieldTest[ResponseLinterProtocol]):
     name = "Cross-Origin-Embedder-Policy"
-    inputs = [b"require-corp; report-to=endpoint"]
+    inputs = [b'require-corp; report-to="endpoint"']
     expected_out: Any = (Token("require-corp"), {"report-to": "endpoint"})
     expected_notes: NoteClassListType = [COEP_REQUIRE_CORP, COEP_REPORT_TO_MISSING]
+
+
+class CrossOriginEmbedderPolicyReportToTokenTest(FieldTest[ResponseLinterProtocol]):
+    name = "Cross-Origin-Embedder-Policy"
+    inputs = [b"require-corp; report-to=endpoint"]
+    expected_out: Any = (Token("require-corp"), {"report-to": Token("endpoint")})
+    expected_notes: NoteClassListType = [COEP_REQUIRE_CORP, POLICY_REPORT_TO_NOT_STRING]
+
+    def set_response_context(self, message: ResponseLinterProtocol) -> None:
+        message.headers.process(
+            [(b"Reporting-Endpoints", b'endpoint="https://example.com/reports"')]
+        )
+
+
+class CrossOriginEmbedderPolicyReportToIntegerTest(FieldTest[ResponseLinterProtocol]):
+    name = "Cross-Origin-Embedder-Policy"
+    inputs = [b"require-corp; report-to=1"]
+    expected_out: Any = (Token("require-corp"), {"report-to": 1})
+    expected_notes: NoteClassListType = [COEP_REQUIRE_CORP, POLICY_REPORT_TO_NOT_STRING]
+
+
+class CrossOriginEmbedderPolicyReportToBinaryTest(FieldTest[ResponseLinterProtocol]):
+    name = "Cross-Origin-Embedder-Policy"
+    inputs = [b"require-corp; report-to=:AAAA:"]
+    expected_out: Any = (Token("require-corp"), {"report-to": b"\x00\x00\x00"})
+    expected_notes: NoteClassListType = [COEP_REQUIRE_CORP, POLICY_REPORT_TO_NOT_STRING]
+
+
+class CrossOriginEmbedderPolicyReportToBooleanTest(FieldTest[ResponseLinterProtocol]):
+    name = "Cross-Origin-Embedder-Policy"
+    inputs = [b"require-corp; report-to"]
+    expected_out: Any = (Token("require-corp"), {"report-to": True})
+    expected_notes: NoteClassListType = [COEP_REQUIRE_CORP, POLICY_REPORT_TO_NOT_STRING]
+
+
+class CrossOriginEmbedderPolicyUnparseableTest(FieldTest[ResponseLinterProtocol]):
+    name = "Cross-Origin-Embedder-Policy"
+    inputs = [b"require-corp;;"]
+    expected_out: Any = None
+    expected_notes: NoteClassListType = [STRUCTURED_FIELD_PARSE_ERROR]
