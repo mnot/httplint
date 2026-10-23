@@ -1,5 +1,6 @@
 from httplint.field.singleton_field import SINGLE_HEADER_REPEAT, SingletonField
 from httplint.field.tests import FieldTest
+from httplint.field.utils import parse_delta_seconds
 from httplint.note import Note, categories, levels
 from httplint.syntax import rfc9110
 from httplint.types import (
@@ -25,11 +26,11 @@ store the response (since they can't be sure if they have the whole response).""
     deprecated = False
 
     def parse(self, field_value: str, add_note: AddNoteMethodType) -> int:
-        try:
-            value = int(field_value)
-        except ValueError:
-            add_note(CL_BAD_SYNTAX)
-            raise
+        # Generous digit bound: oversized values still get CL_TOO_LARGE, not CL_BAD_SYNTAX.
+        parsed = parse_delta_seconds(field_value, add_note, CL_BAD_SYNTAX, max_digits=4000)
+        if parsed is None:
+            raise ValueError
+        value = parsed
         if value > 9223372036854775807:  # 2^63-1
             add_note(CL_TOO_LARGE)
         return value
@@ -136,3 +137,51 @@ class ContentLengthTEPresentTest(FieldTest[AnyMessageLinterProtocol]):
 
     def set_response_context(self, message: ResponseLinterProtocol) -> None:
         message.headers.parsed["transfer-encoding"] = "chunked"
+
+
+class ContentLengthUnderscoreTest(FieldTest[AnyMessageLinterProtocol]):
+    name = "Content-Length"
+    inputs = [b"1_0"]
+    expected_out = None
+    expected_notes: NoteClassListType = [CL_BAD_SYNTAX]
+
+
+class ContentLengthPlusTest(FieldTest[AnyMessageLinterProtocol]):
+    name = "Content-Length"
+    inputs = [b"+5"]
+    expected_out = None
+    expected_notes: NoteClassListType = [CL_BAD_SYNTAX]
+
+
+class ContentLengthMinusTest(FieldTest[AnyMessageLinterProtocol]):
+    name = "Content-Length"
+    inputs = [b"-1"]
+    expected_out = None
+    expected_notes: NoteClassListType = [CL_BAD_SYNTAX]
+
+
+class ContentLengthLeadingZeroTest(FieldTest[AnyMessageLinterProtocol]):
+    name = "Content-Length"
+    inputs = [b"007"]
+    expected_out = 7
+
+
+class ContentLengthHugeTest(FieldTest[AnyMessageLinterProtocol]):
+    name = "Content-Length"
+    inputs = [b"9" * 5000]
+    expected_out = None
+    expected_notes: NoteClassListType = [CL_BAD_SYNTAX]
+
+
+class ContentLengthMaxDigitsTest(FieldTest[AnyMessageLinterProtocol]):
+    name = "Content-Length"
+    inputs = [b"9" * 4000]
+    expected_out = int("9" * 4000)
+    expected_notes: NoteClassListType = [CL_TOO_LARGE]
+
+
+class ContentLengthOverMaxDigitsTest(FieldTest[AnyMessageLinterProtocol]):
+    name = "Content-Length"
+    inputs = [b"9" * 4001]
+    expected_out = None
+    expected_notes: NoteClassListType = [CL_BAD_SYNTAX]

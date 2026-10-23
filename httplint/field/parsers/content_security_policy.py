@@ -1,5 +1,6 @@
-from typing import Dict, List
+from typing import Dict, List, Optional
 
+from httplint.field import BAD_SYNTAX
 from httplint.field.list_field import HttpListField
 from httplint.field.tests import FieldTest
 from httplint.note import MarkdownSafe, Note, categories, levels
@@ -15,10 +16,39 @@ from httplint.util import inline_safe
 # directive-name = 1*( ALPHA / DIGIT / "-" )
 DIRECTIVE_NAME = r"[a-zA-Z0-9-]+"
 # directive-value = *( WSP / <VCHAR except ";" and ","> )
-DIRECTIVE_VALUE = r"[ \t\x21-\x2B\x2D-\x3A\x3C-\x7E]*"
+# Expressed as whitespace-separated runs of non-whitespace, so a value can neither start nor end
+# in whitespace; otherwise it overlaps the surrounding RWS / OWS and the regex backtracks badly.
+DIRECTIVE_VALUE_CHARS = r"[\x21-\x2B\x2D-\x3A\x3C-\x7E]+"
+DIRECTIVE_VALUE = rf"(?: {DIRECTIVE_VALUE_CHARS} (?: {rfc9110.RWS} {DIRECTIVE_VALUE_CHARS} )* )"
 
 
-csp_directive = rf"(?: {DIRECTIVE_NAME} (?: {rfc9110.RWS} {DIRECTIVE_VALUE} )? )"  # pylint: disable=invalid-name
+# Whitespace after a directive is only consumed when a character other than SP, HTAB or ";" follows
+# it. That keeps it from overlapping the OWS before ";" and the trailing \s* added by
+# HttpListField, while still putting the error position of a bad byte after the whitespace.
+TRAILING_WS = r"(?: [ \t]+ (?= [^ \t;] ) )?"
+
+csp_directive = rf"(?: {DIRECTIVE_NAME} (?: {rfc9110.RWS} {DIRECTIVE_VALUE} )? {TRAILING_WS} )"  # pylint: disable=invalid-name
+
+# Fetch directives (CSP3 section 6.1); only these load content, so only they get the http: check.
+FETCH_DIRECTIVES = {
+    "default-src",
+    "script-src",
+    "script-src-elem",
+    "script-src-attr",
+    "style-src",
+    "style-src-elem",
+    "style-src-attr",
+    "img-src",
+    "font-src",
+    "connect-src",
+    "media-src",
+    "object-src",
+    "frame-src",
+    "child-src",
+    "worker-src",
+    "manifest-src",
+    "prefetch-src",
+}
 
 
 class content_security_policy(HttpListField[ResponseLinterProtocol]):
@@ -37,6 +67,7 @@ sources of content that browsers are allowed to load on a page."""
     def __init__(self, wire_name: str, message: ResponseLinterProtocol) -> None:
         super().__init__(wire_name, message)
         self._deferred_notes: List[NoteArgsType] = []
+        self._parent_note: Optional[Note] = None
 
     def parse(self, field_value: str, add_note: AddNoteMethodType) -> Dict[str, str]:
         parsed_directives: Dict[str, str] = {}
@@ -54,6 +85,9 @@ sources of content that browsers are allowed to load on a page."""
                 duplicate_directives.append(name)
                 continue
             parsed_directives[name] = value
+
+        if not parsed_directives:
+            raise ValueError("no directives")
 
         if duplicate_directives:
             self._deferred_notes.append(
@@ -75,6 +109,7 @@ sources of content that browsers are allowed to load on a page."""
                 report_only=self.report_only_string,
                 report_only_text=self.report_only_text,
             )
+            self._parent_note = parent
         else:
             return
 
@@ -92,19 +127,18 @@ sources of content that browsers are allowed to load on a page."""
                 if name == "report-uri":
                     deprecated_report_uri = True
 
-                if name in ["script-src", "style-src", "object-src"]:
-                    if "*" in value.split():
+                tokens = value.lower().split()
+
+                if name in ["default-src", "script-src", "style-src", "object-src"]:
+                    if "*" in tokens:
                         wide_open_directives.append(name)
 
-                if "'unsafe-inline'" in value:
+                if "'unsafe-inline'" in tokens:
                     unsafe_inline_directives.append(name)
-                if "'unsafe-eval'" in value:
+                if "'unsafe-eval'" in tokens:
                     unsafe_eval_directives.append(name)
-                # Check for http: scheme or literal http://
-                if "http:" in value or "http://" in value:
-                    # Simple check, could be improved to parse source lists
-                    if "http:" in value.split():
-                        http_uri_directives.append(name)
+                if name in FETCH_DIRECTIVES and any(token.startswith("http:") for token in tokens):
+                    http_uri_directives.append(name)
 
         if deprecated_report_uri:
             parent.add_child(
@@ -137,7 +171,8 @@ sources of content that browsers are allowed to load on a page."""
             )
 
     def post_check(self, add_note: AddNoteMethodType) -> None:
-        if not self.value:
+        # evaluate() sets the parent note whenever there is a value.
+        if not self.value or self._parent_note is None:
             return
 
         reporting_endpoints_field = self.message.headers.parsed.get("reporting-endpoints")
@@ -154,26 +189,11 @@ sources of content that browsers are allowed to load on a page."""
                 if value in known_endpoints:
                     continue
 
-                # Find the parent note
-                parent_note = None
-                for note in self.message.notes:
-                    if isinstance(note, CONTENT_SECURITY_POLICY):
-                        parent_note = note
-                        break
-
-                if parent_note:
-                    parent_note.add_child(
-                        CSP_REPORT_TO_MISSING,
-                        endpoint=value,
-                        report_only_text=self.report_only_text,
-                    )
-                else:
-                    # Fallback if parent not found (should be rare)
-                    add_note(
-                        CSP_REPORT_TO_MISSING,
-                        endpoint=value,
-                        report_only_text=self.report_only_text,
-                    )
+                self._parent_note.add_child(
+                    CSP_REPORT_TO_MISSING,
+                    endpoint=value,
+                    report_only_text=self.report_only_text,
+                )
 
     def _make_list(self, items: list[str]) -> MarkdownSafe:
         safe = [inline_safe(item) for item in items]
@@ -347,3 +367,79 @@ class CSPReportToMismatchTest(FieldTest[ResponseLinterProtocol]):
 
     def set_response_context(self, message: ResponseLinterProtocol) -> None:
         message.headers.process([(b"Reporting-Endpoints", b'endpoint-2="https://example.com"')])
+
+
+class CSPKeywordCaseTest(FieldTest[ResponseLinterProtocol]):
+    name = "Content-Security-Policy"
+    inputs = [b"script-src 'UNSAFE-INLINE' 'Unsafe-Eval'"]
+    expected_out = [{"script-src": "'UNSAFE-INLINE' 'Unsafe-Eval'"}]
+    expected_notes: NoteClassListType = [
+        CONTENT_SECURITY_POLICY,
+        CSP_UNSAFE_INLINE,
+        CSP_UNSAFE_EVAL,
+    ]
+
+
+class CSPDefaultSrcWideOpenTest(FieldTest[ResponseLinterProtocol]):
+    name = "Content-Security-Policy"
+    inputs = [b"default-src *"]
+    expected_out = [{"default-src": "*"}]
+    expected_notes: NoteClassListType = [CONTENT_SECURITY_POLICY, CSP_WIDE_OPEN]
+
+
+class CSPHttpSchemeTest(FieldTest[ResponseLinterProtocol]):
+    name = "Content-Security-Policy"
+    inputs = [b"script-src 'self' http:"]
+    expected_out = [{"script-src": "'self' http:"}]
+    expected_notes: NoteClassListType = [CONTENT_SECURITY_POLICY, CSP_HTTP_URI]
+
+
+class CSPHttpHostSourceTest(FieldTest[ResponseLinterProtocol]):
+    name = "Content-Security-Policy"
+    inputs = [b"script-src HTTP://cdn.example.com"]
+    expected_out = [{"script-src": "HTTP://cdn.example.com"}]
+    expected_notes: NoteClassListType = [CONTENT_SECURITY_POLICY, CSP_HTTP_URI]
+
+
+class CSPHttpImgSrcTest(FieldTest[ResponseLinterProtocol]):
+    name = "Content-Security-Policy"
+    inputs = [b"img-src http://img.example.com; connect-src http:; default-src http:"]
+    expected_out = [
+        {
+            "img-src": "http://img.example.com",
+            "connect-src": "http:",
+            "default-src": "http:",
+        }
+    ]
+    expected_notes: NoteClassListType = [CONTENT_SECURITY_POLICY, CSP_HTTP_URI]
+
+
+class CSPHttpNonFetchDirectivesTest(FieldTest[ResponseLinterProtocol]):
+    name = "Content-Security-Policy"
+    inputs = [
+        b"frame-ancestors http://x.example.com; form-action http://x.example.com; "
+        b"base-uri http:; navigate-to http://x.example.com"
+    ]
+    expected_out = [
+        {
+            "frame-ancestors": "http://x.example.com",
+            "form-action": "http://x.example.com",
+            "base-uri": "http:",
+            "navigate-to": "http://x.example.com",
+        }
+    ]
+    expected_notes: NoteClassListType = [CONTENT_SECURITY_POLICY]
+
+
+class CSPHttpsHostSourceTest(FieldTest[ResponseLinterProtocol]):
+    name = "Content-Security-Policy"
+    inputs = [b"script-src https://cdn.example.com; report-uri http://example.com/r"]
+    expected_out = [{"script-src": "https://cdn.example.com", "report-uri": "http://example.com/r"}]
+    expected_notes: NoteClassListType = [CONTENT_SECURITY_POLICY, CSP_DEPRECATED_REPORT_URI]
+
+
+class CSPEmptyDirectivesTest(FieldTest[ResponseLinterProtocol]):
+    name = "Content-Security-Policy"
+    inputs = [b";;;"]
+    expected_out = []
+    expected_notes: NoteClassListType = [BAD_SYNTAX]

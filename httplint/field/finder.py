@@ -56,8 +56,10 @@ class HttpFieldFinder:
             name_token = HttpFieldFinder.field_aliases[name_token]
 
         module = HttpFieldFinder.find_module(field_name)
-        if module and hasattr(module, name_token):
-            return cast(Type[HttpField[Any]], getattr(module, name_token))
+        if module:
+            candidate = getattr(module, name_token, None)
+            if isinstance(candidate, type) and issubclass(candidate, HttpField):
+                return candidate
         if field_name.lower() in deprecated.field_lookup:
             return deprecated.DeprecatedField
         if field_name.lower() in unnecessary.UNNECESSARY_FIELDS:
@@ -68,6 +70,9 @@ class HttpFieldFinder:
     def find_module(field_name: str) -> Any:
         """
         Return a module for the given field name, or None if it can't be found.
+
+        This only looks up already-imported modules; they are all imported eagerly
+        by httplint.field.parsers (see the end of this file), not on demand.
         """
         name_token = HttpFieldFinder.name_token(field_name)
         if name_token[0:1] == "_":  # these are special
