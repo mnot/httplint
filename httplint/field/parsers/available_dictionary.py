@@ -46,7 +46,8 @@ class AVAILABLE_DICTIONARY_MISSING_AE(Note):
         "This request advertises a dictionary for compression, but the client doesn't support it."
     )
     _text = """\
-The `Available-Dictionary` header is present, but `Accept-Encoding` does not contain 'dcb' or 'dcz'.
+The `Available-Dictionary` header is present, but `Accept-Encoding` does not list 'dcb' or 'dcz'
+as acceptable: it leaves them out, or gives them a `q` value of 0.
 
 [RFC 9842 Section 6.1](https://www.rfc-editor.org/rfc/rfc9842.html#section-6.1) requires that if a
 client sends `Available-Dictionary`, it MUST also advertise support for dictionary-based content
