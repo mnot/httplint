@@ -5,7 +5,7 @@ from typing import Dict, FrozenSet, List, Optional, Tuple
 import chardet
 
 from httplint.charset_data import SINGLE_BYTE, WHATWG_LABELS
-from httplint.content_encoding import BAD_BROTLI, BAD_GZIP, BAD_ZLIB
+from httplint.content_encoding import BAD_BROTLI, BAD_DEFLATE, BAD_GZIP, BAD_ZLIB
 from httplint.note import Note, categories, levels
 from httplint.types import LinterProtocol
 
@@ -21,7 +21,7 @@ CHARDET_CONFIDENCE_THRESHOLD = 0.5
 # partway through. In each case a multi-byte character may be split at
 # the cutoff point, so charset checks need to tolerate that rather than
 # reporting genuinely valid content as undecodable.
-_DECODE_FAILURE_NOTES = (BAD_GZIP, BAD_ZLIB, BAD_BROTLI)
+_DECODE_FAILURE_NOTES = (BAD_GZIP, BAD_ZLIB, BAD_DEFLATE, BAD_BROTLI)
 
 # Bytes trimmed from the end of a truncated content_sample before the
 # declared-vs-detected comparison runs, so a multi-byte character split
@@ -263,10 +263,7 @@ def verify_charset(linter: LinterProtocol) -> None:  # pylint: disable=too-many-
     if not linter.content_hash or not linter.content_sample:
         return
 
-    status_code = getattr(linter, "status_code", None)
-    if status_code in [204, 205, 304, 206] + list(range(100, 199)) or getattr(
-        linter, "is_head_response", False
-    ):
+    if not linter.has_full_representation() or not linter.content_decoded:
         return
 
     if "content-type" not in linter.headers.parsed:

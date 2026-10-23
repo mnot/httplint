@@ -165,6 +165,15 @@ class HttpMessageLinter:
         "Say whether this message can have content."
         return True
 
+    def has_full_representation(self) -> bool:
+        "Say whether this message's content is a full representation of the resource."
+        return self.can_have_content()
+
+    @property
+    def content_decoded(self) -> bool:
+        "Say whether the content coding(s) were undone, so the content is available to check."
+        return self.decoded.content_available
+
     def post_checks(self) -> None:
         "Post-parsing checks to perform."
 
@@ -364,11 +373,18 @@ class HttpResponseLinter(HttpMessageLinter):
                 self.notes.add("status", STATUS_PHRASE_ENCODING)
 
     def can_have_content(self) -> bool:
+        "Say whether this response can have content (RFC 9110, Section 6.4.1)."
         if self.is_head_response:
             return False
-        if self.status_code in [304]:
+        if self.status_code is not None and (
+            self.status_code in (204, 205, 304) or 100 <= self.status_code <= 199
+        ):
             return False
         return True
+
+    def has_full_representation(self) -> bool:
+        "Say whether this response's content is a full representation (so, not a 206)."
+        return self.can_have_content() and self.status_code != 206
 
     def post_checks(self) -> None:
         check_preflight_response(self)
