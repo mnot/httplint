@@ -498,18 +498,6 @@ Proxy_Authentication_Info = list_rule(auth_param)
 
 Proxy_Authorization = credentials
 
-#   int-range = first-pos "-" [ last-pos ]
-
-int_range = rf"(?: {first_pos} \- {last_pos}? )"
-
-#   suffix-length = 1*DIGIT
-
-suffix_length = rf"{DIGIT}+"
-
-#   suffix-range = "-" suffix-length
-
-suffix_range = rf"(?: \- {suffix_length} )"
-
 #   other-range = 1*( %x21-2B ; '!'-'+'
 #    / %x2D-7E ; '-'-'~'
 #   )
@@ -519,7 +507,7 @@ other_range = r"(?: [\x21-\x2B] | [\x2D-\x7E] )+"
 #   range-spec = int-range / suffix-range / other-range
 
 # other-range is a superset of int-range and suffix-range, so alternating them only adds
-# ambiguous parses (exponential backtracking); matching other-range alone accepts the same strings.
+# ambiguous parses (exponential backtracking); other-range alone accepts the same strings.
 
 range_spec = other_range
 
