@@ -152,24 +152,30 @@ class ResponseCacheChecker:
         self.has_explicit_freshness = False
         self.has_heuristic_freshness = False
         freshness_hdrs = ["field-date"]
-        if expires_hdr_present and self.response_time:
+        self.freshness_unknown = False
+        if expires_hdr_present:
             # An invalid Expires header means it's automatically stale
             self.has_explicit_freshness = True
             freshness_hdrs.append("field-expires")
-            expires_lifetime = self.freshness_lifetime_shared = (self.expires_value or 0) - (
-                self.date_value or int(self.response_time)
-            )
-            self.freshness_lifetime_private = expires_lifetime
-            self.freshness_lifetime_shared = expires_lifetime
+            base_time = self.date_value or (int(self.response_time) if self.response_time else None)
+            if base_time is None:
+                # Freshness is explicit, but with no Date or start time it can't be computed.
+                self.freshness_unknown = True
+            else:
+                expires_lifetime = (self.expires_value or 0) - base_time
+                self.freshness_lifetime_private = expires_lifetime
+                self.freshness_lifetime_shared = expires_lifetime
         if "max-age" in self.cc_dict:
             self.freshness_lifetime_private = self.cc_dict["max-age"]
             self.freshness_lifetime_shared = self.cc_dict["max-age"]
             freshness_hdrs.append("field-cache-control")
             self.has_explicit_freshness = True
+            self.freshness_unknown = False
         if "s-maxage" in self.cc_dict:
             self.freshness_lifetime_shared = self.cc_dict["s-maxage"]
             freshness_hdrs.append("field-cache-control")
             self.has_explicit_freshness = True
+            self.freshness_unknown = False
 
         freshness_left = self.freshness_lifetime_private - self.age
         freshness_left_str = relative_time(abs(int(freshness_left)), 0, 0)
@@ -193,7 +199,9 @@ class ResponseCacheChecker:
 
         # explicit freshness
         if self.has_explicit_freshness:
-            if self.freshness_lifetime_shared != self.freshness_lifetime_private:
+            if self.freshness_unknown:
+                pass
+            elif self.freshness_lifetime_shared != self.freshness_lifetime_private:
                 self.notes.add(
                     " ".join(freshness_hdrs),
                     FRESHNESS_SHARED_PRIVATE,
@@ -248,12 +256,12 @@ class ResponseCacheChecker:
         elif "must-revalidate" in self.cc_dict:
             if self.is_fresh:
                 self.notes.add("field-cache-control", FRESH_MUST_REVALIDATE)
-            elif self.has_explicit_freshness:
+            elif self.has_explicit_freshness and not self.freshness_unknown:
                 self.notes.add("field-cache-control", STALE_MUST_REVALIDATE)
         elif "proxy-revalidate" in self.cc_dict or "s-maxage" in self.cc_dict:
             if self.is_shared_fresh:
                 self.notes.add("field-cache-control", FRESH_PROXY_REVALIDATE)
-            elif self.has_explicit_freshness:
+            elif self.has_explicit_freshness and not self.freshness_unknown:
                 self.notes.add("field-cache-control", STALE_PROXY_REVALIDATE)
         else:
             self.notes.add("field-cache-control", STALE_SERVABLE)
