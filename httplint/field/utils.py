@@ -699,3 +699,17 @@ or as a strong tag that happens to start with `w/`.
 
 See [the HTTP specification](https://www.rfc-editor.org/rfc/rfc9110.html#name-etag) for more
 information."""
+
+
+class ENTITY_TAG_LIST_STAR(Note):
+    category = categories.VALIDATION
+    level = levels.WARN
+    _summary = "The %(field_name)s field mixes `*` with entity tags."
+    _text = """\
+The `*` in the `%(field_name)s` field matches any current representation, so it is only valid
+on its own: the field's value is either `*` or a list of entity tags
+([RFC 9110, Section 13.1.1](https://www.rfc-editor.org/rfc/rfc9110.html#name-if-match) and
+[Section 13.1.2](https://www.rfc-editor.org/rfc/rfc9110.html#name-if-none-match)).
+
+Recipients may handle a list that includes both in different ways; send either `*` or the
+entity tags."""
