@@ -63,7 +63,10 @@ class ExpiresImpossibleTest(FieldTest[ResponseLinterProtocol]):
 
 
 class ExpiresTwoDigitYearPastTest(FieldTest[ResponseLinterProtocol]):
-    "More than 50 years after the response time, so it's the most recent past year."
+    """
+    Guard: more than 50 years after the response time, so it's the most recent past year.
+    (The fixed pivot gave 1994 here too; ExpiresTwoDigitYearFutureTest is the regression test.)
+    """
 
     name = "Expires"
     inputs = [b"Sunday, 06-Nov-94 08:49:37 GMT"]

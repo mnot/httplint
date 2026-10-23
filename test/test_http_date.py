@@ -33,7 +33,10 @@ class HttpDateTest(unittest.TestCase):
         self.assertEqual(parse("Thu, 01 Jan 1970 00:00:00 GMT"), (0, []))
 
     def test_obsolete_formats(self) -> None:
-        self.assertEqual(parse("Sunday, 06-Nov-94 08:49:37 GMT"), (784111777, [DATE_OBSOLETE]))
+        now = calendar.timegm((2001, 9, 9, 1, 46, 40))  # fixed: the year is two digits
+        self.assertEqual(
+            parse("Sunday, 06-Nov-94 08:49:37 GMT", now), (784111777, [DATE_OBSOLETE])
+        )
         self.assertEqual(parse("Sun Nov  6 08:49:37 1994"), (784111777, [DATE_OBSOLETE]))
 
     def test_rfc850_two_digit_year_pivot(self) -> None:
@@ -102,8 +105,8 @@ class HttpDateTest(unittest.TestCase):
             expected = calendar.timegm((expected_year, 11, 6, 8, 49, 37))
             self.assertEqual(parse(value, now)[0], expected, now_year)
 
-    def test_rolling_window_from_datetime(self) -> None:
-        # The same boundary, driven by a float timestamp as start_time provides.
+    def test_rolling_window_float_reference(self) -> None:
+        # A float reference with a fractional second, as start_time can be.
         now = float(calendar.timegm((2030, 1, 1, 0, 0, 0))) + 0.5
         self.assertEqual(
             parse("Sunday, 01-Jan-80 00:00:00 GMT", now)[0],
@@ -143,12 +146,15 @@ class HttpDateTest(unittest.TestCase):
         )
 
     def test_rolling_window_century_leap_year(self) -> None:
-        # 00 resolves to 2000, a leap year, or 2100, which is not.
+        # 00 resolves to 2000, a leap year.
         now = calendar.timegm((2026, 6, 1, 0, 0, 0))
         self.assertEqual(
             parse("Tuesday, 29-Feb-00 00:00:00 GMT", now)[0],
             calendar.timegm((2000, 2, 29, 0, 0, 0)),
         )
+
+    def test_rolling_window_century_non_leap_year(self) -> None:
+        # 00 resolves to 2100, which is not a leap year, so 29 February doesn't exist.
         now = calendar.timegm((2060, 6, 1, 0, 0, 0))
         result, notes = parse("Monday, 29-Feb-00 00:00:00 GMT", now)
         self.assertIsNone(result)  # 2100-02-29 doesn't exist

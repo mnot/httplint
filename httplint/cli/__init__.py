@@ -35,7 +35,11 @@ def getargs() -> Namespace:
         "--now",
         action="store_true",
         dest="now",
-        help="Assume that the HTTP exchange happened now",
+        help=(
+            "Assume that the HTTP exchange happened now. Without it, a two-digit year in an "
+            "obsolete date is resolved against the time linting runs, so the result for a "
+            "year near the 50-year line depends on when it is run."
+        ),
     )
 
     parser.add_argument(
