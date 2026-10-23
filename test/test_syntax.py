@@ -1455,6 +1455,253 @@ class SyntaxLinkAuditTest(unittest.TestCase):
                 self.assertLess(elapsed, TIME_LIMIT, f"{label}: {elapsed:.2f}s")
 
 
+
+class SyntaxStructuredFieldAuditTest(unittest.TestCase):
+    """
+    Audit of rfc9651 against RFC 9651 Appendix C (issue #303). The module is not used by any
+    field parser; it was missing the Display String type, accepted "=" anywhere inside a byte
+    sequence, and rejected a Boolean-true dictionary member with parameters ("c; foo=bar").
+    """
+
+    def test_binary(self) -> None:
+        "sf-binary = ':' base64 ':' and base64 = *( ALPHA / DIGIT / '+' / '/' ) *'='."
+        old = r":[a-zA-Z0-9+/=]*:"
+        changed = 0
+        for value in strings([":", "a", "=", "+", "/", "A", "1"], 6):
+            inner = value[1:-1]
+            expected = (
+                len(value) >= 2
+                and value[0] == ":"
+                and value[-1] == ":"
+                and re.fullmatch(r"[A-Za-z0-9+/]*=*", inner) is not None
+            )
+            with self.subTest(value=value):
+                was, now = fullmatch(old, value), fullmatch(rfc9651.sf_binary, value)
+                self.assertEqual(now, expected)
+                if was != now:
+                    # The old rule also accepted "=" before other characters.
+                    self.assertTrue(was)
+                    self.assertRegex(inner, r"=[^=]")
+                    changed += 1
+        self.assertGreater(changed, 50)
+        for value in ["::", ":YQ==:", ":YQ=:", ":YQ:", ":cHJldGVuZCB0aGlzIGlzIGJpbmFyeSBjb250ZW50Lg==:"]:
+            with self.subTest(value=value):
+                self.assertTrue(fullmatch(rfc9651.sf_binary, value))
+        for value in [":a=b:", ":=a:", ":a b:", ":a", "a:", ":a_b:", ":a-b:"]:
+            with self.subTest(value=value):
+                self.assertFalse(fullmatch(rfc9651.sf_binary, value))
+
+    def test_dictionary_member_parameters(self) -> None:
+        "dict-member = member-key ( parameters / ( '=' member-value ) )."
+        old_member = rf"(?: {rfc9651.member_key} (?: = {rfc9651.member_value} )? )"
+        old = rf"(?: {old_member} (?: {rfc9110.OWS} , {rfc9110.OWS} {old_member} )* )"
+        with_params = re.compile(r"(?:^|,)\s*[a-z*][a-z0-9_.*-]*;")
+        changed = 0
+        for value in strings(["a", "=", "1", ";", " ", ","], 6):
+            with self.subTest(value=value):
+                was, now = fullmatch(old, value), fullmatch(rfc9651.sf_dictionary, value)
+                if was:
+                    self.assertTrue(now)
+                elif now:
+                    changed += 1
+                    self.assertRegex(value, with_params)
+        self.assertGreater(changed, 20)
+        for value in [
+            "a=?0, b, c; foo=bar",
+            "a;b",
+            "a;b=1;c",
+            "a; b=1, c;d",
+            "a=1;b=2, c",
+            "a=(1 2);x, b;y=z",
+        ]:
+            with self.subTest(value=value):
+                self.assertTrue(fullmatch(rfc9651.sf_dictionary, value))
+        for value in ["a;", "a;=1", "a;B", "a=1;b=", "a;b=1=2", ";a", "a, ;b", "a b"]:
+            with self.subTest(value=value):
+                self.assertFalse(fullmatch(rfc9651.sf_dictionary, value))
+
+    def test_display_strings(self) -> None:
+        "sf-displaystring was missing (RFC 9651 added it to bare-item)."
+        for value in [
+            '%""',
+            '%"abc"',
+            '%"This is intended for display to %c3%bcsers."',
+            '%"a\\b"',
+            '%"100%25"',
+            '%"%00%ff"',
+        ]:
+            with self.subTest(value=value):
+                self.assertTrue(fullmatch(rfc9651.sf_displaystring, value))
+                self.assertTrue(fullmatch(rfc9651.bare_item, value))
+                self.assertTrue(fullmatch(rfc9651.sf_item, value))
+                self.assertTrue(fullmatch(rfc9651.sf_item, value + ";a=" + value))
+        for value in [
+            '%"%C3%BC"',
+            '%"%c"',
+            '%"%c3%b"',
+            '%"%zz"',
+            '%"a"b"',
+            '%"ü"',
+            '%"a',
+            '%a',
+            '"%"x"',
+            '% "a"',
+            '%"a\x7f"',
+        ]:
+            with self.subTest(value=value):
+                self.assertFalse(fullmatch(rfc9651.sf_displaystring, value))
+        # A String still allows a bare "%" and rejects what a Display String allows.
+        self.assertTrue(fullmatch(rfc9651.sf_string, '"100%"'))
+        self.assertTrue(fullmatch(rfc9651.sf_string, '"%c3"'))
+        self.assertFalse(fullmatch(rfc9651.sf_string, '%"abc"'))
+        self.assertFalse(fullmatch(rfc9651.sf_string, '"a\\b"'))
+
+    def test_string_chars(self) -> None:
+        "sf-string = DQUOTE *( unescaped / '%' / bs-escaped ) DQUOTE, as the old character class."
+        old = r'"(?:[\x20-\x21\x23-\x5B\x5D-\x7E]|(?:\\["\\]))*"'
+        for code in range(256):
+            value = f'"{chr(code)}"'
+            with self.subTest(code=code):
+                self.assertEqual(
+                    fullmatch(rfc9651.sf_string, value), 0x20 <= code <= 0x7E and chr(code) not in '"\\'
+                )
+                self.assertEqual(fullmatch(rfc9651.sf_string, value), fullmatch(old, value))
+        for value in ['""', '"a b"', '"\\""', '"\\\\"', '"a\\"b"', '"%"']:
+            with self.subTest(value=value):
+                self.assertTrue(fullmatch(rfc9651.sf_string, value))
+        for value in ['"\\a"', '"\\"', '"a', '"a"b"', '"\\\\\\"']:
+            with self.subTest(value=value):
+                self.assertFalse(fullmatch(rfc9651.sf_string, value))
+
+    def test_token_chars(self) -> None:
+        "The character-class sf-token is the composition of ALPHA, '*', tchar, ':' and '/'."
+        composed = rf"(?: (?: {rfc9110.ALPHA} | \* ) (?: {rfc9110.tchar} | : | / )* )"
+        for code in range(256):
+            for template in ["{}", "a{}", "{}a"]:
+                value = template.format(chr(code))
+                with self.subTest(value=value):
+                    self.assertEqual(
+                        fullmatch(rfc9651.sf_token, value), fullmatch(composed, value)
+                    )
+
+    def test_bare_item_order(self) -> None:
+        "bare-item lists sf-integer before sf-decimal; the language is the same either way."
+        reordered = (
+            rf"(?: {rfc9651.sf_decimal} | {rfc9651.sf_integer} | {rfc9651.sf_string} | "
+            rf"{rfc9651.sf_token} | {rfc9651.sf_binary} | {rfc9651.sf_boolean} | "
+            rf"{rfc9651.sf_date} | {rfc9651.sf_displaystring} )"
+        )
+        old = rf"(?: {reordered} {rfc9651.parameters} )"
+        self.assertLess(rfc9651.bare_item.index(rfc9651.sf_integer), rfc9651.bare_item.index(rfc9651.sf_decimal))
+        for value in strings(["1", ".", "-", "a", "?", "0", ";", "@", "="], 5):
+            with self.subTest(value=value):
+                self.assertEqual(fullmatch(old, value), fullmatch(rfc9651.sf_item, value))
+
+    def test_items(self) -> None:
+        for rule, accepted, rejected in [
+            (
+                rfc9651.sf_integer,
+                ["0", "42", "-42", "-0", "0002", "999999999999999", "-999999999999999"],
+                ["", "-", "1.5", "1000000000000000", "+1", "1,000", "a"],
+            ),
+            (
+                rfc9651.sf_decimal,
+                ["4.5", "-0.40", "0002.5", "1.234", "123456789012.5", "5.230"],
+                ["", "1.", ".5", "1.2345", "1234567890123.5", "1", "1.2.3"],
+            ),
+            (
+                rfc9651.sf_token,
+                ["foo123/456", "*", "*foo", "a:b", "A", "text/html", "a!#$%&'*+-.^_`|~"],
+                ["", "1a", "-a", ":a", "/a", "a b", 'a"b', "a,b", "a;b"],
+            ),
+            (rfc9651.sf_boolean, ["?0", "?1"], ["", "?", "?2", "0", "?01", "? 1"]),
+            (
+                rfc9651.sf_date,
+                ["@1659578233", "@0", "@-62135596800", "@253402214400"],
+                ["@", "1659578233", "@1.5", "@ 1", "@@1", "@1000000000000000"],
+            ),
+        ]:
+            for value in accepted:
+                with self.subTest(rule=rule[:20], value=value):
+                    self.assertTrue(fullmatch(rule, value))
+                    self.assertTrue(fullmatch(rfc9651.bare_item, value))
+            for value in rejected:
+                with self.subTest(rule=rule[:20], value=value):
+                    self.assertFalse(fullmatch(rule, value))
+
+    def test_rfc_examples(self) -> None:
+        for rule, values in [
+            (
+                rfc9651.sf_list,
+                [
+                    "sugar, tea, rum",
+                    '("foo" "bar"), ("baz"), ("bat" "one"), ()',
+                    '("foo"; a=1;b=2);lvl=5, ("bar" "baz");lvl=1',
+                    "abc;a=1;b=2; cde_456, (ghi;jk=4 l);q=\"9\";r=w",
+                    "1, 2 ,3,4",
+                    "( a  b ), (  )",
+                ],
+            ),
+            (
+                rfc9651.sf_dictionary,
+                [
+                    'en="Applepie", da=:w4ZibGV0w6ZydGU=:',
+                    "a=?0, b, c; foo=bar",
+                    "rating=1.5, feelings=(joy sadness)",
+                    "a=(1 2), b=3, c=4;aa=bb, d=(5 6);valid",
+                    'a=%"caf%c3%a9", b=@1659578233',
+                ],
+            ),
+            (rfc9651.sf_item, ["5", "5; foo=bar", "1; a; b=?0", "@1659578233", '%"d%c3%a9j%c3%a0"']),
+        ]:
+            for value in values:
+                with self.subTest(value=value):
+                    self.assertTrue(fullmatch(rule, value))
+                    self.assertTrue(fullmatch(rfc9651.sf_value, value))
+        for rule, values in [
+            (rfc9651.sf_list, ["", "a,", ",a", "a,,b", "(a", "a)", "(a,b)", "a b", "a;B", "(a)b"]),
+            (rfc9651.sf_dictionary, ["", "A=1", "a=1,", "a=1 b=2", "a=", "=1", "a=(1", "a;B=1"]),
+            (rfc9651.sf_item, ["", "a b", "(a)", "a;", "a;b=", "1;;a", "a=1"]),
+        ]:
+            for value in values:
+                with self.subTest(value=value):
+                    self.assertFalse(fullmatch(rule, value))
+
+    def test_adversarial(self) -> None:
+        "Linear time on non-matching input (this module had no timing tests)."
+        n = 3000
+        bad = "\x80"
+        cases = [
+            ("inner list items", rfc9651.sf_list, "(" + "a " * n + bad),
+            ("inner list spaces", rfc9651.sf_list, "(" + " " * n + bad),
+            ("inner lists", rfc9651.sf_list, "(a), " * n + bad),
+            ("parameters", rfc9651.sf_item, "a" + ";a" * n + bad),
+            ("parameter spaces", rfc9651.sf_item, "a;" + " " * n + bad),
+            ("parameter values", rfc9651.sf_item, "a" + ";a=1" * n + bad),
+            ("list", rfc9651.sf_list, "a, " * n + bad),
+            ("list spaces", rfc9651.sf_list, "a" + " " * n + bad),
+            ("dictionary", rfc9651.sf_dictionary, "a=1, " * n + bad),
+            ("dictionary bare keys", rfc9651.sf_dictionary, "a;b, " * n + bad),
+            ("dictionary spaces", rfc9651.sf_dictionary, "a=1" + " " * n + bad),
+            ("string", rfc9651.sf_item, '"' + "a" * n + bad),
+            ("string escapes", rfc9651.sf_item, '"' + '\\"' * n + bad),
+            ("display string", rfc9651.sf_item, '%"' + "%c3" * n + bad),
+            ("display string text", rfc9651.sf_item, '%"' + "a" * n + bad),
+            ("token", rfc9651.sf_item, "a" * n + bad),
+            ("binary", rfc9651.sf_item, ":" + "a" * n + bad),
+            ("binary padding", rfc9651.sf_item, ":" + "a=" * n + bad),
+            ("decimal", rfc9651.sf_list, "1.5, " * n + bad),
+            ("integer", rfc9651.sf_item, "1" * n),
+        ]
+        for label, rule, value in cases:
+            compiled = re.compile(rf"^\s*(?:{rule})\s*$", re.VERBOSE | re.IGNORECASE)
+            with self.subTest(label):
+                start = time.monotonic()
+                compiled.match(value)
+                elapsed = time.monotonic() - start
+                self.assertLess(elapsed, TIME_LIMIT, f"{label}: {elapsed:.2f}s")
+
+
 def run_regex_check() -> None:
     print("Checking Syntax...")
     count, modules, errors = check_regex()
