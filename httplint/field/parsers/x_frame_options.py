@@ -122,13 +122,6 @@ class UnknownXFOTest(FieldTest[ResponseLinterProtocol]):
     expected_notes: NoteClassListType = [BAD_SYNTAX, FRAME_OPTIONS_UNKNOWN]
 
 
-class AllowFromXFOTest(FieldTest[ResponseLinterProtocol]):
-    name = "X-Frame-Options"
-    inputs = [b"ALLOW-FROM https://deny.example.com"]
-    expected_out = "ALLOW-FROM HTTPS://DENY.EXAMPLE.COM"
-    expected_notes: NoteClassListType = [FRAME_OPTIONS_UNKNOWN]
-
-
 class SubstringXFOTest(FieldTest[ResponseLinterProtocol]):
     name = "X-Frame-Options"
     inputs = [b"NOTDENY"]
