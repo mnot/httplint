@@ -28,7 +28,7 @@ from httplint.types import (
     StrFieldListType,
     TMessage,
 )
-from httplint.util import inline_safe, markdown_context
+from httplint.util import invalid_char_problem, markdown_context
 
 # base URLs for references
 RFC2616 = "https://www.rfc-editor.org/rfc/rfc2616.html#%s"
@@ -166,10 +166,7 @@ class HttpField(ABC, Generic[TMessage]):
         match = prefix.match(value)
         if match:
             bad_char_index = match.end()
-            problem = (
-                f"The invalid character '{inline_safe(value[bad_char_index])}' "
-                f"was found at position {bad_char_index + 1}."
-            )
+            problem = invalid_char_problem(value, bad_char_index)
             add_note(
                 BAD_SYNTAX_DETAILED,
                 ref_uri=self.reference,
@@ -186,6 +183,12 @@ class HttpField(ABC, Generic[TMessage]):
         """
         Called from parse() when it has reported the value's syntax defect with a more specific
         note; the syntax check then adds no BAD_SYNTAX or BAD_SYNTAX_DETAILED for that value.
+
+        Limits: it covers the whole value being parsed (each list element, field line or
+        singleton value), not just one defect in it. It only has an effect when parse() runs
+        under the field's own input handling; calling it from evaluate() or post_check() does
+        nothing, and a parse() call made directly leaves the flag set on the instance until the
+        next value is processed.
         """
         self._syntax_suppressed = True
 
