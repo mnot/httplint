@@ -124,7 +124,7 @@ authority_form = authority
 
 #   origin-form = absolute-path [ "?" query ]
 
-origin_form = rf"(?: {absolute_path} (?: {query} )? )"
+origin_form = rf"(?: {absolute_path} (?: \? {query} )? )"
 
 #   request-target = origin-form / absolute-form / authority-form / asterisk-form
 

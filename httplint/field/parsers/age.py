@@ -1,5 +1,6 @@
 from httplint.field.singleton_field import SINGLE_HEADER_REPEAT, SingletonField
 from httplint.field.tests import FieldTest
+from httplint.field.utils import is_negative_integer, parse_delta_seconds
 from httplint.note import Note, categories, levels
 from httplint.syntax import rfc9111
 from httplint.types import (
@@ -22,14 +23,14 @@ The `Age` response header conveys the sender's estimate of the amount of time si
     deprecated = False
 
     def parse(self, field_value: str, add_note: AddNoteMethodType) -> int:
-        try:
-            age_value = int(field_value)
-        except ValueError:
-            add_note(AGE_NOT_INT)
-            raise
-        if age_value < 0:
+        if is_negative_integer(field_value):
             add_note(AGE_NEGATIVE)
             raise ValueError
+        # Generous digit bound: oversized values still get AGE_LARGE, not AGE_NOT_INT.
+        parsed = parse_delta_seconds(field_value, add_note, AGE_NOT_INT, max_digits=4000)
+        if parsed is None:
+            raise ValueError
+        age_value = parsed
         if age_value > MAX_DELTA_SECONDS:
             add_note(AGE_LARGE)
         return age_value
@@ -95,3 +96,45 @@ class BigAgeTest(FieldTest[ResponseLinterProtocol]):
     inputs = [b"2147483649"]
     expected_out = 2147483649
     expected_notes: NoteClassListType = [AGE_LARGE]
+
+
+class UnderscoreAgeTest(FieldTest[ResponseLinterProtocol]):
+    name = "Age"
+    inputs = [b"1_0"]
+    expected_out = None
+    expected_notes: NoteClassListType = [AGE_NOT_INT]
+
+
+class PlusAgeTest(FieldTest[ResponseLinterProtocol]):
+    name = "Age"
+    inputs = [b"+1"]
+    expected_out = None
+    expected_notes: NoteClassListType = [AGE_NOT_INT]
+
+
+class NegativeZeroAgeTest(FieldTest[ResponseLinterProtocol]):
+    name = "Age"
+    inputs = [b"-0"]
+    expected_out = None
+    expected_notes: NoteClassListType = [AGE_NEGATIVE]
+
+
+class HugeAgeTest(FieldTest[ResponseLinterProtocol]):
+    name = "Age"
+    inputs = [b"9" * 5000]
+    expected_out = None
+    expected_notes: NoteClassListType = [AGE_NOT_INT]
+
+
+class MaxDigitsAgeTest(FieldTest[ResponseLinterProtocol]):
+    name = "Age"
+    inputs = [b"9" * 4000]
+    expected_out = int("9" * 4000)
+    expected_notes: NoteClassListType = [AGE_LARGE]
+
+
+class OverMaxDigitsAgeTest(FieldTest[ResponseLinterProtocol]):
+    name = "Age"
+    inputs = [b"9" * 4001]
+    expected_out = None
+    expected_notes: NoteClassListType = [AGE_NOT_INT]
