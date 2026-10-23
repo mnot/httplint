@@ -10,6 +10,12 @@ That ABNF is non-normative and "cannot be used to validate" Structured Field syn
 the parsing algorithms in Section 4.2 take precedence.
 
 They should be processed with re.VERBOSE.
+
+The alternatives are in the RFC's order (e.g., sf-integer before sf-decimal, and parameters
+before "=" member-value). That doesn't change what a whole-string match (re.fullmatch)
+accepts, but an unanchored match (re.match) can return a shorter match than a longest-first
+order would: sf_item on "1.5;a=1" matches "1", and sf_dictionary on "a=1, b" matches "a".
+Anchor these rules, or follow them with the context that has to come next.
 """
 
 # pylint: disable=invalid-name

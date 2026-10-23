@@ -1,4 +1,4 @@
-"""
+r"""
 Regex for RFC5322
 
 These regex are directly derived from the ABNF in RFC5322, Section 3 (RFC 5322 has no
@@ -8,6 +8,16 @@ each rule's obs-* alternative is left out.
 
 Several rules are written in a flattened form to avoid exponential backtracking; those are
 marked where they occur.
+
+Only mailbox (and so From) is used by a field, and only mailbox has the lookarounds that stop
+its leading and trailing CFWS from sharing whitespace with a caller's own \s* padding.
+mailbox_list, group_list, group, address, address_list and unstructured don't: wrapped in
+^\s*(?:...)\s*$ they take seconds on a long run of whitespace (group_list and unstructured
+about 7.5 s for 2000 spaces). Don't use them to match a field value without adding the same
+kind of guard.
+
+Comments nest to three levels, as rfc9110's do, since a regular expression can't recurse.
+Sections 3.3, 3.5 and 3.6 of RFC 5322 are not transcribed.
 
 They should be processed with re.VERBOSE.
 """

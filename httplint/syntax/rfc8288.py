@@ -1,7 +1,8 @@
 """
 Regex for RFC8288
 
-These regex are directly derived from the collected ABNF in RFC8288.
+These regex are directly derived from the ABNF in RFC8288, Section 3 (RFC 8288 has no
+collected-ABNF appendix), and from the ABNF fragments in the prose of Sections 3.2 to 3.4.1.
 
     <https://www.rfc-editor.org/rfc/rfc8288#section-3>
 
