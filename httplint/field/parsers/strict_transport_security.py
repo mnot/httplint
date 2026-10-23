@@ -18,8 +18,7 @@ sts_dir = rf"(?: {rfc9110.token} (?: {rfc9110.BWS} = {rfc9110.BWS} {rfc9110.para
 # RFC 6797 Section 6.1: [ directive ] *( ";" [ directive ] ). Whitespace is matched before a ";"
 # and before a directive, never twice by neighbouring terms, and the match starts with a
 # directive or ";" (the caller strips leading whitespace), so a failed match stays linear. A value
-# with nothing in it at all is still reported as bad syntax: a pattern that could match nothing
-# would make failed matches on long whitespace quadratic.
+# with nothing in it at all is still reported as bad syntax.
 sts_directives = (  # pylint: disable=invalid-name
     rf"(?: (?: {sts_dir} | (?= ;) ) (?: {rfc9110.OWS} ; (?: {rfc9110.OWS} {sts_dir} )? )* )"
 )
@@ -28,7 +27,27 @@ sts_directives = (  # pylint: disable=invalid-name
 def _code_span(value: Optional[str]) -> MarkdownSafe:
     "A wire-supplied value as a code span, or '(empty)' if there's nothing to show."
     safe = inline_safe(value or "")
-    return MarkdownSafe(f"`{safe}`" if safe else "(empty)")
+    return MarkdownSafe(f"`{safe}`" if safe.strip() else "(empty)")
+
+
+def _split_directives(field_value: str) -> list[str]:
+    "Split on the ';' separators, ignoring any inside a quoted-string."
+    parts: list[str] = []
+    start = 0
+    quoted = False
+    escaped = False
+    for pos, char in enumerate(field_value):
+        if escaped:
+            escaped = False
+        elif quoted and char == "\\":
+            escaped = True
+        elif char == '"':
+            quoted = not quoted
+        elif char == ";" and not quoted:
+            parts.append(field_value[start:pos])
+            start = pos + 1
+    parts.append(field_value[start:])
+    return parts
 
 
 class strict_transport_security(SingletonField[ResponseLinterProtocol]):
@@ -51,7 +70,7 @@ browsers that it should only be communicated with using HTTPS, instead of using 
             "includesubdomains": False,
             "preload": False,
         }
-        directives = [d.strip() for d in field_value.split(";")]
+        directives = [d.strip() for d in _split_directives(field_value)]
         if len(directives) > 1 and directives[-1] == "":
             directives.pop()
             self._deferred.defer(HSTS_TRAILING_SEMICOLON)
@@ -80,6 +99,7 @@ browsers that it should only be communicated with using HTTPS, instead of using 
                         unquote_string(value),
                         self._deferred.defer,
                         HSTS_BAD_MAX_AGE,
+                        max_digits=4000,  # as for Age: RFC 6797 has no upper bound
                         max_age=max_age,
                     )
             elif name == "includesubdomains":
@@ -122,7 +142,7 @@ browsers that it should only be communicated with using HTTPS, instead of using 
             notes_to_add.append(HSTS_NO_PRELOAD)
 
         if parsed["max-age"] is None:
-            if HSTS_BAD_MAX_AGE not in self._deferred:
+            if not self._deferred.has(HSTS_BAD_MAX_AGE):
                 notes_to_add.append(HSTS_NO_MAX_AGE)
             is_valid = False
         elif parsed["max-age"] == 0:
@@ -298,7 +318,9 @@ class HSTS_BAD_MAX_AGE(Note):
     _summary = "The max-age directive in the HSTS header is invalid."
     _text = """\
 The `max-age` directive in the `Strict-Transport-Security` header must be a non-negative
-integer. The value %(max_age)s is not valid."""
+integer. Its value is not valid:
+
+%(max_age)s"""
 
 
 class HSTS_VALUE_NOT_ALLOWED(Note):

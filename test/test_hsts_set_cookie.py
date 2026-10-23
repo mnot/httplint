@@ -17,6 +17,7 @@ from httplint.field.parsers.strict_transport_security import (
     HSTS_BAD_MAX_AGE,
     HSTS_DUPLICATE_DIRECTIVE,
     HSTS_INVALID,
+    HSTS_NO_MAX_AGE,
     HSTS_OVER_HTTP,
     HSTS_VALID,
     strict_transport_security,
@@ -74,14 +75,13 @@ class DeferredNotesTest(unittest.TestCase):
 
     def test_membership(self) -> None:
         deferred = DeferredNotes()
-        self.assertEqual(len(deferred), 0)
-        self.assertNotIn(FakeNote, deferred)
+        self.assertFalse(deferred.has(FakeNote))
         deferred.defer(FakeNote)
-        self.assertIn(FakeNote, deferred)
-        self.assertNotIn(OtherNote, deferred)
+        self.assertTrue(deferred.has(FakeNote))
         self.assertTrue(deferred.has(OtherNote, FakeNote))
         self.assertFalse(deferred.has(OtherNote))
-        self.assertEqual(len(deferred), 1)
+        deferred.via(self.adder("x"))(OtherNote)
+        self.assertTrue(deferred.has(OtherNote))
 
     def test_emit_without_target(self) -> None:
         deferred = DeferredNotes()
@@ -186,7 +186,7 @@ class HSTSSyntaxTest(unittest.TestCase):
                 self.assertFalse(sts_matches(strict_transport_security.syntax, value))
 
     def test_timing(self) -> None:
-        "A failed match must be linear, whatever the whitespace and semicolons."
+        "Regression: a failed match must be linear (an all-optional grammar is not)."
         cases = {
             "leading whitespace": " " * 20000 + "\x80",
             "trailing whitespace": "max-age=1" + " " * 20000 + "\x80",
@@ -214,9 +214,12 @@ class HSTSBehaviourTest(unittest.TestCase):
         "RFC 6797 Section 8.1 has no 301 exemption."
         for status in [b"200", b"301", b"302", b"404"]:
             with self.subTest(status=status):
-                classes = {type(n) for n in all_notes(lint_hsts(
-                    b"max-age=31536000", "http://example.com/", status
-                ).notes)}
+                classes = {
+                    type(n)
+                    for n in all_notes(
+                        lint_hsts(b"max-age=31536000", "http://example.com/", status).notes
+                    )
+                }
                 self.assertIn(HSTS_OVER_HTTP, classes)
                 self.assertIn(HSTS_INVALID, classes)
                 self.assertNotIn(HSTS_VALID, classes)
@@ -227,9 +230,7 @@ class HSTSBehaviourTest(unittest.TestCase):
         self.assertNotIn(HSTS_OVER_HTTP, classes)
 
     def test_empty_directives_not_duplicates(self) -> None:
-        classes = {
-            type(n) for n in all_notes(lint_hsts(b"max-age=100;;; includeSubDomains").notes)
-        }
+        classes = {type(n) for n in all_notes(lint_hsts(b"max-age=100;;; includeSubDomains").notes)}
         self.assertNotIn(HSTS_DUPLICATE_DIRECTIVE, classes)
         self.assertIn(HSTS_VALID, classes)
 
@@ -242,31 +243,57 @@ class HSTSBehaviourTest(unittest.TestCase):
             (b'max-age=""', '[""]'),
             (b"max-age=", "(empty)"),
             (b"max-age", "(empty)"),
+            (b"max-age=` `", "(empty)"),
+            (b"max-age=``", "(empty)"),
         ]:
             with self.subTest(raw=raw):
                 found = [
-                    n
-                    for n in all_notes(lint_hsts(raw).notes)
-                    if isinstance(n, HSTS_BAD_MAX_AGE)
+                    n for n in all_notes(lint_hsts(raw).notes) if isinstance(n, HSTS_BAD_MAX_AGE)
                 ]
                 self.assertEqual(len(found), 1)
                 note = found[0]
                 note.vars.update({"field_name": "Strict-Transport-Security"})
-                detail = html.unescape(str(note.detail)).replace("<code>", "[").replace(
-                    "</code>", "]"
+                detail = (
+                    html.unescape(str(note.detail)).replace("<code>", "[").replace("</code>", "]")
                 )
                 self.assertIn(shown, detail)
                 self.assertNotIn("[]", detail)
 
     def test_bad_max_age_backticks(self) -> None:
         found = [
-            n
-            for n in all_notes(lint_hsts(b"max-age=a`b").notes)
-            if isinstance(n, HSTS_BAD_MAX_AGE)
+            n for n in all_notes(lint_hsts(b"max-age=a`b").notes) if isinstance(n, HSTS_BAD_MAX_AGE)
         ]
         self.assertEqual(len(found), 1)
         found[0].vars.update({"field_name": "Strict-Transport-Security"})
         self.assertIn("<code>ab</code>", str(found[0].detail))
+
+    def test_max_age_digit_bound(self) -> None:
+        "Like Age, any size up to 4000 digits is a valid integer; RFC 6797 has no upper bound."
+        for digits, valid in [(21, True), (4000, True), (4001, False)]:
+            with self.subTest(digits=digits):
+                classes = {type(n) for n in all_notes(lint_hsts(b"max-age=" + b"9" * digits).notes)}
+                self.assertEqual(HSTS_BAD_MAX_AGE in classes, not valid)
+                self.assertEqual(HSTS_VALID in classes, valid)
+
+    def test_quoted_semicolons(self) -> None:
+        "A ';' inside a quoted-string doesn't separate directives."
+        for raw in [
+            b'foo="a;b"; bar="a;b"; max-age=100',
+            b'foo="a;max-age=1"; max-age=100',
+            b'foo="a\\";b"; bar="\\\\"; max-age=100',
+        ]:
+            with self.subTest(raw=raw):
+                linter = lint_hsts(raw)
+                classes = {type(n) for n in all_notes(linter.notes)}
+                self.assertNotIn(HSTS_DUPLICATE_DIRECTIVE, classes)
+                self.assertIn(HSTS_VALID, classes)
+                self.assertEqual(linter.headers.parsed["strict-transport-security"]["max-age"], 100)
+
+    def test_quoted_max_age_with_semicolon(self) -> None:
+        classes = {type(n) for n in all_notes(lint_hsts(b'max-age="1;2"').notes)}
+        self.assertIn(HSTS_BAD_MAX_AGE, classes)
+        self.assertNotIn(HSTS_NO_MAX_AGE, classes)
+
 
 # --- Set-Cookie ----------------------------------------------------------------------------------
 
@@ -342,6 +369,7 @@ class CookieDateRegexTest(unittest.TestCase):
                     loose_date_parse(bad)
 
     def test_timing(self) -> None:
+        "Guard: the old regexes were not slow either."
         cases = [
             "Wed, " + "1" * 100000 + " Jun 2021 10:18:14 GMT",
             "Wed, 09 Jun " + "2" * 100000 + " 10:18:14 GMT",
@@ -382,6 +410,7 @@ class CookieMaxAgeTest(unittest.TestCase):
                 self.assertEqual(self.attrs(b"a=b; Max-Age=" + value), [])
 
     def test_timing(self) -> None:
+        "Guard: main handles these in time too (it just drops the cookie)."
         start = time.monotonic()
         lint_cookie(b"a=b; Max-Age=" + b"9" * 100000)
         lint_cookie(b"a=b; Expires=" + b"1" * 100000)

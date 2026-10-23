@@ -32,12 +32,6 @@ class DeferredNotes:
 
         return deferred_add_note
 
-    def __contains__(self, note: Type[Note]) -> bool:
-        return self.has(note)
-
-    def __len__(self) -> int:
-        return len(self._entries)
-
     def has(self, *notes: Type[Note]) -> bool:
         "Whether any of `notes` has been deferred."
         return any(entry[1] in notes for entry in self._entries)
@@ -45,7 +39,8 @@ class DeferredNotes:
     def emit(self, add_note: Optional[Callable[..., Any]] = None) -> None:
         """
         Add the deferred notes, in the order they were recorded, using `add_note` (for example
-        `parent.add_child`) unless they were recorded with `via()`.
+        `parent.add_child`) unless they were recorded with `via()`. The list is not cleared, so
+        emitting twice adds each note twice.
         """
         for adder, note, category, vrs in self._entries:
             target = adder or add_note
