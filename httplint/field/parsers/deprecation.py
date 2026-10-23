@@ -17,7 +17,7 @@ class deprecation(StructuredField[ResponseLinterProtocol]):
     description = """\
 The `Deprecation` header field allows a server to communicate to a client that the resource is or
 will be deprecated."""
-    reference = "https://www.rfc-editor.org/rfc/rfc9651.html"
+    reference = "https://www.rfc-editor.org/rfc/rfc9745.html"
     deprecated = False
     sf_type = "item"
     value: SFItemType
@@ -34,10 +34,7 @@ will be deprecated."""
                 else:
                     add_note(DEPRECATION_PAST, date=item.isoformat())
         elif isinstance(item, bool):
-            if item is True:
-                add_note(DEPRECATION_TRUE)
-            else:
-                add_note(DEPRECATION_BAD_TYPE, item_type="Boolean False")
+            add_note(DEPRECATION_BAD_TYPE, item_type="Boolean")
         else:
             add_note(DEPRECATION_BAD_TYPE, item_type=type(item).__name__)
 
@@ -58,21 +55,13 @@ class DEPRECATION_FUTURE(Note):
 The `Deprecation` header indicates that this resource will be deprecated on %(date)s."""
 
 
-class DEPRECATION_TRUE(Note):
-    category = categories.GENERAL
-    level = levels.WARN
-    _summary = "The resource is deprecated."
-    _text = """\
-The `Deprecation` header indicates that this resource is deprecated."""
-
-
 class DEPRECATION_BAD_TYPE(Note):
     category = categories.GENERAL
     level = levels.BAD
     _summary = "The Deprecation header value is invalid."
     _text = """\
 The `Deprecation` [Structured Field](https://www.rfc-editor.org/rfc/rfc8941.html)
-header must be a Date or a Boolean. Found: %(item_type)s."""
+header must be a Date. Found: %(item_type)s."""
 
 
 class DeprecationDateTest(FieldTest[ResponseLinterProtocol]):
@@ -89,7 +78,7 @@ class DeprecationBoolTest(FieldTest[ResponseLinterProtocol]):
     name = "Deprecation"
     inputs = [b"?1"]
     expected_out: Any = (True, {})
-    expected_notes: NoteClassListType = [DEPRECATION_TRUE]
+    expected_notes: NoteClassListType = [DEPRECATION_BAD_TYPE]
 
 
 class DeprecationFalseTest(FieldTest[ResponseLinterProtocol]):
