@@ -155,7 +155,9 @@ class EmptyCodeSpanTest(unittest.TestCase):
             for param in ("detail", "key", "fwd", "foo"):
                 with self.subTest(target=target, param=param):
                     value = f'{target}; {param}="{HTML}"'
-                    self.check_escaped(detail_text(b"Cache-Status", value.encode("ascii")))
+                    detail = detail_text(b"Cache-Status", value.encode("ascii"))
+                    self.check_escaped(detail)
+                    self.assertNotIn("``", detail)
 
     def test_cache_status_empty_target_among_others(self) -> None:
         value = f'a; detail="x", ""; detail="{HTML}", b; detail="{HTML}"'
@@ -176,6 +178,7 @@ class EmptyCodeSpanTest(unittest.TestCase):
             with self.subTest(directive=directive):
                 value = f"{directive}=, foo={HTML}"
                 detail = detail_text(b"Cache-Control", value.encode("ascii"))
+                self.check_escaped(detail)
                 self.assertNotIn("``", detail)
                 self.assertIn("<code>(empty)</code> was found", detail)
 

@@ -160,6 +160,8 @@ ignoring it there."""
                     expected_type = (
                         "non-negative integer" if is_delta else KNOWN_CC[directive_name][3]
                     )
+                    # Only delta-seconds directives get here: _field_names (no-cache=, private=)
+                    # accepts an empty value without raising.
                     if directive_val:
                         shown_value: Union[str, MarkdownSafe, None] = directive_val
                     else:
