@@ -6,12 +6,14 @@ attached to the header that has them.
 import time
 import unittest
 from functools import partial
-from typing import List, Tuple
+from typing import Iterable, List, Tuple
 
 from httplint.field import BAD_SYNTAX_DETAILED
 from httplint.field.parsers.content_security_policy import (
     CONTENT_SECURITY_POLICY,
+    CSP_HTTP_URI,
     CSP_REPORT_TO_MISSING,
+    FETCH_DIRECTIVES,
 )
 from httplint.field.tests import FakeResponseLinter
 from httplint.note import Note
@@ -110,6 +112,43 @@ class CSPSyntaxPositionTest(unittest.TestCase):
             self.problem(b"script-src 'self'; \x80"),
             "The invalid character ' ' was found at position 19.",
         )
+
+
+def http_uri_lists(message: FakeResponseLinter) -> List[str]:
+    found: List[str] = []
+
+    def walk(notes: Iterable[Note]) -> None:
+        for note in notes:
+            if isinstance(note, CSP_HTTP_URI):
+                found.append(str(note.vars["directives_list"]))
+            walk(note.subnotes)
+
+    walk(message.notes)
+    return found
+
+
+class CSPHttpUriDirectivesTest(unittest.TestCase):
+    """CSP_HTTP_URI applies to fetch directives only."""
+
+    def test_fetch_directives_flagged(self) -> None:
+        for name in sorted(FETCH_DIRECTIVES):
+            for value in (b"http:", b"http://cdn.example.com"):
+                with self.subTest(directive=name, value=value):
+                    message = process([(b"Content-Security-Policy", name.encode() + b" " + value)])
+                    self.assertEqual(http_uri_lists(message), [f"* `{name}`"])
+
+    def test_other_directives_not_flagged(self) -> None:
+        for name in (
+            "frame-ancestors",
+            "form-action",
+            "base-uri",
+            "navigate-to",
+            "report-uri",
+            "report-to",
+        ):
+            with self.subTest(directive=name):
+                message = process([(b"Content-Security-Policy", name.encode() + b" http://x.example")])
+                self.assertEqual(http_uri_lists(message), [])
 
 
 if __name__ == "__main__":

@@ -29,14 +29,25 @@ TRAILING_WS = r"(?: [ \t]+ (?= [^ \t;] ) )?"
 
 csp_directive = rf"(?: {DIRECTIVE_NAME} (?: {rfc9110.RWS} {DIRECTIVE_VALUE} )? {TRAILING_WS} )"  # pylint: disable=invalid-name
 
-# Directives whose value is not a source list, so source-list checks do not apply.
-NON_SOURCE_LIST_DIRECTIVES = {
-    "report-uri",
-    "report-to",
-    "sandbox",
-    "plugin-types",
-    "require-trusted-types-for",
-    "trusted-types",
+# Fetch directives (CSP3 section 6.1); only these load content, so only they get the http: check.
+FETCH_DIRECTIVES = {
+    "default-src",
+    "script-src",
+    "script-src-elem",
+    "script-src-attr",
+    "style-src",
+    "style-src-elem",
+    "style-src-attr",
+    "img-src",
+    "font-src",
+    "connect-src",
+    "media-src",
+    "object-src",
+    "frame-src",
+    "child-src",
+    "worker-src",
+    "manifest-src",
+    "prefetch-src",
 }
 
 
@@ -126,9 +137,7 @@ sources of content that browsers are allowed to load on a page."""
                     unsafe_inline_directives.append(name)
                 if "'unsafe-eval'" in tokens:
                     unsafe_eval_directives.append(name)
-                if name not in NON_SOURCE_LIST_DIRECTIVES and any(
-                    token.startswith("http:") for token in tokens
-                ):
+                if name in FETCH_DIRECTIVES and any(token.startswith("http:") for token in tokens):
                     http_uri_directives.append(name)
 
         if deprecated_report_uri:
@@ -390,6 +399,36 @@ class CSPHttpHostSourceTest(FieldTest[ResponseLinterProtocol]):
     inputs = [b"script-src HTTP://cdn.example.com"]
     expected_out = [{"script-src": "HTTP://cdn.example.com"}]
     expected_notes: NoteClassListType = [CONTENT_SECURITY_POLICY, CSP_HTTP_URI]
+
+
+class CSPHttpImgSrcTest(FieldTest[ResponseLinterProtocol]):
+    name = "Content-Security-Policy"
+    inputs = [b"img-src http://img.example.com; connect-src http:; default-src http:"]
+    expected_out = [
+        {
+            "img-src": "http://img.example.com",
+            "connect-src": "http:",
+            "default-src": "http:",
+        }
+    ]
+    expected_notes: NoteClassListType = [CONTENT_SECURITY_POLICY, CSP_HTTP_URI]
+
+
+class CSPHttpNonFetchDirectivesTest(FieldTest[ResponseLinterProtocol]):
+    name = "Content-Security-Policy"
+    inputs = [
+        b"frame-ancestors http://x.example.com; form-action http://x.example.com; "
+        b"base-uri http:; navigate-to http://x.example.com"
+    ]
+    expected_out = [
+        {
+            "frame-ancestors": "http://x.example.com",
+            "form-action": "http://x.example.com",
+            "base-uri": "http:",
+            "navigate-to": "http://x.example.com",
+        }
+    ]
+    expected_notes: NoteClassListType = [CONTENT_SECURITY_POLICY]
 
 
 class CSPHttpsHostSourceTest(FieldTest[ResponseLinterProtocol]):
