@@ -194,7 +194,13 @@ the value shouldn't be remembered, raise `ValueError`.
 
 When using `HttpListField`, _parse_ will be called for each _item_ in the list, after separating on commas (excepting those inside quoted strings). In the example above, if `Bar` were a `HttpListField`, _parse_ would be called three times for `Bar` (with the `field_value`s _1_, _2_, and _3_), but still only once for `Baz`.
 
-Note that `syntax` is checked against each item before _parse_ is called in a `HttpListField`.
+Note that `syntax` is checked against each item (or each field line, for `SingletonField` and `BrokenField`) after _parse_ is called, so that _parse_ can suppress the syntax note (see below).
+
+Three class attributes and one method control the syntax check:
+
+- `report_syntax` (default `True`): if `False`, a value that doesn't match `syntax` adds no syntax note at all (neither `BAD_SYNTAX` nor `BAD_SYNTAX_DETAILED`). Use it when _parse_ reports every syntax problem itself.
+- `max_syntax_length` (default `None`): if set, values longer than this many characters (per list item or field line) aren't checked against `syntax`, and no note says so. _parse_ is still called on them.
+- `suppress_syntax_note()`: call it from _parse_ when it has reported a value's syntax defect with a more specific note, so the value doesn't also get a generic `BAD_SYNTAX` or `BAD_SYNTAX_DETAILED`. It applies to the whole value being parsed (the list item, field line or singleton value), not to one defect in it, so don't call it if the value could have other syntax problems that the specific note doesn't cover. It does nothing when called from _evaluate_ or _post_check_, because the check has already run by then. If _parse_ is called directly (e.g., from a test or an overridden `handle_input`), the call leaves a flag set on the instance until the next value is processed through the normal path.
 
 
 #### The _evaluate_ method
