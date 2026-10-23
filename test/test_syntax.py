@@ -11,13 +11,14 @@ from httplint.field import BAD_SYNTAX, BAD_SYNTAX_DETAILED, HttpField
 from httplint.field.broken_field import BrokenField
 from httplint.field.list_field import HttpListField
 from httplint.field.parsers.link import LINK_BAD_TARGET_URI
-from httplint.field.parsers.location import LOCATION_BAD_URI
+from httplint.field.parsers.location import LOCATION_BAD_URI, LOCATION_NOT_ABSOLUTE
 from httplint.field.parsers.referer import REFERER_BAD_URI
 from httplint.field.singleton_field import SingletonField
 from httplint.field.tests import FakeResponseLinter
-from httplint.note import Note, categories
+from httplint.note import Note, categories, levels
 from httplint.syntax import rfc9110, rfc9112
 from httplint.types import AddNoteMethodType, ResponseLinterProtocol
+from httplint.util import invalid_char_problem
 
 
 def check_regex() -> None:
@@ -229,14 +230,45 @@ class FieldSyntaxCheckTest(unittest.TestCase):
                 self.assertEqual(self.classes(self.lint(field_class, " aaa ")), [])
 
     def test_note_vars(self) -> None:
-        "The note's category and the quoted character come from the field, and are made safe."
-
-        class Categorised(self.SingletonF):  # type: ignore[name-defined]
-            category = categories.CACHING
-
-        notes = self.lint(Categorised, "a`")
-        self.assertEqual(notes[0].category, Categorised.category)
+        "A character that can't be quoted is named by code point."
+        notes = self.lint(self.SingletonF, "a`")
+        self.assertIn("U+0060", notes[0].vars["problem"])
         self.assertNotIn("`", notes[0].vars["problem"])
+
+    def test_category(self) -> None:
+        "Both notes take the field's category, for every kind of field."
+        for base in (self.SingletonF, self.BrokenF, self.ListF):
+            categorised = type("Categorised", (base,), {"category": categories.CACHING})
+            for value in ("aab", "b"):
+                with self.subTest(base.__bases__[0].__name__, value=value):
+                    notes = self.lint(categorised, value)
+                    self.assertEqual(notes[0].category, categories.CACHING)
+
+    def test_levels(self) -> None:
+        "A partial match is BAD (detailed note), no match is WARN (generic note)."
+        for base in (self.SingletonF, self.BrokenF, self.ListF):
+            with self.subTest(base.__bases__[0].__name__):
+                self.assertEqual(self.lint(base, "aab")[0].level, levels.BAD)
+                self.assertEqual(self.lint(base, "b")[0].level, levels.WARN)
+
+    def test_hook_when_parse_raises(self) -> None:
+        "The check still runs when parse() raises ValueError, unless it suppressed it first."
+
+        def raises(self: HttpField[Any], field_value: str, add_note: AddNoteMethodType) -> str:
+            raise ValueError
+
+        def suppresses_then_raises(
+            self: HttpField[Any], field_value: str, add_note: AddNoteMethodType
+        ) -> str:
+            self.suppress_syntax_note()  # type: ignore[attr-defined]
+            raise ValueError
+
+        for base in (self.SingletonF, self.BrokenF, self.ListF):
+            with self.subTest(base.__bases__[0].__name__):
+                plain = type("Raises", (base,), {"parse": raises})
+                quiet = type("Quiet", (base,), {"parse": suppresses_then_raises})
+                self.assertEqual(self.classes(self.lint(plain, "b")), [BAD_SYNTAX])
+                self.assertEqual(self.lint(quiet, "b"), [])
 
     def test_report_syntax_false(self) -> None:
         for base in (self.SingletonF, self.BrokenF, self.ListF):
@@ -323,9 +355,72 @@ class FieldSyntaxNoteTest(unittest.TestCase):
                 self.assertEqual(found.count(specific), 1, found)
                 self.assertFalse(any(issubclass(n, BAD_SYNTAX) for n in found), found)
 
+    def test_order(self) -> None:
+        "The note parse() adds comes before the syntax note for the same value."
+        found = [
+            n
+            for n in self.notes(b"Location", b"http://example.com/a b")
+            if n in (LOCATION_NOT_ABSOLUTE, BAD_SYNTAX_DETAILED)
+        ]
+        self.assertEqual(found, [LOCATION_NOT_ABSOLUTE, BAD_SYNTAX_DETAILED])
+
+    def test_hook_suppresses_whole_value(self) -> None:
+        "Pins the per-value scope: the stray '>' in this Link isn't reported separately."
+        found = self.notes(b"Link", b"<http://[::1]>>; rel=dns-prefetch")
+        self.assertIn(LINK_BAD_TARGET_URI, found)
+        self.assertFalse(any(issubclass(n, BAD_SYNTAX) for n in found), found)
+
+    def problems(self, name: bytes, value: bytes, response: bool = True) -> List[str]:
+        linter = HttpResponseLinter() if response else HttpRequestLinter()
+        if response:
+            linter.process_response_topline(b"HTTP/1.1", b"200", b"OK")
+        else:
+            linter.process_request_topline(b"GET", b"/", b"HTTP/1.1")
+        linter.process_headers([(name, value)])
+        linter.finish_content(True)
+        return [
+            str(n.vars["problem"]) for n in linter.notes if issubclass(n.__class__, BAD_SYNTAX_DETAILED)
+        ]
+
+    def test_unquotable_character_is_named(self) -> None:
+        for name, value, response, expected in [
+            (b"Accept-Language", b"a`b", False, "U+0060"),
+            (b"Cache-Control", b"a\x00b", True, "U+0000"),
+            (b"Allow", b"a\x00b", True, "U+0000"),
+            (b"Connection", b"a\x00b", True, "U+0000"),
+            (b"WWW-Authenticate", b"Basic `", True, "U+0060"),
+        ]:
+            with self.subTest(name=name, value=value):
+                problems = self.problems(name, value, response)
+                self.assertTrue(problems)
+                for problem in problems:
+                    self.assertIn(expected, problem)
+                    self.assertNotIn("''", problem)
+
     def test_link_hook_is_per_element(self) -> None:
         found = self.notes(b"Link", b"<http://[::1>; rel=preload, </a b>")
         self.assertEqual(sum(1 for n in found if n is BAD_SYNTAX), 1, found)
+
+
+class InvalidCharProblemTest(unittest.TestCase):
+    def test_quoted(self) -> None:
+        self.assertEqual(
+            invalid_char_problem("ab c", 2), "The invalid character ' ' was found at position 3."
+        )
+        self.assertEqual(
+            invalid_char_problem("a\x80", 1), "The invalid character '\x80' was found at position 2."
+        )
+
+    def test_named(self) -> None:
+        for char, name in [("`", "U+0060"), ("\x00", "U+0000"), ("\n", "U+000A"), ("\u2028", "U+2028")]:
+            with self.subTest(name):
+                problem = invalid_char_problem(f"a{char}b", 1)
+                self.assertEqual(problem, f"The invalid character {name} was found at position 2.")
+
+    def test_end_of_value(self) -> None:
+        self.assertEqual(
+            invalid_char_problem("ab", 2), "The value ended unexpectedly at position 3."
+        )
 
 
 def run_regex_check() -> None:

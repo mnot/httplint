@@ -1,4 +1,4 @@
-from httplint.field import BAD_SYNTAX
+from httplint.field import BAD_SYNTAX_DETAILED
 from httplint.field.singleton_field import SingletonField
 from httplint.field.tests import FieldTest
 from httplint.field.utils import is_secure, resolve_url
@@ -115,7 +115,7 @@ class RefererColonSegmentTest(FieldTest[RequestLinterProtocol]):
     name = "Referer"
     inputs = [b"1:2"]
     expected_out = "1:2"
-    expected_notes: NoteClassListType = [BAD_SYNTAX]
+    expected_notes: NoteClassListType = [BAD_SYNTAX_DETAILED]
 
 
 class RefererBadURITest(FieldTest[RequestLinterProtocol]):
@@ -129,12 +129,12 @@ class RefererBadURITest(FieldTest[RequestLinterProtocol]):
 
 
 class RefererBadSyntaxTest(FieldTest[RequestLinterProtocol]):
-    "A syntax error that isn't an unresolvable URI is still BAD_SYNTAX."
+    "A syntax error that isn't an unresolvable URI is still BAD_SYNTAX_DETAILED."
 
     name = "Referer"
     inputs = [b"http://example.com/a b"]
     expected_out = "http://example.com/a b"
-    expected_notes: NoteClassListType = [BAD_SYNTAX]
+    expected_notes: NoteClassListType = [BAD_SYNTAX_DETAILED]
 
     def set_request_context(self, message: RequestLinterProtocol) -> None:
         message.uri = "http://example.com/"

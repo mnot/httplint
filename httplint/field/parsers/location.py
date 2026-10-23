@@ -1,6 +1,6 @@
 import re
 
-from httplint.field import BAD_SYNTAX
+from httplint.field import BAD_SYNTAX_DETAILED
 from httplint.field.singleton_field import SingletonField
 from httplint.field.tests import FieldTest
 from httplint.field.utils import resolve_url
@@ -114,12 +114,12 @@ class LocationRelativeTest(FieldTest[ResponseLinterProtocol]):
 
 
 class LocationBadSyntaxTest(FieldTest[ResponseLinterProtocol]):
-    "A syntax error that isn't an unresolvable URI is still BAD_SYNTAX."
+    "A syntax error that isn't an unresolvable URI is still BAD_SYNTAX_DETAILED."
 
     name = "Location"
     inputs = [b"http://example.com/a b"]
     expected_out = "http://example.com/a b"
-    expected_notes: NoteClassListType = [BAD_SYNTAX, LOCATION_NOT_ABSOLUTE]
+    expected_notes: NoteClassListType = [BAD_SYNTAX_DETAILED, LOCATION_NOT_ABSOLUTE]
 
     def set_response_context(self, message: ResponseLinterProtocol) -> None:
         message.status_code = 302
