@@ -20,8 +20,9 @@ SPEC_URL = "http://httpwg.org/specs/rfc8288"
 
 #
 # The first BWS is inside the optional group: outside it, "a ;a ;a" is ambiguous against the
-# "OWS ;" in link-value, and backtracking is exponential on non-matching input. The accepted
-# language is the same.
+# "OWS ;" in link-value, and backtracking is exponential on non-matching input. link-value
+# accepts the same language either way, because its "OWS ;" covers the trailing BWS; this
+# rule on its own no longer matches a token followed by BWS ("a ").
 
 link_param = rf"(?: {token} (?: {BWS} = {BWS} (?: {token} | {quoted_string} ) )? )"
 

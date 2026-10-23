@@ -17,7 +17,6 @@ from httplint.note import Note, categories, levels
 from httplint.syntax import rfc9110
 from httplint.types import AddNoteMethodType, NoteClassListType, RequestLinterProtocol
 
-
 # A date is any value that starts with a day name, in any case: the case is for
 # parse_http_date to report, not for this dispatch to decide.
 _DATE_START_RE = re.compile(r"mon|tue|wed|thu|fri|sat|sun", re.IGNORECASE)

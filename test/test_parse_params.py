@@ -112,9 +112,7 @@ class ParseParamsTest(unittest.TestCase):
 
     def test_bws_with_repeats_and_star(self):
         self.assertEqual(parse("a = 1; A =2", bws=True), ({"a": "1"}, [(PARAM_REPEATS, "a")]))
-        self.assertEqual(
-            parse("x* = UTF-8''a%20b", bws=True, nostar=["y"]), ({"x*": "a b"}, [])
-        )
+        self.assertEqual(parse("x* = UTF-8''a%20b", bws=True, nostar=["y"]), ({"x*": "a b"}, []))
         self.assertEqual(
             parse("x* = UTF-8''a", bws=True, nostar=["x"]), ({}, [(PARAM_STAR_BAD, "x")])
         )

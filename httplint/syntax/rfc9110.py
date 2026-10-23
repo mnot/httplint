@@ -7,12 +7,13 @@ Regex for RFC9110
 from typing import Optional
 
 from .rfc3986 import (
+    IP_literal,
     URI_reference,
     absolute_URI,
     authority,
 )
 from .rfc3986 import host as uri_host
-from .rfc3986 import IP_literal, path_abempty, port, query, relative_part, segment
+from .rfc3986 import path_abempty, port, query, relative_part, segment
 from .rfc5234 import (
     ALPHA,
     DIGIT,

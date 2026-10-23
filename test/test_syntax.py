@@ -165,7 +165,9 @@ class SyntaxBacktrackingTest(unittest.TestCase):
         self.check_rule("field-value tabs", rfc9110.field_value, "a \t" * 2000 + "\x01")
         self.check_rule("chunk-ext", rfc9112.chunk_ext, "; a " * 2000 + "\x80")
         self.check_rule("ext-value", rfc5987.ext_value, "UTF-8''" + "a" * 15000 + "\x80")
-        self.check_rule("ext-value language", rfc5987.ext_value, "UTF-8'" + "en-abcde" * 1500 + "'\x80")
+        self.check_rule(
+            "ext-value language", rfc5987.ext_value, "UTF-8'" + "en-abcde" * 1500 + "'\x80"
+        )
 
     def test_language_tag(self) -> None:
         "Guard: these rules were dead before the alphanum fix, so main is fast on them too."
@@ -526,7 +528,9 @@ class SyntaxTranslationTest(unittest.TestCase):
             "Empty, or SP, HTAB and field-vchar that starts and ends with a field-vchar."
             if not value:
                 return True
-            return vchar(value[0]) and vchar(value[-1]) and all(vchar(c) or c in " \t" for c in value)
+            return (
+                vchar(value[0]) and vchar(value[-1]) and all(vchar(c) or c in " \t" for c in value)
+            )
 
         sp_htab = rf"(?: {rfc9110.SP} | {rfc9110.HTAB} )"
         old_content = rf"(?: {rfc9110.field_vchar} (?: {sp_htab}+ {rfc9110.field_vchar} )? )"
@@ -716,7 +720,13 @@ class SyntaxChallengeTest(unittest.TestCase):
             ]:
                 with self.subTest(rule=rule[:30], value=value):
                     self.assertTrue(fullmatch(rule, value))
-            for value in ["Basic realm=x charset=y", "Basic , realm", "Basic,realm=x", "", " , a=b"]:
+            for value in [
+                "Basic realm=x charset=y",
+                "Basic , realm",
+                "Basic,realm=x",
+                "",
+                " , a=b",
+            ]:
                 with self.subTest(rule=rule[:30], value=value):
                     self.assertFalse(fullmatch(rule, value))
         self.assertTrue(matches(rfc9110.WWW_Authenticate, "Basic , realm=x, Digest a=b"))

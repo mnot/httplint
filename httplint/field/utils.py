@@ -751,10 +751,9 @@ def parse_entity_tag(value: str, add_note: AddNoteMethodType) -> Tuple[bool, str
     Parse an entity-tag into (weak, opaque-tag), with the opaque tag unquoted.
 
     The ``W/`` prefix is case-sensitive (RFC 9110, Section 8.8.3). A lower-case ``w/``
-    raises ValueError, with ENTITY_TAG_WEAK_CASE unless the value is bad in some other way
-    (which the field's syntax check reports). Quoting isn't checked here either.
-
-    The field's syntax check also rejects a lower-case ``w/``, so it is reported as well.
+    raises ValueError. The field's syntax check reports the value as invalid, since it isn't
+    an entity-tag; this adds ENTITY_TAG_WEAK_CASE to say why, if the value would be valid
+    with a capital W. Quoting isn't checked here.
     """
     if value[:2] == "W/":
         return (True, unquote_string(value[2:]))

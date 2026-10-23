@@ -73,8 +73,9 @@ trailer_part = rf"(?: {header_field} {CRLF} )*"
 
 #
 # Not usable as a regular expression: chunk-data is length-prefixed, so "1*OCTET CRLF" can end
-# at any CRLF and matching a chunked body backtracks exponentially. The "chunk" below is
-# therefore left as the literal text, not {chunk}, which keeps this from being a footgun.
+# at any CRLF and matching a chunked body backtracks exponentially. The "chunk" below is the
+# literal text where {chunk} belongs, so this rule is wrong: it matches "chunkchunk0\r\n\r\n"
+# and rejects a real chunked body. It is left as it is because no field uses it.
 
 chunked_body = rf"(?: (?: chunk )* {last_chunk} {trailer_part} {CRLF} )"
 
