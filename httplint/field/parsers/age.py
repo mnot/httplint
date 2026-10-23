@@ -1,6 +1,6 @@
 from httplint.field.singleton_field import SINGLE_HEADER_REPEAT, SingletonField
 from httplint.field.tests import FieldTest
-from httplint.field.utils import parse_delta_seconds
+from httplint.field.utils import is_negative_integer, parse_delta_seconds
 from httplint.note import Note, categories, levels
 from httplint.syntax import rfc9111
 from httplint.types import (
@@ -23,7 +23,7 @@ The `Age` response header conveys the sender's estimate of the amount of time si
     deprecated = False
 
     def parse(self, field_value: str, add_note: AddNoteMethodType) -> int:
-        if field_value.startswith("-") and field_value[1:].isascii() and field_value[1:].isdigit():
+        if is_negative_integer(field_value):
             add_note(AGE_NEGATIVE)
             raise ValueError
         # Generous digit bound: oversized values still get AGE_LARGE, not AGE_NOT_INT.
@@ -122,5 +122,19 @@ class NegativeZeroAgeTest(FieldTest[ResponseLinterProtocol]):
 class HugeAgeTest(FieldTest[ResponseLinterProtocol]):
     name = "Age"
     inputs = [b"9" * 5000]
+    expected_out = None
+    expected_notes: NoteClassListType = [AGE_NOT_INT]
+
+
+class MaxDigitsAgeTest(FieldTest[ResponseLinterProtocol]):
+    name = "Age"
+    inputs = [b"9" * 4000]
+    expected_out = int("9" * 4000)
+    expected_notes: NoteClassListType = [AGE_LARGE]
+
+
+class OverMaxDigitsAgeTest(FieldTest[ResponseLinterProtocol]):
+    name = "Age"
+    inputs = [b"9" * 4001]
     expected_out = None
     expected_notes: NoteClassListType = [AGE_NOT_INT]

@@ -171,3 +171,17 @@ class ContentLengthHugeTest(FieldTest[AnyMessageLinterProtocol]):
     inputs = [b"9" * 5000]
     expected_out = None
     expected_notes: NoteClassListType = [CL_BAD_SYNTAX]
+
+
+class ContentLengthMaxDigitsTest(FieldTest[AnyMessageLinterProtocol]):
+    name = "Content-Length"
+    inputs = [b"9" * 4000]
+    expected_out = int("9" * 4000)
+    expected_notes: NoteClassListType = [CL_TOO_LARGE]
+
+
+class ContentLengthOverMaxDigitsTest(FieldTest[AnyMessageLinterProtocol]):
+    name = "Content-Length"
+    inputs = [b"9" * 4001]
+    expected_out = None
+    expected_notes: NoteClassListType = [CL_BAD_SYNTAX]

@@ -1,7 +1,7 @@
 from httplint.field.cors import CORS_PREFLIGHT_ONLY
 from httplint.field.singleton_field import SingletonField
 from httplint.field.tests import FieldTest
-from httplint.field.utils import parse_delta_seconds
+from httplint.field.utils import is_negative_integer, parse_delta_seconds
 from httplint.note import Note, categories, levels
 from httplint.syntax import rfc9110
 from httplint.types import (
@@ -24,7 +24,7 @@ request (as scoped by the `Access-Control-Allow-Methods` and
     deprecated = False
 
     def parse(self, field_value: str, add_note: AddNoteMethodType) -> int:
-        if field_value.startswith("-") and field_value[1:].isascii() and field_value[1:].isdigit():
+        if is_negative_integer(field_value):
             add_note(CORS_MAX_AGE_NEGATIVE, ref_uri=self.reference)
             raise ValueError
         val = parse_delta_seconds(
@@ -98,5 +98,19 @@ class AccessControlMaxAgeNegativeZeroTest(FieldTest[ResponseLinterProtocol]):
 class AccessControlMaxAgeHugeTest(FieldTest[ResponseLinterProtocol]):
     name = "Access-Control-Max-Age"
     inputs = [b"9" * 5000]
+    expected_out = None
+    expected_notes: NoteClassListType = [CORS_MAX_AGE_INVALID, CORS_PREFLIGHT_ONLY]
+
+
+class AccessControlMaxAgeMaxDigitsTest(FieldTest[ResponseLinterProtocol]):
+    name = "Access-Control-Max-Age"
+    inputs = [b"9" * 20]
+    expected_out = int("9" * 20)
+    expected_notes: NoteClassListType = [CORS_PREFLIGHT_ONLY]
+
+
+class AccessControlMaxAgeOverMaxDigitsTest(FieldTest[ResponseLinterProtocol]):
+    name = "Access-Control-Max-Age"
+    inputs = [b"9" * 21]
     expected_out = None
     expected_notes: NoteClassListType = [CORS_MAX_AGE_INVALID, CORS_PREFLIGHT_ONLY]

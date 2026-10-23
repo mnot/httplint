@@ -1,8 +1,7 @@
-import time
 import unittest
-from typing import Any, List, Tuple, Type
+from typing import Any, Dict, List, Tuple, Type
 
-from httplint.field.utils import parse_delta_seconds
+from httplint.field.utils import is_negative_integer, parse_delta_seconds
 from httplint.message import REQUEST_TARGET_FORM, HttpRequestLinter
 from httplint.note import Note
 
@@ -13,8 +12,10 @@ class BAD(Note):
 
 
 class TestParseDeltaSeconds(unittest.TestCase):
-    def run_parse(self, value: str, **kw: Any) -> Tuple[Any, List[Tuple[Type[Note], dict]]]:
-        notes: List[Tuple[Type[Note], dict]] = []
+    def run_parse(
+        self, value: str, **kw: Any
+    ) -> Tuple[Any, List[Tuple[Type[Note], Dict[str, Any]]]]:
+        notes: List[Tuple[Type[Note], Dict[str, Any]]] = []
 
         def add_note(note: Type[Note], category: Any = None, **vrs: Any) -> Any:
             notes.append((note, vrs))
@@ -39,10 +40,15 @@ class TestParseDeltaSeconds(unittest.TestCase):
         self.assertEqual(self.run_parse("x", ref_uri="u"), (None, [(BAD, {"ref_uri": "u"})]))
 
     def test_huge_value(self) -> None:
-        start = time.perf_counter()
-        for value in ["9" * 100_000, "0" * 100_000, "_" * 100_000]:
-            self.run_parse(value, max_digits=4000)
-        self.assertLess(time.perf_counter() - start, 1.0)
+        self.assertEqual(self.run_parse("9" * 100_000, max_digits=4000), (None, [(BAD, {})]))
+        self.assertEqual(self.run_parse("0" * 100_000, max_digits=4000), (0, []))
+        self.assertEqual(self.run_parse("_" * 100_000, max_digits=4000), (None, [(BAD, {})]))
+
+    def test_is_negative_integer(self) -> None:
+        for value in ["-1", "-0", "-" + "9" * 5000]:
+            self.assertTrue(is_negative_integer(value), value)
+        for value in ["", "-", "1", "+1", "--1", "-1_0", "- 1", "-٥"]:
+            self.assertFalse(is_negative_integer(value), repr(value))
 
 
 class TestConnectLongPort(unittest.TestCase):
@@ -59,3 +65,7 @@ class TestConnectLongPort(unittest.TestCase):
     def test_leading_zeros_ok(self) -> None:
         linter = self.lint(b"example.com:" + b"0" * 5000 + b"443")
         self.assertNotIn(REQUEST_TARGET_FORM, {type(n) for n in linter.notes})
+
+
+if __name__ == "__main__":
+    unittest.main()

@@ -614,3 +614,9 @@ def parse_delta_seconds(
             return int(digits)
     add_note(bad_note, **note_vars)
     return None
+
+
+def is_negative_integer(value: str) -> bool:
+    "True if `value` is '-' followed by ASCII DIGIT+; for choosing a more specific note."
+    magnitude = value[1:]
+    return value.startswith("-") and magnitude.isascii() and magnitude.isdigit()
