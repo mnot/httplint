@@ -1195,6 +1195,37 @@ class FieldSyntaxNoteTest(unittest.TestCase):
                 self.assertEqual(found.count(specific), 1, found)
                 self.assertFalse(any(issubclass(n, BAD_SYNTAX) for n in found), found)
 
+    def test_transfer_encoding_error_position(self) -> None:
+        """
+        The syntax note points at the first character that can't be part of a match. The RFC 7230
+        transfer-coding matched the bare name of a registered coding first, so for `gzip;a=b x` it
+        pointed at the valid ";" (position 5) instead of the stray " " (position 9).
+        """
+        for value, position, char in [
+            (b"gzip;a=b x", 9, " "),
+            (b"chunked; foo=bar \x01", 17, " "),
+            (b"gzip, chunked;a=b;", 12, ";"),
+            (b"gzip;a=b;c", 9, ";"),
+            (b"gzip;a=b", None, None),
+        ]:
+            with self.subTest(value=value):
+                linter = HttpResponseLinter()
+                linter.process_response_topline(b"HTTP/1.1", b"200", b"OK")
+                linter.process_headers([(b"Transfer-Encoding", value)])
+                linter.finish_content(True)
+                problems = [
+                    str(n.vars["problem"])
+                    for n in linter.notes
+                    if isinstance(n, BAD_SYNTAX_DETAILED)
+                ]
+                if position is None:
+                    self.assertEqual(problems, [])
+                else:
+                    self.assertEqual(
+                        problems,
+                        [f"The invalid character {char!r} was found at position {position}."],
+                    )
+
     def test_order(self) -> None:
         "The note parse() adds comes before the syntax note for the same value."
         found = [
