@@ -40,7 +40,9 @@ The `Proxy-Status` header field indicates how intermediaries have handled the re
                 PROXY_STATUS_UNKNOWN_PARAM,
                 PROXY_STATUS_BAD_PARAM_VAL,
             )
-            status_list.append(f"**`{target_str}`**:\n{param_str}")
+            # An empty code span would swallow the next span's delimiters.
+            label = f"**`{target_str}`**" if target_str else "**(empty)**"
+            status_list.append(f"{label}:\n{param_str}")
 
         if status_list:
             add_note(PROXY_STATUS, status=MarkdownSafe("\n\n".join(status_list)))
