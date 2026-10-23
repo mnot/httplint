@@ -7,6 +7,12 @@ from httplint.field.parsers.reporting_endpoints import (
     endpoint_problem,
 )
 from httplint.field.tests import FieldTest
+from httplint.field.utils import (
+    is_integer,
+    is_number,
+    known_reporting_endpoints,
+    report_to_groups,
+)
 from httplint.note import MarkdownSafe, Note, categories, levels
 from httplint.types import (
     AddNoteMethodType,
@@ -67,8 +73,15 @@ It allows websites to declare that they want to receive reports about network er
             if "max_age" not in policy:
                 add_note(NEL_MISSING_KEY, key="max_age")
                 clean = False
-            elif not isinstance(policy["max_age"], int):
+            elif not is_integer(policy["max_age"]):
                 add_note(NEL_BAD_TYPE, key="max_age", expected="integer")
+                clean = False
+            elif policy["max_age"] < 0:
+                add_note(
+                    NEL_BAD_VALUE,
+                    key="max_age",
+                    details="it must not be negative",
+                )
                 clean = False
 
             # optional members
@@ -79,7 +92,7 @@ It allows websites to declare that they want to receive reports about network er
                 clean = False
 
             if "success_fraction" in policy:
-                if not isinstance(policy["success_fraction"], (int, float)):
+                if not is_number(policy["success_fraction"]):
                     add_note(NEL_BAD_TYPE, key="success_fraction", expected="number")
                     clean = False
                 elif not 0.0 <= policy["success_fraction"] <= 1.0:
@@ -91,7 +104,7 @@ It allows websites to declare that they want to receive reports about network er
                     clean = False
 
             if "failure_fraction" in policy:
-                if not isinstance(policy["failure_fraction"], (int, float)):
+                if not is_number(policy["failure_fraction"]):
                     add_note(NEL_BAD_TYPE, key="failure_fraction", expected="number")
                     clean = False
                 elif not 0.0 <= policy["failure_fraction"] <= 1.0:
@@ -108,16 +121,14 @@ It allows websites to declare that they want to receive reports about network er
         if not self.value:
             return
 
+        # Browsers that implement NEL take its endpoints from Report-To groups.
+        known_endpoints = known_reporting_endpoints(self.message, include_report_to=True)
         reporting_endpoints_field = self.message.headers.parsed.get("reporting-endpoints")
-        reporting_endpoints = (
-            list(reporting_endpoints_field.keys()) if reporting_endpoints_field else []
-        )
-        known_endpoints = set(reporting_endpoints)
-        valid_endpoints = (
-            _valid_reporting_endpoints(reporting_endpoints_field, self.message.base_uri)
-            if reporting_endpoints_field
-            else set()
-        )
+        valid_endpoints = report_to_groups(self.message)
+        if reporting_endpoints_field:
+            valid_endpoints |= _valid_reporting_endpoints(
+                reporting_endpoints_field, self.message.base_uri
+            )
 
         resolved_endpoints = []
         for idx, policy in enumerate(self.value):
@@ -193,7 +204,7 @@ class NEL_REPORT_TO_MISSING(Note):
     _text = """\
 The `report_to` member in the [Network Error Logging](https://w3c.github.io/network-error-logging/)
 policy specifies a reporting endpoint, but no matching endpoint refers to it in the
-`Reporting-Endpoints` header."""
+`Reporting-Endpoints` header or a group in the `Report-To` header."""
 
 
 class NelTest(FieldTest[ResponseLinterProtocol]):
@@ -299,3 +310,73 @@ class NelReportToBadURLTest(FieldTest[ResponseLinterProtocol]):
 
     def set_response_context(self, message: ResponseLinterProtocol) -> None:
         message.headers.process([(b"Reporting-Endpoints", b'group1="http://["')])
+
+
+# Report-To is injected as parsed: FieldTest processes the headers twice, which JsonField
+# doesn't tolerate. test/test_nel_report_to.py covers the real header.
+
+
+class NelReportToGroupTest(FieldTest[ResponseLinterProtocol]):
+    name = "NEL"
+    inputs = [b'{"report_to": "g", "max_age": 1}']
+    expected_out = [{"report_to": "g", "max_age": 1}]
+    expected_notes: NoteClassListType = [NEL_CONFIGURED]
+
+    def set_response_context(self, message: ResponseLinterProtocol) -> None:
+        message.headers.parsed["report-to"] = [
+            {"group": "g", "max_age": 10, "endpoints": [{"url": "https://example.com/r"}]}
+        ]
+
+
+class NelReportToDefaultGroupTest(FieldTest[ResponseLinterProtocol]):
+    name = "NEL"
+    inputs = [b'{"report_to": "default", "max_age": 1}']
+    expected_out = [{"report_to": "default", "max_age": 1}]
+    expected_notes: NoteClassListType = [NEL_CONFIGURED]
+
+    def set_response_context(self, message: ResponseLinterProtocol) -> None:
+        message.headers.parsed["report-to"] = [
+            {"max_age": 10, "endpoints": [{"url": "https://example.com/r"}]}
+        ]
+
+
+class NelReportToOtherGroupTest(FieldTest[ResponseLinterProtocol]):
+    name = "NEL"
+    inputs = [b'{"report_to": "g", "max_age": 1}']
+    expected_out = [{"report_to": "g", "max_age": 1}]
+    expected_notes: NoteClassListType = [NEL_REPORT_TO_MISSING]
+
+    def set_response_context(self, message: ResponseLinterProtocol) -> None:
+        message.headers.parsed["report-to"] = [
+            {"group": "other", "max_age": 10, "endpoints": [{"url": "https://example.com/r"}]}
+        ]
+
+
+class NelBooleanMaxAgeTest(FieldTest[ResponseLinterProtocol]):
+    name = "NEL"
+    inputs = [b'{"report_to": "g", "max_age": true}']
+    expected_out = [{"report_to": "g", "max_age": True}]
+    expected_notes: NoteClassListType = [NEL_BAD_TYPE]
+
+    def set_response_context(self, message: ResponseLinterProtocol) -> None:
+        message.headers.process([(b"Reporting-Endpoints", b'g="https://example.com/reports"')])
+
+
+class NelNegativeMaxAgeTest(FieldTest[ResponseLinterProtocol]):
+    name = "NEL"
+    inputs = [b'{"report_to": "g", "max_age": -1}']
+    expected_out = [{"report_to": "g", "max_age": -1}]
+    expected_notes: NoteClassListType = [NEL_BAD_VALUE]
+
+    def set_response_context(self, message: ResponseLinterProtocol) -> None:
+        message.headers.process([(b"Reporting-Endpoints", b'g="https://example.com/reports"')])
+
+
+class NelBooleanFractionTest(FieldTest[ResponseLinterProtocol]):
+    name = "NEL"
+    inputs = [b'{"report_to": "g", "max_age": 1, "success_fraction": true}']
+    expected_out = [{"report_to": "g", "max_age": 1, "success_fraction": True}]
+    expected_notes: NoteClassListType = [NEL_BAD_TYPE]
+
+    def set_response_context(self, message: ResponseLinterProtocol) -> None:
+        message.headers.process([(b"Reporting-Endpoints", b'g="https://example.com/reports"')])

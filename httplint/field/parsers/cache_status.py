@@ -144,3 +144,14 @@ class CacheStatusBadParamValTest(FieldTest[ResponseLinterProtocol]):
     inputs = [b"ExampleCache; fwd=invalid"]
     expected_out = [(Token("ExampleCache"), {"fwd": Token("invalid")})]
     expected_notes: NoteClassListType = [CACHE_STATUS_BAD_PARAM_VAL, CACHE_STATUS]
+
+
+class CacheStatusBooleanIntegerTest(FieldTest[ResponseLinterProtocol]):
+    name = "Cache-Status"
+    inputs = [b"ExampleCache; fwd-status=?1; ttl=?1"]
+    expected_out = [(Token("ExampleCache"), {"fwd-status": True, "ttl": True})]
+    expected_notes: NoteClassListType = [
+        CACHE_STATUS_BAD_PARAM_VAL,
+        CACHE_STATUS_BAD_PARAM_VAL,
+        CACHE_STATUS,
+    ]
