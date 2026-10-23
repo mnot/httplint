@@ -111,7 +111,7 @@ class ResponseCacheChecker:
             if (
                 "public" in self.cc_dict
                 or "private" in self.cc_dict
-                or self.expires_value
+                or self.expires_value is not None
                 or "max-age" in self.cc_dict
                 or self._response.status_code in HEURISTIC_CACHEABLE_STATUS
             ):

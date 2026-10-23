@@ -13,6 +13,7 @@ from httplint.content_encoding import ContentEncodingProcessor
 from httplint.content_type import verify_content_type
 from httplint.field.cors import check_preflight_request, check_preflight_response
 from httplint.field.section import FieldSection
+from httplint.field.utils import parse_digits
 from httplint.i18n import L_, translate
 from httplint.note import Note, Notes, categories, levels
 from httplint.status import StatusChecker
@@ -208,6 +209,12 @@ IUSERINFO = (
 )
 
 
+def _port_invalid(port: str) -> bool:
+    "True if the port isn't DIGIT+ with a value of 65535 or less."
+    value = parse_digits(port, max_digits=5)
+    return value is None or value > 65535
+
+
 def _userinfo_valid(iri: str) -> bool:
     "True if the IRI has no userinfo, or userinfo that is valid as it stands."
     userinfo, at, _ = urlsplit(iri).netloc.rpartition("@")
@@ -281,7 +288,7 @@ class HttpRequestLinter(HttpMessageLinter):
         if (
             bad_userinfo
             or not re.fullmatch(pattern, self.uri, re.VERBOSE)
-            or (authority_form and int(self.uri.rpartition(":")[2]) > 65535)
+            or (authority_form and _port_invalid(self.uri.rpartition(":")[2]))
         ):
             if authority_form or target == "*":
                 self.notes.add("uri", REQUEST_TARGET_FORM, method=method)

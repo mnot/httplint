@@ -9,7 +9,6 @@ import unittest
 import xml.etree.ElementTree as ET
 
 from httplint.field import HttpField
-from httplint.field.date_field import HttpDateField
 from httplint.field.finder import HttpFieldFinder
 from httplint.field.section import FieldSection
 from httplint.field.tests import FakeResponseLinter
@@ -55,21 +54,23 @@ def parseFieldRegistry(xml_file):
 
 NOT_PRESENT = "not present"
 
-# Intermediate base classes that aren't fields themselves.
-ABSTRACT_FIELD_CLASSES = (HttpDateField,)
-
 
 def checkFieldClass(field_cls):
     """
     Given a field class, make sure it's complete. Complain on STDERR if not.
     """
 
-    if HttpField in field_cls.__bases__ or field_cls in ABSTRACT_FIELD_CLASSES:
+    if HttpField in field_cls.__bases__:
         return 0
 
     errors = 0
     message = FakeResponseLinter()
     field = field_cls("warning", None)
+    # Intermediate bases outside the parsers (e.g., HttpDateField) aren't fields.
+    if not field_cls.__module__.startswith("httplint.field.parsers") and not any(
+        hasattr(field, attr) for attr in ("reference", "description")
+    ):
+        return 0
     attrs = dir(field)
     checks = [
         ("canonical_name", [str], True),

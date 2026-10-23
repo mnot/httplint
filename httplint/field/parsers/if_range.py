@@ -7,6 +7,7 @@ from httplint.field.tests import FieldTest
 from httplint.field.utils import (
     BAD_DATE_SYNTAX,
     DATE_OBSOLETE,
+    ENTITY_TAG_WEAK_CASE,
     RE_FLAGS,
     is_entity_tag,
     parse_entity_tag,
@@ -32,15 +33,9 @@ entire new representation."""
         # The value is an entity-tag or an HTTP-date; no date starts with a quote or "W/".
         if not re.match(r'(?:"|W/)', field_value, RE_FLAGS):
             return super().parse(field_value, add_note)
-        try:
-            tag = parse_entity_tag(field_value)
-        except ValueError:
-            tag = None
-        if tag is None or not is_entity_tag(field_value):
+        if not is_entity_tag(field_value):
             add_note(BAD_SYNTAX, ref_uri=self.reference)
-        if tag is None:
-            raise ValueError
-        return tag
+        return parse_entity_tag(field_value, add_note)
 
 
 class IfRangeTest(FieldTest[RequestLinterProtocol]):
@@ -85,5 +80,14 @@ class IfRangeUnterminatedTest(FieldTest[RequestLinterProtocol]):
 class IfRangeLowerCaseWeakTest(FieldTest[RequestLinterProtocol]):
     name = "If-Range"
     inputs = [b'w/"xyzzy"']
+    expected_out = None
+    expected_notes: NoteClassListType = [ENTITY_TAG_WEAK_CASE]
+
+
+class IfRangeLowerCaseWeakUnquotedTest(FieldTest[RequestLinterProtocol]):
+    "One note for the unquoted tag; the case of the prefix isn't also reported."
+
+    name = "If-Range"
+    inputs = [b"w/xyzzy"]
     expected_out = None
     expected_notes: NoteClassListType = [BAD_SYNTAX]

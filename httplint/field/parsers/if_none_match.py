@@ -1,9 +1,8 @@
 from typing import Tuple, Union
 
-from httplint.field import BAD_SYNTAX
 from httplint.field.list_field import HttpListField
 from httplint.field.tests import FieldTest
-from httplint.field.utils import is_entity_tag, parse_entity_tag
+from httplint.field.utils import ENTITY_TAG_WEAK_CASE, parse_entity_tag
 from httplint.note import categories
 from httplint.syntax import rfc9110
 from httplint.types import AddNoteMethodType, NoteClassListType, RequestLinterProtocol
@@ -23,12 +22,7 @@ any current representation of the target resource."""
     def parse(self, field_value: str, add_note: AddNoteMethodType) -> Union[str, Tuple[bool, str]]:
         if field_value == "*":
             return field_value
-        try:
-            return parse_entity_tag(field_value)
-        except ValueError:
-            if is_entity_tag(field_value):  # otherwise the syntax check has reported it
-                add_note(BAD_SYNTAX, ref_uri=self.reference)
-            raise
+        return parse_entity_tag(field_value, add_note)
 
 
 class IfNoneMatchTest(FieldTest[RequestLinterProtocol]):
@@ -53,4 +47,4 @@ class IfNoneMatchLowerCaseWeakTest(FieldTest[RequestLinterProtocol]):
     name = "If-None-Match"
     inputs = [b'w/"xyzzy"']
     expected_out = []
-    expected_notes: NoteClassListType = [BAD_SYNTAX]
+    expected_notes: NoteClassListType = [ENTITY_TAG_WEAK_CASE]

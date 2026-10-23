@@ -140,5 +140,40 @@ class TestCacheFreshness(unittest.TestCase):
         self.assertIn(STALE_IF_ERROR, notes)
 
 
+class TestExpiresStorable(unittest.TestCase):
+    def notes_for(self, expires):
+        linter = HttpResponseLinter()
+        linter.process_response_topline(b"HTTP/1.1", b"404", b"Not Found")
+        linter.process_headers(
+            [
+                (b"Date", b"Tue, 15 Nov 1994 08:12:31 GMT"),
+                (b"Expires", expires),
+            ]
+        )
+        linter.finish_content(True)
+        return [n.__class__ for n in linter.notes]
+
+    def test_epoch_expires_makes_storable(self):
+        from httplint.cache import STORE_STORABLE, STORE_UNSTORABLE
+
+        notes = self.notes_for(b"Thu, 01 Jan 1970 00:00:00 GMT")
+        self.assertIn(STORE_STORABLE, notes)
+        self.assertNotIn(STORE_UNSTORABLE, notes)
+
+    def test_expires_makes_storable(self):
+        from httplint.cache import STORE_STORABLE, STORE_UNSTORABLE
+
+        notes = self.notes_for(b"Fri, 01 Jan 1971 00:00:00 GMT")
+        self.assertIn(STORE_STORABLE, notes)
+        self.assertNotIn(STORE_UNSTORABLE, notes)
+
+    def test_bad_expires_is_unstorable(self):
+        from httplint.cache import STORE_STORABLE, STORE_UNSTORABLE
+
+        notes = self.notes_for(b"nonsense")
+        self.assertIn(STORE_UNSTORABLE, notes)
+        self.assertNotIn(STORE_STORABLE, notes)
+
+
 if __name__ == "__main__":
     unittest.main()

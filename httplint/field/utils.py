@@ -2,7 +2,9 @@ import calendar
 import re
 from email.utils import parsedate as lib_parsedate
 from typing import Any, Dict, FrozenSet, List, Optional, Set, Tuple, Type, Union
+from urllib.parse import SplitResult
 from urllib.parse import unquote as urlunquote
+from urllib.parse import urljoin, urlsplit
 
 from http_sf import Token
 
@@ -393,9 +395,11 @@ def check_sf_params(
     param_list = []
     for param_name, param_value in params.items():
         safe_value = inline_safe(str(param_value))
+        # An empty code span would swallow the next span's delimiters.
+        shown_value = f"`{safe_value}`" if safe_value else "(empty)"
         if param_name not in known_params:
             add_note(unknown_param_note, param=param_name)
-            param_list.append(f"* `{param_name}`: `{safe_value}`")
+            param_list.append(f"* `{param_name}`: {shown_value}")
         else:
             expected_type = known_params[param_name].get("type")
             if expected_type and not isinstance(param_value, expected_type):
@@ -404,7 +408,7 @@ def check_sf_params(
                     param=param_name,
                     value=param_value,
                 )
-                param_list.append(f"* `{param_name}`: `{safe_value}`")
+                param_list.append(f"* `{param_name}`: {shown_value}")
                 continue
 
             allowed_values = known_params[param_name].get("values")
@@ -414,7 +418,7 @@ def check_sf_params(
                     param=param_name,
                     value=param_value,
                 )
-                param_list.append(f"* `{param_name}`: `{safe_value}`")
+                param_list.append(f"* `{param_name}`: {shown_value}")
                 continue
 
             if "value_desc" in known_params[param_name]:
@@ -422,11 +426,11 @@ def check_sf_params(
                 if desc:
                     param_list.append(f"* {desc}")
                 else:
-                    param_list.append(f"* `{param_name}`: `{safe_value}`")
+                    param_list.append(f"* `{param_name}`: {shown_value}")
             elif "desc" in known_params[param_name]:
                 desc = known_params[param_name]["desc"]
                 if "%s" in desc:
-                    wrapped = f"`{safe_value}`" if safe_value else ""
+                    wrapped = f"`{safe_value}`" if safe_value else "(empty)"
                     param_list.append(f"* {desc % wrapped}")
                 elif param_value:
                     # A static desc with no %s is a flag-style description,
@@ -437,7 +441,7 @@ def check_sf_params(
                 if param_value is True:
                     param_list.append(f"* `{param_name}`")
                 else:
-                    param_list.append(f"* `{param_name}`: `{safe_value}`")
+                    param_list.append(f"* `{param_name}`: {shown_value}")
 
     return "\n".join(param_list)
 
@@ -600,23 +604,98 @@ specification](https://www.rfc-editor.org/rfc/rfc9110.html#name-obsolete-date-fo
 """
 
 
-### Entity tags
+# --- resolve_url: URL resolution shared by Link, Location, Referer, Reporting-Endpoints,
+# --- Speculation-Rules and NEL
 
 
-def parse_entity_tag(value: str) -> Tuple[bool, str]:
+def resolve_url(url: str, base: str = "") -> Optional[SplitResult]:
+    "Resolve url against base (if any) and split it; None if urllib rejects it (e.g., bad IPv6)."
+    try:
+        return urlsplit(urljoin(base, url))
+    except ValueError:
+        return None
+
+
+def is_secure(split: SplitResult) -> bool:
+    "Whether a split URL has a secure scheme (https or wss)."
+    return split.scheme.lower() in ("https", "wss")
+
+
+# --- parse_delta_seconds: non-negative integer field values ---------------------------------
+
+
+def parse_digits(value: str, max_digits: int = 20) -> Optional[int]:
     """
-    Parse an entity-tag into (weak, opaque-tag), with the opaque tag unquoted.
+    Parse `value` as DIGIT+ (ASCII only; no sign, underscore or whitespace), or return None if it
+    isn't, or has more than `max_digits` significant digits (leading zeros don't count).
 
-    The ``W/`` prefix is case-sensitive (RFC 9110, Section 8.8.3); a lower-case ``w/``
-    raises ValueError. Quoting isn't checked here; that's the field's syntax check.
+    This keeps int()'s leniency and its 4300-digit limit away from wire values.
     """
-    if value[:2] == "W/":
-        return (True, unquote_string(value[2:]))
-    if value[:2].lower() == "w/":
-        raise ValueError
-    return (False, unquote_string(value))
+    if value.isascii() and value.isdigit():
+        digits = value.lstrip("0") or "0"
+        if len(digits) <= max_digits:
+            return int(digits)
+    return None
+
+
+def parse_delta_seconds(
+    value: str,
+    add_note: AddNoteMethodType,
+    bad_note: Type[Note],
+    max_digits: int = 20,
+    **note_vars: Any,
+) -> Optional[int]:
+    """
+    Parse `value` with parse_digits(), as used for delta-seconds and similar values.
+
+    On failure, add `bad_note` (with `note_vars`) and return None. Range checks stay with the
+    caller.
+    """
+    result = parse_digits(value, max_digits)
+    if result is None:
+        add_note(bad_note, **note_vars)
+    return result
+
+
+def is_negative_integer(value: str) -> bool:
+    "True if `value` is '-' followed by ASCII DIGIT+; for choosing a more specific note."
+    magnitude = value[1:]
+    return value.startswith("-") and magnitude.isascii() and magnitude.isdigit()
+
+
+# --- parse_entity_tag: entity-tags for ETag, If-Match, If-None-Match and If-Range ---------------
 
 
 def is_entity_tag(value: str) -> bool:
     "Whether ``value`` matches the entity-tag syntax."
     return re.match(rf"^\s*{rfc9110.entity_tag}\s*$", value, RE_FLAGS) is not None
+
+
+def parse_entity_tag(value: str, add_note: AddNoteMethodType) -> Tuple[bool, str]:
+    """
+    Parse an entity-tag into (weak, opaque-tag), with the opaque tag unquoted.
+
+    The ``W/`` prefix is case-sensitive (RFC 9110, Section 8.8.3). A lower-case ``w/``
+    raises ValueError, with ENTITY_TAG_WEAK_CASE unless the value is bad in some other way
+    (which the field's syntax check reports). Quoting isn't checked here either.
+    """
+    if value[:2] == "W/":
+        return (True, unquote_string(value[2:]))
+    if value[:2].lower() == "w/":
+        if is_entity_tag(value):
+            add_note(ENTITY_TAG_WEAK_CASE)
+        raise ValueError
+    return (False, unquote_string(value))
+
+
+class ENTITY_TAG_WEAK_CASE(Note):
+    category = categories.GENERAL
+    level = levels.WARN
+    _summary = "The %(field_name)s field's entity tag has a lower-case weak indicator."
+    _text = """\
+An entity tag is weak when it starts with `W/`, and that prefix is case-sensitive: a lower-case
+`w/` isn't the weak indicator. Recipients can therefore treat the whole value as an invalid tag,
+or as a strong tag that happens to start with `w/`.
+
+See [the HTTP specification](https://www.rfc-editor.org/rfc/rfc9110.html#name-etag) for more
+information."""

@@ -32,9 +32,7 @@ class HttpDateTest(unittest.TestCase):
         self.assertEqual(parse("Thu, 01 Jan 1970 00:00:00 GMT"), (0, []))
 
     def test_obsolete_formats(self) -> None:
-        self.assertEqual(
-            parse("Sunday, 06-Nov-94 08:49:37 GMT"), (784111777, [DATE_OBSOLETE])
-        )
+        self.assertEqual(parse("Sunday, 06-Nov-94 08:49:37 GMT"), (784111777, [DATE_OBSOLETE]))
         self.assertEqual(parse("Sun Nov  6 08:49:37 1994"), (784111777, [DATE_OBSOLETE]))
 
     def test_rfc850_two_digit_year_pivot(self) -> None:

@@ -1,11 +1,16 @@
 import re
 from typing import Tuple
-from urllib.parse import urljoin, urlsplit
 
 from httplint.field import BAD_SYNTAX
 from httplint.field.list_field import HttpListField
 from httplint.field.tests import FieldTest
-from httplint.field.utils import PARAM_REPEATS, PARAM_STAR_ERROR, parse_params
+from httplint.field.utils import (
+    PARAM_REPEATS,
+    PARAM_STAR_ERROR,
+    RE_FLAGS,
+    parse_params,
+    resolve_url,
+)
 from httplint.note import MarkdownSafe, Note, categories, levels
 from httplint.syntax import rfc3986, rfc8288, rfc9110
 from httplint.types import (
@@ -16,6 +21,8 @@ from httplint.types import (
 )
 from httplint.util import inline_safe
 
+HINT_RELS = ("preload", "preconnect", "dns-prefetch")
+
 
 class link(HttpListField[AnyMessageLinterProtocol]):
     canonical_name = "Link"
@@ -25,6 +32,7 @@ statement of the form "[context IRI] has a [relation type] resource at [target I
 [target attributes]."""
     reference = f"{rfc8288.SPEC_URL}#header.link"
     syntax = rfc8288.Link
+    report_syntax = False  # parse() reports it, unless LINK_BAD_TARGET_URI covers the same defect
     deprecated = False
 
     def parse(self, field_value: str, add_note: AddNoteMethodType) -> Tuple[str, ParamDictType]:
@@ -36,6 +44,8 @@ statement of the form "[context IRI] has a [relation type] resource at [target I
         param_dict = parse_params(
             param_str, add_note, ["rel", "rev", "anchor", "hreflang", "type", "media"]
         )
+        if not self._check_hint_target(link_value, param_dict, add_note):
+            self._check_syntax(field_value, add_note)
         if "rel" in param_dict:  # relation_types
             pass
         if "rev" in param_dict:
@@ -48,8 +58,33 @@ statement of the form "[context IRI] has a [relation type] resource at [target I
                 add_note(LINK_BAD_TYPE, link=link_value, type=param_dict["type"])
         return link_value, param_dict
 
+    def _check_hint_target(
+        self, link_value: str, params: ParamDictType, add_note: AddNoteMethodType
+    ) -> bool:
+        "Add LINK_BAD_TARGET_URI if a resource hint's target is unresolvable; True if so."
+        rel = params.get("rel")
+        if not isinstance(rel, str):
+            return False
+        hint_rels = [t for t in dict.fromkeys(rel.lower().split()) if t in HINT_RELS]
+        if not hint_rels:
+            return False
+        base_uri = getattr(self.message, "base_uri", "") or ""
+        if resolve_url(link_value, base_uri) is not None:
+            return False
+        add_note(LINK_BAD_TARGET_URI, rel="/".join(hint_rels), link=link_value)
+        return True
+
+    def _check_syntax(self, field_value: str, add_note: AddNoteMethodType) -> None:
+        "Report BAD_SYNTAX as HttpListField does; BAD_SYNTAX_DETAILED is still added there."
+        assert isinstance(self.syntax, rfc9110.list_rule)
+        element = self.syntax.element
+        if re.match(rf"^\s*(?:{element})\s*$", field_value, RE_FLAGS):
+            return
+        if not re.match(rf"^\s*(?:{element})", field_value, RE_FLAGS):
+            add_note(BAD_SYNTAX, ref_uri=self.reference)
+
     def evaluate(self, add_note: AddNoteMethodType) -> None:
-        hints: dict[str, list[str]] = {"preload": [], "preconnect": [], "dns-prefetch": []}
+        hints: dict[str, list[str]] = {rel: [] for rel in HINT_RELS}
         bad_targets: list[Tuple[str, str, str]] = []  # (rel, link, scheme)
         base_uri = getattr(self.message, "base_uri", "") or ""
         for link_value, params in self.value:
@@ -59,7 +94,10 @@ statement of the form "[context IRI] has a [relation type] resource at [target I
             for token in rel.lower().split():
                 if token not in hints:
                     continue
-                scheme = urlsplit(urljoin(base_uri, link_value)).scheme.lower()
+                resolved = resolve_url(link_value, base_uri)
+                if resolved is None:
+                    continue  # reported by parse()
+                scheme = resolved.scheme.lower()
                 if scheme and scheme not in ("http", "https"):
                     bad_targets.append((token, link_value, scheme))
                 else:
@@ -96,6 +134,15 @@ related resources before the current response is fully processed:
 `preload` triggers the browser to fetch a resource needed for the current page; `preconnect`
 opens a connection (DNS + TCP + TLS) to an origin in advance; `dns-prefetch` performs a DNS
 lookup only. Used appropriately, these hints can reduce critical-path latency."""
+
+
+class LINK_BAD_TARGET_URI(Note):
+    category = categories.GENERAL
+    level = levels.BAD
+    _summary = "The %(rel)s Link target isn't a valid URI."
+    _text = """\
+The `Link` header advertises a `%(rel)s` resource hint for `%(link)s`, but that isn't a valid URI
+(for example, it may have a malformed IP address in its host). Browsers may ignore this hint."""
 
 
 class LINK_BAD_HINT_TARGET(Note):
@@ -271,3 +318,35 @@ class RepeatedRejectedTitleStarLinkTest(FieldTest[AnyMessageLinterProtocol]):
     inputs = [b"</foo>; rel=ex; title*=bogus; title*=UTF-8''%41"]
     expected_out = [("/foo", {"rel": "ex"})]
     expected_notes: NoteClassListType = [PARAM_STAR_ERROR, PARAM_REPEATS]
+
+
+class MalformedIPv6PreloadLinkTest(FieldTest[AnyMessageLinterProtocol]):
+    name = "Link"
+    inputs = [b"<http://[::1>; rel=preload"]
+    expected_out = [("http://[::1", {"rel": "preload"})]
+    expected_notes: NoteClassListType = [LINK_BAD_TARGET_URI]
+
+
+class MalformedIPv6PreconnectLinkTest(FieldTest[AnyMessageLinterProtocol]):
+    name = "Link"
+    inputs = [b"<http://[::1]x>; rel=preconnect"]
+    expected_out = [("http://[::1]x", {"rel": "preconnect"})]
+    expected_notes: NoteClassListType = [LINK_BAD_TARGET_URI]
+
+
+class MalformedIPv6OtherRelLinkTest(FieldTest[AnyMessageLinterProtocol]):
+    "Only resource hint targets are resolved, so other links keep BAD_SYNTAX."
+
+    name = "Link"
+    inputs = [b"<http://[::1>; rel=stylesheet"]
+    expected_out = [("http://[::1", {"rel": "stylesheet"})]
+    expected_notes: NoteClassListType = [BAD_SYNTAX]
+
+
+class BadSyntaxHintLinkTest(FieldTest[AnyMessageLinterProtocol]):
+    "A syntax error that isn't an unresolvable target is still BAD_SYNTAX."
+
+    name = "Link"
+    inputs = [b"</a b>; rel=preload"]
+    expected_out = [("/a b", {"rel": "preload"})]
+    expected_notes: NoteClassListType = [BAD_SYNTAX, LINK_RESOURCE_HINTS]
