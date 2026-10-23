@@ -123,6 +123,11 @@ absolute_form = absolute_URI
 
 asterisk_form = r"\*"
 
+#   authority = <authority, see [URI], Section 3.2>
+#
+# RFC 9112 Appendix A lists it, but nothing in RFC 9112 uses it any more (authority-form is
+# uri-host ":" port); like rfc9110.py, this is a comment line, not a rule.
+
 #   authority-form = uri-host ":" port
 
 authority_form = rf"(?: {uri_host} : {port} )"
