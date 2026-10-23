@@ -27,6 +27,7 @@ from .rfc9110 import (
     list_rule,
     quoted_string,
     token,
+    transfer_coding,
 )
 
 SPEC_URL = "http://httpwg.org/specs/rfc9112"
@@ -82,19 +83,12 @@ chunked_body = rf"(?: (?: {chunk} )* {last_chunk} {trailer_section} {CRLF} )"
 
 ## Transfer-Encoding
 
-#   transfer-parameter = token BWS "=" BWS ( token / quoted-string )
-
-transfer_parameter = rf"(?: {token} {BWS} = {BWS} (?: {token} | {quoted_string} ) )"
-
-#   transfer-extension = token *( OWS ";" OWS transfer-parameter )
-
-transfer_extension = rf"(?: {token} (?: {OWS} ; {OWS} {transfer_parameter} )* )"
-
-#   transfer-coding = "chunked" / "compress" / "deflate" / "gzip" / transfer-extension
-
-transfer_coding = rf"(?: chunked | compress | deflate | gzip | {transfer_extension} )"
-
 #   Transfer-Encoding = #transfer-coding
+#                     ; defined in [HTTP], Section 10.1.4
+#
+# transfer-coding (and its transfer-parameter) is defined by RFC 9110 and imported above. The
+# RFC 7230 form, "chunked / compress / deflate / gzip / transfer-extension", matched a
+# registered name by two routes, so a long list that failed to match backtracked exponentially.
 
 Transfer_Encoding = list_rule(transfer_coding)
 

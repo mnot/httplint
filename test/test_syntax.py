@@ -181,6 +181,18 @@ class SyntaxBacktrackingTest(unittest.TestCase):
             "ext-value language", rfc5987.ext_value, "UTF-8'" + "en-abcde" * 1500 + "'\x80"
         )
 
+    def test_transfer_encoding(self) -> None:
+        """
+        The RFC 7230 transfer-coding listed chunked, compress, deflate and gzip before
+        transfer-extension, so each of them matched by two routes: 2**n paths for n elements.
+        """
+        for name in ["gzip", "chunked", "a;b=c"]:
+            self.check_rule(
+                f"Transfer-Encoding {name}",
+                str(rfc9112.Transfer_Encoding),
+                ", ".join([name] * 24) + "\x80",
+            )
+
     def test_language_tag(self) -> None:
         "Guard: these rules were dead before the alphanum fix, so main is fast on them too."
         n = 1500
@@ -601,6 +613,28 @@ class SyntaxTranslationTest(unittest.TestCase):
         self.assertTrue(matches(new, ""))
         self.assertTrue(matches(new, "gzip, chunked"))
         self.assertFalse(matches(new, "gzip,"))
+
+    def test_transfer_coding_is_rfc9110(self) -> None:
+        "RFC 9112 imports transfer-coding; the RFC 7230 form accepted the same language."
+        self.assertIs(rfc9112.transfer_coding, rfc9110.transfer_coding)
+        for name in ["transfer_parameter", "transfer_extension"]:
+            self.assertFalse(hasattr(rfc9112, name))
+        param = rf"(?: {rfc9110.token} {rfc9110.BWS} = {rfc9110.BWS} (?: {rfc9110.token} | {rfc9110.quoted_string} ) )"
+        extension = rf"(?: {rfc9110.token} (?: {rfc9110.OWS} ; {rfc9110.OWS} {param} )* )"
+        old = rf"(?: chunked | compress | deflate | gzip | {extension} )"
+        old_list = str(rfc9110.list_rule(old))
+        for value in strings(["gzip", "chunked", "a", " ", ";", "=", '"', ","], 5):
+            with self.subTest(value=value):
+                self.assertEqual(
+                    fullmatch(old, value), fullmatch(rfc9112.transfer_coding, value), value
+                )
+                self.assertEqual(
+                    matches(old_list, value), matches(str(rfc9112.Transfer_Encoding), value), value
+                )
+        for value in ["gzip", "Chunked", "gzip;a=b", 'x;a="b c" ; d=e', "x-gzip"]:
+            self.assertTrue(fullmatch(rfc9112.transfer_coding, value))
+        for value in ["", "gzip;", "gzip;a", "a b", "gzip,chunked"]:
+            self.assertFalse(fullmatch(rfc9112.transfer_coding, value))
 
     def test_comment_nesting(self) -> None:
         "comment is unrolled to two levels inside the outer one."
