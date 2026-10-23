@@ -4,7 +4,9 @@ Regex for RFC9112
 
 # pylint: disable=invalid-name, line-too-long
 
-from .rfc3986 import absolute_URI, query
+from .rfc3986 import absolute_URI
+from .rfc3986 import host as uri_host
+from .rfc3986 import port, query
 from .rfc5234 import (
     CRLF,
     DIGIT,
@@ -15,8 +17,8 @@ from .rfc5234 import (
     VCHAR,
 )
 
-# RFC 9112 refers to these rules, which RFC 9110 defines (uri-host and port are RFC 3986's, via
-# RFC 9110); they are imported, not redefined, so that there is one transcription of each.
+# RFC 9112 refers to these rules, which RFC 9110 defines (and uri-host, port, which RFC 3986
+# does); they are imported, not redefined, so that there is one transcription of each.
 from .rfc9110 import (
     BWS,
     OWS,
@@ -26,11 +28,9 @@ from .rfc9110 import (
     field_value,
     list_rule,
     obs_text,
-    port,
     quoted_string,
     token,
     transfer_coding,
-    uri_host,
 )
 
 SPEC_URL = "http://httpwg.org/specs/rfc9112"
