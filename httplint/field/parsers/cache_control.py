@@ -1,7 +1,8 @@
-from typing import Any, Callable, Dict, List, Tuple, Union
+import re
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 from httplint.field.list_field import HttpListField
-from httplint.field.tests import FieldTest
+from httplint.field.tests import FakeRequestLinter, FieldTest
 from httplint.field.utils import unquote_string
 from httplint.note import Note, categories, levels
 from httplint.syntax import rfc9111
@@ -12,6 +13,21 @@ from httplint.types import (
 )
 from httplint.util import MAX_DELTA_SECONDS, markdown_list
 
+
+def _delta_seconds(instr: Optional[str]) -> int:
+    "Parse delta-seconds: one or more ASCII digits, so no sign, whitespace or non-ASCII digits."
+    if instr is None or not re.fullmatch(r"[0-9]+", instr):
+        raise ValueError(instr)
+    return int(instr)
+
+
+def _field_names(instr: Optional[str]) -> Optional[str]:
+    "Parse the optional argument of no-cache and private; None if absent."
+    if instr is None:
+        return None
+    return unquote_string(instr)
+
+
 # known cache directives; assumed to not allow duplicates
 # values are (valid_in_requests, valid_in_responses, value_type, value_type_str)
 KNOWN_CC: Dict[str, Tuple[bool, bool, Union[None, Callable[..., Any]], str]] = {
@@ -21,15 +37,15 @@ KNOWN_CC: Dict[str, Tuple[bool, bool, Union[None, Callable[..., Any]], str]] = {
     "min-fresh": (True, False, int, "integer"),
     "must-revalidate": (False, True, None, "none"),
     "must-understand": (False, True, None, "none"),
-    "no-cache": (True, True, unquote_string, "quoted string"),
+    "no-cache": (True, True, _field_names, "quoted string"),
     "no-store": (True, True, None, "none"),
     "no-transform": (True, True, None, "none"),
     "only-if-cached": (True, False, None, "none"),
-    "private": (False, True, unquote_string, "quoted string"),
+    "private": (False, True, _field_names, "quoted string"),
     "proxy-revalidate": (False, True, None, "none"),
     "public": (False, True, None, "none"),
     "s-maxage": (False, True, int, "integer"),
-    "stale-if-error": (False, True, int, "integer"),
+    "stale-if-error": (True, True, int, "integer"),
     "stale-while-revalidate": (False, True, int, "integer"),
     "pre-check": (False, True, int, "integer"),
     "post-check": (False, True, int, "integer"),
@@ -115,13 +131,26 @@ ignoring it there."""
                 if directive_val is not None:
                     add_note(CC_SHOULD_NOT_HAVE_VALUE, directive=directive_name)
             else:
+                is_delta = value_func is int
+                if is_delta:
+                    value_func = _delta_seconds
                 try:
-                    val = value_func(directive_val)
+                    arg = directive_val
+                    quoted = (
+                        is_delta and arg is not None and len(arg) >= 2 and arg[0] == arg[-1] == '"'
+                    )
+                    if quoted and arg is not None:
+                        arg = re.sub(r"\\(.)", r"\1", arg[1:-1])
+                    val = value_func(arg)
+                    if quoted:
+                        add_note(CC_QUOTED_VALUE, directive=directive_name)
                     if isinstance(val, int) and val > MAX_DELTA_SECONDS:
                         add_note(CC_MAX_AGE_TOO_LARGE, directive=directive_name)
                     return (directive_name, val)
                 except (ValueError, TypeError):
-                    expected_type = KNOWN_CC[directive_name][3]
+                    expected_type = (
+                        "non-negative integer" if is_delta else KNOWN_CC[directive_name][3]
+                    )
                     add_note(
                         CC_BAD_VALUE_TYPE,
                         directive=directive_name,
@@ -213,6 +242,16 @@ class CC_BAD_VALUE_TYPE(Note):
         "The `%(directive)s` cache directive type is %(expected_type)s, "
         "but `%(value)s` was found."
     )
+
+
+class CC_QUOTED_VALUE(Note):
+    category = categories.CACHING
+    level = levels.WARN
+    _summary = "The %(directive)s cache directive's value is quoted."
+    _text = """\
+The `%(directive)s` cache directive's value is a number, so senders must not generate it as a
+quoted string. Recipients ought to accept both forms, and it has been interpreted as if it were
+not quoted, but some implementations may not recognise the quoted form."""
 
 
 class CC_MAX_AGE_TOO_LARGE(Note):
@@ -363,6 +402,50 @@ class CacheControlQuotedTest(FieldTest[AnyMessageLinterProtocol]):
     name = "Cache-Control"
     inputs = [b'private="b,c", c=d']
     expected_out = [("private", "b,c"), ("c", "d")]
+
+
+class CacheControlNoArgTest(FieldTest[AnyMessageLinterProtocol]):
+    name = "Cache-Control"
+    inputs = [b"no-cache, private"]
+    expected_out = [("no-cache", None), ("private", None)]
+
+
+class CacheControlNoCacheArgTest(FieldTest[AnyMessageLinterProtocol]):
+    name = "Cache-Control"
+    inputs = [b'no-cache="Set-Cookie", private=""']
+    expected_out = [("no-cache", "Set-Cookie"), ("private", "")]
+
+
+class CacheControlQuotedDeltaTest(FieldTest[AnyMessageLinterProtocol]):
+    name = "Cache-Control"
+    inputs = [b'max-age="5", s-maxage="\\10"']
+    expected_out = [("max-age", 5), ("s-maxage", 10)]
+    expected_notes: NoteClassListType = [CC_QUOTED_VALUE]
+
+
+class CacheControlBadQuotedDeltaTest(FieldTest[AnyMessageLinterProtocol]):
+    name = "Cache-Control"
+    inputs = [b'max-age=" 5"']
+    expected_notes: NoteClassListType = [CC_BAD_VALUE_TYPE]
+
+
+class CacheControlNegativeTest(FieldTest[AnyMessageLinterProtocol]):
+    name = "Cache-Control"
+    inputs = [b"max-age=-5"]
+    expected_notes: NoteClassListType = [CC_BAD_VALUE_TYPE]
+
+
+class CacheControlSignTest(FieldTest[AnyMessageLinterProtocol]):
+    name = "Cache-Control"
+    inputs = [b"max-age=+5"]
+    expected_notes: NoteClassListType = [CC_BAD_VALUE_TYPE]
+
+
+class CacheControlStaleIfErrorRequestTest(FieldTest[AnyMessageLinterProtocol]):
+    name = "Cache-Control"
+    linter_class = FakeRequestLinter
+    inputs = [b"stale-if-error=10"]
+    expected_out = [("stale-if-error", 10)]
 
 
 class CacheControlMaxAgeTest(FieldTest[AnyMessageLinterProtocol]):
