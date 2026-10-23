@@ -79,8 +79,9 @@ class ORIGIN_PORT_TOO_LONG(Note):
     level = levels.BAD
     _summary = "The Origin header contains a port with too many digits."
     _text = """\
-The port in the `Origin` header has more than %(max_digits)s digits, which is more than recipients
-can be expected to handle. Ports are 16-bit numbers (up to 65535)."""
+The port in the `Origin` header has more than %(max_digits)s significant digits (leading zeros
+don't count), which is more than recipients can be expected to handle. The whole `Origin` value
+is ignored."""
 
 
 class ORIGIN_MULTIPLE_VALUES(Note):

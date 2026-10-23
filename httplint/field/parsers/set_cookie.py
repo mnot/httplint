@@ -1,13 +1,14 @@
-# pylint: disable=too-many-lines
+# pylint: disable=too-many-lines  # one module holds the parser, its notes and its tests
+import unittest
 from calendar import timegm
 from re import match, split
-from typing import List, Optional, Tuple, Union
+from typing import Any, List, Optional, Tuple, Type, Union
 
 from httplint.field import RFC6265
 from httplint.field.broken_field import BrokenField
 from httplint.field.deferred_notes import DeferredNotes
 from httplint.field.section import FIELD_VALUE_ENCODING
-from httplint.field.tests import FieldTest
+from httplint.field.tests import FakeResponseLinter, FieldTest
 from httplint.field.utils import is_negative_integer, parse_delta_seconds, resolve_url
 from httplint.note import MarkdownSafe, Note, categories, levels
 from httplint.types import (
@@ -41,16 +42,19 @@ requests to the server."""
 
     def parse(self, field_value: str, add_note: AddNoteMethodType) -> CookieType:
         # base_uri comes from the caller, not the wire; if it can't be parsed, the default Path
-        # (RFC 6265, Section 5.1.4) can't be worked out, so "/" is used.
+        # (RFC 6265, Section 5.1.4) can't be worked out, so "/" is used (and noted, once).
         base = resolve_url(self.message.base_uri)
-        if base is None:
-            path = ""
-            if not self._bad_base_uri_noted:
+        path = None if base is None else base.path
+        deferred_add_note = self._deferred.via(add_note)
+
+        def add_note_once(note: Type[Note], category: Optional[Any] = None, **vrs: Any) -> Any:
+            if note is SET_COOKIE_BAD_BASE_URI:
+                if self._bad_base_uri_noted:
+                    return None
                 self._bad_base_uri_noted = True
-                self._deferred.defer(SET_COOKIE_BAD_BASE_URI)
-        else:
-            path = base.path
-        return loose_parse(field_value, path, self.message.start_time, self._deferred.via(add_note))
+            return deferred_add_note(note, category=category, **vrs)
+
+        return loose_parse(field_value, path, self.message.start_time, add_note_once)
 
     def evaluate(self, add_note: AddNoteMethodType) -> None:
         cookie_names = [c[0] for c in self.value]
@@ -87,7 +91,7 @@ def _is_hardened(attrs: List[Tuple[str, Union[str, int]]]) -> bool:
 
 def loose_parse(  # pylint: disable=too-many-branches
     set_cookie_string: str,
-    uri_path: str,
+    uri_path: Optional[str],
     current_time: Optional[float],
     add_note: AddNoteMethodType,
 ) -> CookieType:
@@ -180,7 +184,7 @@ def _process_cookie_attribute(  # pylint: disable=too-many-branches,too-many-arg
     attribute_value: str,
     cookie_name: str,
     cookie_attribute_list: List[Tuple[str, Union[str, int]]],
-    uri_path: str,
+    uri_path: Optional[str],
     current_time: Optional[float],
     add_note: AddNoteMethodType,
     lifetime_note_added: bool,
@@ -246,12 +250,16 @@ def _process_cookie_attribute(  # pylint: disable=too-many-branches,too-many-arg
     elif case_norm_attribute_name == "path":
         if attribute_value == "" or attribute_value[0] != "/":
             # use default path
-            if uri_path == "" or uri_path[0] != "/":
-                cookie_path = "/"
-            if uri_path.count("/") < 2:
+            if uri_path is None:
+                add_note(SET_COOKIE_BAD_BASE_URI)
                 cookie_path = "/"
             else:
-                cookie_path = uri_path[: uri_path.rindex("/")]
+                if uri_path == "" or uri_path[0] != "/":
+                    cookie_path = "/"
+                if uri_path.count("/") < 2:
+                    cookie_path = "/"
+                else:
+                    cookie_path = uri_path[: uri_path.rindex("/")]
         else:
             cookie_path = attribute_value
         cookie_attribute_list.append(("Path", cookie_path))
@@ -424,11 +432,11 @@ def loose_date_parse(cookie_date: str) -> int:
 class SET_COOKIE_BAD_BASE_URI(Note):
     category = categories.COOKIES
     level = levels.INFO
-    _summary = "The response URI could not be parsed, so some Set-Cookie checks were skipped."
+    _summary = "The response URI could not be parsed, so a default Path of / was used."
     _text = """\
 The URI that this response was retrieved from, as given to the linter, is not valid, so it can't
-be used. The checks of `Set-Cookie` that depend on it (such as working out the default `Path` of
-a cookie) were skipped; a `Path` of `/` is assumed where one is needed."""
+be used. A `Path` attribute in `Set-Cookie` that is empty, or doesn't start with `/`, is replaced
+by the default path of the request URI; because that URI is unusable, `/` was used instead."""
 
 
 class SET_COOKIE_NO_NAME(Note):
@@ -958,6 +966,32 @@ class BadBaseUriSCTest(FieldTest[ResponseLinterProtocol]):
     inputs = [b"a=b; Path", b"c=d"]
     expected_out = [("a", "b", [("Path", "/")]), ("c", "d", [])]
     expected_notes: NoteClassListType = [SET_COOKIE_BAD_BASE_URI]
+
+    def set_response_context(self, message: ResponseLinterProtocol) -> None:
+        message.base_uri = "http://["
+
+
+class BadBaseUriOneNoteTest(unittest.TestCase):
+    "Two cookies that need the default Path still give one note per field."
+
+    def test_one_note(self) -> None:
+        message = FakeResponseLinter()
+        message.base_uri = "http://["
+        message.headers.process([(b"Set-Cookie", b"a=b; Path"), (b"Set-Cookie", b"c=d; Path=x")])
+        found = [n for n in message.notes if isinstance(n, SET_COOKIE_BAD_BASE_URI)]
+        self.assertEqual(1, len(found))
+        self.assertEqual(
+            [("a", "b", [("Path", "/")]), ("c", "d", [("Path", "/")])],
+            message.headers.parsed["set-cookie"],
+        )
+
+
+class BadBaseUriExplicitPathSCTest(FieldTest[ResponseLinterProtocol]):
+    "No cookie needs the default Path, so there is no note."
+
+    name = "Set-Cookie"
+    inputs = [b"a=b; Path=/x", b"c=d"]
+    expected_out = [("a", "b", [("Path", "/x")]), ("c", "d", [])]
 
     def set_response_context(self, message: ResponseLinterProtocol) -> None:
         message.base_uri = "http://["
