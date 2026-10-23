@@ -98,8 +98,6 @@ class ContentEncodingProcessor:
     def _sink_process(self, chunk: bytes) -> None:
         self._hash_processor.update(chunk)
         self.length += len(chunk)
-        if not self.content_available:
-            return
         for processor in self.processors:
             processor(chunk)
 
@@ -247,6 +245,7 @@ class DeflateProcessor:
         self._processor: Optional[Any] = None
         self._header_buffer = bytearray()
         self._decompressed = 0
+        self._eof = False
         self.ok = True
 
     @staticmethod
@@ -259,7 +258,7 @@ class DeflateProcessor:
         )
 
     def __call__(self, chunk: bytes) -> None:
-        if not self.ok:
+        if not self.ok or self._eof:
             return
 
         if self._processor is None:
@@ -281,6 +280,10 @@ class DeflateProcessor:
                     self.ok = False
                     return
                 self.next_processor(decompressed)
+            if self._processor.eof:
+                # Bytes after the end of the stream are ignored; don't let them accumulate.
+                self._eof = True
+                self._processor = None
         except zlib.error as zlib_error:
             self.message.notes.add(
                 "field-content-encoding",

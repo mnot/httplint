@@ -373,7 +373,7 @@ class TestUndecodedCodings(unittest.TestCase):
             self.assertLess(peak, 16 * 1024 * 1024, wbits)
 
     def test_deflate_trailing_data_ignored(self):
-        # Pins current behaviour (same as gzip): bytes after the end of the stream are dropped.
+        # Bytes after the end of the stream are dropped, silently.
         data = b"hello world" * 100
         for compressed in (zlib.compress(data), zlib.compress(data)[2:-4]):
             linter = _response(
@@ -381,6 +381,35 @@ class TestUndecodedCodings(unittest.TestCase):
             )
             self.assertEqual(linter.decoded.length, len(data))
             self.assertFalse(_has(linter, BAD_DEFLATE))
+
+    def test_deflate_trailing_data_bounded(self):
+        # 100MB of junk after a valid stream must not be retained (zlib keeps it in unused_data).
+        data = b"hello world" * 100
+        junk = b"\xff" * (1024 * 1024)
+        for compressed in (zlib.compress(data), zlib.compress(data)[2:-4]):
+            linter = HttpResponseLinter()
+            linter.process_response_topline(b"HTTP/1.1", b"200", b"OK")
+            linter.process_headers([(b"Content-Encoding", b"deflate")])
+            tracemalloc.start()
+            try:
+                linter.feed_content(compressed)
+                for _ in range(100):
+                    linter.feed_content(junk)
+                _, peak = tracemalloc.get_traced_memory()
+            finally:
+                tracemalloc.stop()
+            linter.finish_content(True)
+            self.assertEqual(linter.decoded.length, len(data))
+            self.assertFalse(_has(linter, BAD_DEFLATE))
+            self.assertLess(peak, 16 * 1024 * 1024)
+
+    def test_deflate_trailing_data_in_same_chunk(self):
+        data = b"hello world" * 100
+        linter = _response(
+            b"200", [(b"Content-Encoding", b"deflate")], [zlib.compress(data) + b"junk", b"more"]
+        )
+        self.assertEqual(linter.decoded.length, len(data))
+        self.assertFalse(_has(linter, BAD_DEFLATE))
 
     def test_deflate_corrupt_after_data_counts_decompressed_bytes(self):
         data = b"hello world" * 100
@@ -411,6 +440,23 @@ class TestUndecodedCodings(unittest.TestCase):
             self.assertEqual(linter.content_sample, b"", coding)
             self.assertFalse(_has(linter, CHARSET_UNDECODABLE), coding)
             self.assertFalse(_has(linter, CONTENT_TYPE_MISMATCH), coding)
+
+    def test_undecoded_coding_still_feeds_other_processors(self):
+        # Processors on decoded.processors get the stream as it was before content_decoded
+        # existed: for a coding that isn't undone, the bytes as received.
+        payload = b"\x28\xb5\x2f\xfd" + bytes(range(128, 256)) * 4
+        for coding in (b"zstd", b"compress"):
+            linter = HttpResponseLinter()
+            linter.process_response_topline(b"HTTP/1.1", b"200", b"OK")
+            linter.process_headers([(b"Content-Encoding", coding)])
+            received = []
+            linter.decoded.processors.append(received.append)
+            linter.feed_content(payload[:10])
+            linter.feed_content(payload[10:])
+            linter.finish_content(True)
+            self.assertEqual(b"".join(received), payload, coding)
+            self.assertEqual(linter.decoded.length, len(payload), coding)
+            self.assertEqual(linter.content_sample, b"", coding)
 
     def test_undecoded_coding_skips_content_type_mismatch(self):
         headers = [(b"Content-Type", b"image/png"), (b"Content-Encoding", b"zstd")]

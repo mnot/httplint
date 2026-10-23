@@ -186,7 +186,12 @@ class HttpMessageLinter:
         Capture a sample of the decoded content, noting whether it had to
         be cut short so charset checks know it may end mid-character even
         when the full content doesn't.
+
+        Nothing is captured if a content coding couldn't be undone, since the
+        chunks are then not the representation.
         """
+        if not self.content_decoded:
+            return
         room = self.content_sample_size - len(self.content_sample)
         if room > 0:
             self.content_sample += chunk[:room]
