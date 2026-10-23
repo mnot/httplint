@@ -3,6 +3,7 @@ from typing import Dict, List, Optional
 from httplint.field import BAD_SYNTAX
 from httplint.field.list_field import HttpListField
 from httplint.field.tests import FieldTest
+from httplint.field.utils import known_reporting_endpoints
 from httplint.note import MarkdownSafe, Note, categories, levels
 from httplint.syntax import rfc9110
 from httplint.types import (
@@ -175,12 +176,7 @@ sources of content that browsers are allowed to load on a page."""
         if not self.value or self._parent_note is None:
             return
 
-        reporting_endpoints_field = self.message.headers.parsed.get("reporting-endpoints")
-        reporting_endpoints = (
-            list(reporting_endpoints_field.keys()) if reporting_endpoints_field else []
-        )
-
-        known_endpoints = set(reporting_endpoints)
+        known_endpoints = known_reporting_endpoints(self.message)
 
         for parsed_directives in self.value:
             for name, value in parsed_directives.items():

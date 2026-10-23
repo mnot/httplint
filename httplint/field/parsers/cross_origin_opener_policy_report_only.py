@@ -10,25 +10,9 @@ from httplint.field.parsers.cross_origin_opener_policy import (
 from httplint.field.tests import FieldTest
 from httplint.note import Note, categories, levels
 from httplint.types import (
-    AddNoteMethodType,
     NoteClassListType,
     ResponseLinterProtocol,
 )
-
-
-class cross_origin_opener_policy_report_only(cross_origin_opener_policy):
-    canonical_name = "Cross-Origin-Opener-Policy-Report-Only"
-    description = """\
-The `Cross-Origin-Opener-Policy-Report-Only` header field allows a document to report on
-potential violations of its Cross-Origin Opener Policy without enforcing them."""
-    reference = "https://html.spec.whatwg.org/multipage/origin.html#coop"
-    report_only_string = " (for reporting only)"
-    report_only_text = "\n\nBrowsers will only report violations of this policy, not enforce it."
-
-    def evaluate(self, add_note: AddNoteMethodType) -> None:
-        if "cross-origin-opener-policy" in self.message.headers.handlers:
-            add_note(COOP_REPORT_ONLY_DUPLICATE)
-        super().evaluate(add_note)
 
 
 class COOP_REPORT_ONLY_DUPLICATE(Note):
@@ -38,6 +22,18 @@ class COOP_REPORT_ONLY_DUPLICATE(Note):
     _text = """\
 A response should not have both `Cross-Origin-Opener-Policy` and
 `Cross-Origin-Opener-Policy-Report-Only` headers. The report-only header will be ignored."""
+
+
+class cross_origin_opener_policy_report_only(cross_origin_opener_policy):
+    canonical_name = "Cross-Origin-Opener-Policy-Report-Only"
+    description = """\
+The `Cross-Origin-Opener-Policy-Report-Only` header field allows a document to report on
+potential violations of its Cross-Origin Opener Policy without enforcing them."""
+    reference = "https://html.spec.whatwg.org/multipage/origin.html#coop"
+    enforcing_name = "cross-origin-opener-policy"
+    report_only_duplicate_note = COOP_REPORT_ONLY_DUPLICATE
+    report_only_string = " (for reporting only)"
+    report_only_text = "\n\nBrowsers will only report violations of this policy, not enforce it."
 
 
 class CrossOriginOpenerPolicyReportOnlySameOriginTest(FieldTest[ResponseLinterProtocol]):
