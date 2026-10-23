@@ -8,6 +8,7 @@ from functools import partial
 from typing import Iterable, List, Type
 
 from httplint.field import BAD_SYNTAX, BAD_SYNTAX_DETAILED
+from httplint.field.cors import CORS_PREFLIGHT_ONLY
 from httplint.field.parsers.accept import ACCEPT_BAD_SYNTAX
 from httplint.field.parsers.accept_language import ACCEPT_LANGUAGE_BAD_SYNTAX
 from httplint.field.parsers.accept_patch import ACCEPT_PATCH_BAD_SYNTAX
@@ -16,6 +17,7 @@ from httplint.field.parsers.access_control_max_age import (
     CORS_MAX_AGE_INVALID,
     CORS_MAX_AGE_NEGATIVE,
 )
+from httplint.field.parsers.age import AGE_NEGATIVE, AGE_NOT_INT
 from httplint.field.parsers.content_range import (
     CONTENT_RANGE_INVALID_ASTERISK,
     CONTENT_RANGE_MISSING_SLASH,
@@ -23,11 +25,11 @@ from httplint.field.parsers.content_range import (
     RANGE_INVALID_INTEGER,
 )
 from httplint.field.parsers.strict_transport_security import HSTS_BAD_MAX_AGE
-from httplint.field.parsers.age import AGE_NEGATIVE, AGE_NOT_INT
-from httplint.field.cors import CORS_PREFLIGHT_ONLY
 from httplint.field.tests import FakeRequestLinter, FakeResponseLinter
 from httplint.i18n import L_
 from httplint.note import Note
+
+GENERIC = (BAD_SYNTAX, BAD_SYNTAX_DETAILED)
 
 
 def note_classes(
@@ -76,7 +78,18 @@ class AcceptMediaTypeTest(unittest.TestCase):
 
     def test_second_defect_keeps_the_generic_note(self) -> None:
         for linter, name, specific in self.fields:
-            for value in ["invalid; a", "invalid; a=b c", "invalid; =b"]:
+            for value in [
+                "invalid; a",
+                "invalid; a=b c",
+                "invalid; =b",
+                "invalid;baz",
+                "invalid;=x",
+                "invalid;x=y z",
+                'invalid;"',
+                "invalid;q=",
+                "invalid;q=0.5 x",
+                "invalid;a=b;c",
+            ]:
                 with self.subTest(field=name, value=value):
                     notes = note_classes(linter, name, value)
                     self.assertEqual(notes[0], specific)
@@ -90,6 +103,13 @@ class AcceptMediaTypeTest(unittest.TestCase):
                 self.assertEqual(notes[0], specific)
                 self.assertEqual(len(notes), 2)
                 self.assertIn(notes[1], (BAD_SYNTAX, BAD_SYNTAX_DETAILED))
+
+    def test_second_defect_in_one_element_only(self) -> None:
+        for linter, name, specific in self.fields:
+            with self.subTest(field=name):
+                notes = note_classes(linter, name, "invalid;baz, invalid;a=b, invalid;q=")
+                self.assertEqual(notes.count(specific), 3)
+                self.assertEqual(len([n for n in notes if n in GENERIC]), 2)
 
     def test_valid_values_get_no_notes(self) -> None:
         for linter, name, _ in self.fields:
@@ -107,11 +127,37 @@ class AcceptLanguageTest(unittest.TestCase):
                 self.assertEqual(self.notes(value), [ACCEPT_LANGUAGE_BAD_SYNTAX])
 
     def test_second_defect_keeps_the_generic_note(self) -> None:
-        for value in ["en; foo=bar; q=abc", "e n; foo=bar", "en; foo=bar; q=1; q=0.5", ";foo=bar"]:
+        for value in [
+            "en; foo=bar; q=abc",
+            "e n; foo=bar",
+            "en; foo=bar; q=1; q=0.5",
+            ";foo=bar",
+            "en;foo=bar;q=",
+            "en;foo=bar;q=0.5 x",
+            "en;foo=bar;q=1.0000",
+            "en;foo=bar;baz",
+            "en;foo=bar;=x",
+            "en;foo=bar;x=y z",
+            "en;foo=bar;;",
+            'en;foo=bar;"',
+            "en;baz;foo=bar",
+        ]:
             with self.subTest(value=value):
                 notes = self.notes(value)
                 self.assertIn(ACCEPT_LANGUAGE_BAD_SYNTAX, notes)
-                self.assertEqual(len([n for n in notes if n in (BAD_SYNTAX, BAD_SYNTAX_DETAILED)]), 1)
+                self.assertEqual(len([n for n in notes if n in GENERIC]), 1)
+
+    def test_single_bad_q_gets_one_note(self) -> None:
+        for value in ["en;q=abc", "en;q=1.0000", "en;q=", "en;q=0.5 x"]:
+            with self.subTest(value=value):
+                notes = self.notes(value)
+                self.assertEqual(len(notes), 1)
+                self.assertIn(notes[0], GENERIC)
+
+    def test_second_defect_in_one_element_only(self) -> None:
+        notes = self.notes("en;foo=bar;q=, fr;foo=bar, de;q=abc")
+        self.assertEqual(notes.count(ACCEPT_LANGUAGE_BAD_SYNTAX), 2)
+        self.assertEqual(len([n for n in notes if n in GENERIC]), 2)
 
     def test_suppression_is_per_list_element(self) -> None:
         notes = self.notes("en; foo=bar, fr; q=abc")
@@ -174,7 +220,13 @@ class StrictTransportSecurityTest(unittest.TestCase):
         ]
 
     def test_empty_max_age_gets_one_note(self) -> None:
-        for value in ["max-age=", "max-age= ", "max-age=;", "max-age=; includeSubDomains", "max-age =;"]:
+        for value in [
+            "max-age=",
+            "max-age= ",
+            "max-age=;",
+            "max-age=; includeSubDomains",
+            "max-age =;",
+        ]:
             with self.subTest(value=value):
                 self.assertEqual(self.counts(value), [1, 0])
 
