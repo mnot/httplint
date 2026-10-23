@@ -1,10 +1,10 @@
-from httplint.field.singleton_field import SingletonField
+from httplint.field.challenge_field import CredentialsField
 from httplint.field.tests import FieldTest
 from httplint.syntax import rfc9110
 from httplint.types import AddNoteMethodType, RequestLinterProtocol
 
 
-class proxy_authorization(SingletonField[RequestLinterProtocol]):
+class proxy_authorization(CredentialsField[RequestLinterProtocol]):
     canonical_name = "Proxy-Authorization"
     description = """\
 The `Proxy-Authorization` header field allows a user agent to authenticate itself with a proxy
@@ -20,4 +20,4 @@ The `Proxy-Authorization` header field allows a user agent to authenticate itsel
 class ProxyAuthorizationTest(FieldTest[RequestLinterProtocol]):
     name = "Proxy-Authorization"
     inputs = [b"Basic QWxhZGRpbjpvcGVuIHNlc2FtZQ=="]
-    expected_out = "Basic QWxhZGRpbjpvcGVuIHNlc2FtZQ=="
+    expected_out = ("Basic", "QWxhZGRpbjpvcGVuIHNlc2FtZQ==")
