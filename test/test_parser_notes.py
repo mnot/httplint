@@ -8,7 +8,7 @@ from typing import List
 from httplint import HttpResponseLinter
 from httplint.field.parsers.permissions_policy import PERMISSIONS_POLICY_UNKNOWN_TOKEN
 from httplint.field.parsers.use_as_dictionary import USE_AS_DICTIONARY_BAD_TYPE
-from httplint.field.parsers.x_frame_options import FRAME_OPTIONS_UNKNOWN
+from httplint.field.parsers.x_frame_options import FRAME_OPTIONS_ALLOW_FROM, FRAME_OPTIONS_UNKNOWN
 from httplint.note import Note
 
 
@@ -54,15 +54,22 @@ class UseAsDictionaryBadTypeKeyTest(unittest.TestCase):
             self.assertNotIn("456", str(note.summary))
 
 
-class AllowFromXFOTest(unittest.TestCase):
-    def test_allow_from_is_unknown(self) -> None:
+class XFrameOptionsUnknownTextTest(unittest.TestCase):
+    def test_allow_from_has_its_own_note(self) -> None:
         notes = _notes([(b"X-Frame-Options", b"ALLOW-FROM https://deny.example.com")])
-        classes = [n.__class__ for n in notes]
-        self.assertIn(FRAME_OPTIONS_UNKNOWN, classes)
-        self.assertEqual(
-            [c.__name__ for c in classes if c.__name__.startswith("FRAME_OPTIONS")],
-            ["FRAME_OPTIONS_UNKNOWN"],
-        )
+        xfo = [n for n in notes if n.__class__.__name__.startswith("FRAME_OPTIONS")]
+        self.assertEqual([n.__class__ for n in xfo], [FRAME_OPTIONS_ALLOW_FROM])
+        detail = str(xfo[0].detail)
+        self.assertIn("ALLOW-FROM", detail)
+        self.assertIn("obsolete", detail)
+
+    def test_unknown_value_text_does_not_claim_only_two_are_defined(self) -> None:
+        notes = _notes([(b"X-Frame-Options", b"foo")])
+        xfo = [n for n in notes if isinstance(n, FRAME_OPTIONS_UNKNOWN)]
+        self.assertEqual(len(xfo), 1)
+        detail = str(xfo[0].detail)
+        self.assertNotIn("currently defined", detail)
+        self.assertIn("Browsers act on only two values", detail)
 
 
 if __name__ == "__main__":

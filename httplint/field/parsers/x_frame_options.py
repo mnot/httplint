@@ -42,6 +42,8 @@ the transmitted content in frames that are part of other web pages.
             add_note(FRAME_OPTIONS_DENY)
         elif self.value == "SAMEORIGIN":
             add_note(FRAME_OPTIONS_SAMEORIGIN)
+        elif self.value.split(None, 1)[0] == "ALLOW-FROM":
+            add_note(FRAME_OPTIONS_ALLOW_FROM)
         else:
             add_note(FRAME_OPTIONS_UNKNOWN)
 
@@ -80,6 +82,20 @@ See [MDN](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-Frame-Opti
 """
 
 
+class FRAME_OPTIONS_ALLOW_FROM(Note):
+    category = categories.SECURITY
+    level = levels.WARN
+    _summary = "The X-Frame-Options header uses the obsolete ALLOW-FROM value."
+    _text = """\
+[RFC 7034](https://www.rfc-editor.org/rfc/rfc7034) defined an `ALLOW-FROM` value for this header, but
+it is obsolete, and browsers may ignore it. Use the
+[`frame-ancestors`](https://www.w3.org/TR/CSP3/#directive-frame-ancestors) directive of
+`Content-Security-Policy` to allow framing by specific origins.
+
+See [MDN](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-Frame-Options) for more information.
+"""
+
+
 class FRAME_OPTIONS_UNKNOWN(Note):
     category = categories.SECURITY
     level = levels.WARN
@@ -87,8 +103,8 @@ class FRAME_OPTIONS_UNKNOWN(Note):
     # Original URL:
     # http://blogs.msdn.com/b/ie/archive/2009/01/27/ie8-security-part-vii-clickjacking-defenses.aspx
     _text = """\
-Only two values are currently defined for this header, `DENY` and `SAMEORIGIN`. Using other values
-here won't necessarily cause problems, but they probably won't have any effect either.
+Browsers act on only two values for this header, `DENY` and `SAMEORIGIN`. Using other values here
+won't necessarily cause problems, but they probably won't have any effect either.
 
 See [MDN](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-Frame-Options) for more information.
 """
