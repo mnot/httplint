@@ -1,14 +1,14 @@
+# pylint: disable=too-many-lines
 from calendar import timegm
 from re import match, split
 from typing import List, Optional, Tuple, Union
-from urllib.parse import urlsplit
 
 from httplint.field import RFC6265
 from httplint.field.broken_field import BrokenField
 from httplint.field.deferred_notes import DeferredNotes
 from httplint.field.section import FIELD_VALUE_ENCODING
 from httplint.field.tests import FieldTest
-from httplint.field.utils import is_negative_integer, parse_delta_seconds
+from httplint.field.utils import is_negative_integer, parse_delta_seconds, resolve_url
 from httplint.note import MarkdownSafe, Note, categories, levels
 from httplint.types import (
     AddNoteMethodType,
@@ -37,9 +37,19 @@ requests to the server."""
     def __init__(self, wire_name: str, message: ResponseLinterProtocol) -> None:
         super().__init__(wire_name, message)
         self._deferred = DeferredNotes()
+        self._bad_base_uri_noted = False
 
     def parse(self, field_value: str, add_note: AddNoteMethodType) -> CookieType:
-        path = urlsplit(self.message.base_uri).path
+        # base_uri comes from the caller, not the wire; if it can't be parsed, the default Path
+        # (RFC 6265, Section 5.1.4) can't be worked out, so "/" is used.
+        base = resolve_url(self.message.base_uri)
+        if base is None:
+            path = ""
+            if not self._bad_base_uri_noted:
+                self._bad_base_uri_noted = True
+                self._deferred.defer(SET_COOKIE_BAD_BASE_URI)
+        else:
+            path = base.path
         return loose_parse(field_value, path, self.message.start_time, self._deferred.via(add_note))
 
     def evaluate(self, add_note: AddNoteMethodType) -> None:
@@ -65,7 +75,7 @@ requests to the server."""
                 ),
             )
 
-        self._deferred.emit()
+        self._deferred.emit(add_note)
 
 
 def _is_hardened(attrs: List[Tuple[str, Union[str, int]]]) -> bool:
@@ -409,6 +419,16 @@ def loose_date_parse(cookie_date: str) -> int:
         )
     )
     return parsed_cookie_date
+
+
+class SET_COOKIE_BAD_BASE_URI(Note):
+    category = categories.COOKIES
+    level = levels.INFO
+    _summary = "The response URI could not be parsed, so some Set-Cookie checks were skipped."
+    _text = """\
+The URI that this response was retrieved from, as given to the linter, is not valid, so it can't
+be used. The checks of `Set-Cookie` that depend on it (such as working out the default `Path` of
+a cookie) were skipped; a `Path` of `/` is assumed where one is needed."""
 
 
 class SET_COOKIE_NO_NAME(Note):
@@ -929,6 +949,40 @@ class MaxAgeLeadingZeroTextSCTest(MaxAgeSignOnlySCTest):
     "One defect, one note."
 
     inputs = [b"lang=en-US; Max-Age=0a"]
+
+
+class BadBaseUriSCTest(FieldTest[ResponseLinterProtocol]):
+    "An unparseable base_uri (from the caller) must not silently drop the cookies."
+
+    name = "Set-Cookie"
+    inputs = [b"a=b; Path", b"c=d"]
+    expected_out = [("a", "b", [("Path", "/")]), ("c", "d", [])]
+    expected_notes: NoteClassListType = [SET_COOKIE_BAD_BASE_URI]
+
+    def set_response_context(self, message: ResponseLinterProtocol) -> None:
+        message.base_uri = "http://["
+
+
+class EmptyBaseUriSCTest(FieldTest[ResponseLinterProtocol]):
+    "Guard: no base_uri at all isn't an error."
+
+    name = "Set-Cookie"
+    inputs = [b"a=b; Path"]
+    expected_out = [("a", "b", [("Path", "/")])]
+
+    def set_response_context(self, message: ResponseLinterProtocol) -> None:
+        message.base_uri = ""
+
+
+class DefaultPathSCTest(FieldTest[ResponseLinterProtocol]):
+    "Guard: the default Path comes from a valid base_uri."
+
+    name = "Set-Cookie"
+    inputs = [b"a=b; Path"]
+    expected_out = [("a", "b", [("Path", "/foo")])]
+
+    def set_response_context(self, message: ResponseLinterProtocol) -> None:
+        message.base_uri = "http://example.com/foo/bar"
 
 
 class MaxAgeHugeSCTest(FieldTest[ResponseLinterProtocol]):
