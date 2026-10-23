@@ -150,8 +150,8 @@ class EmptyCodeSpanTest(unittest.TestCase):
                     self.assertIn(escaped, detail)
                 self.assertEqual("(empty)" in detail, nameless)
 
-    # The same shape of bug exists at these sites, which are outside the scope of
-    # the Proxy-Status / Set-Cookie fix. Remove expectedFailure when they are fixed.
+    # Known bug, tracked in https://github.com/mnot/httplint/issues/276.
+    # Remove expectedFailure when that issue is fixed.
     @unittest.expectedFailure
     def test_cache_status_empty_target(self) -> None:
         for param in ("detail", "key"):
@@ -159,6 +159,8 @@ class EmptyCodeSpanTest(unittest.TestCase):
                 value = f'""; {param}="{HTML}"'
                 self.check_escaped(detail_text(b"Cache-Status", value.encode("ascii")))
 
+    # Known bug, tracked in https://github.com/mnot/httplint/issues/277.
+    # Remove expectedFailure when that issue is fixed.
     @unittest.expectedFailure
     def test_link_resource_hint_empty_target(self) -> None:
         value = f"<>; rel=preload, <{HTML}>; rel=preload"
