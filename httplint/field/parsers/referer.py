@@ -1,9 +1,7 @@
-import re
-
-from httplint.field import BAD_SYNTAX
+from httplint.field import BAD_SYNTAX_DETAILED
 from httplint.field.singleton_field import SingletonField
 from httplint.field.tests import FieldTest
-from httplint.field.utils import RE_FLAGS, is_secure, resolve_url
+from httplint.field.utils import is_secure, resolve_url
 from httplint.note import Note, categories, levels
 from httplint.syntax import rfc9110
 from httplint.types import (
@@ -21,7 +19,6 @@ The `Referer` [sic] header field allows the user agent to specify a URI Referenc
 resource from which the target URI was obtained (i.e., the "referrer")."""
     reference = f"{rfc9110.SPEC_URL}#field.referer"
     syntax = rfc9110.Referer
-    report_syntax = False  # parse() reports it, unless REFERER_BAD_URI covers the same defect
     deprecated = False
 
     def parse(self, field_value: str, add_note: AddNoteMethodType) -> str:
@@ -34,8 +31,7 @@ resource from which the target URI was obtained (i.e., the "referrer")."""
             bad_uri = True
         if bad_uri:
             add_note(REFERER_BAD_URI, uri=field_value)
-        elif not re.match(rf"^\s*(?:{self.syntax})\s*$", field_value, RE_FLAGS):
-            add_note(BAD_SYNTAX, ref_uri=self.reference)
+            self.suppress_syntax_note()
         return field_value
 
     def evaluate(self, add_note: AddNoteMethodType) -> None:
@@ -119,7 +115,7 @@ class RefererColonSegmentTest(FieldTest[RequestLinterProtocol]):
     name = "Referer"
     inputs = [b"1:2"]
     expected_out = "1:2"
-    expected_notes: NoteClassListType = [BAD_SYNTAX]
+    expected_notes: NoteClassListType = [BAD_SYNTAX_DETAILED]
 
 
 class RefererBadURITest(FieldTest[RequestLinterProtocol]):
@@ -133,12 +129,12 @@ class RefererBadURITest(FieldTest[RequestLinterProtocol]):
 
 
 class RefererBadSyntaxTest(FieldTest[RequestLinterProtocol]):
-    "A syntax error that isn't an unresolvable URI is still BAD_SYNTAX."
+    "A syntax error that isn't an unresolvable URI is still BAD_SYNTAX_DETAILED."
 
     name = "Referer"
     inputs = [b"http://example.com/a b"]
     expected_out = "http://example.com/a b"
-    expected_notes: NoteClassListType = [BAD_SYNTAX]
+    expected_notes: NoteClassListType = [BAD_SYNTAX_DETAILED]
 
     def set_request_context(self, message: RequestLinterProtocol) -> None:
         message.uri = "http://example.com/"

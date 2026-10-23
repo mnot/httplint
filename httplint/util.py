@@ -148,6 +148,24 @@ def inline_safe(value: str) -> str:
     return _INLINE_UNSAFE_RE.sub("", value)
 
 
+def invalid_char_problem(text: str, index: int) -> str:
+    """
+    Describe the syntax problem at ``index`` in ``text`` for a BAD_SYNTAX_DETAILED note.
+
+    The offending character is quoted as is, unless it is one inline_safe() would strip
+    (a backtick, NUL or line break); that is named by code point instead, so it is never
+    left out of the sentence.
+    """
+    if index >= len(text):
+        return f"The value ended unexpectedly at position {index + 1}."
+    char = text[index]
+    if _INLINE_UNSAFE_RE.match(char):
+        shown = f"U+{ord(char):04X}"
+    else:
+        shown = f"'{char}'"
+    return f"The invalid character {shown} was found at position {index + 1}."
+
+
 def markdown_list(inlist: List[str], markup: str = "") -> MarkdownSafe:
     """
     Format a list of strings into Markdown.

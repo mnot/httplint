@@ -7,7 +7,6 @@ from httplint.field.tests import FieldTest
 from httplint.field.utils import (
     PARAM_REPEATS,
     PARAM_STAR_ERROR,
-    RE_FLAGS,
     parse_params,
     resolve_url,
 )
@@ -48,21 +47,20 @@ statement of the form "[context IRI] has a [relation type] resource at [target I
 [target attributes]."""
     reference = f"{rfc8288.SPEC_URL}#header.link"
     syntax = rfc8288.Link
-    report_syntax = False  # parse() reports it, unless LINK_BAD_TARGET_URI covers the same defect
     deprecated = False
 
     def __init__(self, wire_name: str, message: AnyMessageLinterProtocol) -> None:
         super().__init__(wire_name, message)
         self.malformed: set[int] = set()  # id() of the params of links with a syntax defect
+        self._params: ParamDictType = {}  # the params parse() last returned
 
     def parse(self, field_value: str, add_note: AddNoteMethodType) -> Tuple[str, ParamDictType]:
         link_value, param_str = split_link_value(field_value)
         param_dict = parse_params(
             param_str, add_note, ["rel", "rev", "anchor", "hreflang", "type", "media"]
         )
-        if not self._check_hint_target(link_value, param_dict, add_note):
-            if not self._check_syntax(field_value, add_note):
-                self.malformed.add(id(param_dict))
+        self._params = param_dict
+        self._check_hint_target(link_value, param_dict, add_note)
         if "rel" in param_dict:  # relation_types
             pass
         if "rev" in param_dict:
@@ -89,20 +87,15 @@ statement of the form "[context IRI] has a [relation type] resource at [target I
         if resolve_url(link_value, base_uri) is not None:
             return False
         add_note(LINK_BAD_TARGET_URI, rel="/".join(hint_rels), link=link_value)
+        self.suppress_syntax_note()
         return True
 
-    def _check_syntax(self, field_value: str, add_note: AddNoteMethodType) -> bool:
-        """
-        Report BAD_SYNTAX as HttpListField does; BAD_SYNTAX_DETAILED is still added there.
-        True if the link-value is well-formed.
-        """
-        assert isinstance(self.syntax, rfc9110.list_rule)
-        element = self.syntax.element
-        if re.match(rf"^\s*(?:{element})\s*$", field_value, RE_FLAGS):
-            return True
-        if not re.match(rf"^\s*(?:{element})", field_value, RE_FLAGS):
-            add_note(BAD_SYNTAX, ref_uri=self.reference)
-        return False
+    def _check_syntax(self, value: str, add_note: AddNoteMethodType) -> bool:
+        "The base class checks each link after parse(); remember the ones that fail."
+        conforms = super()._check_syntax(value, add_note)
+        if not conforms:
+            self.malformed.add(id(self._params))
+        return conforms
 
     def evaluate(self, add_note: AddNoteMethodType) -> None:
         hints: dict[str, list[str]] = {rel: [] for rel in HINT_RELS}
