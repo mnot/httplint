@@ -849,3 +849,21 @@ def sf_type_matches(value: Any, expected: Any) -> bool:
 def is_number(value: Any) -> bool:
     "True if `value` is an int or a float, but not a bool."
     return isinstance(value, (int, float)) and not isinstance(value, bool)
+
+
+# --- coding_acceptable: whether Accept-Encoding allows a content coding ------------------------
+
+def coding_acceptable(accept_encoding: List[Tuple[str, ParamDictType]], coding: str) -> bool:
+    """
+    Whether a request's parsed Accept-Encoding allows ``coding`` (RFC 9110 Section 12.5.3):
+    an explicit entry decides, then ``*``, and q=0 means not acceptable. An invalid q is
+    treated as absent.
+    """
+    explicit: Dict[str, Optional[float]] = {}
+    for entry_coding, params in accept_encoding:
+        explicit.setdefault(entry_coding, parse_qvalue(dict(params), None))
+    if coding in explicit:
+        return explicit[coding] != 0.0
+    if "*" in explicit:
+        return explicit["*"] != 0.0
+    return False

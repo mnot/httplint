@@ -1,9 +1,9 @@
 from types import SimpleNamespace
-from typing import Dict, List, Optional, Tuple, cast
+from typing import cast
 
 from httplint.field.list_field import HttpListField
 from httplint.field.tests import FakeRequestLinter, FieldTest
-from httplint.field.utils import parse_qvalue, vary_covers
+from httplint.field.utils import coding_acceptable, vary_covers
 from httplint.note import Note, categories, levels
 from httplint.syntax import rfc9110
 from httplint.types import (
@@ -11,7 +11,6 @@ from httplint.types import (
     AnyMessageLinterProtocol,
     CachingProtocol,
     NoteClassListType,
-    ParamDictType,
     ResponseLinterProtocol,
 )
 
@@ -39,7 +38,7 @@ of its underlying media type; e.g., `gzip` and `deflate`."""
             and response.request.message_type == "request"
         ):
             accept_encoding = response.request.headers.parsed.get("accept-encoding")
-            if accept_encoding is not None and not _coding_acceptable(accept_encoding, coding):
+            if accept_encoding is not None and not coding_acceptable(accept_encoding, coding):
                 add_note(ENCODING_UNWANTED, coding=field_value)
         return coding
 
@@ -54,22 +53,6 @@ of its underlying media type; e.g., `gzip` and `deflate`."""
             ):
                 if not vary_covers(self.message, "available-dictionary"):
                     add_note(DICTIONARY_COMPRESSED_MISSING_VARY)
-
-
-def _coding_acceptable(accept_encoding: List[Tuple[str, ParamDictType]], coding: str) -> bool:
-    """
-    Whether a request's parsed Accept-Encoding allows ``coding`` (RFC 9110 Section 12.5.3):
-    an explicit entry decides, then ``*``, and q=0 means not acceptable. An invalid q is
-    treated as absent.
-    """
-    explicit: Dict[str, Optional[float]] = {}
-    for entry_coding, params in accept_encoding:
-        explicit.setdefault(entry_coding, parse_qvalue(dict(params), None))
-    if coding in explicit:
-        return explicit[coding] != 0.0
-    if "*" in explicit:
-        return explicit["*"] != 0.0
-    return False
 
 
 class DICTIONARY_COMPRESSED_MISSING_VARY(Note):
