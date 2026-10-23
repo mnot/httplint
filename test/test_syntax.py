@@ -1321,6 +1321,57 @@ class SyntaxRfc5322AuditTest(unittest.TestCase):
                 self.assertLess(elapsed, TIME_LIMIT, f"{label}: {elapsed:.2f}s")
 
 
+
+class SyntaxExtValueAuditTest(unittest.TestCase):
+    """
+    Guards for the audit of rfc5987 against RFC 8187 section 3.2.1 (issue #303). The ABNF was
+    already transcribed correctly, so these pass on main too; the docstring and SPEC_URL now
+    name RFC 8187, which obsoletes RFC 5987.
+    """
+
+    def test_character_sets(self) -> None:
+        alnum = set("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")
+        attr_char = alnum | set("!#$&+-.^_`|~")
+        mime_charsetc = alnum | set("!#$%&+-^_`{}~")
+        for code in range(256):
+            char = chr(code)
+            with self.subTest(char=repr(char)):
+                self.assertEqual(fullmatch(rfc5987.attr_char, char), char in attr_char)
+                self.assertEqual(fullmatch(rfc5987.mime_charsetc, char), char in mime_charsetc)
+
+    def test_rfc_8187_examples(self) -> None:
+        for value in [
+            "utf-8'en'%C2%A3%20rates",
+            "UTF-8''%c2%a3%20and%20%e2%82%ac%20rates",
+            "UTF-8'de'letztes%20Kapitel",
+            "UTF-8'de'n%c3%a4chstes%20Kapitel",
+            "ISO-8859-1'en'%A3%20rates",
+            "iso-8859-1''a",
+            "UTF-8''",
+            "x{}~'en-x-private'a",
+        ]:
+            with self.subTest(value=value):
+                self.assertTrue(fullmatch(rfc5987.ext_value, value))
+        for value in [
+            '"UTF-8\'en\'a"',
+            "''a",
+            "UTF-8'en'a b",
+            "UTF-8'en'a'b",
+            "UTF-8'en'a%2",
+            "UTF-8'en'a%g0",
+            "UTF-8'en'a*",
+            "UTF-8en'a",
+            "UTF-8'en",
+            "UTF-8'not a tag'a",
+            "UT'F-8'a",
+        ]:
+            with self.subTest(value=value):
+                self.assertFalse(fullmatch(rfc5987.ext_value, value))
+
+    def test_spec_url(self) -> None:
+        self.assertTrue(rfc5987.SPEC_URL.endswith("rfc8187"))
+
+
 def run_regex_check() -> None:
     print("Checking Syntax...")
     count, modules, errors = check_regex()
