@@ -1,6 +1,6 @@
 from httplint.field.date_field import HttpDateField
+from httplint.field.http_date import BAD_DATE_SYNTAX, DATE_OBSOLETE
 from httplint.field.tests import FieldTest
-from httplint.field.utils import BAD_DATE_SYNTAX, DATE_OBSOLETE
 from httplint.note import categories
 from httplint.syntax import rfc9111
 from httplint.types import NoteClassListType, ResponseLinterProtocol
