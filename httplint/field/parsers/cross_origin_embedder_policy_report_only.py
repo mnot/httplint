@@ -9,7 +9,7 @@ from httplint.field.parsers.cross_origin_embedder_policy import (
 )
 from httplint.field.tests import FieldTest
 from httplint.field.token_policy_field import POLICY_REPORT_TO_NOT_STRING
-from httplint.note import Note, categories, levels
+from httplint.note import MarkdownSafe, Note, categories, levels
 from httplint.types import (
     NoteClassListType,
     ResponseLinterProtocol,
@@ -34,7 +34,9 @@ potential violations of its Cross-Origin Embedder Policy without enforcing them.
     enforcing_name = "cross-origin-embedder-policy"
     report_only_duplicate_note = COEP_REPORT_ONLY_DUPLICATE
     report_only_string = " (for reporting only)"
-    report_only_text = "\n\nBrowsers will only report violations of this policy, not enforce it."
+    report_only_text = MarkdownSafe(
+        "\n\nBrowsers will only report violations of this policy, not enforce it."
+    )
 
 
 class CrossOriginEmbedderPolicyReportOnlyRequireCorpTest(FieldTest[ResponseLinterProtocol]):

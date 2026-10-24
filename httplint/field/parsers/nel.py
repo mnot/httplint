@@ -124,7 +124,7 @@ It allows websites to declare that they want to receive reports about network er
                     add_note(
                         NEL_BAD_VALUE,
                         key="success_fraction",
-                        details="itmust be between 0.0 and 1.0",
+                        details="it must be between 0.0 and 1.0",
                     )
                     clean = False
 
@@ -209,8 +209,7 @@ class NEL_BAD_VALUE(Note):
     level = levels.WARN
     _summary = "The NEL policy has an invalid value for '%(key)s'."
     _text = """\
-The `%(key)s` key has an invalid value; %(details)s.
-Details: %(details)s"""
+The `%(key)s` key has an invalid value; %(details)s."""
 
 
 class NEL_CONFIGURED(Note):

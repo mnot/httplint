@@ -264,7 +264,7 @@ _QUOTED_PAIR_CHAR = _char_set(
 )
 
 
-def split_list_field(field_value: str) -> List[str]:
+def split_list_field(field_value: str, comments: bool = False) -> List[str]:
     """
     Split a field value on commas, as the #rule needs.
 
@@ -272,27 +272,35 @@ def split_list_field(field_value: str) -> List[str]:
     quoted-string is an ordinary character of its item, so the malformed item reaches the
     field's own syntax check instead of being dropped.
 
+    With `comments`, commas inside a parenthesised comment (nested to any depth) don't
+    split either; an unmatched "(" is an ordinary character, as with a stray quote.
+
     This is linear; an earlier regex-based version backtracked quadratically.
     """
     size = len(field_value)
     # quote_end[idx]: if inside a quoted-string at idx, the index just after its closing
     # quote, or -1 if it is unterminated or malformed.
     quote_end = [-1] * (size + 2)
+    for idx in range(size - 1, -1, -1):
+        char = field_value[idx]
+        if char == '"':
+            quote_end[idx] = idx + 1
+        elif char in _QDTEXT:
+            quote_end[idx] = quote_end[idx + 1]
+        elif char == "\\" and idx + 1 < size and field_value[idx + 1] in _QUOTED_PAIR_CHAR:
+            quote_end[idx] = quote_end[idx + 2]
+    if comments:
+        return _split_outside_comments(field_value, quote_end)
     # run_end[idx]: where the run of non-comma characters and quoted-strings starting at
     # idx stops (at a comma or the end).
     run_end = [size] * (size + 1)
     for idx in range(size - 1, -1, -1):
         char = field_value[idx]
         if char == '"':
-            quote_end[idx] = idx + 1
             after = quote_end[idx + 1]
             run_end[idx] = run_end[after if after >= 0 else idx + 1]
-            continue
-        if char in _QDTEXT:
-            quote_end[idx] = quote_end[idx + 1]
-        elif char == "\\" and idx + 1 < size and field_value[idx + 1] in _QUOTED_PAIR_CHAR:
-            quote_end[idx] = quote_end[idx + 2]
-        run_end[idx] = idx if char == "," else run_end[idx + 1]
+        else:
+            run_end[idx] = idx if char == "," else run_end[idx + 1]
     items: List[str] = []
     pos = 0
     while pos < size:
@@ -852,3 +860,57 @@ def sf_type_matches(value: Any, expected: Any) -> bool:
 def is_number(value: Any) -> bool:
     "True if `value` is an int or a float, but not a bool."
     return isinstance(value, (int, float)) and not isinstance(value, bool)
+
+
+# --- _split_outside_comments: comma splitting that respects "(" comments ")" -------------------
+
+
+def _split_outside_comments(field_value: str, quote_end: List[int]) -> List[str]:
+    """
+    Split on commas outside quoted-strings (per `quote_end`, see `split_list_field`) and
+    comments. Comments nest, and a quoted-pair inside one can escape a parenthesis; a "(" with
+    no matching ")" is an ordinary character.
+
+    Linear: `after_comment` is filled right to left in one pass, then the value is scanned once.
+    """
+    size = len(field_value)
+    # after_comment[idx]: scanning from idx inside a comment (one level deep), the index just
+    # after the ")" that closes it, or -1 if there is none. A comment's end, for the "(" at
+    # idx, is after_comment[idx + 1].
+    after_comment = [-1] * (size + 2)
+    for idx in range(size - 1, -1, -1):
+        char = field_value[idx]
+        if char == ")":
+            after_comment[idx] = idx + 1
+        elif char == "(":
+            # The nested comment ends at after_comment[idx + 1]; carry on from there.
+            nested = after_comment[idx + 1]
+            after_comment[idx] = after_comment[nested] if nested >= 0 else -1
+        elif char == "\\" and idx + 1 < size and field_value[idx + 1] in _QUOTED_PAIR_CHAR:
+            after_comment[idx] = after_comment[idx + 2]
+        else:
+            after_comment[idx] = after_comment[idx + 1]
+
+    items: List[str] = []
+    item_start = 0
+    idx = 0
+    while idx < size:
+        char = field_value[idx]
+        if char == ",":
+            item = field_value[item_start:idx].strip()
+            if item:
+                items.append(item)
+            item_start = idx + 1
+            idx += 1
+        elif char == '"':
+            after = quote_end[idx + 1]
+            idx = after if after >= 0 else idx + 1
+        elif char == "(":
+            after = after_comment[idx + 1]
+            idx = after if after >= 0 else idx + 1
+        else:
+            idx += 1
+    item = field_value[item_start:].strip()
+    if item:
+        items.append(item)
+    return items

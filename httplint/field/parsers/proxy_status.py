@@ -30,9 +30,7 @@ The `Proxy-Status` header field indicates how intermediaries have handled the re
         status_list = []
         for target, params in self.value:
 
-            target_str = inline_safe(
-                target.decode("ascii", "replace") if isinstance(target, bytes) else str(target)
-            )
+            target_str = inline_safe(_target_text(target))
             param_str = check_sf_params(
                 params,
                 KNOWN_PARAMS,
@@ -42,16 +40,24 @@ The `Proxy-Status` header field indicates how intermediaries have handled the re
             )
             # An empty code span would swallow the next span's delimiters.
             label = f"**`{target_str}`**" if target_str else "**(empty)**"
-            status_list.append(f"{label}:\n{param_str}")
+            status_list.append(f"{label}:\n\n{param_str}")
 
         if status_list:
             add_note(PROXY_STATUS, status=MarkdownSafe("\n\n".join(status_list)))
 
 
+def _target_text(target: Any) -> str:
+    "Plain text for a target; an inner list (not valid here) is shown as (a b), not as a repr."
+    if isinstance(target, bytes):
+        return target.decode("ascii", "replace")
+    if isinstance(target, list):
+        return "(" + " ".join(_target_text(item) for item, _ in target) + ")"
+    return str(target)
+
+
 KNOWN_PARAMS: Dict[str, Dict[str, Any]] = {
     "error": {
         "type": Token,
-        "desc": "The error was `%s`.",
         "value_desc": {
             Token(
                 "dns_timeout"
