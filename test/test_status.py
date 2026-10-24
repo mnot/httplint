@@ -1,7 +1,11 @@
 import unittest
 from httplint import HttpResponseLinter
 from httplint.message import STATUS_CODE_NON_NUMERIC
-from httplint.status import HEADER_SHOULD_NOT_BE_IN_304, STATUS_NONSTANDARD
+from httplint.status import (
+    CONNECT_TUNNEL_FRAMING,
+    HEADER_SHOULD_NOT_BE_IN_304,
+    STATUS_NONSTANDARD,
+)
 
 
 class TestStatus304(unittest.TestCase):
@@ -484,6 +488,63 @@ class TestStatus206(unittest.TestCase):
 
         notes = self._notes_206([(b"Content-Range", b"bytes 0-4/10")])
         self.assertFalse(any(isinstance(n, PARTIAL_WITHOUT_RANGE) for n in notes))
+
+
+class TestStatusConnectTunnel(unittest.TestCase):
+    @staticmethod
+    def _notes(status, response_headers, method=b"CONNECT", with_request=True):
+        from httplint.message import HttpRequestLinter
+
+        linter = HttpResponseLinter()
+        if with_request:
+            req = HttpRequestLinter()
+            req.process_request_topline(method, b"example.com:443", b"HTTP/1.1")
+            req.process_headers([])
+            linter.request = req
+        linter.process_response_topline(b"HTTP/1.1", status, b"Phrase")
+        linter.process_headers([(b"Date", b"Fri, 01 Jan 2021 00:00:00 GMT")] + response_headers)
+        linter.finish_content(True)
+        return [n for n in linter.notes if isinstance(n, CONNECT_TUNNEL_FRAMING)]
+
+    def test_connect_2xx_with_framing_headers(self):
+        for status in (b"200", b"204", b"299"):
+            for name in (b"Content-Length", b"content-length", b"Transfer-Encoding"):
+                with self.subTest(status=status, name=name):
+                    notes = self._notes(status, [(name, b"0" if b"ength" in name else b"chunked")])
+                    self.assertEqual([n.subject for n in notes], ["field-" + name.decode().lower()])
+
+    def test_connect_2xx_with_both_headers(self):
+        notes = self._notes(b"200", [(b"Content-Length", b"0"), (b"Transfer-Encoding", b"chunked")])
+        self.assertEqual(
+            sorted(n.subject for n in notes), ["field-content-length", "field-transfer-encoding"]
+        )
+
+    def test_connect_2xx_with_invalid_header_value(self):
+        notes = self._notes(b"200", [(b"Content-Length", b"abc")])
+        self.assertEqual(len(notes), 1)
+
+    def test_connect_note_level(self):
+        from httplint.note import levels
+
+        self.assertEqual(CONNECT_TUNNEL_FRAMING.level, levels.BAD)
+
+    def test_connect_2xx_without_framing_headers(self):
+        # Guard
+        self.assertEqual(self._notes(b"200", []), [])
+
+    def test_connect_non_2xx_not_flagged(self):
+        # Guard
+        for status in (b"407", b"502"):
+            self.assertEqual(self._notes(status, [(b"Content-Length", b"0")]), [], status)
+
+    def test_non_connect_request_not_flagged(self):
+        # Guard
+        self.assertEqual(self._notes(b"200", [(b"Content-Length", b"0")], method=b"GET"), [])
+
+    def test_no_request_not_flagged(self):
+        # Guard
+        notes = self._notes(b"200", [(b"Content-Length", b"0")], with_request=False)
+        self.assertEqual(notes, [])
 
 
 if __name__ == "__main__":
