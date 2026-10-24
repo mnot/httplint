@@ -647,7 +647,7 @@ class PARAM_STAR_BAD(Note):
     level = levels.BAD
     _summary = "The %(param)s* parameter isn't allowed on the %(field_name)s field."
     _text = """\
-Parameter values that end in '*' are reserved for non-ascii text, as explained in
+Parameters whose names end in '*' are reserved for non-ascii text, as explained in
 [RFC8187](https://www.rfc-editor.org/rfc/rfc8187#section-4).
 
 The `%(param)s` parameter on the `%(field_name)s` field does not allow this; you should use
@@ -659,7 +659,7 @@ class PARAM_STAR_QUOTED(Note):
     level = levels.BAD
     _summary = "The '%(param)s' parameter's value cannot be quoted."
     _text = """\
-Parameter values that end in '*' have a specific format, defined in
+Parameters whose names end in '*' have values with a specific format, defined in
 [RFC8187](https://www.rfc-editor.org/rfc/rfc8187#section-3.2.1), to allow non-ASCII text.
 
 The `%(param)s` parameter on the `%(field_name)s` field has double-quotes around it, which is not
@@ -671,7 +671,7 @@ class PARAM_STAR_ERROR(Note):
     level = levels.BAD
     _summary = "The %(param)s parameter's value is invalid."
     _text = """\
-Parameter values that end in '*' have a specific format, defined in
+Parameters whose names end in '*' have values with a specific format, defined in
 [RFC8187](https://www.rfc-editor.org/rfc/rfc8187#section-3.2.1), to allow non-ASCII text.
 
 The `%(param)s` parameter on the `%(field_name)s` field is not valid; it needs to have three
@@ -683,7 +683,7 @@ class PARAM_STAR_NOCHARSET(Note):
     level = levels.WARN
     _summary = "The %(param)s parameter's value doesn't define an encoding."
     _text = """\
-Parameter values that end in '*' have a specific format, defined in
+Parameters whose names end in '*' have values with a specific format, defined in
 [RFC8187](https://www.rfc-editor.org/rfc/rfc8187#section-3.2.1), to allow non-ASCII text.
 
 The `%(param)s` parameter on the `%(field_name)s` header doesn't declare its character encoding,
@@ -695,7 +695,7 @@ class PARAM_STAR_CHARSET(Note):
     level = levels.WARN
     _summary = "The %(param)s parameter's value uses an encoding other than UTF-8."
     _text = """\
-Parameter values that end in '*' have a specific format, defined in
+Parameters whose names end in '*' have values with a specific format, defined in
 [RFC8187](https://www.rfc-editor.org/rfc/rfc8187#section-3.2.1), to allow non-ASCII text.
 
 The `%(param)s` parameter on the `%(field_name)s` header uses the `'%(enc)s` encoding, which has

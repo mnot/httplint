@@ -9,7 +9,9 @@ import unittest
 from httplint.field.utils import (
     PARAM_REPEATS,
     PARAM_STAR_BAD,
+    PARAM_STAR_CHARSET,
     PARAM_STAR_ERROR,
+    PARAM_STAR_NOCHARSET,
     PARAM_STAR_QUOTED,
     parse_params,
 )
@@ -116,6 +118,26 @@ class ParseParamsTest(unittest.TestCase):
         self.assertEqual(
             parse("x* = UTF-8''a", bws=True, nostar=["x"]), ({}, [(PARAM_STAR_BAD, "x")])
         )
+
+
+class ParamStarNoteTextTest(unittest.TestCase):
+    """The parameter *name* ends in '*' (RFC 8187 Section 3.2.1), not its value."""
+
+    def test_notes_describe_the_name_and_link_rfc8187(self) -> None:
+        for note_class, anchor in [
+            (PARAM_STAR_BAD, "section-4"),
+            (PARAM_STAR_QUOTED, "section-3.2.1"),
+            (PARAM_STAR_ERROR, "section-3.2.1"),
+            (PARAM_STAR_NOCHARSET, "section-3.2.1"),
+            (PARAM_STAR_CHARSET, "section-3.2.1"),
+        ]:
+            with self.subTest(note=note_class.__name__):
+                note = note_class("x", param="x", field_name="Foo", enc="latin1")
+                detail = str(note.detail)
+                self.assertIn("names end in '*'", detail)
+                self.assertNotIn("values that end in", detail)
+                self.assertIn(f"https://www.rfc-editor.org/rfc/rfc8187#{anchor}", detail)
+                self.assertNotIn("rfc5987", detail)
 
 
 if __name__ == "__main__":
