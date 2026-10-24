@@ -287,11 +287,14 @@ It was found in the following directives:
 class CSP_REPORT_TO_MISSING(Note):
     category = categories.SECURITY
     level = levels.WARN
-    _summary = "The report-to endpoint '%(endpoint)s' is not defined."
+    _summary = "The report-to name '%(endpoint)s' doesn't match a Reporting-Endpoints entry."
     _text = """\
-The `report-to` directive [Content Security Policy](https://www.w3.org/TR/CSP3/)
-specifies a reporting endpoint, but no matching endpoint refers to it in the
-`Reporting-Endpoints` header.%(report_only_text)s"""
+The `report-to` directive in [Content Security Policy](https://www.w3.org/TR/CSP3/)
+names a reporting endpoint. The Reporting API matches that name against the entries in the
+`Reporting-Endpoints` header, and none has this name.
+
+The specification does not use legacy `Report-To` groups for this, so a group with this name in a
+`Report-To` header does not satisfy it.%(report_only_text)s"""
 
 
 class CSPTest(FieldTest[ResponseLinterProtocol]):
