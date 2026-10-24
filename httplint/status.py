@@ -438,7 +438,7 @@ class CONNECT_TUNNEL_FRAMING(Note):
     _summary = "A successful response to CONNECT can't have a %(field_name)s header."
     _text = """\
 A `2xx` response to a `CONNECT` request switches the connection to a tunnel, so what follows the
-header section is tunnelled data, not message content. A server must not send `Content-Length` or
+header section is tunnelled data, not message content. A server MUST NOT send `Content-Length` or
 `Transfer-Encoding` in such a response, and clients ignore them.
 
 See [RFC 9110 Section 9.3.6](https://www.rfc-editor.org/rfc/rfc9110.html#section-9.3.6)."""
