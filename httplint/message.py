@@ -41,9 +41,9 @@ class HttpMessageLinter:
     Base class for HTTP message linters.
 
     ``start_time`` is when the exchange happened, in seconds since the epoch. If it is
-    not given, time-dependent checks are skipped where they can be, but a two-digit year
-    in an obsolete date is resolved against the time linting runs (RFC 9110 Section
-    5.6.7), so the result for a year near the 50-year line depends on when it is run.
+    not given (the CLI only sets it with ``-n/--now``), a two-digit year in an obsolete
+    date is resolved against the wall clock (RFC 9110 Section 5.6.7), so the result for a
+    year near the 50-year line depends on when linting runs.
     """
 
     message_type = L_("message")
