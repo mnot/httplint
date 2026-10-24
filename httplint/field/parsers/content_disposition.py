@@ -106,6 +106,14 @@ class QuotedCDTest(FieldTest[AnyMessageLinterProtocol]):
     expected_out = ("attachment", {"filename": "foo.txt"})
 
 
+class QuotedSemicolonCDTest(FieldTest[AnyMessageLinterProtocol]):
+    "Guard: a semicolon inside a quoted parameter value stays in the value (same on main)."
+
+    name = "Content-Disposition"
+    inputs = [b'attachment; filename="a;b.txt"']
+    expected_out = ("attachment", {"filename": "a;b.txt"})
+
+
 class TokenCDTest(FieldTest[AnyMessageLinterProtocol]):
     name = "Content-Disposition"
     inputs = [b"attachment; filename=foo.txt"]

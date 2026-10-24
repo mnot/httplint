@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from typing import Optional
 
 from httplint.field.list_field import HttpListField
+from httplint.field.params import split_params_off
 from httplint.field.tests import FieldTest
 from httplint.field.utils import BAD_Q_VALUE, parse_media_type_once, parse_qvalue
 from httplint.note import Note, categories, levels
@@ -41,7 +42,7 @@ acceptable in responses."""
             nostar=["q"],
         )
 
-        raw_params = field_value.partition(";")[2]
+        _, raw_params = split_params_off(field_value)
         q_val = parse_qvalue(param_dict, add_note, raw_params, item=media_type)
 
         return AcceptValue(media_type, param_dict, q_val)
