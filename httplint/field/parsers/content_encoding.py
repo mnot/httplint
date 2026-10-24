@@ -1,9 +1,14 @@
 from types import SimpleNamespace
-from typing import Dict, List, Optional, Tuple, cast
+from typing import cast
 
+from httplint.field.codings import (
+    CODING_ALIAS_DEPRECATED,
+    coding_acceptable,
+    note_deprecated_codings,
+)
 from httplint.field.list_field import HttpListField
 from httplint.field.tests import FakeRequestLinter, FieldTest
-from httplint.field.utils import parse_qvalue, vary_covers
+from httplint.field.utils import vary_covers
 from httplint.note import Note, categories, levels
 from httplint.syntax import rfc9110
 from httplint.types import (
@@ -11,7 +16,6 @@ from httplint.types import (
     AnyMessageLinterProtocol,
     CachingProtocol,
     NoteClassListType,
-    ParamDictType,
     ResponseLinterProtocol,
 )
 
@@ -39,9 +43,12 @@ of its underlying media type; e.g., `gzip` and `deflate`."""
             and response.request.message_type == "request"
         ):
             accept_encoding = response.request.headers.parsed.get("accept-encoding")
-            if accept_encoding is not None and not _coding_acceptable(accept_encoding, coding):
+            if accept_encoding is not None and not coding_acceptable(accept_encoding, coding):
                 add_note(ENCODING_UNWANTED, coding=field_value)
         return coding
+
+    def evaluate(self, add_note: AddNoteMethodType) -> None:
+        note_deprecated_codings(self.value, add_note, self.category)
 
     def post_check(self, add_note: AddNoteMethodType) -> None:
         if not self.message.as_response:
@@ -54,22 +61,6 @@ of its underlying media type; e.g., `gzip` and `deflate`."""
             ):
                 if not vary_covers(self.message, "available-dictionary"):
                     add_note(DICTIONARY_COMPRESSED_MISSING_VARY)
-
-
-def _coding_acceptable(accept_encoding: List[Tuple[str, ParamDictType]], coding: str) -> bool:
-    """
-    Whether a request's parsed Accept-Encoding allows ``coding`` (RFC 9110 Section 12.5.3):
-    an explicit entry decides, then ``*``, and q=0 means not acceptable. An invalid q is
-    treated as absent.
-    """
-    explicit: Dict[str, Optional[float]] = {}
-    for entry_coding, params in accept_encoding:
-        explicit.setdefault(entry_coding, parse_qvalue(dict(params), None))
-    if coding in explicit:
-        return explicit[coding] != 0.0
-    if "*" in explicit:
-        return explicit["*"] != 0.0
-    return False
 
 
 class DICTIONARY_COMPRESSED_MISSING_VARY(Note):
@@ -298,3 +289,182 @@ class DictionaryCompressedVaryCoveredTest(FieldTest[AnyMessageLinterProtocol]):
             CachingProtocol, SimpleNamespace(store_shared=True, store_private=True)
         )
         message.headers.parsed["vary"] = ["accept-encoding", "available-dictionary"]
+
+
+class ContentEncodingXGzipTest(FieldTest[AnyMessageLinterProtocol]):
+    "x-gzip is equivalent to gzip (RFC 9110 Section 8.4.1.3)."
+
+    name = "Content-Encoding"
+    inputs = [b"x-gzip"]
+    expected_out = ["x-gzip"]
+    expected_notes: NoteClassListType = [CODING_ALIAS_DEPRECATED]
+
+    def set_response_context(self, message: ResponseLinterProtocol) -> None:
+        assert message.request is not None
+        message.request.headers.process([(b"accept-encoding", b"gzip")])
+
+
+class ContentEncodingXGzipRequestTest(FieldTest[AnyMessageLinterProtocol]):
+    "The alias works the other way too: gzip is acceptable when the request lists x-gzip."
+
+    name = "Content-Encoding"
+    inputs = [b"gzip"]
+    expected_out = ["gzip"]
+    expected_notes: NoteClassListType = []
+
+    def set_response_context(self, message: ResponseLinterProtocol) -> None:
+        assert message.request is not None
+        message.request.headers.process([(b"accept-encoding", b"x-gzip")])
+
+
+class ContentEncodingXGzipQZeroTest(FieldTest[AnyMessageLinterProtocol]):
+    "A q=0 on gzip refuses x-gzip as well, even though a wildcard would otherwise allow it."
+
+    name = "Content-Encoding"
+    inputs = [b"x-gzip"]
+    expected_out = ["x-gzip"]
+    expected_notes: NoteClassListType = [ENCODING_UNWANTED, CODING_ALIAS_DEPRECATED]
+
+    def set_response_context(self, message: ResponseLinterProtocol) -> None:
+        assert message.request is not None
+        message.request.headers.process([(b"accept-encoding", b"gzip;q=0, *;q=1")])
+
+
+class ContentEncodingXCompressTest(FieldTest[AnyMessageLinterProtocol]):
+    "x-compress is equivalent to compress (RFC 9110 Section 8.4.1.1)."
+
+    name = "Content-Encoding"
+    inputs = [b"x-compress"]
+    expected_out = ["x-compress"]
+    expected_notes: NoteClassListType = [CODING_ALIAS_DEPRECATED]
+
+    def set_response_context(self, message: ResponseLinterProtocol) -> None:
+        assert message.request is not None
+        message.request.headers.process([(b"accept-encoding", b"compress")])
+
+
+class ContentEncodingXGzipNotCompressTest(FieldTest[AnyMessageLinterProtocol]):
+    "Guard: the aliases don't cross over; x-gzip is not acceptable to a client that lists compress."
+
+    name = "Content-Encoding"
+    inputs = [b"x-gzip"]
+    expected_out = ["x-gzip"]
+    expected_notes: NoteClassListType = [ENCODING_UNWANTED, CODING_ALIAS_DEPRECATED]
+
+    def set_response_context(self, message: ResponseLinterProtocol) -> None:
+        assert message.request is not None
+        message.request.headers.process([(b"accept-encoding", b"compress")])
+
+
+class ContentEncodingExactBeforeAliasTest(FieldTest[AnyMessageLinterProtocol]):
+    "An entry for the coding itself decides, even if an earlier entry refuses its alias."
+
+    name = "Content-Encoding"
+    inputs = [b"gzip"]
+    expected_out = ["gzip"]
+    expected_notes: NoteClassListType = []
+
+    def set_response_context(self, message: ResponseLinterProtocol) -> None:
+        assert message.request is not None
+        message.request.headers.process([(b"accept-encoding", b"x-gzip;q=0, gzip")])
+
+
+class ContentEncodingExactAliasBeforeAliasTest(FieldTest[AnyMessageLinterProtocol]):
+    "As above, for x-gzip with an earlier gzip;q=0."
+
+    name = "Content-Encoding"
+    inputs = [b"x-gzip"]
+    expected_out = ["x-gzip"]
+    expected_notes: NoteClassListType = [CODING_ALIAS_DEPRECATED]
+
+    def set_response_context(self, message: ResponseLinterProtocol) -> None:
+        assert message.request is not None
+        message.request.headers.process([(b"accept-encoding", b"gzip;q=0, x-gzip")])
+
+
+class ContentEncodingExactCompressBeforeAliasTest(FieldTest[AnyMessageLinterProtocol]):
+    "As above, for x-compress with an earlier compress;q=0."
+
+    name = "Content-Encoding"
+    inputs = [b"x-compress"]
+    expected_out = ["x-compress"]
+    expected_notes: NoteClassListType = [CODING_ALIAS_DEPRECATED]
+
+    def set_response_context(self, message: ResponseLinterProtocol) -> None:
+        assert message.request is not None
+        message.request.headers.process([(b"accept-encoding", b"compress;q=0, x-compress")])
+
+
+class ContentEncodingExactRefusalBeforeAliasTest(FieldTest[AnyMessageLinterProtocol]):
+    "An exact q=0 beats an alias that is allowed (main flags this too)."
+
+    name = "Content-Encoding"
+    inputs = [b"gzip"]
+    expected_out = ["gzip"]
+    expected_notes: NoteClassListType = [ENCODING_UNWANTED]
+
+    def set_response_context(self, message: ResponseLinterProtocol) -> None:
+        assert message.request is not None
+        message.request.headers.process([(b"accept-encoding", b"x-gzip, gzip;q=0")])
+
+
+class ContentEncodingAliasChainTest(FieldTest[AnyMessageLinterProtocol]):
+    "In a chain, each coding is checked on its own: only br is unwanted."
+
+    name = "Content-Encoding"
+    inputs = [b"gzip, br"]
+    expected_out = ["gzip", "br"]
+    expected_notes: NoteClassListType = [ENCODING_UNWANTED]
+
+    def set_response_context(self, message: ResponseLinterProtocol) -> None:
+        assert message.request is not None
+        message.request.headers.process([(b"accept-encoding", b"x-gzip;q=0, gzip")])
+
+
+class ContentEncodingRepeatedCodingTest(FieldTest[AnyMessageLinterProtocol]):
+    "A coding that repeats in the chain is acceptable each time."
+
+    name = "Content-Encoding"
+    inputs = [b"gzip, gzip"]
+    expected_out = ["gzip", "gzip"]
+    expected_notes: NoteClassListType = []
+
+    def set_response_context(self, message: ResponseLinterProtocol) -> None:
+        assert message.request is not None
+        message.request.headers.process([(b"accept-encoding", b"x-gzip;q=0, gzip")])
+
+
+class ContentEncodingAliasRefusalOverridesWildcardTest(FieldTest[AnyMessageLinterProtocol]):
+    "With no entry for the coding itself, a refused alias beats the wildcard."
+
+    name = "Content-Encoding"
+    inputs = [b"gzip"]
+    expected_out = ["gzip"]
+    expected_notes: NoteClassListType = [ENCODING_UNWANTED]
+
+    def set_response_context(self, message: ResponseLinterProtocol) -> None:
+        assert message.request is not None
+        message.request.headers.process([(b"accept-encoding", b"x-gzip;q=0, *")])
+
+
+class ContentEncodingXGzipDeprecatedTest(FieldTest[AnyMessageLinterProtocol]):
+    name = "Content-Encoding"
+    inputs = [b"X-Gzip"]
+    expected_out = ["x-gzip"]
+    expected_notes: NoteClassListType = [CODING_ALIAS_DEPRECATED]
+
+
+class ContentEncodingXGzipInChainTest(FieldTest[AnyMessageLinterProtocol]):
+    name = "Content-Encoding"
+    inputs = [b"gzip, x-gzip"]
+    expected_out = ["gzip", "x-gzip"]
+    expected_notes: NoteClassListType = [CODING_ALIAS_DEPRECATED]
+
+
+class ContentEncodingStandardCodingsTest(FieldTest[AnyMessageLinterProtocol]):
+    "Guard: gzip and compress don't get the deprecated-alias note."
+
+    name = "Content-Encoding"
+    inputs = [b"gzip, compress"]
+    expected_out = ["gzip", "compress"]
+    expected_notes: NoteClassListType = []
