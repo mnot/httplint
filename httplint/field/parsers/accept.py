@@ -57,7 +57,7 @@ class ACCEPT_BAD_SYNTAX(Note):
     _text = """\
 `%(value)s` is not a valid media range. `Accept` is a list of media ranges
 (e.g., `text/html`, `image/*`, `*/*`) that the client prefers in the response;
-see [its definition](%(ref_uri)s) for more information."""
+see [its definition](%(ref_uri)s) for more information.%(position)s"""
 
 
 class AcceptTest(FieldTest[RequestLinterProtocol]):

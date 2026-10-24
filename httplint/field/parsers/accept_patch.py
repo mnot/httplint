@@ -34,7 +34,7 @@ class ACCEPT_PATCH_BAD_SYNTAX(Note):
     _text = """\
 `%(value)s` is not a valid media type. `Accept-Patch` is a list of media types
 (e.g., `application/json-patch+json`) accepted in a PATCH request; see [its
-definition](%(ref_uri)s) for more information."""
+definition](%(ref_uri)s) for more information.%(position)s"""
 
 
 class AcceptPatchTest(FieldTest[ResponseLinterProtocol]):

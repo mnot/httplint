@@ -5,7 +5,7 @@ from typing import Optional
 from httplint.field import BAD_SYNTAX
 from httplint.field.list_field import HttpListField
 from httplint.field.tests import FieldTest
-from httplint.field.utils import RE_FLAGS, parse_params, parse_qvalue
+from httplint.field.utils import RE_FLAGS, parse_params, parse_qvalue, syntax_position
 from httplint.note import Note, categories, levels
 from httplint.syntax import rfc9110
 from httplint.types import (
@@ -52,7 +52,11 @@ preferred in the response."""
 
         if param_dict:
             # RFC 9110 only defines q parameter for Accept-Language
-            add_note(ACCEPT_LANGUAGE_BAD_SYNTAX, ref_uri=self.reference)
+            add_note(
+                ACCEPT_LANGUAGE_BAD_SYNTAX,
+                ref_uri=self.reference,
+                position=syntax_position(self, field_value),
+            )
             # That note covers the value's syntax defect only if nothing else is wrong: the
             # value has to match the syntax once its well-formed non-q parameters are removed.
             rest = EXTRA_PARAM_RE.sub(
@@ -74,7 +78,7 @@ class ACCEPT_LANGUAGE_BAD_SYNTAX(Note):
     _summary = "The Accept-Language header isn't valid."
     _text = """\
 The value for this field doesn't conform to its specified syntax; see [its
-definition](%(ref_uri)s) for more information."""
+definition](%(ref_uri)s) for more information.%(position)s"""
 
 
 class AcceptLanguageTest(FieldTest[RequestLinterProtocol]):

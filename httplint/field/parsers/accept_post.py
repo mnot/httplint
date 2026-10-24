@@ -37,7 +37,7 @@ class ACCEPT_POST_BAD_SYNTAX(Note):
     _text = """\
 `%(value)s` is not a valid media type. `Accept-Post` is a list of media types
 (e.g., `text/turtle`) accepted in a POST request; see [its definition](%(ref_uri)s)
-for more information."""
+for more information.%(position)s"""
 
 
 class AcceptPostTest(FieldTest[ResponseLinterProtocol]):

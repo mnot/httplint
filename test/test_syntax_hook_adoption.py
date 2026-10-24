@@ -5,7 +5,7 @@ second, unrelated syntax defect still gets the generic syntax note.
 
 import unittest
 from functools import partial
-from typing import Iterable, List, Type
+from typing import Iterable, List, Tuple, Type
 
 from httplint.field import BAD_SYNTAX, BAD_SYNTAX_DETAILED
 from httplint.field.cors import CORS_PREFLIGHT_ONLY
@@ -251,6 +251,85 @@ class StrictTransportSecurityTest(unittest.TestCase):
         ]:
             with self.subTest(value=value):
                 self.assertEqual(self.counts(value), expected)
+
+
+class SyntaxPositionTest(unittest.TestCase):
+    "A specific note that replaces BAD_SYNTAX_DETAILED says where the value goes wrong."
+
+    def rendered(
+        self, linter_class: type, name: str, value: str
+    ) -> List[Tuple[Type[Note], str, str]]:
+        "(class, summary, detail HTML) of each top-level note."
+        message = linter_class()
+        message.headers.process([(name.encode(), value.encode("latin-1"))])
+        message.post_checks()
+        return [(type(n), str(n.summary), str(n.detail)) for n in message.notes]
+
+    def only_note(self, linter_class: type, name: str, value: str) -> Tuple[Type[Note], str, str]:
+        notes = self.rendered(linter_class, name, value)
+        self.assertEqual(len(notes), 1, notes)
+        return notes[0]
+
+    def test_accept_language_specific_note_has_position(self) -> None:
+        note, summary, detail = self.only_note(FakeRequestLinter, "Accept-Language", "en; foo=bar")
+        self.assertIs(note, ACCEPT_LANGUAGE_BAD_SYNTAX)
+        self.assertTrue(summary)
+        self.assertIn("The invalid character ';' was found at position 3.", detail)
+        self.assertIn("en; foo=bar\n  ^", detail)
+        self.assertNotIn("<code></code>", detail)
+
+    def test_accept_language_single_defect_has_position(self) -> None:
+        for value, position in [("en;q=abc", 3), ("en;q=1.0000", 11), ("en;q=", 3)]:
+            with self.subTest(value=value):
+                note, summary, detail = self.only_note(FakeRequestLinter, "Accept-Language", value)
+                self.assertIs(note, BAD_SYNTAX_DETAILED)
+                self.assertTrue(summary)
+                self.assertIn(f"found at position {position}.", detail)
+                self.assertIn(value + "\n" + " " * (position - 1) + "^", detail)
+                self.assertNotIn("<code></code>", detail)
+
+    def test_position_is_within_the_list_element(self) -> None:
+        notes = self.rendered(FakeRequestLinter, "Accept-Language", "de, fr; foo=bar, en")
+        self.assertEqual([n for n, _, _ in notes], [ACCEPT_LANGUAGE_BAD_SYNTAX])
+        detail = notes[0][2]
+        self.assertIn("found at position 3.", detail)
+        self.assertIn("fr; foo=bar\n  ^", detail)
+        self.assertNotIn("de,", detail)
+
+    def test_position_follows_the_right_element_with_two_bad_ones(self) -> None:
+        notes = self.rendered(FakeRequestLinter, "Accept-Language", "en; foo=bar, fr;q=abc")
+        self.assertEqual(
+            [n for n, _, _ in notes], [ACCEPT_LANGUAGE_BAD_SYNTAX, BAD_SYNTAX_DETAILED]
+        )
+        self.assertIn("en; foo=bar\n  ^", notes[0][2])
+        self.assertIn("fr;q=abc\n  ^", notes[1][2])
+
+    def test_media_type_notes_have_position(self) -> None:
+        for linter, name, specific in AcceptMediaTypeTest.fields:
+            with self.subTest(field=name):
+                note, _, detail = self.only_note(linter, name, "text/html/")
+                self.assertIs(note, specific)
+                self.assertIn("<code>text/html/</code> is not a valid", detail)
+                self.assertIn("The invalid character '/' was found at position 10.", detail)
+                self.assertIn("text/html/\n         ^", detail)
+
+    def test_media_type_note_without_a_matching_prefix_has_no_position(self) -> None:
+        for linter, name, specific in AcceptMediaTypeTest.fields:
+            with self.subTest(field=name):
+                note, _, detail = self.only_note(linter, name, "invalid")
+                self.assertIs(note, specific)
+                self.assertNotIn("position", detail)
+                self.assertNotIn("<code></code>", detail)
+
+    def test_position_is_escaped(self) -> None:
+        value = "text/html/<b>`&"
+        for linter, name, specific in AcceptMediaTypeTest.fields:
+            with self.subTest(field=name):
+                note, _, detail = self.only_note(linter, name, value)
+                self.assertIs(note, specific)
+                self.assertNotIn("<b>", detail)
+                self.assertIn("&lt;b&gt;", detail)
+                self.assertIn("found at position 10.", detail)
 
 
 if __name__ == "__main__":
