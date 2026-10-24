@@ -22,8 +22,8 @@ from httplint.syntax import (
     rfc5234,
     rfc5322,
     rfc5646,
-    rfc5987,
     rfc6838,
+    rfc8187,
     rfc8288,
     rfc9110,
     rfc9111,
@@ -179,9 +179,9 @@ class SyntaxBacktrackingTest(unittest.TestCase):
         self.check_rule("field-value long words", rfc9110.field_value, "aaa " * 2000 + "\x01")
         self.check_rule("field-value tabs", rfc9110.field_value, "a \t" * 2000 + "\x01")
         self.check_rule("chunk-ext", rfc9112.chunk_ext, "; a " * 2000 + "\x80")
-        self.check_rule("ext-value", rfc5987.ext_value, "UTF-8''" + "a" * 15000 + "\x80")
+        self.check_rule("ext-value", rfc8187.ext_value, "UTF-8''" + "a" * 15000 + "\x80")
         self.check_rule(
-            "ext-value language", rfc5987.ext_value, "UTF-8'" + "en-abcde" * 1500 + "'\x80"
+            "ext-value language", rfc8187.ext_value, "UTF-8'" + "en-abcde" * 1500 + "'\x80"
         )
 
     def test_language_tag(self) -> None:
@@ -487,11 +487,11 @@ class SyntaxTranslationTest(unittest.TestCase):
             with self.subTest(value=value):
                 self.assertNotIn("BAD_SYNTAX", field_notes(False, b"From", value))
 
-    def test_rfc5987_hash(self) -> None:
+    def test_rfc8187_hash(self) -> None:
         "An unescaped # starts a comment under re.VERBOSE, which dropped the rest of the line."
         for old_form, new, lost in [
-            (rfc5987.attr_char.replace(r"\#", "#"), rfc5987.attr_char, "#$&+-."),
-            (rfc5987.mime_charsetc.replace(r"\#", "#"), rfc5987.mime_charsetc, "#$%&"),
+            (rfc8187.attr_char.replace(r"\#", "#"), rfc8187.attr_char, "#$&+-."),
+            (rfc8187.mime_charsetc.replace(r"\#", "#"), rfc8187.mime_charsetc, "#$%&"),
         ]:
             self.assertNotEqual(old_form, new)
             for code in range(256):
@@ -501,10 +501,10 @@ class SyntaxTranslationTest(unittest.TestCase):
                     self.assertEqual(was, now and char not in lost)
         for value in ["UTF-8''foo-bar", "UTF-8''a.b", "UTF-8''a+b", "UTF-8'en'a%20b#$&", "ab''x"]:
             with self.subTest(value=value):
-                self.assertTrue(fullmatch(rfc5987.ext_value, value))
+                self.assertTrue(fullmatch(rfc8187.ext_value, value))
         for value in ["UTF-8'foo", "UTF-8''a b", "UTF-8''a*b", "UTF-8''a%zz", "UTF-8''a'b"]:
             with self.subTest(value=value):
-                self.assertFalse(fullmatch(rfc5987.ext_value, value))
+                self.assertFalse(fullmatch(rfc8187.ext_value, value))
 
     def test_link_param_bws(self) -> None:
         token, quoted_string = rfc9110.token, rfc9110.quoted_string
@@ -1326,7 +1326,7 @@ class SyntaxRfc5322AuditTest(unittest.TestCase):
 
 class SyntaxExtValueAuditTest(unittest.TestCase):
     """
-    Guards for the audit of rfc5987 against RFC 8187 section 3.2.1 (issue #303). The ABNF was
+    Guards for the audit of rfc8187 against RFC 8187 section 3.2.1 (issue #303). The ABNF was
     already transcribed correctly, so these pass on main too; the docstring and SPEC_URL now
     name RFC 8187, which obsoletes RFC 5987.
     """
@@ -1338,8 +1338,8 @@ class SyntaxExtValueAuditTest(unittest.TestCase):
         for code in range(256):
             char = chr(code)
             with self.subTest(char=repr(char)):
-                self.assertEqual(fullmatch(rfc5987.attr_char, char), char in attr_char)
-                self.assertEqual(fullmatch(rfc5987.mime_charsetc, char), char in mime_charsetc)
+                self.assertEqual(fullmatch(rfc8187.attr_char, char), char in attr_char)
+                self.assertEqual(fullmatch(rfc8187.mime_charsetc, char), char in mime_charsetc)
 
     def test_rfc_8187_examples(self) -> None:
         for value in [
@@ -1353,7 +1353,7 @@ class SyntaxExtValueAuditTest(unittest.TestCase):
             "x{}~'en-x-private'a",
         ]:
             with self.subTest(value=value):
-                self.assertTrue(fullmatch(rfc5987.ext_value, value))
+                self.assertTrue(fullmatch(rfc8187.ext_value, value))
         for value in [
             "\"UTF-8'en'a\"",
             "''a",
@@ -1368,10 +1368,10 @@ class SyntaxExtValueAuditTest(unittest.TestCase):
             "UT'F-8'a",
         ]:
             with self.subTest(value=value):
-                self.assertFalse(fullmatch(rfc5987.ext_value, value))
+                self.assertFalse(fullmatch(rfc8187.ext_value, value))
 
     def test_spec_url(self) -> None:
-        self.assertTrue(rfc5987.SPEC_URL.endswith("rfc8187"))
+        self.assertTrue(rfc8187.SPEC_URL.endswith("rfc8187"))
 
 
 class SyntaxLinkAuditTest(unittest.TestCase):
