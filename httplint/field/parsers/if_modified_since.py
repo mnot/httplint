@@ -33,6 +33,9 @@ class IfModifiedSinceObsoleteTest(FieldTest[RequestLinterProtocol]):
     expected_out = 783459811
     expected_notes: NoteClassListType = [DATE_OBSOLETE]
 
+    def set_request_context(self, message: RequestLinterProtocol) -> None:
+        message.start_time = 1_000_000_000.0  # 2001; the two-digit year is resolved against it
+
 
 class IfModifiedSinceBadTest(FieldTest[RequestLinterProtocol]):
     name = "If-Modified-Since"

@@ -16,4 +16,6 @@ class HttpDateField(SingletonField[TMessage], Generic[TMessage]):
     syntax = False  # parse_http_date does its own syntax check and notes
 
     def parse(self, field_value: str, add_note: AddNoteMethodType) -> int:
-        return parse_http_date(field_value, add_note, category=self.category)
+        return parse_http_date(
+            field_value, add_note, category=self.category, now=self.message.start_time
+        )

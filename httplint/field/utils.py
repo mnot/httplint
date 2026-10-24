@@ -1,5 +1,6 @@
 import calendar
 import re
+import time
 from email.utils import parsedate as lib_parsedate
 from typing import Any, Callable, Dict, FrozenSet, List, Optional, Set, Tuple, Type, Union
 from urllib.parse import SplitResult
@@ -8,7 +9,7 @@ from urllib.parse import urljoin, urlsplit
 
 from http_sf import Token
 
-from httplint.note import Note, categories, levels
+from httplint.note import MarkdownSafe, Note, categories, levels
 from httplint.syntax import rfc5234, rfc6838, rfc9110
 from httplint.types import AddNoteMethodType, LinterProtocol, ParamDictType
 from httplint.util import inline_safe
@@ -109,9 +110,19 @@ def check_media_type(
 
 
 def parse_http_date(
-    value: str, add_note: AddNoteMethodType, category: Optional[categories] = None
+    value: str,
+    add_note: AddNoteMethodType,
+    category: Optional[categories] = None,
+    now: Optional[float] = None,
 ) -> int:
-    """Parse a HTTP date. Raises ValueError if it's bad."""
+    """
+    Parse a HTTP date. Raises ValueError if it's bad.
+
+    ``now`` is the reference time (seconds since the epoch) for resolving the
+    two-digit year of an rfc850-date, as RFC 9110 Section 5.6.7 requires; it defaults
+    to the current time. Callers with a message should pass its ``start_time`` so that
+    linting a recorded exchange is repeatable.
+    """
     if not re.match(rf"^{rfc9110.HTTP_date}$", value, RE_FLAGS):
         add_note(BAD_DATE_SYNTAX, category=category)
         raise ValueError
@@ -123,11 +134,15 @@ def parse_http_date(
         raise ValueError
     # IMF-fixdate and asctime-date have four-digit years, which parsedate would
     # otherwise treat as two-digit ones ("0000" -> 2000); rfc850-date's own two-digit
-    # years are handled by parsedate (pivot at 68).
+    # years are resolved below, not by parsedate's fixed pivot.
     year_match = re.search(r"(?<!\d)\d{4}(?!\d)", value)
     year, month, day, hour, minute, second = date_tuple[:6]
     if year_match:
         year = int(year_match.group())
+    else:
+        year = _resolve_two_digit_year(
+            year % 100, (month, day, hour, minute, second), _time_or_now(now)
+        )
     # Out-of-range fields would be silently normalised by timegm.
     if year < 1 or not 1 <= month <= 12 or day < 1 or day > calendar.monthrange(year, month)[1]:
         add_note(BAD_DATE_SYNTAX, category=category)
@@ -264,7 +279,9 @@ _QUOTED_PAIR_CHAR = _char_set(
 )
 
 
-def split_list_field(field_value: str, comments: bool = False) -> List[str]:
+def split_list_field(
+    field_value: str, angle_targets: bool = False, comments: bool = False
+) -> List[str]:
     """
     Split a field value on commas, as the #rule needs.
 
@@ -272,8 +289,16 @@ def split_list_field(field_value: str, comments: bool = False) -> List[str]:
     quoted-string is an ordinary character of its item, so the malformed item reaches the
     field's own syntax check instead of being dropped.
 
+    With ``angle_targets``, a ``<...>`` at the start of an item (as in Link) is skipped
+    over whole, so commas inside it don't split either. It ends at the first ``>``; if there
+    is none, or another ``<`` comes first, the ``<`` is an ordinary character. That last
+    rule departs from RFC 8288 Appendix B.2, which takes the target up to the first ``>``:
+    ``<a<b,c>`` is two (invalid) items here, not one. The target isn't a valid
+    URI-Reference either way, and this keeps ``<a, <b>`` as two items, as before.
+
     With `comments`, commas inside a parenthesised comment (nested to any depth) don't
     split either; an unmatched "(" is an ordinary character, as with a stray quote.
+    ``angle_targets`` has no effect with ``comments``; no field uses both.
 
     This is linear; an earlier regex-based version backtracked quadratically.
     """
@@ -303,8 +328,23 @@ def split_list_field(field_value: str, comments: bool = False) -> List[str]:
             run_end[idx] = idx if char == "," else run_end[idx + 1]
     items: List[str] = []
     pos = 0
+    # close: the first ">" after the last "<" we looked at; -1 if there is none, -2 if unset.
+    # Reusing it is safe: it was the first ">" at or after an earlier "<", so while
+    # close >= start (and start only moves forward) no ">" lies between start and close.
+    # With no ">" at all (-1), nothing later can be a bracketed target. Searching every
+    # time would be quadratic.
+    close = -2
     while pos < size:
         stop = run_end[pos]
+        if angle_targets and close != -1:
+            start = pos
+            while start < size and field_value[start].isspace():
+                start += 1
+            if start < size and field_value[start] == "<":
+                if close < start:
+                    close = field_value.find(">", start)
+                if close != -1 and field_value.find("<", start + 1, close) == -1:
+                    stop = run_end[close + 1]
         item = field_value[pos:stop].strip()
         if item:
             items.append(item)
@@ -414,6 +454,9 @@ def check_sf_params(
         safe_value = inline_safe(str(param_value))
         # An empty code span would swallow the next span's delimiters.
         shown_value = f"`{safe_value}`" if safe_value else "(empty)"
+        # The notes below put %(value)s in a code span of their own, and an empty value would
+        # leave an empty one, so they get a placeholder instead.
+        note_value = param_value if str(param_value) else MarkdownSafe("(empty)")
         if param_name not in known_params:
             add_note(unknown_param_note, param=param_name)
             param_list.append(f"* `{param_name}`: {shown_value}")
@@ -423,7 +466,7 @@ def check_sf_params(
                 add_note(
                     bad_param_val_note,
                     param=param_name,
-                    value=param_value,
+                    value=note_value,
                 )
                 param_list.append(f"* `{param_name}`: {shown_value}")
                 continue
@@ -433,7 +476,7 @@ def check_sf_params(
                 add_note(
                     bad_param_val_note,
                     param=param_name,
-                    value=param_value,
+                    value=note_value,
                 )
                 param_list.append(f"* `{param_name}`: {shown_value}")
                 continue
@@ -944,3 +987,35 @@ def _split_outside_comments(field_value: str, quote_end: List[int]) -> List[str]
     if item:
         items.append(item)
     return items
+
+
+# --- two-digit years: reference time for parse_http_date ---
+
+
+def _time_or_now(now: Optional[float]) -> time.struct_time:
+    "The reference time as UTC fields; the current time if ``now`` is missing or unusable."
+    if now is not None:
+        try:
+            return time.gmtime(now)
+        except (OverflowError, OSError, ValueError):
+            pass
+    return time.gmtime()
+
+
+def _resolve_two_digit_year(
+    two_digits: int, rest: Tuple[int, int, int, int, int], now: time.struct_time
+) -> int:
+    """
+    The year for a two-digit rfc850-date year, per RFC 9110 Section 5.6.7: a timestamp
+    that appears to be more than 50 years in the future is the most recent past year
+    with the same last two digits.
+
+    ``rest`` is (month, day, hour, minute, second). Comparing those against ``now``
+    rather than building a date 50 years on keeps 29 February from being a special case.
+    """
+    limit_year = now.tm_year + 50
+    year = limit_year - (limit_year - two_digits) % 100
+    now_rest = (now.tm_mon, now.tm_mday, now.tm_hour, now.tm_min, now.tm_sec)
+    if year == limit_year and rest > now_rest:
+        year -= 100
+    return year

@@ -4,7 +4,7 @@ from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 from httplint.field.list_field import HttpListField
 from httplint.field.tests import FakeRequestLinter, FieldTest
 from httplint.field.utils import unquote_string
-from httplint.note import Note, categories, levels
+from httplint.note import MarkdownSafe, Note, categories, levels
 from httplint.syntax import rfc9111
 from httplint.types import (
     AddNoteMethodType,
@@ -50,6 +50,9 @@ KNOWN_CC: Dict[str, Tuple[bool, bool, Union[None, Callable[..., Any]], str]] = {
     "pre-check": (False, True, int, "integer"),
     "post-check": (False, True, int, "integer"),
 }
+
+# delta-seconds directives whose argument is optional; the others require one
+OPTIONAL_DELTA_CC = {"max-stale"}
 
 # cache directives and those they override. Listed in order of
 # significance; only the first match will be shown.
@@ -136,6 +139,11 @@ ignoring it there."""
                 is_delta = value_func is int
                 if is_delta:
                     value_func = _delta_seconds
+                if is_delta and directive_val is None:
+                    if directive_name in OPTIONAL_DELTA_CC:
+                        return (directive_name, None)
+                    add_note(CC_MISSING_VALUE, directive=directive_name)
+                    raise ValueError
                 try:
                     arg = directive_val
                     quoted = False
@@ -152,11 +160,20 @@ ignoring it there."""
                     expected_type = (
                         "non-negative integer" if is_delta else KNOWN_CC[directive_name][3]
                     )
+                    # Only delta-seconds directives get here: _field_names (no-cache=, private=)
+                    # accepts an empty value without raising.
+                    if directive_val:
+                        shown_value: Union[str, MarkdownSafe, None] = directive_val
+                    else:
+                        # An empty value would leave an empty code span in the note.
+                        shown_value = MarkdownSafe("(empty)")
+                        if is_delta:
+                            self.suppress_syntax_note()  # the note covers the empty value
                     add_note(
                         CC_BAD_VALUE_TYPE,
                         directive=directive_name,
                         expected_type=expected_type,
-                        value=directive_val,
+                        value=shown_value,
                     )
                     raise ValueError  # pylint: disable=raise-missing-from
         return (directive_name, directive_val)
@@ -242,6 +259,16 @@ class CC_BAD_VALUE_TYPE(Note):
     _text = (
         "The `%(directive)s` cache directive type is %(expected_type)s, "
         "but `%(value)s` was found."
+    )
+
+
+class CC_MISSING_VALUE(Note):
+    category = categories.CACHING
+    level = levels.BAD
+    _summary = "The %(directive)s cache directive requires a value."
+    _text = (
+        "The `%(directive)s` cache directive requires a value (a non-negative integer), "
+        "but none was given."
     )
 
 
@@ -446,6 +473,32 @@ class CacheControlLeadingZerosTest(FieldTest[AnyMessageLinterProtocol]):
 class CacheControlEmptyQuotedTest(FieldTest[AnyMessageLinterProtocol]):
     name = "Cache-Control"
     inputs = [b'max-age=""']
+    expected_notes: NoteClassListType = [CC_BAD_VALUE_TYPE]
+
+
+class CacheControlEmptyValueTest(FieldTest[AnyMessageLinterProtocol]):
+    name = "Cache-Control"
+    inputs = [b"max-age="]
+    expected_notes: NoteClassListType = [CC_BAD_VALUE_TYPE]
+
+
+class CacheControlMissingValueTest(FieldTest[AnyMessageLinterProtocol]):
+    name = "Cache-Control"
+    inputs = [b"max-age, s-maxage"]
+    expected_notes: NoteClassListType = [CC_MISSING_VALUE, CC_MISSING_VALUE]
+
+
+class CacheControlBareMaxStaleTest(FieldTest[AnyMessageLinterProtocol]):
+    name = "Cache-Control"
+    linter_class = FakeRequestLinter
+    inputs = [b"max-stale, min-fresh=5"]
+    expected_out = [("max-stale", None), ("min-fresh", 5)]
+
+
+class CacheControlEmptyMaxStaleTest(FieldTest[AnyMessageLinterProtocol]):
+    name = "Cache-Control"
+    linter_class = FakeRequestLinter
+    inputs = [b"max-stale="]
     expected_notes: NoteClassListType = [CC_BAD_VALUE_TYPE]
 
 
