@@ -1,5 +1,12 @@
 """
 Regex for RFC9111
+
+These regex are directly derived from the collected ABNF in RFC9111 (Appendix A), with the
+exception of Pragma and Warning: RFC 9111 has no ABNF for them (it deprecates Pragma, Section 5.4,
+and obsoletes Warning, Section 5.5), so those rules are RFC 7234's (Section 5.4, Section 5.5 and
+Appendix C).
+
+They should be processed with re.VERBOSE.
 """
 
 # pylint: disable=invalid-name
@@ -39,6 +46,7 @@ Cache_Control = list_rule(cache_directive)
 Expires = HTTP_date
 
 #   extension-pragma = token [ "=" ( token / quoted-string ) ]
+#   (RFC 7234, Section 5.4)
 
 extension_pragma = rf"(?: {token} (?: = (?: {token} | {quoted_string} ) )? )"
 
@@ -47,11 +55,14 @@ extension_pragma = rf"(?: {token} (?: = (?: {token} | {quoted_string} ) )? )"
 pragma_directive = rf"(?: no-cache | {extension_pragma} )"
 
 #   Pragma = 1#pragma-directive
-# Note: RFC 9111 defines Pragma as 1#pragma-directive, but doesn't show the ABNF
-# for Pragma itself in the collected ABNF.
-# We use the list_rule with minimum 1 as per RFC 9111.
+#
+# From RFC 7234, Section 5.4 (RFC 9111 has no ABNF for Pragma). The list uses the sender form;
+# RFC 7234's collected ABNF also allows empty list elements, as recipients must accept.
 
 Pragma = list_rule(pragma_directive, 1)
+
+# The warn-* and warning-value rules, and Warning, are RFC 7234's (Section 5.5 and Appendix C);
+# RFC 9111 obsoletes Warning and has no ABNF for it.
 
 #   warn-code = 3DIGIT
 
@@ -74,8 +85,7 @@ warn_date = rf"(?: {DQUOTE} {HTTP_date} {DQUOTE} )"
 warning_value = rf"(?: {warn_code} {SP} {warn_agent} {SP} {warn_text} (?: {SP} {warn_date} )? )"
 
 #   Warning = 1#warning-value
-# Note: RFC 9111 defines Warning as 1#warning-value, but doesn't show the ABNF
-# for Warning itself in the collected ABNF.
-# We use the list_rule with minimum 1 as per RFC 9111.
+#
+# The list uses the sender form; see Pragma.
 
 Warning_ = list_rule(warning_value, 1)

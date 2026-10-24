@@ -24,3 +24,19 @@ class FromTest(FieldTest[RequestLinterProtocol]):
     name = "From"
     inputs = [b"webmaster@example.org"]
     expected_out = "webmaster@example.org"
+
+
+class FromQuotedTrailingSpaceTest(FieldTest[RequestLinterProtocol]):
+    "quoted-string allows FWS before the closing quote (#303); this was BAD_SYNTAX."
+
+    name = "From"
+    inputs = [b'"Bob " <webmaster@example.org>']
+    expected_out = '"Bob " <webmaster@example.org>'
+
+
+class FromNestedCommentTest(FieldTest[RequestLinterProtocol]):
+    "Comments nest (#303); this was BAD_SYNTAX_DETAILED."
+
+    name = "From"
+    inputs = [b"webmaster@example.org (Web (Master))"]
+    expected_out = "webmaster@example.org (Web (Master))"
