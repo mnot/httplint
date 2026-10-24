@@ -56,7 +56,7 @@ class DateIncorrectLinkTest(unittest.TestCase):
             "field-date", DATE_INCORRECT, clock_skew_string="a"
         )
         detail = str(note.detail)
-        self.assertIn('href="http://en.wikipedia.org/wiki/Network_Time_Protocol"', detail)
+        self.assertIn('href="https://en.wikipedia.org/wiki/Network_Time_Protocol"', detail)
         self.assertIn('title="Network Time Protocol"', detail)
         self.assertNotIn("Network_Time_Protocol Network", detail)
 
