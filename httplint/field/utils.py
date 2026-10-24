@@ -1,3 +1,4 @@
+# pylint: disable=too-many-lines  # one module holds the shared field helpers
 import calendar
 import re
 import time
@@ -21,6 +22,7 @@ from urllib.parse import urljoin, urlsplit
 
 from http_sf import Token
 
+from httplint.field.params import split_params_off
 from httplint.note import MarkdownSafe, Note, categories, levels
 from httplint.syntax import rfc5234, rfc6838, rfc9110
 from httplint.types import AddNoteMethodType, LinterProtocol, ParamDictType
@@ -55,10 +57,7 @@ def parse_media_type(
     ``check_media_type`` for the checks applied along the way. ``nostar`` is passed
     through to ``parse_params`` to flag RFC 5987-style ``param*`` keys.
     """
-    try:
-        media_type, param_str = field_value.split(";", 1)
-    except ValueError:
-        media_type, param_str = field_value, ""
+    media_type, param_str = split_params_off(field_value)
     media_type = media_type.strip().lower()
     check_media_type(media_type, add_note, bad_syntax_note, ref_uri, allow_wildcard)
     param_dict = parse_params(param_str, add_note, nostar)

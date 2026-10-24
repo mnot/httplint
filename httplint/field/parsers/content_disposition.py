@@ -1,5 +1,6 @@
 from typing import Tuple
 
+from httplint.field.params import split_params_off
 from httplint.field.singleton_field import SINGLE_HEADER_REPEAT, SingletonField
 from httplint.field.tests import FieldTest
 from httplint.field.utils import PARAM_STAR_QUOTED, parse_params
@@ -25,10 +26,7 @@ the file, rather than display it."""
     deprecated = False
 
     def parse(self, field_value: str, add_note: AddNoteMethodType) -> Tuple[str, ParamDictType]:
-        try:
-            disposition, param_str = field_value.split(";", 1)
-        except ValueError:
-            disposition, param_str = field_value, ""
+        disposition, param_str = split_params_off(field_value)
         disposition = disposition.lower()
         param_dict = parse_params(param_str, add_note)
         if disposition not in ["inline", "attachment"]:
