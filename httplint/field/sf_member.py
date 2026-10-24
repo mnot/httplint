@@ -5,6 +5,7 @@ from decimal import Decimal
 from typing import Any, Tuple
 
 from http_sf import DisplayString, Token
+from http_sf.list import ser_list
 
 _TYPE_NAMES: Tuple[Tuple[type, str], ...] = (
     (bool, "Boolean"),
@@ -31,10 +32,17 @@ def member_type_name(member: Any) -> str:
     return "String"
 
 
+def member_type_phrase(member: Any) -> str:
+    "The type name with its indefinite article, such as 'an Integer' or 'a Date'."
+    name = member_type_name(member)
+    return f"{'an' if name[0] in 'AEIOU' else 'a'} {name}"
+
+
 def member_text(member: Any) -> str:
-    "Plain text for a member; an inner list is shown as (a b), not as a Python repr."
-    if isinstance(member, bytes):
-        return member.decode("ascii", "replace")
-    if isinstance(member, list):
-        return "(" + " ".join(member_text(item) for item, _ in member) + ")"
-    return str(member)
+    'A String or Token as its text; any other member in its wire form, such as ?1 or (a "").'
+    if is_string_or_token(member):
+        return str(member)
+    try:
+        return str(ser_list([(member, {})]))
+    except ValueError:
+        return str(member)
