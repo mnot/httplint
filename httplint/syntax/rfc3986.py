@@ -88,7 +88,10 @@ IPv6address = rf"""(?:                                       (?: {h16} : ){{6}} 
 """
 
 #   IPvFuture     = "v" 1*HEXDIG "." 1*( unreserved / sub-delims / ":" )
-IPvFuture = rf"(?: v {HEXDIG}+ \. (?: {unreserved} | {sub_delims} | : )+ )"
+#
+# ABNF strings are case-insensitive, and these rules are processed with re.VERBOSE alone (the
+# module header), so the "v" is written out as a class, as ALPHA and HEXDIG are.
+IPvFuture = rf"(?: [vV] {HEXDIG}+ \. (?: {unreserved} | {sub_delims} | : )+ )"
 
 #   IP-literal    = "[" ( IPv6address / IPvFuture  ) "]"
 IP_literal = rf"(?: \[ (?: {IPv6address} | {IPvFuture} ) \] )"

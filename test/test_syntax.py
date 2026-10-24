@@ -442,9 +442,9 @@ class SyntaxLanguageTagTest(unittest.TestCase):
         self.assertGreater(newly_accepted, 100)
 
 
-def fullmatch(rule: str, value: str) -> bool:
+def fullmatch(rule: str, value: str, flags: int = re.VERBOSE | re.IGNORECASE) -> bool:
     "Like matches(), but without the whitespace padding."
-    return re.fullmatch(rule, value, re.VERBOSE | re.IGNORECASE) is not None
+    return re.fullmatch(rule, value, flags) is not None
 
 
 def strings(alphabet: Sequence[str], max_length: int) -> Iterator[str]:
@@ -1299,6 +1299,63 @@ class SyntaxParametersTest(unittest.TestCase):
                 start = time.monotonic()
                 compiled.match(value)
                 self.assertLess(time.monotonic() - start, TIME_LIMIT, label)
+
+
+class SyntaxIPvFutureTest(unittest.TestCase):
+    """
+    IPvFuture = "v" ...: an ABNF string is case-insensitive, and the request target is matched
+    with re.VERBOSE alone, so "V" has to be in the pattern (issue #303).
+    """
+
+    @staticmethod
+    def target_notes(target: bytes) -> List[str]:
+        linter = HttpRequestLinter()
+        linter.process_request_topline(b"GET", target, b"HTTP/1.1")
+        linter.finish_content(True)
+        return [type(note).__name__ for note in linter.notes]
+
+    def test_request_target(self) -> None:
+        for target in [
+            b"http://[v1.a]/",
+            b"http://[V1.a]/",
+            b"http://[vF.a:b]/",
+            b"http://[VF.a:b]:80/x",
+        ]:
+            with self.subTest(target=target):
+                self.assertNotIn("URI_BAD_SYNTAX", self.target_notes(target))
+        for target in [b"http://[x1.a]/", b"http://[V.a]/", b"http://[v1.]/", b"http://[V1]/"]:
+            with self.subTest(target=target):
+                self.assertIn("URI_BAD_SYNTAX", self.target_notes(target))
+
+    def test_rule(self) -> None:
+        for value in ["v1.a", "V1.a", "vF.a:b", "Vf.~!:"]:
+            self.assertTrue(fullmatch(rfc3986.IPvFuture, value, re.VERBOSE), value)
+            self.assertTrue(fullmatch(rfc3986.IP_literal, f"[{value}]", re.VERBOSE), value)
+        for value in ["x1.a", "V.a", "v1.", "V1", "vg.a", ""]:
+            self.assertFalse(fullmatch(rfc3986.IPvFuture, value, re.VERBOSE), value)
+
+    def test_differential(self) -> None:
+        """
+        Against the old rule (a bare "v"): the same strings with re.IGNORECASE (what fields use),
+        and with re.VERBOSE alone only the strings that start with "V" are newly accepted.
+        """
+        old = rfc3986.IPvFuture.replace("[vV]", "v")
+        self.assertNotEqual(old, rfc3986.IPvFuture)
+        newly_accepted = 0
+        for value in strings(["v", "V", "1", "F", "g", ".", "a"], 5):
+            with self.subTest(value=value):
+                self.assertEqual(
+                    fullmatch(old, value, re.VERBOSE | re.IGNORECASE),
+                    fullmatch(rfc3986.IPvFuture, value, re.VERBOSE | re.IGNORECASE),
+                )
+                was = fullmatch(old, value, re.VERBOSE)
+                now = fullmatch(rfc3986.IPvFuture, value, re.VERBOSE)
+                if value.startswith("V"):
+                    self.assertEqual(now, fullmatch(old, "v" + value[1:], re.VERBOSE))
+                    newly_accepted += now and not was
+                else:
+                    self.assertEqual(was, now)
+        self.assertGreater(newly_accepted, 10)
 
 
 def run_regex_check() -> None:
