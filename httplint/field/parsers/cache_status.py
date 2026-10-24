@@ -1,8 +1,10 @@
 # pylint: disable=duplicate-code
+from decimal import Decimal
 from typing import Any, Dict
 
 from http_sf import Token
 
+from httplint.field.sf_member import is_string_or_token, member_text, member_type_name
 from httplint.field.structured_field import StructuredField
 from httplint.field.tests import FieldTest
 from httplint.field.utils import check_sf_params
@@ -31,10 +33,14 @@ debugging caches."""
     def evaluate(self, add_note: AddNoteMethodType) -> None:
         status_list = []
         for target, params in self.value:
-
-            target_str = inline_safe(
-                target.decode("ascii", "replace") if isinstance(target, bytes) else str(target)
-            )
+            if not is_string_or_token(target):
+                add_note(
+                    CACHE_STATUS_BAD_MEMBER,
+                    member_type=member_type_name(target),
+                    # An empty value would leave an empty code span in the note text.
+                    value=member_text(target) or MarkdownSafe("(empty)"),
+                )
+            target_str = inline_safe(member_text(target))
             param_str = check_sf_params(
                 params,
                 KNOWN_PARAMS,
@@ -106,6 +112,16 @@ The `Cache-Status` header field indicates how caches have handled the response.
 """
 
 
+class CACHE_STATUS_BAD_MEMBER(Note):
+    category = categories.CACHING
+    level = levels.BAD
+    _summary = "A Cache-Status member is a %(member_type)s, not a String or Token."
+    _text = """\
+Each member of the `Cache-Status` list identifies the cache that inserted it, and
+[RFC 9211](https://www.rfc-editor.org/rfc/rfc9211.html#section-2) requires it to be a String or
+a Token. This member, `%(value)s`, is a %(member_type)s."""
+
+
 class CACHE_STATUS_UNKNOWN_PARAM(Note):
     category = categories.CACHING
     level = levels.INFO
@@ -171,3 +187,63 @@ class CacheStatusEmptyParamValTest(FieldTest[ResponseLinterProtocol]):
     inputs = [b'ExampleCache; fwd=""']
     expected_out = [(Token("ExampleCache"), {"fwd": ""})]
     expected_notes: NoteClassListType = [CACHE_STATUS_BAD_PARAM_VAL, CACHE_STATUS]
+
+
+class CacheStatusBadMemberInnerListTest(FieldTest[ResponseLinterProtocol]):
+    name = "Cache-Status"
+    inputs = [b"(a b)"]
+    expected_out = [([(Token("a"), {}), (Token("b"), {})], {})]
+    expected_notes: NoteClassListType = [CACHE_STATUS_BAD_MEMBER, CACHE_STATUS]
+
+
+class CacheStatusBadMemberIntegerTest(FieldTest[ResponseLinterProtocol]):
+    name = "Cache-Status"
+    inputs = [b"1"]
+    expected_out = [(1, {})]
+    expected_notes: NoteClassListType = [CACHE_STATUS_BAD_MEMBER, CACHE_STATUS]
+
+
+class CacheStatusBadMemberDecimalTest(FieldTest[ResponseLinterProtocol]):
+    name = "Cache-Status"
+    inputs = [b"1.5"]
+    expected_out = [(Decimal("1.5"), {})]
+    expected_notes: NoteClassListType = [CACHE_STATUS_BAD_MEMBER, CACHE_STATUS]
+
+
+class CacheStatusBadMemberBooleanTest(FieldTest[ResponseLinterProtocol]):
+    name = "Cache-Status"
+    inputs = [b"?1"]
+    expected_out = [(True, {})]
+    expected_notes: NoteClassListType = [CACHE_STATUS_BAD_MEMBER, CACHE_STATUS]
+
+
+class CacheStatusBadMemberByteSequenceTest(FieldTest[ResponseLinterProtocol]):
+    name = "Cache-Status"
+    inputs = [b":YWJj:"]
+    expected_out = [(b"abc", {})]
+    expected_notes: NoteClassListType = [CACHE_STATUS_BAD_MEMBER, CACHE_STATUS]
+
+
+class CacheStatusBadMemberAmongGoodTest(FieldTest[ResponseLinterProtocol]):
+    name = "Cache-Status"
+    inputs = [b'a, 1, "b"; hit, (c d)']
+    expected_out = [
+        (Token("a"), {}),
+        (1, {}),
+        ("b", {"hit": True}),
+        ([(Token("c"), {}), (Token("d"), {})], {}),
+    ]
+    expected_notes: NoteClassListType = [
+        CACHE_STATUS_BAD_MEMBER,
+        CACHE_STATUS_BAD_MEMBER,
+        CACHE_STATUS,
+    ]
+
+
+class CacheStatusStringAndTokenMembersTest(FieldTest[ResponseLinterProtocol]):
+    "Guard: String and Token members get no member-type note."
+
+    name = "Cache-Status"
+    inputs = [b'a, "b c"']
+    expected_out = [(Token("a"), {}), ("b c", {})]
+    expected_notes: NoteClassListType = [CACHE_STATUS]
