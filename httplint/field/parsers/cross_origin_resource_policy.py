@@ -19,20 +19,17 @@ loaded by a cross-origin document."""
     syntax = False  # Not a Structured Field in the strict sense, but uses token
     category = categories.SECURITY
     deprecated = False
-    structured_field = False  # It's a simple string/token
-
-    report_only_text = ""
 
     def parse(self, field_value: str, add_note: AddNoteMethodType) -> Any:
         return field_value
 
     def evaluate(self, add_note: AddNoteMethodType) -> None:
         if self.value == "same-origin":
-            add_note(CORP_SAME_ORIGIN, report_only_text=self.report_only_text)
+            add_note(CORP_SAME_ORIGIN)
         elif self.value == "same-site":
-            add_note(CORP_SAME_SITE, report_only_text=self.report_only_text)
+            add_note(CORP_SAME_SITE)
         elif self.value == "cross-origin":
-            add_note(CORP_CROSS_ORIGIN, report_only_text=self.report_only_text)
+            add_note(CORP_CROSS_ORIGIN)
         else:
             add_note(CROSS_ORIGIN_RESOURCE_POLICY_BAD_VALUE, value=self.value)
 
@@ -45,7 +42,7 @@ class CORP_SAME_ORIGIN(Note):
 The `same-origin`
 [Cross-Origin Resource Policy](https://fetch.spec.whatwg.org/#cross-origin-resource-policy-header)
 prevents the resource from being read by any cross-origin document 
-in supporting browsers.%(report_only_text)s"""
+in supporting browsers."""
 
 
 class CORP_SAME_SITE(Note):
@@ -56,7 +53,7 @@ class CORP_SAME_SITE(Note):
 The `same-site`
 [Cross-Origin Resource Policy](https://fetch.spec.whatwg.org/#cross-origin-resource-policy-header)
 allows the resource to be read by documents from the same site, but
-prevents it from being read by cross-site documents in supporting browsers.%(report_only_text)s"""
+prevents it from being read by cross-site documents in supporting browsers."""
 
 
 class CORP_CROSS_ORIGIN(Note):
@@ -67,7 +64,7 @@ class CORP_CROSS_ORIGIN(Note):
 The `cross-origin`
 [Cross-Origin Resource Policy](https://fetch.spec.whatwg.org/#cross-origin-resource-policy-header)
 allows the resource to be read by any document in supporting browsers, regardless of its 
-origin.%(report_only_text)s"""
+origin."""
 
 
 class CROSS_ORIGIN_RESOURCE_POLICY_BAD_VALUE(Note):
