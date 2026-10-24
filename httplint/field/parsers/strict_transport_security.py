@@ -99,8 +99,6 @@ browsers that it should only be communicated with using HTTPS, instead of using 
                 if value is None:
                     self._deferred.defer(HSTS_BAD_MAX_AGE, max_age=max_age)
                 else:
-                    if value == "":
-                        self._empty_max_age(raw_directives, index)
                     parsed["max-age"] = parse_delta_seconds(
                         unquote_string(value),
                         self._deferred.defer,
@@ -108,6 +106,8 @@ browsers that it should only be communicated with using HTTPS, instead of using 
                         max_digits=4000,  # as for Age: RFC 6797 has no upper bound
                         max_age=max_age,
                     )
+                    if parsed["max-age"] is None:
+                        self._bad_max_age(raw_directives, index)
             elif name == "includesubdomains":
                 parsed["includesubdomains"] = True
                 if value is not None:
@@ -122,15 +122,21 @@ browsers that it should only be communicated with using HTTPS, instead of using 
 
         return parsed
 
-    def _empty_max_age(self, raw_directives: list[str], index: int) -> None:
+    def _bad_max_age(self, raw_directives: list[str], index: int) -> None:
         """
-        An empty `max-age=` is a syntax error that HSTS_BAD_MAX_AGE reports. If it is the value's
-        only one (the value would match the syntax with a max-age filled in), drop the generic
-        syntax note, so that the defect gets one note.
+        A bad max-age value (empty, or not an integer) has been reported with HSTS_BAD_MAX_AGE,
+        and may be a syntax error as well (`max-age=`, `max-age=1 2`). If it is the only syntax
+        error in the value, so that the value would conform with a valid max-age in its place,
+        drop the generic syntax note, so that the defect gets one note.
         """
         name, equals, after = raw_directives[index].partition("=")
+        value = after.strip()
+        if ";" in value:
+            return  # an unterminated quote swallowed what follows, so there is more to report
+        lead = after[: len(after) - len(after.lstrip())]
+        trail = after[len(after.rstrip()) :]
         fixed = list(raw_directives)
-        fixed[index] = f"{name}{equals}1{after}"
+        fixed[index] = f"{name}{equals}{lead}1{trail}"
         if self.matches_syntax(";".join(fixed)):
             self.suppress_syntax_note()
 

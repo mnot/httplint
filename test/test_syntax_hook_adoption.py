@@ -252,10 +252,47 @@ class StrictTransportSecurityTest(unittest.TestCase):
             ("max-age", [1, 0]),
             ('max-age=""', [1, 0]),
             ("max-age=abc", [1, 0]),
-            ("max-age=1 2", [1, 1]),
         ]:
             with self.subTest(value=value):
                 self.assertEqual(self.counts(value), expected)
+
+    def test_non_empty_bad_max_age_gets_one_note(self) -> None:
+        for value in [
+            "max-age=1 2",
+            'max-age="1',
+            "max-age=1,2",
+            "max-age=1\x01",
+            "max-age=\x01\x02 1 2",
+            "max-age=-1",
+            "max-age=+1",
+            "max-age=1.5",
+            "max-age=0x10",
+            "max-age=1 2\t",
+            "max-age= 1 2 ",
+            "max-age = 1 2",
+            "max-age=text/html",
+            "max-age=1 2; includeSubDomains",
+            "includeSubDomains; max-age=1 2; preload",
+            "max-age=1 2;;",
+            "max-age=1 2;",
+            "max-age=x; max-age=y",
+        ]:
+            with self.subTest(value=value):
+                self.assertEqual(self.counts(value), [1, 0])
+
+    def test_second_defect_after_non_empty_bad_max_age_keeps_the_generic_note(self) -> None:
+        for value in [
+            "max-age=1 2; foo bar",
+            "max-age=1 2; max-age=3 4",
+            "max-age=1 2; includeSubDomains=a b",
+            "max-age=1 2; =x",
+            "max-age=1 2;/",
+            'max-age="1; foo bar',
+            "max-age=1,2; max-age=",
+            "foo bar; max-age=1 2",
+        ]:
+            with self.subTest(value=value):
+                self.assertEqual(self.counts(value), [1, 1])
 
 
 class SyntaxPositionTest(unittest.TestCase):
