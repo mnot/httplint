@@ -902,39 +902,6 @@ def is_number(value: Any) -> bool:
     return isinstance(value, (int, float)) and not isinstance(value, bool)
 
 
-# --- coding_acceptable: whether Accept-Encoding allows a content coding ------------------------
-
-# RFC 9110 Section 8.4.1: a recipient SHOULD consider these legacy names equivalent.
-CODING_ALIASES = {"x-gzip": "gzip", "x-compress": "compress"}
-
-
-def coding_acceptable(
-    accept_encoding: List[Tuple[str, ParamDictType]], coding: str, wildcard: bool = True
-) -> bool:
-    """
-    Whether a request's parsed Accept-Encoding allows ``coding`` (RFC 9110 Section 12.5.3):
-    an explicit entry decides, then ``*`` (unless ``wildcard`` is False), and q=0 means not
-    acceptable. An invalid q is treated as absent. ``x-gzip`` and ``x-compress`` are equivalent
-    to ``gzip`` and ``compress``, both in the request and as ``coding``. An entry for the
-    literal ``coding`` decides first (the first of any duplicates); an alias entry is used
-    only when there is none.
-    """
-    explicit: Dict[str, Optional[float]] = {}
-    aliased: Dict[str, Optional[float]] = {}
-    for entry_coding, params in accept_encoding:
-        q_value = parse_qvalue(dict(params), None)
-        explicit.setdefault(entry_coding, q_value)
-        aliased.setdefault(CODING_ALIASES.get(entry_coding, entry_coding), q_value)
-    if coding in explicit:
-        return explicit[coding] != 0.0
-    canonical = CODING_ALIASES.get(coding, coding)
-    if canonical in aliased:
-        return aliased[canonical] != 0.0
-    if wildcard and "*" in explicit:
-        return explicit["*"] != 0.0
-    return False
-
-
 # --- _split_outside_comments: comma splitting that respects "(" comments ")" -------------------
 
 
