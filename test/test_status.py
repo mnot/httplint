@@ -1,9 +1,17 @@
 import unittest
 from httplint import HttpResponseLinter
-from httplint.message import STATUS_CODE_NON_NUMERIC
+from httplint.message import (
+    CL_CORRECT,
+    CL_INCORRECT,
+    CONTENT_NOT_ALLOWED,
+    STATUS_CODE_NON_NUMERIC,
+    HttpRequestLinter,
+)
+from httplint.note import levels
 from httplint.status import (
     CONNECT_TUNNEL_FRAMING,
     HEADER_SHOULD_NOT_BE_IN_304,
+    PARTIAL_WITHOUT_RANGE,
     STATUS_NONSTANDARD,
 )
 
@@ -476,25 +484,19 @@ class TestStatus206(unittest.TestCase):
         return list(linter.notes)
 
     def test_206_without_content_range_subject(self):
-        from httplint.status import PARTIAL_WITHOUT_RANGE
-
         notes = self._notes_206([])
         subjects = [n.subject for n in notes if isinstance(n, PARTIAL_WITHOUT_RANGE)]
         self.assertEqual(subjects, ["field-content-range"])
 
     def test_206_with_content_range_not_flagged(self):
         # Guard
-        from httplint.status import PARTIAL_WITHOUT_RANGE
-
         notes = self._notes_206([(b"Content-Range", b"bytes 0-4/10")])
         self.assertFalse(any(isinstance(n, PARTIAL_WITHOUT_RANGE) for n in notes))
 
 
 class TestStatusConnectTunnel(unittest.TestCase):
     @staticmethod
-    def _notes(status, response_headers, method=b"CONNECT", with_request=True):
-        from httplint.message import HttpRequestLinter
-
+    def _linter(status, response_headers, method=b"CONNECT", with_request=True, content=()):
         linter = HttpResponseLinter()
         if with_request:
             req = HttpRequestLinter()
@@ -503,15 +505,28 @@ class TestStatusConnectTunnel(unittest.TestCase):
             linter.request = req
         linter.process_response_topline(b"HTTP/1.1", status, b"Phrase")
         linter.process_headers([(b"Date", b"Fri, 01 Jan 2021 00:00:00 GMT")] + response_headers)
+        for chunk in content:
+            linter.feed_content(chunk)
         linter.finish_content(True)
+        return linter
+
+    @classmethod
+    def _notes(cls, *args, **kwargs):
+        linter = cls._linter(*args, **kwargs)
         return [n for n in linter.notes if isinstance(n, CONNECT_TUNNEL_FRAMING)]
 
     def test_connect_2xx_with_framing_headers(self):
+        cases = [
+            (b"Content-Length", b"0", "field-content-length"),
+            (b"content-length", b"0", "field-content-length"),
+            (b"Transfer-Encoding", b"chunked", "field-transfer-encoding"),
+        ]
         for status in (b"200", b"204", b"299"):
-            for name in (b"Content-Length", b"content-length", b"Transfer-Encoding"):
+            for name, value, subject in cases:
                 with self.subTest(status=status, name=name):
-                    notes = self._notes(status, [(name, b"0" if b"ength" in name else b"chunked")])
-                    self.assertEqual([n.subject for n in notes], ["field-" + name.decode().lower()])
+                    notes = self._notes(status, [(name, value)])
+                    self.assertEqual([n.subject for n in notes], [subject])
+                    self.assertEqual(notes[0].level, levels.BAD)
 
     def test_connect_2xx_with_both_headers(self):
         notes = self._notes(b"200", [(b"Content-Length", b"0"), (b"Transfer-Encoding", b"chunked")])
@@ -521,12 +536,23 @@ class TestStatusConnectTunnel(unittest.TestCase):
 
     def test_connect_2xx_with_invalid_header_value(self):
         notes = self._notes(b"200", [(b"Content-Length", b"abc")])
-        self.assertEqual(len(notes), 1)
+        self.assertEqual([n.subject for n in notes], ["field-content-length"])
 
-    def test_connect_note_level(self):
-        from httplint.note import levels
+    def test_connect_2xx_with_repeated_header(self):
+        notes = self._notes(b"200", [(b"Content-Length", b"0"), (b"Content-Length", b"0")])
+        self.assertEqual([n.subject for n in notes], ["field-content-length"])
 
-        self.assertEqual(CONNECT_TUNNEL_FRAMING.level, levels.BAD)
+    def test_connect_2xx_tunnel_bytes_with_content_length(self):
+        # The #305 exclusion still holds: only the framing note is added.
+        for length in (b"5", b"2"):
+            with self.subTest(length=length):
+                linter = self._linter(
+                    b"200", [(b"Content-Length", length)], content=[b"hello"]
+                )
+                classes = [n.__class__ for n in linter.notes]
+                self.assertEqual(classes.count(CONNECT_TUNNEL_FRAMING), 1)
+                for unwanted in (CONTENT_NOT_ALLOWED, CL_CORRECT, CL_INCORRECT):
+                    self.assertNotIn(unwanted, classes)
 
     def test_connect_2xx_without_framing_headers(self):
         # Guard
@@ -534,7 +560,7 @@ class TestStatusConnectTunnel(unittest.TestCase):
 
     def test_connect_non_2xx_not_flagged(self):
         # Guard
-        for status in (b"407", b"502"):
+        for status in (b"100", b"199", b"300", b"407", b"502"):
             self.assertEqual(self._notes(status, [(b"Content-Length", b"0")]), [], status)
 
     def test_non_connect_request_not_flagged(self):
