@@ -1440,7 +1440,8 @@ class SyntaxRangesSpecifierTest(unittest.TestCase):
             elif now and not was:
                 newly_accepted += 1
                 head, _, tail = value.partition("=")
-                if not tail[:1] in (" ", "\t") or not old.fullmatch(f"{head}={tail.lstrip(' \t')}"):
+                without_ows = head + "=" + tail.lstrip(" \t")
+                if tail[:1] not in (" ", "\t") or not old.fullmatch(without_ows):
                     wrong.append(value)
         self.assertEqual(wrong, [])
         self.assertGreater(newly_accepted, 20)
