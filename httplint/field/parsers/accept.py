@@ -1,10 +1,9 @@
 from dataclasses import dataclass
 from typing import Optional
 
-from httplint.field import BAD_SYNTAX
 from httplint.field.list_field import HttpListField
 from httplint.field.tests import FieldTest
-from httplint.field.utils import BAD_Q_VALUE, parse_media_type, parse_qvalue
+from httplint.field.utils import BAD_Q_VALUE, parse_media_type_once, parse_qvalue
 from httplint.note import Note, categories, levels
 from httplint.syntax import rfc9110
 from httplint.types import (
@@ -33,11 +32,11 @@ acceptable in responses."""
     deprecated = False
 
     def parse(self, field_value: str, add_note: AddNoteMethodType) -> AcceptValue:
-        media_type, param_dict = parse_media_type(
+        media_type, param_dict = parse_media_type_once(
+            self,
             field_value,
             add_note,
             ACCEPT_BAD_SYNTAX,
-            self.reference,
             allow_wildcard=True,
             nostar=["q"],
         )
@@ -58,7 +57,7 @@ class ACCEPT_BAD_SYNTAX(Note):
     _text = """\
 `%(value)s` is not a valid media range. `Accept` is a list of media ranges
 (e.g., `text/html`, `image/*`, `*/*`) that the client prefers in the response;
-see [its definition](%(ref_uri)s) for more information."""
+see [its definition](%(ref_uri)s) for more information.%(position)s"""
 
 
 class AcceptTest(FieldTest[RequestLinterProtocol]):
@@ -87,7 +86,7 @@ class AcceptBadTypeTest(FieldTest[RequestLinterProtocol]):
     name = "Accept"
     inputs = [b"invalid"]
     expected_out = [AcceptValue("invalid", {}, None)]
-    expected_notes: NoteClassListType = [ACCEPT_BAD_SYNTAX, BAD_SYNTAX]
+    expected_notes: NoteClassListType = [ACCEPT_BAD_SYNTAX]
 
 
 class AcceptBadQSignTest(FieldTest[RequestLinterProtocol]):

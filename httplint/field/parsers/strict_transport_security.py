@@ -1,6 +1,5 @@
 from typing import Any, Optional
 
-from httplint.field import BAD_SYNTAX
 from httplint.field.deferred_notes import DeferredNotes
 from httplint.field.singleton_field import SINGLE_HEADER_REPEAT, SingletonField
 from httplint.field.tests import FieldTest
@@ -72,13 +71,16 @@ browsers that it should only be communicated with using HTTPS, instead of using 
             "includesubdomains": False,
             "preload": False,
         }
-        directives = [d.strip() for d in _split_directives(field_value)]
+        # The syntax check sees the unstripped line, so look for other defects in that.
+        raw = self.raw_values[0] if self.raw_values else field_value
+        raw_directives = _split_directives(raw if raw.strip() == field_value else field_value)
+        directives = [d.strip() for d in raw_directives]
         if len(directives) > 1 and directives[-1] == "":
             directives.pop()
             self._deferred.defer(HSTS_TRAILING_SEMICOLON)
 
         seen_directives = set()
-        for directive in directives:
+        for index, directive in enumerate(directives):
             parts = directive.split("=", 1)
             name = parts[0].strip().lower()
             value = parts[1].strip() if len(parts) > 1 else None
@@ -104,6 +106,8 @@ browsers that it should only be communicated with using HTTPS, instead of using 
                         max_digits=4000,  # as for Age: RFC 6797 has no upper bound
                         max_age=max_age,
                     )
+                    if parsed["max-age"] is None:
+                        self._bad_max_age(raw_directives, index)
             elif name == "includesubdomains":
                 parsed["includesubdomains"] = True
                 if value is not None:
@@ -117,6 +121,24 @@ browsers that it should only be communicated with using HTTPS, instead of using 
                 pass
 
         return parsed
+
+    def _bad_max_age(self, raw_directives: list[str], index: int) -> None:
+        """
+        A bad max-age value (empty, or not an integer) has been reported with HSTS_BAD_MAX_AGE,
+        and may be a syntax error as well (`max-age=`, `max-age=1 2`). If it is the only syntax
+        error in the value, so that the value would conform with a valid max-age in its place,
+        drop the generic syntax note, so that the defect gets one note.
+        """
+        name, equals, after = raw_directives[index].partition("=")
+        value = after.strip()
+        if ";" in value:
+            return  # an unterminated quote swallowed what follows, so there is more to report
+        lead = after[: len(after) - len(after.lstrip())]
+        trail = after[len(after.rstrip()) :]
+        fixed = list(raw_directives)
+        fixed[index] = f"{name}{equals}{lead}1{trail}"
+        if self.matches_syntax(";".join(fixed)):
+            self.suppress_syntax_note()
 
     def evaluate(self, add_note: AddNoteMethodType) -> None:
         if not self.value:
@@ -548,11 +570,10 @@ class HSTSUnderscoreMaxAgeTest(HSTSSignedMaxAgeTest):
 
 
 class HSTSEmptyMaxAgeTest(HSTSSignedMaxAgeTest):
-    "The empty value is also a syntax error, so BAD_SYNTAX comes with it (as it did before)."
+    "The empty value is also a syntax error, which HSTS_BAD_MAX_AGE reports on its own."
 
     inputs = [b"max-age="]
     expected_notes: NoteClassListType = [
-        BAD_SYNTAX,
         HSTS_BAD_MAX_AGE,
         HSTS_NO_SUBDOMAINS,
         HSTS_NO_PRELOAD,

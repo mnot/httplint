@@ -2,7 +2,19 @@ import calendar
 import re
 import time
 from email.utils import parsedate as lib_parsedate
-from typing import Any, Callable, Dict, FrozenSet, List, Optional, Set, Tuple, Type, Union
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Dict,
+    FrozenSet,
+    List,
+    Optional,
+    Set,
+    Tuple,
+    Type,
+    Union,
+)
 from urllib.parse import SplitResult
 from urllib.parse import unquote as urlunquote
 from urllib.parse import urljoin, urlsplit
@@ -12,7 +24,10 @@ from http_sf import Token
 from httplint.note import MarkdownSafe, Note, categories, levels
 from httplint.syntax import rfc5234, rfc6838, rfc9110
 from httplint.types import AddNoteMethodType, LinterProtocol, ParamDictType
-from httplint.util import inline_safe
+from httplint.util import inline_safe, invalid_char_problem, markdown_context
+
+if TYPE_CHECKING:
+    from httplint.field import HttpField
 
 RE_FLAGS = re.VERBOSE | re.IGNORECASE
 
@@ -48,6 +63,53 @@ def parse_media_type(
     check_media_type(media_type, add_note, bad_syntax_note, ref_uri, allow_wildcard)
     param_dict = parse_params(param_str, add_note, nostar)
     return media_type, param_dict
+
+
+def syntax_position(field: "HttpField[Any]", value: str) -> MarkdownSafe:
+    """
+    For a specific note that stands in for BAD_SYNTAX_DETAILED: where ``value`` stops matching
+    the field's syntax, in the same form (the problem character and an excerpt). It is empty if
+    no part of the value matches, where the generic note has no position either, and otherwise
+    starts with a blank line, to follow a paragraph of text.
+    """
+    patterns = field._syntax_patterns()  # pylint: disable=protected-access
+    match = patterns[1].match(value) if patterns else None
+    if not match:
+        return MarkdownSafe("")
+    index = match.end()
+    problem = inline_safe(invalid_char_problem(value, index))
+    return MarkdownSafe(f"\n\n`{problem}`\n{markdown_context(value, index)}")
+
+
+def parse_media_type_once(
+    field: "HttpField[Any]",
+    field_value: str,
+    add_note: AddNoteMethodType,
+    bad_syntax_note: Type[Note],
+    **kwargs: Any,
+) -> Tuple[str, ParamDictType]:
+    """
+    parse_media_type() for a field that reports a value that isn't shaped like a media type or
+    media range with ``bad_syntax_note``. If that is the value's only syntax defect (it would
+    match the field's syntax with the media type swapped for a valid one), the field's generic
+    syntax note is dropped, so the defect gets one note. A second defect, e.g. in a parameter,
+    still gets the generic note.
+    """
+    reported = False
+
+    def track(note: Type[Note], category: Optional[Any] = None, **vrs: Any) -> Note:
+        nonlocal reported
+        if note is bad_syntax_note:
+            reported = True
+            vrs["position"] = syntax_position(field, field_value)
+        return add_note(note, category, **vrs)
+
+    result = parse_media_type(field_value, track, bad_syntax_note, field.reference, **kwargs)
+    if reported:
+        _, sep, params = field_value.partition(";")
+        if field.matches_syntax(f"a/b{sep}{params}"):
+            field.suppress_syntax_note()
+    return result
 
 
 def check_media_type(

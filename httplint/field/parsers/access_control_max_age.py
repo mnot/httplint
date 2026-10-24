@@ -19,18 +19,20 @@ request (as scoped by the `Access-Control-Allow-Methods` and
 `Access-Control-Allow-Headers` request headers) can be cached."""
     reference = "https://fetch.spec.whatwg.org/#http-access-control-max-age"
     syntax = rfc9110.delay_seconds
-    report_syntax = False
     category = categories.CORS
     deprecated = False
 
     def parse(self, field_value: str, add_note: AddNoteMethodType) -> int:
+        # The value is a single number, so a note about it covers any syntax defect it has.
         if is_negative_integer(field_value):
+            self.suppress_syntax_note()
             add_note(CORS_MAX_AGE_NEGATIVE, ref_uri=self.reference)
             raise ValueError
         val = parse_delta_seconds(
             field_value, add_note, CORS_MAX_AGE_INVALID, ref_uri=self.reference
         )
         if val is None:
+            self.suppress_syntax_note()
             raise ValueError
         return val
 
