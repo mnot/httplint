@@ -1,6 +1,6 @@
+from httplint.field.delta_seconds import is_negative_integer, parse_delta_seconds
 from httplint.field.singleton_field import SINGLE_HEADER_REPEAT, SingletonField
 from httplint.field.tests import FieldTest
-from httplint.field.utils import is_negative_integer, parse_delta_seconds
 from httplint.note import Note, categories, levels
 from httplint.syntax import rfc9111
 from httplint.types import (

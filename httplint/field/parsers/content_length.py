@@ -1,6 +1,6 @@
+from httplint.field.delta_seconds import parse_delta_seconds
 from httplint.field.singleton_field import SINGLE_HEADER_REPEAT, SingletonField
 from httplint.field.tests import FieldTest
-from httplint.field.utils import parse_delta_seconds
 from httplint.note import Note, categories, levels
 from httplint.syntax import rfc9110
 from httplint.types import (

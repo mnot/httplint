@@ -1,9 +1,9 @@
 from typing import Tuple, Union
 
 from httplint.field import BAD_SYNTAX
+from httplint.field.entity_tag import ENTITY_TAG_LIST_STAR, ENTITY_TAG_WEAK_CASE, parse_entity_tag
 from httplint.field.list_field import HttpListField
 from httplint.field.tests import FieldTest
-from httplint.field.utils import ENTITY_TAG_LIST_STAR, ENTITY_TAG_WEAK_CASE, parse_entity_tag
 from httplint.note import categories
 from httplint.syntax import rfc9110
 from httplint.types import AddNoteMethodType, NoteClassListType, RequestLinterProtocol

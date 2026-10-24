@@ -7,9 +7,10 @@ from typing import Any, List, Optional, Tuple, Type, Union
 from httplint.field import RFC6265
 from httplint.field.broken_field import BrokenField
 from httplint.field.deferred_notes import DeferredNotes
+from httplint.field.delta_seconds import is_negative_integer, parse_delta_seconds
 from httplint.field.section import FIELD_VALUE_ENCODING
 from httplint.field.tests import FakeResponseLinter, FieldTest
-from httplint.field.utils import is_negative_integer, parse_delta_seconds, resolve_url
+from httplint.field.urls import resolve_url
 from httplint.note import MarkdownSafe, Note, categories, levels
 from httplint.types import (
     AddNoteMethodType,

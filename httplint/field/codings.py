@@ -4,7 +4,7 @@ Content-coding helpers shared by Accept-Encoding, Content-Encoding and Available
 
 from typing import Dict, Iterable, List, Optional, Tuple
 
-from httplint.field.utils import parse_qvalue
+from httplint.field.conneg import parse_qvalue
 from httplint.note import Note, categories, levels
 from httplint.types import AddNoteMethodType, ParamDictType
 

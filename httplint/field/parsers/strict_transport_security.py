@@ -1,9 +1,10 @@
 from typing import Any, Optional
 
 from httplint.field.deferred_notes import DeferredNotes
+from httplint.field.delta_seconds import parse_delta_seconds
+from httplint.field.params import unquote_string
 from httplint.field.singleton_field import SINGLE_HEADER_REPEAT, SingletonField
 from httplint.field.tests import FieldTest
-from httplint.field.utils import parse_delta_seconds, unquote_string
 from httplint.note import MarkdownSafe, Note, categories, levels
 from httplint.syntax import rfc9110
 from httplint.types import (

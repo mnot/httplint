@@ -2,9 +2,9 @@ import re
 from dataclasses import dataclass
 from typing import Union
 
+from httplint.field.delta_seconds import parse_digits
 from httplint.field.singleton_field import SingletonField
 from httplint.field.tests import FieldTest
-from httplint.field.utils import parse_digits
 from httplint.note import Note, categories, levels
 from httplint.syntax import rfc3986
 from httplint.types import (

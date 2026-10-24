@@ -8,12 +8,9 @@ from httplint.field.parsers.reporting_endpoints import (
     ENDPOINT_NOT_SECURE,
     endpoint_problem,
 )
+from httplint.field.reporting import known_reporting_endpoints
+from httplint.field.sf_helpers import is_integer, is_number
 from httplint.field.tests import FieldTest
-from httplint.field.utils import (
-    is_integer,
-    is_number,
-    known_reporting_endpoints,
-)
 from httplint.note import MarkdownSafe, Note, categories, levels
 from httplint.types import (
     AddNoteMethodType,

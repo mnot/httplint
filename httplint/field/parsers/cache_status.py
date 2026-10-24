@@ -5,10 +5,10 @@ from typing import Any, Dict
 
 from http_sf import Token
 
+from httplint.field.sf_helpers import check_sf_params
 from httplint.field.sf_member import is_string_or_token, member_text, member_type_phrase
 from httplint.field.structured_field import StructuredField
 from httplint.field.tests import FieldTest
-from httplint.field.utils import check_sf_params
 from httplint.note import MarkdownSafe, Note, categories, levels
 from httplint.types import (
     AddNoteMethodType,
