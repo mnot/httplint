@@ -5,7 +5,7 @@ from httplint.field.structured_field import (
     StructuredField,
 )
 from httplint.field.tests import FieldTest
-from httplint.field.utils import is_secure, resolve_url
+from httplint.field.urls import is_secure, resolve_url
 from httplint.note import Note, categories, levels
 from httplint.types import (
     AddNoteMethodType,

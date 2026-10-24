@@ -3,7 +3,7 @@ import re
 from httplint.field import BAD_SYNTAX_DETAILED
 from httplint.field.singleton_field import SingletonField
 from httplint.field.tests import FieldTest
-from httplint.field.utils import resolve_url
+from httplint.field.urls import resolve_url
 from httplint.note import Note, categories, levels
 from httplint.syntax import rfc3986, rfc9110
 from httplint.types import (

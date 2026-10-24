@@ -3,10 +3,11 @@ import unittest
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, NoReturn, Optional, Tuple, Type
 
+from httplint.field.common import RE_FLAGS
+from httplint.field.delta_seconds import parse_digits
 from httplint.field.section import FIELD_VALUE_ENCODING
 from httplint.field.singleton_field import SingletonField
 from httplint.field.tests import FakeRequestLinter, FieldTest
-from httplint.field.utils import RE_FLAGS, parse_digits
 from httplint.note import Note, categories, levels
 from httplint.syntax import rfc9110
 from httplint.types import AddNoteMethodType, NoteClassListType, RequestLinterProtocol

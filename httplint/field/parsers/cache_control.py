@@ -2,8 +2,8 @@ import re
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 from httplint.field.list_field import HttpListField
+from httplint.field.params import unquote_string
 from httplint.field.tests import FakeRequestLinter, FieldTest
-from httplint.field.utils import unquote_string
 from httplint.note import MarkdownSafe, Note, categories, levels
 from httplint.syntax import rfc9111
 from httplint.types import (

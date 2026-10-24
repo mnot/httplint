@@ -6,9 +6,9 @@ from httplint.field.codings import (
     coding_acceptable,
     note_deprecated_codings,
 )
+from httplint.field.conneg import vary_covers
 from httplint.field.list_field import HttpListField
 from httplint.field.tests import FakeRequestLinter, FieldTest
-from httplint.field.utils import vary_covers
 from httplint.note import Note, categories, levels
 from httplint.syntax import rfc9110
 from httplint.types import (
