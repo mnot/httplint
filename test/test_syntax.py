@@ -6,6 +6,7 @@ import time
 import unittest
 from functools import partial
 from typing import Any, Callable, Iterator, List, Sequence, Tuple, Type
+from urllib.parse import urlsplit
 
 from httplint import HttpRequestLinter, HttpResponseLinter, syntax
 from httplint.field import BAD_SYNTAX, BAD_SYNTAX_DETAILED, HttpField
@@ -1341,17 +1342,32 @@ class SyntaxIPvFutureTest(unittest.TestCase):
         return [type(note).__name__ for note in linter.notes]
 
     def test_request_target(self) -> None:
-        for target in [
-            b"http://[v1.a]/",
-            b"http://[V1.a]/",
-            b"http://[vF.a:b]/",
-            b"http://[VF.a:b]:80/x",
-        ]:
+        for target in [b"http://[v1.a]/", b"http://[vF.a:b]/"]:
             with self.subTest(target=target):
                 self.assertNotIn("URI_BAD_SYNTAX", self.target_notes(target))
         for target in [b"http://[x1.a]/", b"http://[V.a]/", b"http://[v1.]/", b"http://[V1]/"]:
             with self.subTest(target=target):
                 self.assertIn("URI_BAD_SYNTAX", self.target_notes(target))
+
+    def test_request_target_upper_case(self) -> None:
+        """
+        Through the linter. urllib.parse.urlsplit, which runs first, rejected "V" in some
+        releases (it was fixed in later patch levels), so this is skipped there; the rule
+        itself is checked by test_rule whatever Python runs it.
+        """
+        try:
+            urlsplit("http://[V1.a]/")
+        except ValueError:
+            self.skipTest("urlsplit rejects an upper-case V in this Python")
+        for target in [b"http://[V1.a]/", b"http://[VF.a:b]:80/x"]:
+            with self.subTest(target=target):
+                self.assertNotIn("URI_BAD_SYNTAX", self.target_notes(target))
+
+    def test_fields(self) -> None:
+        "Location and Origin match the host with the rule alone, on every Python."
+        self.assertNotIn("LOCATION_NOT_ABSOLUTE", field_notes(True, b"Location", b"http://[V1.a]/"))
+        self.assertNotIn("BAD_ORIGIN_SYNTAX", field_notes(False, b"Origin", b"http://[V1.a]:80"))
+        self.assertIn("BAD_ORIGIN_SYNTAX", field_notes(False, b"Origin", b"http://[x1.a]:80"))
 
     def test_rule(self) -> None:
         for value in ["v1.a", "V1.a", "vF.a:b", "Vf.~!:"]:
