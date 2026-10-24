@@ -157,7 +157,11 @@ class EmptyCodeSpanTest(unittest.TestCase):
         for param in ("detail", "key"):
             with self.subTest(param=param):
                 value = f'""; {param}="{HTML}"'
-                self.check_escaped(detail_text(b"Cache-Status", value.encode("ascii")))
+                detail = detail_text(b"Cache-Status", value.encode("ascii"))
+                self.check_escaped(detail)
+                # Separating the bullets from the target line stopped the escaping failure,
+                # but an empty target still renders as an empty code span.
+                self.assertNotIn("``", detail)
 
     def test_link_resource_hint_empty_target(self) -> None:
         # A bracketed target ends at the first ">", so the HTML goes in an unbracketed one. A

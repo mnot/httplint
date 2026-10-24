@@ -1,4 +1,4 @@
-from httplint.field.list_field import HttpListField
+from httplint.field.singleton_field import SingletonField
 from httplint.field.tests import FieldTest
 from httplint.note import Note, categories, levels
 from httplint.syntax import rfc9110
@@ -7,7 +7,7 @@ from httplint.types import AddNoteMethodType, NoteClassListType, ResponseLinterP
 MAX_SERVER_LENGTH = 64
 
 
-class server(HttpListField[ResponseLinterProtocol]):
+class server(SingletonField[ResponseLinterProtocol]):
     canonical_name = "Server"
     description = """\
 The `Server` response header contains information about the software used by the origin server to
@@ -28,8 +28,33 @@ handle the request."""
 
 class ServerTest(FieldTest[ResponseLinterProtocol]):
     name = "Server"
-    inputs = [b"Apache/2.4.1 (Unix)", b"CERN/3.0 libwww/2.17"]
-    expected_out = ["Apache/2.4.1 (Unix)", "CERN/3.0 libwww/2.17"]
+    inputs = [b"Apache/2.4.1 (Unix)"]
+    expected_out = "Apache/2.4.1 (Unix)"
+    expected_notes: NoteClassListType = []
+
+
+class ServerPlainTest(FieldTest[ResponseLinterProtocol]):
+    name = "Server"
+    inputs = [b"CERN/3.0 libwww/2.17"]
+    expected_out = "CERN/3.0 libwww/2.17"
+    expected_notes: NoteClassListType = []
+
+
+class ServerCommentCommaTest(FieldTest[ResponseLinterProtocol]):
+    "A comma inside a comment doesn't split the value."
+
+    name = "Server"
+    inputs = [b"Apache/2.4.1 (Unix, Linux)"]
+    expected_out = "Apache/2.4.1 (Unix, Linux)"
+    expected_notes: NoteClassListType = []
+
+
+class ServerNestedCommentTest(FieldTest[ResponseLinterProtocol]):
+    "Comments nested to the three levels the syntax rule allows stay in one value."
+
+    name = "Server"
+    inputs = [b"a (b (c (d, e), f), g)"]
+    expected_out = "a (b (c (d, e), f), g)"
     expected_notes: NoteClassListType = []
 
 
@@ -47,5 +72,5 @@ Consider shortening it."""
 class ServerTooLongTest(FieldTest[ResponseLinterProtocol]):
     name = "Server"
     inputs = [b"a" * (MAX_SERVER_LENGTH + 1)]
-    expected_out = ["a" * (MAX_SERVER_LENGTH + 1)]
+    expected_out = "a" * (MAX_SERVER_LENGTH + 1)
     expected_notes: NoteClassListType = [SERVER_TOO_LONG]

@@ -75,12 +75,18 @@ The `%(field_name)s` header must be one of `same-origin`, `same-origin-allow-pop
 class COOP_REPORT_TO_MISSING(Note):
     category = categories.SECURITY
     level = levels.WARN
-    _summary = "The report-to endpoint '%(endpoint)s' is not defined%(report_only)s."
+    _summary = (
+        "The report-to name '%(endpoint)s' doesn't match a Reporting-Endpoints entry"
+        "%(report_only)s."
+    )
     _text = """\
 The `report-to` parameter in the
 [Cross-Origin Opener Policy](https://html.spec.whatwg.org/multipage/origin.html#coop)
-header specifies a reporting endpoint, but no matching endpoint refers to it in the
-`Reporting-Endpoints` header."""
+header names a reporting endpoint. The Reporting API matches that name against the entries in the
+`Reporting-Endpoints` header, and none has this name.
+
+The specification does not use legacy `Report-To` groups for this, so a group with this name in a
+`Report-To` header does not satisfy it."""
 
 
 class cross_origin_opener_policy(TokenPolicyField):
