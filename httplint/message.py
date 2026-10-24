@@ -215,7 +215,8 @@ class HttpMessageLinter:
         return state
 
 
-# RFC 9112 Section 3.2.3: uri-host ":" port (rfc9112.authority_form is the older RFC 7230 rule)
+# RFC 9112 Section 3.2.3: uri-host ":" port, but stricter than rfc9112.authority_form: the host
+# and the port must not be empty (RFC 3986's reg-name and port can be)
 AUTHORITY_FORM = rf"(?= [^:] ) {rfc3986.host} : [0-9]+"
 
 # RFC 3987's iuserinfo: userinfo, plus non-ASCII characters

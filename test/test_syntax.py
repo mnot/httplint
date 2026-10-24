@@ -142,6 +142,15 @@ class SyntaxBacktrackingTest(unittest.TestCase):
             elapsed = time.monotonic() - start
             self.assertLess(elapsed, TIME_LIMIT, f"{label}: {elapsed:.2f}s")
 
+    def check_full(self, label: str, rule: str, value: str) -> None:
+        "Match a rule that isn't padded when it is used (a start-line or a message)."
+        compiled = re.compile(rule, re.VERBOSE | re.IGNORECASE)
+        with self.subTest(label):
+            start = time.monotonic()
+            compiled.fullmatch(value)
+            elapsed = time.monotonic() - start
+            self.assertLess(elapsed, TIME_LIMIT, f"{label}: {elapsed:.2f}s")
+
     def test_translation_rules(self) -> None:
         """
         Guards for the rules rewritten for #239: the obvious ways to write link-param,
@@ -180,6 +189,60 @@ class SyntaxBacktrackingTest(unittest.TestCase):
         self.check_rule(
             "ext-value language", rfc5987.ext_value, "UTF-8'" + "en-abcde" * 1500 + "'\x80"
         )
+
+    def test_transfer_encoding(self) -> None:
+        """
+        The RFC 7230 transfer-coding listed chunked, compress, deflate and gzip before
+        transfer-extension, so each of them matched by two routes: 2**n paths for n elements.
+        """
+        for name in ["gzip", "chunked", "a;b=c"]:
+            self.check_rule(
+                f"Transfer-Encoding {name}",
+                str(rfc9112.Transfer_Encoding),
+                ", ".join([name] * 24) + "\x80",
+            )
+
+    def test_start_line_rules(self) -> None:
+        """
+        Guard: the RFC 9112 start-line rules match long non-matching input in linear time. They
+        are not used to match messages, but they are transcriptions that someone may use.
+        """
+        n = 15000
+        bad = "\x01"
+        cases = [
+            ("authority-form host", rfc9112.authority_form, "a" * n + bad),
+            ("authority-form pct", rfc9112.authority_form, "%41" * n + bad),
+            ("authority-form dots", rfc9112.authority_form, "1." * n + bad),
+            ("authority-form port", rfc9112.authority_form, "a:" + "1" * n + bad),
+            ("authority-form IPv6", rfc9112.authority_form, "[" + "1:" * n + "]" + bad),
+            ("request-line origin", rfc9112.request_line, "GET /" + "a/" * n + " " + bad),
+            ("request-line query", rfc9112.request_line, "GET /?" + "a/?" * n + " " + bad),
+            ("request-line absolute", rfc9112.request_line, "GET http://" + "a." * n + " " + bad),
+            ("request-line path", rfc9112.request_line, "GET http://a" + "/a" * n + " " + bad),
+            ("request-line authority", rfc9112.request_line, "CONNECT " + "a" * n + bad),
+            ("request-line method", rfc9112.request_line, "G" * n + bad),
+            ("request-line spaces", rfc9112.request_line, "GET " + "/ " * n + bad),
+            ("status-line reason", rfc9112.status_line, "HTTP/1.1 200 " + "a b\t" * n + bad),
+            ("status-line obs-text", rfc9112.status_line, "HTTP/1.1 200 " + "\x80" * n + bad),
+            ("status-line spaces", rfc9112.status_line, "HTTP/1.1 200" + " " * n + bad),
+            ("reason-phrase", rfc9112.reason_phrase, "a b" * n + bad),
+            ("start-line", rfc9112.start_line, "HTTP/1.1 200 " + "a " * n + bad),
+            ("HTTP-version", rfc9112.HTTP_version, "HTTP/1." + "1" * n),
+            ("obs-fold OWS", rfc9112.obs_fold, " \t" * n + bad),
+            ("obs-fold RWS", rfc9112.obs_fold, "\r\n" + " \t" * n + bad),
+            ("obs-fold lines", rfc9112.obs_fold, " \r\n" * n + bad),
+        ]
+        for label, rule, value in cases:
+            self.check_full(label, rule, value)
+        message = "GET / HTTP/1.1\r\n"
+        for label, value in [
+            ("HTTP-message fields", message + "A: b\r\n" * 2000 + bad),
+            ("HTTP-message long value", message + "A: " + "a b " * 2000 + bad),
+            ("HTTP-message name", message + "A" * n + bad),
+            ("HTTP-message start", "GET /" + "a/" * n + bad),
+            ("HTTP-message folds", message + "A: b\r\n" + " c\r\n" * 2000 + bad),
+        ]:
+            self.check_full(label, rfc9112.HTTP_message, value)
 
     def test_language_tag(self) -> None:
         "Guard: these rules were dead before the alphanum fix, so main is fast on them too."
@@ -602,6 +665,179 @@ class SyntaxTranslationTest(unittest.TestCase):
         self.assertTrue(matches(new, "gzip, chunked"))
         self.assertFalse(matches(new, "gzip,"))
 
+    def test_transfer_coding_is_rfc9110(self) -> None:
+        "RFC 9112 imports transfer-coding; the RFC 7230 form accepted the same language."
+        self.assertIs(rfc9112.transfer_coding, rfc9110.transfer_coding)
+        for name in ["transfer_parameter", "transfer_extension"]:
+            self.assertFalse(hasattr(rfc9112, name))
+        param = rf"(?: {rfc9110.token} {rfc9110.BWS} = {rfc9110.BWS} (?: {rfc9110.token} | {rfc9110.quoted_string} ) )"
+        extension = rf"(?: {rfc9110.token} (?: {rfc9110.OWS} ; {rfc9110.OWS} {param} )* )"
+        old = rf"(?: chunked | compress | deflate | gzip | {extension} )"
+        old_list = str(rfc9110.list_rule(old))
+        for value in strings(["gzip", "chunked", "a", " ", ";", "=", '"', ","], 5):
+            with self.subTest(value=value):
+                self.assertEqual(
+                    fullmatch(old, value), fullmatch(rfc9112.transfer_coding, value), value
+                )
+                self.assertEqual(
+                    matches(old_list, value), matches(str(rfc9112.Transfer_Encoding), value), value
+                )
+        for value in ["gzip", "Chunked", "gzip;a=b", 'x;a="b c" ; d=e', "x-gzip"]:
+            self.assertTrue(fullmatch(rfc9112.transfer_coding, value))
+        for value in ["", "gzip;", "gzip;a", "a b", "gzip,chunked"]:
+            self.assertFalse(fullmatch(rfc9112.transfer_coding, value))
+
+    # The rules as they were: authority-form = authority, and a CRLF on the request-line.
+    OLD_REQUEST_TARGET = (
+        rf"(?: {rfc9112.origin_form} | {rfc9112.absolute_form} | {rfc3986.authority} "
+        rf"| {rfc9112.asterisk_form} )"
+    )
+    OLD_REQUEST_LINE = (
+        rf"(?: {rfc9112.method} [ ] {OLD_REQUEST_TARGET} [ ] {rfc9112.HTTP_version} "
+        rf"{rfc9112.CRLF} )"
+    )
+    OLD_REASON_PHRASE = (
+        rf"(?: {rfc9112.HTAB} | {rfc9112.SP} | {rfc9112.VCHAR} | {rfc9112.obs_text} )*"
+    )
+    OLD_STATUS_LINE = (
+        rf"(?: {rfc9112.HTTP_version} [ ] {rfc9112.status_code} [ ] {OLD_REASON_PHRASE} "
+        rf"{rfc9112.CRLF} )"
+    )
+
+    def test_authority_form(self) -> None:
+        "authority-form is uri-host ':' port (RFC 9112 Section 3.2.3), not authority."
+
+        def reference(value: str) -> bool:
+            "A host, then the last ':', then DIGITs (possibly none, as in RFC 3986's port)."
+            host, colon, port = value.rpartition(":")
+            return (
+                bool(colon)
+                and re.fullmatch("[0-9]*", port) is not None
+                and fullmatch(rfc3986.host, host)
+            )
+
+        for value in strings(["a", "1", ":", "@", "[", "]", "."], 6):
+            with self.subTest(value=value):
+                now = fullmatch(rfc9112.authority_form, value)
+                self.assertEqual(now, reference(value))
+                # Narrower than authority: nothing new is accepted.
+                if now:
+                    self.assertTrue(fullmatch(rfc3986.authority, value))
+        # An empty host (reg-name = *( ... )) and an empty port (port = *DIGIT) are valid ABNF.
+        for value in ["example.org:80", "a:", ":80", ":", "[::1]:443", "1.2.3.4:8080", "a%41:1"]:
+            with self.subTest(value=value):
+                self.assertTrue(fullmatch(rfc9112.authority_form, value))
+        # What authority accepted and authority-form rejects: no port, or userinfo.
+        for value in ["example.org", "[::1]", "u@example.org:80", "u:p@example.org", ""]:
+            with self.subTest(value=value):
+                self.assertTrue(fullmatch(rfc3986.authority, value))
+                self.assertFalse(fullmatch(rfc9112.authority_form, value))
+        for value in ["a:b", "a:80:80", "a b:80", "[::1:80", "a:80 ", "a@b:80"]:
+            with self.subTest(value=value):
+                self.assertFalse(fullmatch(rfc9112.authority_form, value))
+
+    def test_request_target(self) -> None:
+        "Only the authority-form change reaches request-target and request-line."
+        old_authority = rfc3986.authority
+        old_target = self.OLD_REQUEST_TARGET
+        old_line = self.OLD_REQUEST_LINE
+        for target in strings(["a", "1", ":", "@", "/", "?", "*", "[", "]"], 5):
+            with self.subTest(target=target):
+                was = fullmatch(old_target, target)
+                now = fullmatch(rfc9112.request_target, target)
+                if was != now:
+                    # authority-form lost the forms without a port, and userinfo.
+                    self.assertEqual((was, now), (True, False))
+                    self.assertTrue(fullmatch(old_authority, target))
+                    self.assertFalse(fullmatch(rfc9112.authority_form, target))
+                # The request-line differs only through its request-target, and loses its CRLF.
+                line = f"GET {target} HTTP/1.1"
+                self.assertEqual(fullmatch(old_line, line + "\r\n"), was)
+                self.assertEqual(fullmatch(rfc9112.request_line, line), now)
+        for line in ["GET / HTTP/1.1", "OPTIONS * HTTP/1.1", "CONNECT a.example:443 HTTP/1.1"]:
+            self.assertTrue(fullmatch(rfc9112.request_line, line))
+            self.assertFalse(fullmatch(rfc9112.request_line, line + "\r\n"))
+        for line in ["CONNECT a.example HTTP/1.1", "GET  / HTTP/1.1", "GET /  HTTP/1.1"]:
+            self.assertFalse(fullmatch(rfc9112.request_line, line))
+
+    def test_status_line(self) -> None:
+        "status-line loses its CRLF, and reason-phrase is 1*( ... ) inside [ ]."
+        old_reason, old = self.OLD_REASON_PHRASE, self.OLD_STATUS_LINE
+        pieces = ["HTTP/1.1", " ", "200", "OK", "\t", "\x80", "\x7f", "\x01", "\r\n", "\n"]
+        for value in strings(pieces, 5):
+            with self.subTest(value=value):
+                self.assertEqual(
+                    fullmatch(old, value + "\r\n"), fullmatch(rfc9112.status_line, value), value
+                )
+        for value in [
+            "HTTP/1.1 200 OK",
+            "HTTP/1.1 200 ",
+            "HTTP/1.1 404 Not\tFound \x80",
+            "HTTP/1.0 200 a",
+        ]:
+            self.assertTrue(fullmatch(rfc9112.status_line, value))
+        # The space after the status code is required even when there is no reason-phrase.
+        for value in ["HTTP/1.1 200", "HTTP/1.1 20 OK", "HTTP/1.1 200 OK\r\n", "HTTP/1.1 200 \x01"]:
+            self.assertFalse(fullmatch(rfc9112.status_line, value))
+        # The rule alone no longer matches nothing: that is what [ ] is for.
+        self.assertTrue(fullmatch(old_reason, ""))
+        self.assertFalse(fullmatch(rfc9112.reason_phrase, ""))
+        for value in ["a", " ", "\t", "\x80", "a b\tc"]:
+            self.assertTrue(fullmatch(rfc9112.reason_phrase, value))
+        for value in ["\x01", "a\r\nb", "a\x7f"]:
+            self.assertFalse(fullmatch(rfc9112.reason_phrase, value))
+
+    def test_obs_fold(self) -> None:
+        "obs-fold = OWS CRLF RWS (RFC 9112 Section 5.2) was missing."
+        for value in ["\r\n ", " \r\n\t", "\t \r\n  \t", "\r\n    "]:
+            with self.subTest(value=value):
+                self.assertTrue(fullmatch(rfc9112.obs_fold, value))
+        for value in ["", "\r\n", " \r\n", "\n ", "\r ", "\r\n x", "a\r\n ", " \r\n \r\n "]:
+            with self.subTest(value=value):
+                self.assertFalse(fullmatch(rfc9112.obs_fold, value))
+        # It is the continuation of a field line: the field-line before it ends with OWS.
+        self.assertTrue(fullmatch(rf"{rfc9112.field_line} {rfc9112.obs_fold} b", "A: a\r\n b"))
+
+    def test_rules_defined_by_rfc9110(self) -> None:
+        "absolute-path and obs-text are RFC 9110's; the copies in rfc9112 had the same text."
+        self.assertEqual(rfc9112.absolute_path, rf"(?: / {rfc3986.segment} )+")
+        self.assertEqual(rfc9112.obs_text, r"[\x80-\xff]")
+        self.assertIs(rfc9112.absolute_path, rfc9110.absolute_path)
+        self.assertIs(rfc9112.obs_text, rfc9110.obs_text)
+
+    def test_http_message(self) -> None:
+        "HTTP-message puts the CRLF after start-line, as RFC 9112 Section 2.1 does."
+        old_start = rf"(?: {self.OLD_REQUEST_LINE} | {self.OLD_STATUS_LINE} )"
+        old = rf"(?: {old_start} (?: {rfc9112.field_line} {rfc9112.CRLF} )* {rfc9112.CRLF} (?: {rfc9112.message_body} )? )"
+        pieces = ["GET / HTTP/1.1", "HTTP/1.1 200 OK", "\r\n", "A: b", "A:", " c", "\n"]
+        count = 0
+        for value in strings(pieces, 5):
+            with self.subTest(value=value):
+                now = fullmatch(rfc9112.HTTP_message, value)
+                self.assertEqual(fullmatch(old, value), now, value)
+                count += now
+        self.assertGreater(count, 100)
+        for value in [
+            "GET / HTTP/1.1\r\n\r\n",
+            "GET / HTTP/1.1\r\nHost: a\r\nA:\r\n\r\nbody\r\n",
+            "HTTP/1.1 200 \r\nA: b\r\n\r\n",
+            "HTTP/1.1 200 OK\r\n\r\n\x00\xff",
+        ]:
+            self.assertTrue(fullmatch(rfc9112.HTTP_message, value))
+        for value in [
+            "GET / HTTP/1.1\r\n",
+            "GET / HTTP/1.1\r\n\r",
+            "GET / HTTP/1.1\r\n A\r\n\r\n",
+            "\r\n\r\n",
+        ]:
+            self.assertFalse(fullmatch(rfc9112.HTTP_message, value))
+        # The one change in language is the authority-form's, via request-target.
+        old_message = rf"(?: {self.OLD_REQUEST_LINE} (?: {rfc9112.field_line} {rfc9112.CRLF} )* {rfc9112.CRLF} (?: {rfc9112.message_body} )? )"
+        self.assertTrue(fullmatch(rfc9112.HTTP_message, "CONNECT a:80 HTTP/1.1\r\n\r\n"))
+        self.assertTrue(fullmatch(old_message, "CONNECT a:80 HTTP/1.1\r\n\r\n"))
+        self.assertFalse(fullmatch(rfc9112.HTTP_message, "CONNECT a HTTP/1.1\r\n\r\n"))
+        self.assertTrue(fullmatch(old_message, "CONNECT a HTTP/1.1\r\n\r\n"))
+
     def test_comment_nesting(self) -> None:
         "comment is unrolled to two levels inside the outer one."
 
@@ -968,6 +1204,37 @@ class FieldSyntaxNoteTest(unittest.TestCase):
                 found = self.notes(name, value, response)
                 self.assertEqual(found.count(specific), 1, found)
                 self.assertFalse(any(issubclass(n, BAD_SYNTAX) for n in found), found)
+
+    def test_transfer_encoding_error_position(self) -> None:
+        """
+        The syntax note points at the first character that can't be part of a match. The RFC 7230
+        transfer-coding matched the bare name of a registered coding first, so for `gzip;a=b x` it
+        pointed at the valid ";" (position 5) instead of the stray " " (position 9).
+        """
+        for value, position, char in [
+            (b"gzip;a=b x", 9, " "),
+            (b"chunked; foo=bar \x01", 17, " "),
+            (b"gzip, chunked;a=b;", 12, ";"),
+            (b"gzip;a=b;c", 9, ";"),
+            (b"gzip;a=b", None, None),
+        ]:
+            with self.subTest(value=value):
+                linter = HttpResponseLinter()
+                linter.process_response_topline(b"HTTP/1.1", b"200", b"OK")
+                linter.process_headers([(b"Transfer-Encoding", value)])
+                linter.finish_content(True)
+                problems = [
+                    str(n.vars["problem"])
+                    for n in linter.notes
+                    if isinstance(n, BAD_SYNTAX_DETAILED)
+                ]
+                if position is None:
+                    self.assertEqual(problems, [])
+                else:
+                    self.assertEqual(
+                        problems,
+                        [f"The invalid character {char!r} was found at position {position}."],
+                    )
 
     def test_order(self) -> None:
         "The note parse() adds comes before the syntax note for the same value."
