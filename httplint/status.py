@@ -58,6 +58,16 @@ class StatusChecker:
             return
         status_method()
 
+    def _byte_range_requested(self) -> bool:
+        "Say whether the request is known to have a Range header using the bytes unit."
+        if not self.request:
+            return False
+        for name, value in self.request.headers.text:
+            unit, sep, _ = value.partition("=")
+            if name.lower() == "range" and sep and unit.strip().lower() == "bytes":
+                return True
+        return False
+
     def status100(self) -> None:  # Continue
         if self.request and not "100-continue" in get_header(self.request.headers.text, "expect"):
             self.add_note("status", UNEXPECTED_CONTINUE)
@@ -236,6 +246,12 @@ class StatusChecker:
     def status416(self) -> None:  # Requested Range Not Satisfiable
         if self.request and not get_header(self.request.headers.text, "range"):
             self.add_note("", STATUS_416_WITHOUT_RANGE)
+        elif (
+            self.request
+            and self._byte_range_requested()
+            and not any(name.lower() == "content-range" for name, _ in self.response.headers.text)
+        ):
+            self.add_note("field-content-range", STATUS_416_WITHOUT_CONTENT_RANGE)
 
     def status417(self) -> None:  # Expectation Failed
         if self.request:
@@ -662,6 +678,18 @@ The `416 (Range Not Satisfiable)` status code indicates that the set of ranges i
 `Range` header field overlap the current extent of the selected resource.
 
 However, this request didn't contain a `Range` header."""
+
+
+class STATUS_416_WITHOUT_CONTENT_RANGE(Note):
+    category = categories.GENERAL
+    level = levels.WARN
+    _summary = "A 416 response to a byte-range request should have a Content-Range header."
+    _text = """\
+When a server generates a `416 (Range Not Satisfiable)` response to a byte-range request, it
+should send a `Content-Range` header field in the unsatisfied form (`bytes */<length>`), giving the
+current length of the selected representation.
+
+This response didn't include a `Content-Range` header."""
 
 
 class STATUS_417_WITHOUT_EXPECT(Note):
