@@ -2,8 +2,8 @@ from typing import Tuple
 
 from httplint.field import BAD_SYNTAX_DETAILED
 from httplint.field.list_field import HttpListField
+from httplint.field.params import PARAM_REPEATS, parse_params
 from httplint.field.tests import FieldTest
-from httplint.field.utils import PARAM_REPEATS, parse_params
 from httplint.note import Note, categories, levels
 from httplint.syntax import rfc9110
 from httplint.types import (

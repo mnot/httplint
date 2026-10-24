@@ -3,9 +3,11 @@ from dataclasses import dataclass
 from typing import Optional
 
 from httplint.field import BAD_SYNTAX
+from httplint.field.common import RE_FLAGS, syntax_position
+from httplint.field.conneg import parse_qvalue
 from httplint.field.list_field import HttpListField
+from httplint.field.params import parse_params
 from httplint.field.tests import FieldTest
-from httplint.field.utils import RE_FLAGS, parse_params, parse_qvalue, syntax_position
 from httplint.note import Note, categories, levels
 from httplint.syntax import rfc9110
 from httplint.types import (

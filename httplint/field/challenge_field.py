@@ -2,8 +2,8 @@ import re
 from typing import Dict, Generic, List, Optional, Tuple, Union
 
 from httplint.field import BAD_SYNTAX_DETAILED, HttpField
+from httplint.field.common import RE_FLAGS
 from httplint.field.singleton_field import SINGLE_HEADER_REPEAT
-from httplint.field.utils import RE_FLAGS
 from httplint.syntax import rfc9110
 from httplint.types import AddNoteMethodType, TMessage
 from httplint.util import invalid_char_problem, markdown_context
