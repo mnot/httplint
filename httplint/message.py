@@ -152,7 +152,7 @@ class HttpMessageLinter:
                         content_length=f_num(self.content_length),
                     )
         else:
-            if self.content_length and not self.no_content:
+            if self.content_length and not self.no_content and not self.is_connect_tunnel():
                 self.notes.add(
                     "message", CONTENT_NOT_ALLOWED, message=translate(L_("This message"))
                 )
@@ -172,6 +172,10 @@ class HttpMessageLinter:
     def can_have_content(self) -> bool:
         "Say whether this message can have content."
         return True
+
+    def is_connect_tunnel(self) -> bool:
+        "Say whether the bytes after the header section are tunnel data, not content."
+        return False
 
     def has_full_representation(self) -> bool:
         "Say whether this message's content is a full representation of the resource."
@@ -399,7 +403,22 @@ class HttpResponseLinter(HttpMessageLinter):
             self.status_code in (204, 205, 304) or 100 <= self.status_code <= 199
         ):
             return False
+        if self.is_connect_tunnel():
+            return False
         return True
+
+    def is_connect_tunnel(self) -> bool:
+        """
+        Say whether this is a 2xx response to CONNECT, after which the connection carries
+        tunnel data rather than message content (RFC 9110, Section 9.3.6). Without a known
+        request, it isn't.
+        """
+        return (
+            self.request is not None
+            and self.request.method == "CONNECT"
+            and self.status_code is not None
+            and 200 <= self.status_code <= 299
+        )
 
     def has_full_representation(self) -> bool:
         "Say whether this response's content is a full representation (so, not a 206)."

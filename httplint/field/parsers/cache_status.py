@@ -42,7 +42,7 @@ debugging caches."""
                 CACHE_STATUS_UNKNOWN_PARAM,
                 CACHE_STATUS_BAD_PARAM_VAL,
             )
-            status_list.append(f"**`{target_str}`**:\n{param_str}")
+            status_list.append(f"**`{target_str}`**:\n\n{param_str}")
 
         if status_list:
             add_note(CACHE_STATUS, status=MarkdownSafe("\n\n".join(status_list)))

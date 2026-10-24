@@ -38,6 +38,8 @@ the transmitted content in frames that are part of other web pages.
         return field_value.upper()
 
     def evaluate(self, add_note: AddNoteMethodType) -> None:
+        if not self.value:
+            return  # the syntax check has already reported it
         if self.value == "DENY":
             add_note(FRAME_OPTIONS_DENY)
         elif self.value == "SAMEORIGIN":
@@ -136,6 +138,24 @@ class UnknownXFOTest(FieldTest[ResponseLinterProtocol]):
     inputs = [b"foO"]
     expected_out = "FOO"
     expected_notes: NoteClassListType = [BAD_SYNTAX, FRAME_OPTIONS_UNKNOWN]
+
+
+class EmptyXFOTest(FieldTest[ResponseLinterProtocol]):
+    "Regression: an empty value used to raise IndexError in evaluate()."
+
+    name = "X-Frame-Options"
+    inputs = [b""]
+    expected_out = ""
+    expected_notes: NoteClassListType = [BAD_SYNTAX]
+
+
+class WhitespaceXFOTest(FieldTest[ResponseLinterProtocol]):
+    "Regression: a whitespace-only value used to raise IndexError in evaluate()."
+
+    name = "X-Frame-Options"
+    inputs = [b"  "]
+    expected_out = ""
+    expected_notes: NoteClassListType = [BAD_SYNTAX]
 
 
 class SubstringXFOTest(FieldTest[ResponseLinterProtocol]):

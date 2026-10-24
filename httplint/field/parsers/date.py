@@ -60,7 +60,7 @@ clock skew can cause responses that should be cacheable to be considered uncache
 their freshness lifetime is short).
 
 Ask your server administrator to synchronise the clock, e.g., using
-[NTP](http://en.wikipedia.org/wiki/Network_Time_Protocol Network Time Protocol).
+[NTP](https://en.wikipedia.org/wiki/Network_Time_Protocol "Network Time Protocol").
 
 Apparent clock skew can also be caused by caching the response without adjusting the `Age` header;
 e.g., in a reverse proxy or Content Delivery network. See [this
