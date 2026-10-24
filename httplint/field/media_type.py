@@ -6,7 +6,7 @@ import re
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Type, Union
 
 from httplint.field.common import RE_FLAGS, syntax_position
-from httplint.field.params import parse_params
+from httplint.field.params import parse_params, split_params_off
 from httplint.note import Note, categories, levels
 from httplint.syntax import rfc6838, rfc9110
 from httplint.types import AddNoteMethodType, ParamDictType
@@ -39,10 +39,7 @@ def parse_media_type(
     ``check_media_type`` for the checks applied along the way. ``nostar`` is passed
     through to ``parse_params`` to flag RFC 5987-style ``param*`` keys.
     """
-    try:
-        media_type, param_str = field_value.split(";", 1)
-    except ValueError:
-        media_type, param_str = field_value, ""
+    media_type, param_str = split_params_off(field_value)
     media_type = media_type.strip().lower()
     check_media_type(media_type, add_note, bad_syntax_note, ref_uri, allow_wildcard)
     param_dict = parse_params(param_str, add_note, nostar)
@@ -74,8 +71,8 @@ def parse_media_type_once(
 
     result = parse_media_type(field_value, track, bad_syntax_note, field.reference, **kwargs)
     if reported:
-        _, sep, params = field_value.partition(";")
-        if field.matches_syntax(f"a/b{sep}{params}"):
+        head, _ = split_params_off(field_value)
+        if field.matches_syntax("a/b" + field_value[len(head) :]):
             field.suppress_syntax_note()
     return result
 
