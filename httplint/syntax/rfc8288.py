@@ -45,6 +45,10 @@ Link = list_rule(link_value)
 #  LOALPHA is not defined in RFC 8288; it is RFC 2616's "any US-ASCII lower-case letter". Link
 #  relation types are compared case-insensitively (Section 2.1.1), but reg-rel-type is written
 #  with lower-case letters only, and is transcribed that way.
+#
+#  This applies to LOALPHA, reg-rel-type, ext-rel-type and relation-type below: a consumer that
+#  wires them into Link must lower-case the value, or match case-insensitively, before using
+#  them. As written, rel="Next" fails reg-rel-type and ext-rel-type.
 
 LOALPHA = r"(?-i:[a-z])"
 
