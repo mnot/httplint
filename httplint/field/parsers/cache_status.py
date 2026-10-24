@@ -42,7 +42,9 @@ debugging caches."""
                 CACHE_STATUS_UNKNOWN_PARAM,
                 CACHE_STATUS_BAD_PARAM_VAL,
             )
-            status_list.append(f"**`{target_str}`**:\n\n{param_str}")
+            # An empty code span would swallow the next span's delimiters.
+            label = f"**`{target_str}`**" if target_str else "**(empty)**"
+            status_list.append(f"{label}:\n\n{param_str}")
 
         if status_list:
             add_note(CACHE_STATUS, status=MarkdownSafe("\n\n".join(status_list)))
@@ -155,3 +157,17 @@ class CacheStatusBooleanIntegerTest(FieldTest[ResponseLinterProtocol]):
         CACHE_STATUS_BAD_PARAM_VAL,
         CACHE_STATUS,
     ]
+
+
+class CacheStatusEmptyTargetTest(FieldTest[ResponseLinterProtocol]):
+    name = "Cache-Status"
+    inputs = [b'""; hit; key=""']
+    expected_out = [("", {"hit": True, "key": ""})]
+    expected_notes: NoteClassListType = [CACHE_STATUS]
+
+
+class CacheStatusEmptyParamValTest(FieldTest[ResponseLinterProtocol]):
+    name = "Cache-Status"
+    inputs = [b'ExampleCache; fwd=""']
+    expected_out = [(Token("ExampleCache"), {"fwd": ""})]
+    expected_notes: NoteClassListType = [CACHE_STATUS_BAD_PARAM_VAL, CACHE_STATUS]

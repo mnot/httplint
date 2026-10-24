@@ -8,7 +8,7 @@ from urllib.parse import urljoin, urlsplit
 
 from http_sf import Token
 
-from httplint.note import Note, categories, levels
+from httplint.note import MarkdownSafe, Note, categories, levels
 from httplint.syntax import rfc5234, rfc6838, rfc9110
 from httplint.types import AddNoteMethodType, LinterProtocol, ParamDictType
 from httplint.util import inline_safe
@@ -414,6 +414,9 @@ def check_sf_params(
         safe_value = inline_safe(str(param_value))
         # An empty code span would swallow the next span's delimiters.
         shown_value = f"`{safe_value}`" if safe_value else "(empty)"
+        # The notes below put %(value)s in a code span of their own, and an empty value would
+        # leave an empty one, so they get a placeholder instead.
+        note_value = param_value if str(param_value) else MarkdownSafe("(empty)")
         if param_name not in known_params:
             add_note(unknown_param_note, param=param_name)
             param_list.append(f"* `{param_name}`: {shown_value}")
@@ -423,7 +426,7 @@ def check_sf_params(
                 add_note(
                     bad_param_val_note,
                     param=param_name,
-                    value=param_value,
+                    value=note_value,
                 )
                 param_list.append(f"* `{param_name}`: {shown_value}")
                 continue
@@ -433,7 +436,7 @@ def check_sf_params(
                 add_note(
                     bad_param_val_note,
                     param=param_name,
-                    value=param_value,
+                    value=note_value,
                 )
                 param_list.append(f"* `{param_name}`: {shown_value}")
                 continue
