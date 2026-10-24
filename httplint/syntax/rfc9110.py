@@ -563,8 +563,13 @@ range_spec = other_range
 range_set = list_rule(range_spec, 1)
 
 #   ranges-specifier = range-unit "=" range-set
+#
+# Deliberate deviation from the published ABNF, following RFC 9110 Errata ID 7306 (Verified,
+# Section 14.1.1): the rule should be range-unit "=" OWS range-set. The published text
+# contradicts the RFC's own example in Section 14.1.2, "bytes= 0-999, 4500-5499, -1000". Drop
+# the OWS if the RFC is republished with the original text.
 
-ranges_specifier = rf"(?: {range_unit} = {range_set} )"
+ranges_specifier = rf"(?: {range_unit} = {OWS} {range_set} )"
 
 #   Range = ranges-specifier
 

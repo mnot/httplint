@@ -1400,6 +1400,78 @@ class SyntaxIPvFutureTest(unittest.TestCase):
         self.assertGreater(newly_accepted, 10)
 
 
+class SyntaxRangesSpecifierTest(unittest.TestCase):
+    """
+    ranges-specifier allows OWS after the "=", as RFC 9110 Errata ID 7306 says it should (the
+    published ABNF contradicts the example in Section 14.1.2).
+    """
+
+    OLD = rf"(?: {rfc9110.range_unit} = {rfc9110.range_set} )"
+
+    def test_accepts(self) -> None:
+        for value in [
+            "bytes= 0-999, 4500-5499, -1000",
+            "bytes=\t0-9",
+            "bytes=  \t 0-",
+            "bytes=0-9",
+            "bytes=0-9, -1",
+            "bytes= -1",
+            "a= b",
+        ]:
+            with self.subTest(value=value):
+                self.assertTrue(fullmatch(rfc9110.ranges_specifier, value))
+                self.assertTrue(fullmatch(rfc9110.Range, value))
+
+    def test_rejects(self) -> None:
+        for value in ["bytes=", "bytes= ", "bytes =0-9", "bytes= 0-9,", "bytes= 0 -9", "= 0-9"]:
+            with self.subTest(value=value):
+                self.assertFalse(fullmatch(rfc9110.ranges_specifier, value))
+
+    def test_differential(self) -> None:
+        "The only strings newly accepted have whitespace after the first '='."
+        old = re.compile(self.OLD, re.VERBOSE | re.IGNORECASE)
+        new = re.compile(rfc9110.ranges_specifier, re.VERBOSE | re.IGNORECASE)
+        wrong = []
+        newly_accepted = 0
+        for value in strings(["a", "=", "0", "-", " ", "\t", ",", "\x80"], 6):
+            was, now = old.fullmatch(value) is not None, new.fullmatch(value) is not None
+            if was and not now:
+                wrong.append(value)
+            elif now and not was:
+                newly_accepted += 1
+                head, _, tail = value.partition("=")
+                if not tail[:1] in (" ", "\t") or not old.fullmatch(f"{head}={tail.lstrip(' \t')}"):
+                    wrong.append(value)
+        self.assertEqual(wrong, [])
+        self.assertGreater(newly_accepted, 20)
+
+    def test_timing(self) -> None:
+        n = 3000
+        for label, value in [
+            ("whitespace", "bytes=" + " \t" * n + "\x80"),
+            ("whitespace, then ranges", "bytes=" + " " * n + "0-1, " * 24 + "\x80"),
+            ("ranges", "bytes= " + "0-1, " * n + "\x80"),
+            ("only whitespace", "bytes=" + " " * n),
+        ]:
+            compiled = re.compile(rf"^\s*(?:{rfc9110.Range})\s*$", re.VERBOSE | re.IGNORECASE)
+            with self.subTest(label):
+                start = time.monotonic()
+                compiled.match(value)
+                self.assertLess(time.monotonic() - start, TIME_LIMIT, label)
+
+    def test_field(self) -> None:
+        """
+        Guard: Range doesn't report syntax from the rule (report_syntax is False; its parser does),
+        so the field's output is the same on main.
+        """
+        for value in [b"bytes= 0-999, 4500-5499, -1000", b"bytes=\t0-9", b"bytes=0-9"]:
+            with self.subTest(value=value):
+                self.assertNotIn("RANGE_BAD_SYNTAX", field_notes(False, b"Range", value))
+        for value in [b"bytes=", b"bytes= 0 -9"]:
+            with self.subTest(value=value):
+                self.assertIn("RANGE_BAD_SYNTAX", field_notes(False, b"Range", value))
+
+
 def run_regex_check() -> None:
     print("Checking Syntax...")
     count, modules, errors = check_regex()
