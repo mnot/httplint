@@ -18,17 +18,19 @@ The `Age` response header conveys the sender's estimate of the amount of time si
 (or its validation) was generated at the origin server."""
     reference = f"{rfc9111.SPEC_URL}#field.age"
     syntax = rfc9111.Age
-    report_syntax = False
     category = categories.CACHING
     deprecated = False
 
     def parse(self, field_value: str, add_note: AddNoteMethodType) -> int:
+        # The value is a single number, so a note about it covers any syntax defect it has.
         if is_negative_integer(field_value):
+            self.suppress_syntax_note()
             add_note(AGE_NEGATIVE)
             raise ValueError
         # Generous digit bound: oversized values still get AGE_LARGE, not AGE_NOT_INT.
         parsed = parse_delta_seconds(field_value, add_note, AGE_NOT_INT, max_digits=4000)
         if parsed is None:
+            self.suppress_syntax_note()
             raise ValueError
         age_value = parsed
         if age_value > MAX_DELTA_SECONDS:

@@ -3,7 +3,7 @@ import tracemalloc
 import unittest
 import zlib
 import brotli
-from httplint.message import HttpResponseLinter
+from httplint.message import HttpRequestLinter, HttpResponseLinter
 from httplint.util import f_num
 from httplint.charset import CHARSET_UNDECODABLE
 from httplint.content_encoding import (
@@ -15,7 +15,7 @@ from httplint.content_encoding import (
     DeflateProcessor,
 )
 from httplint.content_type import CONTENT_TYPE_MISMATCH
-from httplint.message import CL_CORRECT, CONTENT_NOT_ALLOWED
+from httplint.message import CL_CORRECT, CL_INCORRECT, CONTENT_NOT_ALLOWED
 
 class TestContentEncoding(unittest.TestCase):
     def test_brotli_valid(self):
@@ -288,6 +288,54 @@ class TestCanHaveContent(unittest.TestCase):
         self.assertFalse(_has(linter, CONTENT_NOT_ALLOWED))
         self.assertTrue(_has(linter, CL_CORRECT))
         self.assertFalse(_has(linter, CHARSET_UNDECODABLE))
+
+    @staticmethod
+    def _connect_response(method, status, headers, chunks):
+        request = HttpRequestLinter()
+        request.process_request_topline(method, b"example.com:443", b"HTTP/1.1")
+        request.process_headers([])
+        linter = HttpResponseLinter()
+        linter.request = request
+        linter.process_response_topline(b"HTTP/1.1", status, b"Phrase")
+        linter.process_headers(headers)
+        for chunk in chunks:
+            linter.feed_content(chunk)
+        linter.finish_content(True)
+        return linter
+
+    def test_connect_2xx_is_tunnel(self):
+        for status in (b"200", b"204", b"299"):
+            linter = self._connect_response(b"CONNECT", status, [], [])
+            self.assertFalse(linter.can_have_content(), status)
+            self.assertFalse(linter.has_full_representation(), status)
+
+    def test_connect_2xx_tunnel_data_not_checked(self):
+        headers = HTML_UTF8 + [(b"Content-Length", str(len(LATIN1_HTML)).encode())]
+        linter = self._connect_response(b"CONNECT", b"200", headers, [LATIN1_HTML])
+        self.assertFalse(_has(linter, CL_CORRECT))
+        self.assertFalse(_has(linter, CL_INCORRECT))
+        self.assertFalse(_has(linter, CONTENT_NOT_ALLOWED))
+        self.assertFalse(_has(linter, CHARSET_UNDECODABLE))
+        self.assertFalse(_has(linter, CONTENT_TYPE_MISMATCH))
+
+    def test_connect_non_2xx_still_has_content(self):
+        for status in (b"403", b"407", b"502"):
+            linter = self._connect_response(
+                b"CONNECT", status, [(b"Content-Length", b"5")], [b"hello"]
+            )
+            self.assertTrue(linter.can_have_content(), status)
+            self.assertTrue(_has(linter, CL_CORRECT), status)
+
+    def test_non_connect_request_unchanged(self):
+        linter = self._connect_response(b"GET", b"200", [(b"Content-Length", b"5")], [b"hello"])
+        self.assertTrue(linter.can_have_content())
+        self.assertTrue(_has(linter, CL_CORRECT))
+
+    def test_connect_without_request_unchanged(self):
+        # Guard: with no request, the method is unknown and the old behaviour stays.
+        linter = _response(b"200", [(b"Content-Length", b"5")], [b"hello"])
+        self.assertTrue(linter.can_have_content())
+        self.assertTrue(_has(linter, CL_CORRECT))
 
     def test_199_skips_content_checks(self):
         # The old status list was range(100, 199), which missed 199.

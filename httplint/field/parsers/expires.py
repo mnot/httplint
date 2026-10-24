@@ -1,6 +1,6 @@
 from httplint.field.date_field import HttpDateField
 from httplint.field.tests import FieldTest
-from httplint.field.utils import BAD_DATE_SYNTAX
+from httplint.field.utils import BAD_DATE_SYNTAX, DATE_OBSOLETE
 from httplint.note import categories
 from httplint.syntax import rfc9111
 from httplint.types import NoteClassListType, ResponseLinterProtocol
@@ -60,3 +60,30 @@ class ExpiresImpossibleTest(FieldTest[ResponseLinterProtocol]):
     inputs = [b"Mon, 31 Feb 2011 25:61:61 GMT"]
     expected_out = None
     expected_notes: NoteClassListType = [BAD_DATE_SYNTAX]
+
+
+class ExpiresTwoDigitYearPastTest(FieldTest[ResponseLinterProtocol]):
+    """
+    Guard: more than 50 years after the response time, so it's the most recent past year.
+    (The fixed pivot gave 1994 here too; ExpiresTwoDigitYearFutureTest is the regression test.)
+    """
+
+    name = "Expires"
+    inputs = [b"Sunday, 06-Nov-94 08:49:37 GMT"]
+    expected_out = 784111777  # 1994, not 2094
+    expected_notes: NoteClassListType = [DATE_OBSOLETE]
+
+    def set_response_context(self, message: ResponseLinterProtocol) -> None:
+        message.start_time = 2_000_000_000.0  # 2033
+
+
+class ExpiresTwoDigitYearFutureTest(FieldTest[ResponseLinterProtocol]):
+    "Within 50 years of the response time, so it's in the future."
+
+    name = "Expires"
+    inputs = [b"Sunday, 06-Nov-94 08:49:37 GMT"]
+    expected_out = 3939871777  # 2094
+    expected_notes: NoteClassListType = [DATE_OBSOLETE]
+
+    def set_response_context(self, message: ResponseLinterProtocol) -> None:
+        message.start_time = 3_000_000_000.0  # 2065

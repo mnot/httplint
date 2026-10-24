@@ -1,9 +1,8 @@
 from typing import Tuple
 
-from httplint.field import BAD_SYNTAX
 from httplint.field.list_field import HttpListField
 from httplint.field.tests import FieldTest
-from httplint.field.utils import parse_media_type
+from httplint.field.utils import parse_media_type_once
 from httplint.note import Note, categories, levels
 from httplint.syntax import rfc9110
 from httplint.types import (
@@ -25,7 +24,7 @@ PATCH request."""
     deprecated = False
 
     def parse(self, field_value: str, add_note: AddNoteMethodType) -> Tuple[str, ParamDictType]:
-        return parse_media_type(field_value, add_note, ACCEPT_PATCH_BAD_SYNTAX, self.reference)
+        return parse_media_type_once(self, field_value, add_note, ACCEPT_PATCH_BAD_SYNTAX)
 
 
 class ACCEPT_PATCH_BAD_SYNTAX(Note):
@@ -35,7 +34,7 @@ class ACCEPT_PATCH_BAD_SYNTAX(Note):
     _text = """\
 `%(value)s` is not a valid media type. `Accept-Patch` is a list of media types
 (e.g., `application/json-patch+json`) accepted in a PATCH request; see [its
-definition](%(ref_uri)s) for more information."""
+definition](%(ref_uri)s) for more information.%(position)s"""
 
 
 class AcceptPatchTest(FieldTest[ResponseLinterProtocol]):
@@ -57,7 +56,7 @@ class AcceptPatchBadTest(FieldTest[ResponseLinterProtocol]):
     name = "Accept-Patch"
     inputs = [b"invalid"]
     expected_out = [("invalid", {})]
-    expected_notes: NoteClassListType = [ACCEPT_PATCH_BAD_SYNTAX, BAD_SYNTAX]
+    expected_notes: NoteClassListType = [ACCEPT_PATCH_BAD_SYNTAX]
 
 
 class AcceptPatchWildcardTest(FieldTest[ResponseLinterProtocol]):

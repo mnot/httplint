@@ -1,11 +1,12 @@
 """
 Regex for RFC5987
 
-These regex are directly derived from the collected ABNF in RFC5987.
+These regex are directly derived from the ABNF in RFC8187, Section 3.2.1. RFC 8187 obsoletes
+RFC 5987; the module keeps its old name so that existing imports keep working.
 
-Well, not really; it's:
-
-    <http://httpwg.org/http-extensions/rfc5987bis.html>
+The ABNF is the same as RFC 5987's, except that RFC 5987's charset rule also listed
+"ISO-8859-1" (which mime-charset already matches, so the language is the same) and that RFC 5987
+also defined the parameter rules (parmname, reg-parameter, ext-parameter), which RFC 8187 dropped.
 
 They should be processed with re.VERBOSE.
 """
@@ -15,7 +16,7 @@ They should be processed with re.VERBOSE.
 from .rfc5234 import ALPHA, DIGIT, HEXDIG
 from .rfc5646 import Language_Tag
 
-SPEC_URL = "http://httpwg.org/specs/rfc5987"
+SPEC_URL = "https://www.rfc-editor.org/rfc/rfc8187"
 
 
 #  language      = <Language-Tag, see [RFC5646], Section 2.1>

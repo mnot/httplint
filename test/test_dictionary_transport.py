@@ -45,6 +45,45 @@ class TestDictionaryTransport(unittest.TestCase):
                             n._summary == AVAILABLE_DICTIONARY_MISSING_AE._summary 
                             for n in linter.notes))
 
+    def test_request_missing_ae_text(self):
+        for accept_encoding in (None, b"gzip", b"dcb;q=0", b"*, dcb;q=0, dcz;q=0"):
+            with self.subTest(accept_encoding=accept_encoding):
+                linter = HttpRequestLinter()
+                linter.process_request_topline(b"GET", b"/", b"HTTP/1.1")
+                headers = [
+                    (b"Available-Dictionary", b":pZGm1Av0IEBKARczz7exkNYsZb8LzaMrV7J32a2fFG4=:")
+                ]
+                if accept_encoding is not None:
+                    headers.append((b"Accept-Encoding", accept_encoding))
+                linter.process_headers(headers)
+                linter.finish_content(True)
+
+                notes = [n for n in linter.notes if isinstance(n, AVAILABLE_DICTIONARY_MISSING_AE)]
+                self.assertEqual(len(notes), 1)
+                summary = notes[0].summary
+                detail = " ".join(str(notes[0].detail).split())
+                self.assertIn("can't be used", summary)
+                self.assertIn("doesn't list dcb or dcz as acceptable", summary)
+                self.assertNotIn("doesn't support", summary)
+                self.assertIn(
+                    "doesn't list <code>dcb</code> or <code>dcz</code> as acceptable", detail
+                )
+                self.assertIn("<code>q</code> value of 0", detail)
+                self.assertIn("rfc9842.html#section-6.1", detail)
+                self.assertNotIn("MUST", detail)
+                self.assertNotIn("requires", detail)
+
+    def test_request_q_zero_one_listed(self):
+        linter = HttpRequestLinter()
+        linter.process_request_topline(b"GET", b"/", b"HTTP/1.1")
+        linter.process_headers([
+            (b"Available-Dictionary", b":pZGm1Av0IEBKARczz7exkNYsZb8LzaMrV7J32a2fFG4=:"),
+            (b"Accept-Encoding", b"dcb;q=0, dcz")
+        ])
+        linter.finish_content(True)
+
+        self.assertFalse(any(isinstance(n, AVAILABLE_DICTIONARY_MISSING_AE) for n in linter.notes))
+
     def test_response_valid(self):
         linter = HttpResponseLinter()
         linter.process_response_topline(b"HTTP/1.1", b"200", b"OK")

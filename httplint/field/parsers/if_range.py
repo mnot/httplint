@@ -50,7 +50,9 @@ entire new representation."""
                 add_note(IF_RANGE_WEAK)
             return tag
         if _DATE_START_RE.match(field_value):
-            return parse_http_date(field_value, add_note, category=self.category)
+            return parse_http_date(
+                field_value, add_note, category=self.category, now=self.message.start_time
+            )
         add_note(BAD_SYNTAX, ref_uri=self.reference)
         raise ValueError
 
@@ -90,6 +92,9 @@ class IfRangeObsoleteDateTest(FieldTest[RequestLinterProtocol]):
     inputs = [b"Saturday, 29-Oct-94 19:43:31 GMT"]
     expected_out = 783459811
     expected_notes: NoteClassListType = [DATE_OBSOLETE]
+
+    def set_request_context(self, message: RequestLinterProtocol) -> None:
+        message.start_time = 1_000_000_000.0  # 2001; the two-digit year is resolved against it
 
 
 class IfRangeBadDateTest(FieldTest[RequestLinterProtocol]):
@@ -170,3 +175,15 @@ class IfRangeLowerCaseWeakUnquotedTest(FieldTest[RequestLinterProtocol]):
     inputs = [b"w/xyzzy"]
     expected_out = None
     expected_notes: NoteClassListType = [BAD_SYNTAX]
+
+
+class IfRangeTwoDigitYearTest(FieldTest[RequestLinterProtocol]):
+    "The two-digit year is resolved against the request time."
+
+    name = "If-Range"
+    inputs = [b"Sunday, 06-Nov-94 08:49:37 GMT"]
+    expected_out = 3939871777  # 2094
+    expected_notes: NoteClassListType = [DATE_OBSOLETE]
+
+    def set_request_context(self, message: RequestLinterProtocol) -> None:
+        message.start_time = 3_000_000_000.0  # 2065

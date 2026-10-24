@@ -1,5 +1,5 @@
 import re
-from typing import Tuple
+from typing import List, Tuple
 
 from httplint.field import BAD_SYNTAX
 from httplint.field.list_field import HttpListField
@@ -9,6 +9,7 @@ from httplint.field.utils import (
     PARAM_STAR_ERROR,
     parse_params,
     resolve_url,
+    split_list_field,
 )
 from httplint.note import MarkdownSafe, Note, categories, levels
 from httplint.syntax import rfc3986, rfc8288, rfc9110
@@ -53,6 +54,10 @@ statement of the form "[context IRI] has a [relation type] resource at [target I
         super().__init__(wire_name, message)
         self.malformed: set[int] = set()  # id() of the params of links with a syntax defect
         self._params: ParamDictType = {}  # the params parse() last returned
+
+    def split_values(self, field_value: str) -> List[str]:
+        "A comma inside the angle brackets of a target is part of the URI, not a list delimiter."
+        return split_list_field(field_value, angle_targets=True)
 
     def parse(self, field_value: str, add_note: AddNoteMethodType) -> Tuple[str, ParamDictType]:
         link_value, param_str = split_link_value(field_value)
@@ -125,8 +130,10 @@ statement of the form "[context IRI] has a [relation type] resource at [target I
             hints_plain = ", ".join(present)
             lines = []
             for rel_name, targets in present.items():
-                safe = [inline_safe(t) for t in targets]
-                lines.append(f"- `{rel_name}`: {', '.join(f'`{t}`' for t in safe)}")
+                shown = [
+                    f"`{safe}`" if (safe := inline_safe(t)).strip() else "(empty)" for t in targets
+                ]
+                lines.append(f"- `{rel_name}`: {', '.join(shown)}")
             add_note(
                 LINK_RESOURCE_HINTS,
                 hints=hints_plain,
@@ -490,4 +497,58 @@ class WellFormedHintLinkTest(FieldTest[AnyMessageLinterProtocol]):
     name = "Link"
     inputs = [b'</a;b.css>; rel="preload"; as=style; type="text/css"']
     expected_out = [("/a;b.css", {"rel": "preload", "as": "style", "type": "text/css"})]
+    expected_notes: NoteClassListType = [LINK_RESOURCE_HINTS]
+
+
+class CommaInTargetLinkTest(FieldTest[AnyMessageLinterProtocol]):
+    "RFC 8288 Section 3: the target is a URI-Reference, which may contain a comma."
+
+    name = "Link"
+    inputs = [b"<http://example.com/a,b>; rel=next"]
+    expected_out = [("http://example.com/a,b", {"rel": "next"})]
+
+
+class CommaInTargetListLinkTest(FieldTest[AnyMessageLinterProtocol]):
+    name = "Link"
+    inputs = [b'<http://example.com/a,b>; rel=next, </c,d,e>; rel=prev; title="x,y", </f>; rel=up']
+    expected_out = [
+        ("http://example.com/a,b", {"rel": "next"}),
+        ("/c,d,e", {"rel": "prev", "title": "x,y"}),
+        ("/f", {"rel": "up"}),
+    ]
+
+
+class CommaInHintTargetLinkTest(FieldTest[AnyMessageLinterProtocol]):
+    name = "Link"
+    inputs = [b"</a,b.css>; rel=preload; as=style"]
+    expected_out = [("/a,b.css", {"rel": "preload", "as": "style"})]
+    expected_notes: NoteClassListType = [LINK_RESOURCE_HINTS]
+
+
+class CommaAfterTargetLinkTest(FieldTest[AnyMessageLinterProtocol]):
+    "Guard: commas outside the brackets still separate links."
+
+    name = "Link"
+    inputs = [b"</a>; rel=next, </b>; rel=prev"]
+    expected_out = [("/a", {"rel": "next"}), ("/b", {"rel": "prev"})]
+
+
+class UnclosedBracketThenLinkTest(FieldTest[AnyMessageLinterProtocol]):
+    "Guard: an unclosed '<' doesn't swallow the links after it."
+
+    name = "Link"
+    inputs = [b"<http://example.com/a; rel=next, </b>; rel=prev"]
+    expected_out = [
+        ("<http://example.com/a", {"rel": "next"}),
+        ("/b", {"rel": "prev"}),
+    ]
+    expected_notes: NoteClassListType = [BAD_SYNTAX]
+
+
+class EmptyTargetLinkTest(FieldTest[AnyMessageLinterProtocol]):
+    "Guard: an empty URI-Reference is valid. The note text is tested in test_markdown_injection."
+
+    name = "Link"
+    inputs = [b"<>; rel=preload"]
+    expected_out = [("", {"rel": "preload"})]
     expected_notes: NoteClassListType = [LINK_RESOURCE_HINTS]

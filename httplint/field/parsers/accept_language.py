@@ -1,16 +1,24 @@
+import re
 from dataclasses import dataclass
 from typing import Optional
 
 from httplint.field import BAD_SYNTAX
 from httplint.field.list_field import HttpListField
 from httplint.field.tests import FieldTest
-from httplint.field.utils import parse_params, parse_qvalue
+from httplint.field.utils import RE_FLAGS, parse_params, parse_qvalue, syntax_position
 from httplint.note import Note, categories, levels
 from httplint.syntax import rfc9110
 from httplint.types import (
     AddNoteMethodType,
     NoteClassListType,
     RequestLinterProtocol,
+)
+
+# A well-formed parameter, followed by a ";" or the end of the value. The leading whitespace is
+# left out of the match so that a failed match stays linear.
+EXTRA_PARAM_RE = re.compile(
+    rf";{rfc9110.OWS}({rfc9110.token})={rfc9110.parameter_value}(?={rfc9110.OWS}(?:;|\Z))",
+    RE_FLAGS,
 )
 
 
@@ -44,7 +52,18 @@ preferred in the response."""
 
         if param_dict:
             # RFC 9110 only defines q parameter for Accept-Language
-            add_note(ACCEPT_LANGUAGE_BAD_SYNTAX, ref_uri=self.reference)
+            add_note(
+                ACCEPT_LANGUAGE_BAD_SYNTAX,
+                ref_uri=self.reference,
+                position=syntax_position(self, field_value),
+            )
+            # That note covers the value's syntax defect only if nothing else is wrong: the
+            # value has to match the syntax once its well-formed non-q parameters are removed.
+            rest = EXTRA_PARAM_RE.sub(
+                lambda match: match.group() if match.group(1).lower() == "q" else "", field_value
+            )
+            if self.matches_syntax(rest):
+                self.suppress_syntax_note()
 
         return AcceptLanguageValue(language, q_val)
 
@@ -58,7 +77,7 @@ class ACCEPT_LANGUAGE_BAD_SYNTAX(Note):
     _summary = "The Accept-Language header isn't valid."
     _text = """\
 The value for this field doesn't conform to its specified syntax; see [its
-definition](%(ref_uri)s) for more information."""
+definition](%(ref_uri)s) for more information.%(position)s"""
 
 
 class AcceptLanguageTest(FieldTest[RequestLinterProtocol]):
@@ -75,7 +94,7 @@ class AcceptLanguageParamTest(FieldTest[RequestLinterProtocol]):
     name = "Accept-Language"
     inputs = [b"en; foo=bar"]
     expected_out = [AcceptLanguageValue("en", None)]
-    expected_notes: NoteClassListType = [ACCEPT_LANGUAGE_BAD_SYNTAX, BAD_SYNTAX]
+    expected_notes: NoteClassListType = [ACCEPT_LANGUAGE_BAD_SYNTAX]
 
 
 class AcceptLanguageBadQTest(FieldTest[RequestLinterProtocol]):

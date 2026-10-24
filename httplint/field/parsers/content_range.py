@@ -55,12 +55,18 @@ where in the full response content the partial content is located. It is also us
 in `416` (Requested Range Not Satisfiable) responses."""
     reference = f"{rfc9110.SPEC_URL}#field.content-range"
     syntax = rfc9110.Content_Range
-    # parse() reports syntax problems itself, and always rejects the value after BAD_SYNTAX, so
-    # that one defect gives one note (the more specific notes cover the other defects).
-    report_syntax = False
     deprecated = False
 
     def parse(self, field_value: str, add_note: AddNoteMethodType) -> Optional[ContentRangeValue]:
+        try:
+            return self._parse(field_value, add_note)
+        except ValueError:
+            # parse() reports the first defect it finds, with BAD_SYNTAX or a more specific note,
+            # and always rejects the value after that, so that one defect gives one note.
+            self.suppress_syntax_note()
+            raise
+
+    def _parse(self, field_value: str, add_note: AddNoteMethodType) -> Optional[ContentRangeValue]:
         self._check_status(add_note)
 
         unit, sep, rest = field_value.partition(" ")

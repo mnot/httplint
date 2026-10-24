@@ -20,11 +20,14 @@ from httplint.field.tests import FakeResponseLinter
 from httplint.note import Note, categories, levels
 from httplint.syntax import (
     rfc3986,
+    rfc5234,
     rfc5322,
     rfc5646,
     rfc5987,
+    rfc6838,
     rfc8288,
     rfc9110,
+    rfc9111,
     rfc9112,
     rfc9651,
 )
@@ -1044,6 +1047,728 @@ class InvalidCharProblemTest(unittest.TestCase):
         self.assertEqual(
             invalid_char_problem("ab", 2), "The value ended unexpectedly at position 3."
         )
+
+
+class SyntaxCoreRulesTest(unittest.TestCase):
+    "The RFC 5234 core rules are all present (audit, issue #303)."
+
+    def test_char(self) -> None:
+        "CHAR was missing; it is %x01-7F."
+        for code in range(256):
+            with self.subTest(code=code):
+                self.assertEqual(fullmatch(rfc5234.CHAR, chr(code)), 1 <= code <= 0x7F)
+
+
+class SyntaxLanguageTagAuditTest(unittest.TestCase):
+    """
+    The rfc5646 rules irregular, regular, extension and privateuse were bare alternations or
+    sequences, which break when quantified or placed in a sequence; they are now grouped (#303).
+    Language-Tag itself accepts what it did.
+    """
+
+    @staticmethod
+    def ungrouped(rule: str) -> str:
+        "The rule as it was before it was grouped."
+        body = rule.strip()
+        assert body.startswith("(?:") and body.endswith(")")
+        return body[3:-1]
+
+    def test_differential(self) -> None:
+        names = ["irregular", "regular", "extension", "privateuse"]
+        old = {name: self.ungrouped(getattr(rfc5646, name)) for name in names}
+        old_grandfathered = rf"(?: {old['irregular']} | {old['regular']} )"
+        old_langtag = rf"""(?:
+            {rfc5646.language}
+            (?: \- {rfc5646.script} )?
+            (?: \- {rfc5646.region} )?
+            (?: \- {rfc5646.variant} )*
+            (?: \- {old['extension']} )*
+            (?: \- {old['privateuse']} )?
+        )"""
+        old_tag = rf"(?: {old_langtag} | {old['privateuse']} | {old_grandfathered} )"
+        subtags = ["en", "i", "ami", "zh", "min", "nan", "GB", "oed", "x", "a", "bb", "sgn", "BE"]
+        subtags += ["FR", "art", "lojban", "1996", "Latn"]
+        accepted = 0
+        for count in range(1, 4):
+            for combo in itertools.product(subtags, repeat=count):
+                value = "-".join(combo)
+                was, now = matches(old_tag, value), matches(rfc5646.Language_Tag, value)
+                with self.subTest(value=value):
+                    self.assertEqual(was, now)
+                accepted += now
+        self.assertGreater(accepted, 100)
+        for value in ["i-ami", "zh-min-nan", "en-GB-oed", "sgn-BE-FR", "art-lojban", "x-a"]:
+            with self.subTest(value=value):
+                self.assertTrue(matches(rfc5646.Language_Tag, value))
+
+    def test_rules_can_be_composed(self) -> None:
+        "Each of the four rules is one unit: quantifiable, and safe inside a larger sequence."
+        for name, value in [
+            ("irregular", "i-ami"),
+            ("regular", "zh-min-nan"),
+            ("extension", "a-bb"),
+            ("privateuse", "x-a"),
+        ]:
+            rule = getattr(rfc5646, name)
+            old = self.ungrouped(rule)
+            with self.subTest(name=name):
+                self.assertTrue(fullmatch(rf"<{rule}>", f"<{value}>"))
+                self.assertTrue(fullmatch(rf"(?:{rule}/)+", f"{value}/{value}/"))
+                if name in ("irregular", "regular"):
+                    # The bare alternation splits the "<" and ">" into the first and last branch.
+                    self.assertFalse(fullmatch(rf"<{old}>", f"<{value}>"))
+
+
+class SyntaxLanguageTagBacktrackingTest(unittest.TestCase):
+    "Guard: Language-Tag stays linear after the rules were grouped (it passes on main too)."
+
+    def test_adversarial(self) -> None:
+        n = 4000
+        for label, value in [
+            ("grandfathered prefix", "i-" * n),
+            ("zh-min", "zh-min" + "-nan" * n),
+            ("extensions", "en" + "-a-bb" * n + "!"),
+            ("private use", "x" + "-abcdefgh" * n + "!"),
+        ]:
+            compiled = re.compile(
+                rf"^\s*(?:{rfc5646.Language_Tag})\s*$", re.VERBOSE | re.IGNORECASE
+            )
+            with self.subTest(label):
+                start = time.monotonic()
+                compiled.match(value)
+                elapsed = time.monotonic() - start
+                self.assertLess(elapsed, TIME_LIMIT, f"{label}: {elapsed:.2f}s")
+
+
+class SyntaxRfc5322AuditTest(unittest.TestCase):
+    """
+    Audit of rfc5322 against RFC 5322 sections 3.2 and 3.4 (issue #303). Two rules accepted
+    less than the RFC does: quoted-string forbade FWS before the closing quote, and comments
+    could not nest. Rules that were missing have been added.
+    """
+
+    def test_quoted_string_trailing_fws(self) -> None:
+        "quoted-string = DQUOTE *([FWS] qcontent) [FWS] DQUOTE: FWS is allowed before the end."
+        old = rf"(?: \" (?: {rfc5322.FWS}? {rfc5322.qcontent} )* \" )"
+        new = rfc5322.quoted_string_core
+        self.assertNotEqual(old, new)
+        differences = 0
+        for value in strings(['"', "a", " ", "\t", "\\", "\r", "\n"], 6):
+            with self.subTest(value=repr(value)):
+                was, now = fullmatch(old, value), fullmatch(new, value)
+                shorter = value.endswith('"') and any(
+                    fullmatch(rfc5322.FWS, value[split:-1]) and fullmatch(old, value[:split] + '"')
+                    for split in range(len(value) - 1)
+                )
+                # The only new strings are an old one with FWS added before the closing quote.
+                self.assertEqual(now, was or shorter)
+                differences += now and not was
+        self.assertGreater(differences, 10)
+        for value in ['"a "', '" "', '"a\t"', '"a \r\n "', '"a b "', '"a\\ "']:
+            with self.subTest(value=repr(value)):
+                self.assertTrue(fullmatch(new, value))
+        for value in ['"a \r\n"', '"a', 'a "', '"a" "', '"\r\n"']:
+            with self.subTest(value=repr(value)):
+                self.assertFalse(fullmatch(new, value))
+
+    def test_quoted_string_in_from(self) -> None:
+        for value in ['"Bob " <w@x.org>', '" " <w@x.org>', '"a "@x.org', '"Bob Smith" <w@x.org>']:
+            with self.subTest(value=value):
+                self.assertTrue(matches(rfc9110.From, value))
+                self.assertNotIn("BAD_SYNTAX", field_notes(False, b"From", value.encode()))
+        self.assertFalse(matches(rfc9110.From, '"Bob <w@x.org>'))
+
+    @staticmethod
+    def depth(value: str) -> int:
+        "The nesting depth of `value` if it is one comment, or -1 if it isn't."
+        level = deepest = pos = 0
+        while pos < len(value):
+            char = value[pos]
+            if level == 0 and pos > 0:
+                return -1
+            if char == "\\":
+                if level == 0 or pos + 1 >= len(value):
+                    return -1
+                pos += 2
+                continue
+            if char == "(":
+                level += 1
+                deepest = max(deepest, level)
+            elif char == ")":
+                if level == 0:
+                    return -1
+                level -= 1
+            elif level == 0:
+                return -1
+            pos += 1
+        return deepest if level == 0 and deepest else -1
+
+    def test_nested_comments(self) -> None:
+        "comment = '(' *([FWS] ccontent) [FWS] ')' where ccontent can be a comment."
+        old = rf"(?: \( (?: {rfc5322.fws_unit} | {rfc5322.ctext} | {rfc5322.quoted_pair} )* \) )"
+        for value in strings(["(", ")", "a", "\\", " "], 7):
+            with self.subTest(value=value):
+                level = self.depth(value)
+                self.assertEqual(fullmatch(rfc5322.comment, value), 1 <= level <= 3)
+                self.assertEqual(fullmatch(old, value), level == 1)
+        for value in ["(a (b) c)", "(a (b (c)) d)", "(a\r\n (b))", "(a (b) (c))"]:
+            with self.subTest(value=repr(value)):
+                self.assertTrue(fullmatch(rfc5322.comment, value))
+        for value in ["(a (b (c (d))))", "(a (b)", "(a\r\n(b))", "(a)(b)"]:
+            with self.subTest(value=repr(value)):
+                self.assertFalse(fullmatch(rfc5322.comment, value))
+
+    def test_nested_comments_in_from(self) -> None:
+        for value in [
+            "w@x.org (a (b) c)",
+            "(a (b)) w@x.org",
+            "Bob (a (b (c))) <w@x.org> (d (e))",
+        ]:
+            with self.subTest(value=value):
+                self.assertTrue(matches(rfc9110.From, value))
+                self.assertNotIn("BAD_SYNTAX", field_notes(False, b"From", value.encode()))
+        self.assertFalse(matches(rfc9110.From, "w@x.org (a (b (c (d))))"))
+
+    def test_specials(self) -> None:
+        "specials is the visible characters that are not atext."
+        atext = re.compile(rfc5322.atext, re.VERBOSE)
+        for code in range(256):
+            char = chr(code)
+            with self.subTest(char=repr(char)):
+                expected = 0x21 <= code <= 0x7E and not atext.fullmatch(char)
+                self.assertEqual(fullmatch(rfc5322.specials, char), expected)
+        self.assertEqual(sum(fullmatch(rfc5322.specials, chr(c)) for c in range(256)), 13)
+
+    def test_atom_and_word(self) -> None:
+        for value in ["a", "abc", " a ", "(c) a (d)", "a!#$%", "(c)\r\n a"]:
+            with self.subTest(value=repr(value)):
+                self.assertTrue(fullmatch(rfc5322.atom, value))
+                self.assertTrue(fullmatch(rfc5322.word, value))
+        for value in ["", "a b", "a.b", "(c)", "a@b", "a(b"]:
+            with self.subTest(value=repr(value)):
+                self.assertFalse(fullmatch(rfc5322.atom, value))
+        for value in ['"a b"', ' "a b" (c)', '""']:
+            with self.subTest(value=repr(value)):
+                self.assertTrue(fullmatch(rfc5322.word, value))
+                self.assertFalse(fullmatch(rfc5322.atom, value))
+
+    def test_unstructured(self) -> None:
+        for value in ["", "a", "a b", " a  b  ", "a\r\n b", "Hello, World!", "   "]:
+            with self.subTest(value=repr(value)):
+                self.assertTrue(fullmatch(rfc5322.unstructured, value))
+        for value in ["a\x00", "a\r\nb", "a\x80", "a\n"]:
+            with self.subTest(value=repr(value)):
+                self.assertFalse(fullmatch(rfc5322.unstructured, value))
+
+    def test_address_lists(self) -> None:
+        accepted = [
+            "a@b.c",
+            "Bob <a@b.c>",
+            "a@b.c, d@e.f",
+            "a@b.c , <d@e.f>",
+            "Bob <a@b.c>, Al <d@e.f>",
+        ]
+        groups = [
+            "G:;",
+            "G: a@b.c;",
+            "G: a@b.c, d@e.f ;",
+            "G: (c) ;",
+            "G:; (c)",
+            "Some G: <a@b.c>;",
+        ]
+        rejected = ["", "a@b.c,", ",a@b.c", "a@b.c,,d@e.f", "G: a@b.c", "G a@b.c;", "G: ;;"]
+        for value in accepted:
+            with self.subTest(value=value):
+                self.assertTrue(fullmatch(rfc5322.mailbox_list, value))
+                self.assertTrue(fullmatch(rfc5322.address_list, value))
+        for value in groups:
+            with self.subTest(value=value):
+                self.assertTrue(fullmatch(rfc5322.group, value))
+                self.assertTrue(fullmatch(rfc5322.address, value))
+                self.assertTrue(fullmatch(rfc5322.address_list, value))
+                self.assertFalse(fullmatch(rfc5322.mailbox_list, value))
+        self.assertTrue(fullmatch(rfc5322.address_list, "a@b.c, G: d@e.f;, Bob <g@h.i>"))
+        self.assertTrue(fullmatch(rfc5322.group_list, "a@b.c, d@e.f"))
+        self.assertTrue(fullmatch(rfc5322.group_list, " (c) "))
+        for value in rejected:
+            with self.subTest(value=value):
+                self.assertFalse(fullmatch(rfc5322.address_list, value))
+        # The From field's mailbox is unchanged.
+        self.assertTrue(fullmatch(rfc5322.mailbox_core, "Bob <a@b.c>"))
+        self.assertFalse(matches(rfc9110.From, "a@b.c, d@e.f"))
+
+    def test_adversarial(self) -> None:
+        "Linear time on non-matching input for the changed and the new rules."
+        n = 3000
+        cases = [
+            ("trailing spaces in quotes", rfc5322.mailbox, '"a' + " " * n + "\x00"),
+            ("spaced quoted atoms", rfc5322.mailbox, '"a "' * n + "\x00"),
+            ("quotes and folds", rfc5322.mailbox, '"a' + " \r\n " * n + "\x00"),
+            ("nested comments", rfc5322.mailbox, "((((" * n + "\x00"),
+            ("sibling comments", rfc5322.mailbox, "(a (b (c)))" * (n // 4) + "\x00"),
+            ("deep and broken", rfc5322.mailbox, "w@x.org " + "(a (b (c" * (n // 4)),
+            ("mailbox list", rfc5322.mailbox_list, "a <b@c>, " * (n // 4) + "\x00"),
+            ("address list", rfc5322.address_list, "a@b.c, " * (n // 4) + "\x00"),
+            ("address list groups", rfc5322.address_list, "G: a@b.c;, " * (n // 4) + "\x00"),
+            ("group list", rfc5322.group, "G:" + " (c)" * (n // 4) + "\x00"),
+            ("group mailboxes", rfc5322.group, "G:" + "a@b.c," * (n // 4) + "\x00"),
+            ("atoms", rfc5322.word, "a " * n + "\x00"),
+            ("unstructured", rfc5322.unstructured, "a  " * n + "\x00"),
+            ("unstructured folds", rfc5322.unstructured, "a\r\n " * n + "\x00"),
+        ]
+        for label, rule, value in cases:
+            compiled = re.compile(rf"^\s*(?:{rule})\s*$", re.VERBOSE | re.IGNORECASE)
+            with self.subTest(label):
+                start = time.monotonic()
+                compiled.match(value)
+                elapsed = time.monotonic() - start
+                self.assertLess(elapsed, TIME_LIMIT, f"{label}: {elapsed:.2f}s")
+
+
+class SyntaxExtValueAuditTest(unittest.TestCase):
+    """
+    Guards for the audit of rfc5987 against RFC 8187 section 3.2.1 (issue #303). The ABNF was
+    already transcribed correctly, so these pass on main too; the docstring and SPEC_URL now
+    name RFC 8187, which obsoletes RFC 5987.
+    """
+
+    def test_character_sets(self) -> None:
+        alnum = set("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")
+        attr_char = alnum | set("!#$&+-.^_`|~")
+        mime_charsetc = alnum | set("!#$%&+-^_`{}~")
+        for code in range(256):
+            char = chr(code)
+            with self.subTest(char=repr(char)):
+                self.assertEqual(fullmatch(rfc5987.attr_char, char), char in attr_char)
+                self.assertEqual(fullmatch(rfc5987.mime_charsetc, char), char in mime_charsetc)
+
+    def test_rfc_8187_examples(self) -> None:
+        for value in [
+            "utf-8'en'%C2%A3%20rates",
+            "UTF-8''%c2%a3%20and%20%e2%82%ac%20rates",
+            "UTF-8'de'letztes%20Kapitel",
+            "UTF-8'de'n%c3%a4chstes%20Kapitel",
+            "ISO-8859-1'en'%A3%20rates",
+            "iso-8859-1''a",
+            "UTF-8''",
+            "x{}~'en-x-private'a",
+        ]:
+            with self.subTest(value=value):
+                self.assertTrue(fullmatch(rfc5987.ext_value, value))
+        for value in [
+            "\"UTF-8'en'a\"",
+            "''a",
+            "UTF-8'en'a b",
+            "UTF-8'en'a'b",
+            "UTF-8'en'a%2",
+            "UTF-8'en'a%g0",
+            "UTF-8'en'a*",
+            "UTF-8en'a",
+            "UTF-8'en",
+            "UTF-8'not a tag'a",
+            "UT'F-8'a",
+        ]:
+            with self.subTest(value=value):
+                self.assertFalse(fullmatch(rfc5987.ext_value, value))
+
+    def test_spec_url(self) -> None:
+        self.assertTrue(rfc5987.SPEC_URL.endswith("rfc8187"))
+
+
+class SyntaxLinkAuditTest(unittest.TestCase):
+    """
+    Audit of rfc8288 against RFC 8288 section 3 (issue #303). The ABNF block (Link, link-value,
+    link-param) was already right, apart from link-param's leading BWS, which is deliberately
+    inside the optional group (see the rule's comment). The relation-type, anchor, hreflang and
+    type rules that the RFC gives in prose were missing.
+    """
+
+    def test_relation_types(self) -> None:
+        for value in ["next", "a1", "a.b-c", "http://example.net/foo", "a:b", "x1.2-3"]:
+            with self.subTest(value=value):
+                self.assertTrue(fullmatch(rfc8288.relation_type, value))
+        for value in ["", "1a", "a_b", "-a", ".a", "a b", "Next", "a:b c"]:
+            with self.subTest(value=value):
+                self.assertFalse(fullmatch(rfc8288.relation_type, value))
+
+    def test_rel_value(self) -> None:
+        for value in [
+            "next",
+            "next prev",
+            "start http://example.net/relation/other",
+            "http://a/ http://b/",
+            "a  b",
+            "a   b c",
+        ]:
+            with self.subTest(value=value):
+                self.assertTrue(fullmatch(rfc8288.rel_param_value, value))
+        for value in ["", "next ", " next", "next\tprev", "next,prev", "1 a", "next  Prev"]:
+            with self.subTest(value=value):
+                self.assertFalse(fullmatch(rfc8288.rel_param_value, value))
+
+    def test_other_parameter_values(self) -> None:
+        for value in ["#foo", "http://a/b?c#d", "../a", ""]:
+            with self.subTest(value=value):
+                self.assertTrue(fullmatch(rfc8288.anchor_param_value, value))
+        self.assertFalse(fullmatch(rfc8288.anchor_param_value, "a b"))
+        for value in ["en", "de-CH", "x-private", "i-ami"]:
+            with self.subTest(value=value):
+                self.assertTrue(fullmatch(rfc8288.hreflang_param_value, value))
+        self.assertFalse(fullmatch(rfc8288.hreflang_param_value, "en_US"))
+        for value in ["text/html", "application/vnd.a+json", "a/b"]:
+            with self.subTest(value=value):
+                self.assertTrue(fullmatch(rfc8288.type_param_value, value))
+        for value in ["text", "text/", "/html", "text/html; charset=utf-8", "te xt/html"]:
+            with self.subTest(value=value):
+                self.assertFalse(fullmatch(rfc8288.type_param_value, value))
+
+    def test_link_field_unchanged(self) -> None:
+        "Guard: Link itself still takes the values the ABNF block allows."
+        for value in [
+            '<a>; rel="next"',
+            "<a>;rel=next ; title=x",
+            '<a>; rel = "next", <b>; rel=prev',
+            "<a>;a;b",
+            "",
+        ]:
+            with self.subTest(value=value):
+                self.assertTrue(matches(rfc8288.Link, value))
+        for value in ["a", "<a", "<a>;", "<a>; =b", "<a>,", "<a> b"]:
+            with self.subTest(value=value):
+                self.assertFalse(matches(rfc8288.Link, value))
+
+    def test_adversarial(self) -> None:
+        "Linear time on non-matching input for the new rules."
+        n = 3000
+        cases = [
+            ("rel types", rfc8288.rel_param_value, "next " * n + "\x00"),
+            ("rel types, long spaces", rfc8288.rel_param_value, "next" + " " * n + "\x00"),
+            ("rel URIs", rfc8288.rel_param_value, "http://a/b " * n + "\x00"),
+            ("rel type chars", rfc8288.rel_param_value, "a" * n + "_"),
+            ("rel URI chars", rfc8288.rel_param_value, "a:" + "b" * n + " "),
+            ("type", rfc8288.type_param_value, "a/" + "b" * n + " "),
+        ]
+        for label, rule, value in cases:
+            compiled = re.compile(rf"^\s*(?:{rule})\s*$", re.VERBOSE | re.IGNORECASE)
+            with self.subTest(label):
+                start = time.monotonic()
+                compiled.match(value)
+                elapsed = time.monotonic() - start
+                self.assertLess(elapsed, TIME_LIMIT, f"{label}: {elapsed:.2f}s")
+
+
+class SyntaxStructuredFieldAuditTest(unittest.TestCase):
+    """
+    Audit of rfc9651 against RFC 9651 Appendix C (issue #303). The module is not used by any
+    field parser; it was missing the Display String type, accepted "=" anywhere inside a byte
+    sequence, and rejected a Boolean-true dictionary member with parameters ("c; foo=bar").
+    """
+
+    def test_binary(self) -> None:
+        "sf-binary = ':' base64 ':' and base64 = *( ALPHA / DIGIT / '+' / '/' ) *'='."
+        old = r":[a-zA-Z0-9+/=]*:"
+        changed = 0
+        for value in strings([":", "a", "=", "+", "/", "A", "1"], 6):
+            inner = value[1:-1]
+            expected = (
+                len(value) >= 2
+                and value[0] == ":"
+                and value[-1] == ":"
+                and re.fullmatch(r"[A-Za-z0-9+/]*=*", inner) is not None
+            )
+            with self.subTest(value=value):
+                was, now = fullmatch(old, value), fullmatch(rfc9651.sf_binary, value)
+                self.assertEqual(now, expected)
+                if was != now:
+                    # The old rule also accepted "=" before other characters.
+                    self.assertTrue(was)
+                    self.assertRegex(inner, r"=[^=]")
+                    changed += 1
+        self.assertGreater(changed, 50)
+        for value in [
+            "::",
+            ":YQ==:",
+            ":YQ=:",
+            ":YQ:",
+            ":cHJldGVuZCB0aGlzIGlzIGJpbmFyeSBjb250ZW50Lg==:",
+        ]:
+            with self.subTest(value=value):
+                self.assertTrue(fullmatch(rfc9651.sf_binary, value))
+        for value in [":a=b:", ":=a:", ":a b:", ":a", "a:", ":a_b:", ":a-b:"]:
+            with self.subTest(value=value):
+                self.assertFalse(fullmatch(rfc9651.sf_binary, value))
+
+    def test_dictionary_member_parameters(self) -> None:
+        "dict-member = member-key ( parameters / ( '=' member-value ) )."
+        old_member = rf"(?: {rfc9651.member_key} (?: = {rfc9651.member_value} )? )"
+        old = rf"(?: {old_member} (?: {rfc9110.OWS} , {rfc9110.OWS} {old_member} )* )"
+        with_params = re.compile(r"(?:^|,)\s*[a-z*][a-z0-9_.*-]*;")
+        changed = 0
+        for value in strings(["a", "=", "1", ";", " ", ","], 6):
+            with self.subTest(value=value):
+                was, now = fullmatch(old, value), fullmatch(rfc9651.sf_dictionary, value)
+                if was:
+                    self.assertTrue(now)
+                elif now:
+                    changed += 1
+                    self.assertRegex(value, with_params)
+        self.assertGreater(changed, 20)
+        for value in [
+            "a=?0, b, c; foo=bar",
+            "a;b",
+            "a;b=1;c",
+            "a; b=1, c;d",
+            "a=1;b=2, c",
+            "a=(1 2);x, b;y=z",
+        ]:
+            with self.subTest(value=value):
+                self.assertTrue(fullmatch(rfc9651.sf_dictionary, value))
+        for value in ["a;", "a;=1", "a;B", "a=1;b=", "a;b=1=2", ";a", "a, ;b", "a b"]:
+            with self.subTest(value=value):
+                self.assertFalse(fullmatch(rfc9651.sf_dictionary, value))
+
+    def test_display_strings(self) -> None:
+        "sf-displaystring was missing (RFC 9651 added it to bare-item)."
+        for value in [
+            '%""',
+            '%"abc"',
+            '%"This is intended for display to %c3%bcsers."',
+            '%"a\\b"',
+            '%"100%25"',
+            '%"%00%ff"',
+        ]:
+            with self.subTest(value=value):
+                self.assertTrue(fullmatch(rfc9651.sf_displaystring, value))
+                self.assertTrue(fullmatch(rfc9651.bare_item, value))
+                self.assertTrue(fullmatch(rfc9651.sf_item, value))
+                self.assertTrue(fullmatch(rfc9651.sf_item, value + ";a=" + value))
+        for value in [
+            '%"%C3%BC"',
+            '%"%c"',
+            '%"%c3%b"',
+            '%"%zz"',
+            '%"a"b"',
+            '%"ü"',
+            '%"a',
+            "%a",
+            '"%"x"',
+            '% "a"',
+            '%"a\x7f"',
+        ]:
+            with self.subTest(value=value):
+                self.assertFalse(fullmatch(rfc9651.sf_displaystring, value))
+        # A String still allows a bare "%" and rejects what a Display String allows.
+        self.assertTrue(fullmatch(rfc9651.sf_string, '"100%"'))
+        self.assertTrue(fullmatch(rfc9651.sf_string, '"%c3"'))
+        self.assertFalse(fullmatch(rfc9651.sf_string, '%"abc"'))
+        self.assertFalse(fullmatch(rfc9651.sf_string, '"a\\b"'))
+
+    def test_string_chars(self) -> None:
+        "sf-string = DQUOTE *( unescaped / '%' / bs-escaped ) DQUOTE, as the old character class."
+        old = r'"(?:[\x20-\x21\x23-\x5B\x5D-\x7E]|(?:\\["\\]))*"'
+        for code in range(256):
+            value = f'"{chr(code)}"'
+            with self.subTest(code=code):
+                self.assertEqual(
+                    fullmatch(rfc9651.sf_string, value),
+                    0x20 <= code <= 0x7E and chr(code) not in '"\\',
+                )
+                self.assertEqual(fullmatch(rfc9651.sf_string, value), fullmatch(old, value))
+        for value in ['""', '"a b"', '"\\""', '"\\\\"', '"a\\"b"', '"%"']:
+            with self.subTest(value=value):
+                self.assertTrue(fullmatch(rfc9651.sf_string, value))
+        for value in ['"\\a"', '"\\"', '"a', '"a"b"', '"\\\\\\"']:
+            with self.subTest(value=value):
+                self.assertFalse(fullmatch(rfc9651.sf_string, value))
+
+    def test_token_chars(self) -> None:
+        "The character-class sf-token is the composition of ALPHA, '*', tchar, ':' and '/'."
+        composed = rf"(?: (?: {rfc9110.ALPHA} | \* ) (?: {rfc9110.tchar} | : | / )* )"
+        for code in range(256):
+            for template in ["{}", "a{}", "{}a"]:
+                value = template.format(chr(code))
+                with self.subTest(value=value):
+                    self.assertEqual(fullmatch(rfc9651.sf_token, value), fullmatch(composed, value))
+
+    def test_bare_item_order(self) -> None:
+        "bare-item lists sf-integer before sf-decimal; the language is the same either way."
+        reordered = (
+            rf"(?: {rfc9651.sf_decimal} | {rfc9651.sf_integer} | {rfc9651.sf_string} | "
+            rf"{rfc9651.sf_token} | {rfc9651.sf_binary} | {rfc9651.sf_boolean} | "
+            rf"{rfc9651.sf_date} | {rfc9651.sf_displaystring} )"
+        )
+        old = rf"(?: {reordered} {rfc9651.parameters} )"
+        self.assertLess(
+            rfc9651.bare_item.index(rfc9651.sf_integer), rfc9651.bare_item.index(rfc9651.sf_decimal)
+        )
+        for value in strings(["1", ".", "-", "a", "?", "0", ";", "@", "="], 5):
+            with self.subTest(value=value):
+                self.assertEqual(fullmatch(old, value), fullmatch(rfc9651.sf_item, value))
+
+    def test_items(self) -> None:
+        for rule, accepted, rejected in [
+            (
+                rfc9651.sf_integer,
+                ["0", "42", "-42", "-0", "0002", "999999999999999", "-999999999999999"],
+                ["", "-", "1.5", "1000000000000000", "+1", "1,000", "a"],
+            ),
+            (
+                rfc9651.sf_decimal,
+                ["4.5", "-0.40", "0002.5", "1.234", "123456789012.5", "5.230"],
+                ["", "1.", ".5", "1.2345", "1234567890123.5", "1", "1.2.3"],
+            ),
+            (
+                rfc9651.sf_token,
+                ["foo123/456", "*", "*foo", "a:b", "A", "text/html", "a!#$%&'*+-.^_`|~"],
+                ["", "1a", "-a", ":a", "/a", "a b", 'a"b', "a,b", "a;b"],
+            ),
+            (rfc9651.sf_boolean, ["?0", "?1"], ["", "?", "?2", "0", "?01", "? 1"]),
+            (
+                rfc9651.sf_date,
+                ["@1659578233", "@0", "@-62135596800", "@253402214400"],
+                ["@", "1659578233", "@1.5", "@ 1", "@@1", "@1000000000000000"],
+            ),
+        ]:
+            for value in accepted:
+                with self.subTest(rule=rule[:20], value=value):
+                    self.assertTrue(fullmatch(rule, value))
+                    self.assertTrue(fullmatch(rfc9651.bare_item, value))
+            for value in rejected:
+                with self.subTest(rule=rule[:20], value=value):
+                    self.assertFalse(fullmatch(rule, value))
+
+    def test_rfc_examples(self) -> None:
+        for rule, values in [
+            (
+                rfc9651.sf_list,
+                [
+                    "sugar, tea, rum",
+                    '("foo" "bar"), ("baz"), ("bat" "one"), ()',
+                    '("foo"; a=1;b=2);lvl=5, ("bar" "baz");lvl=1',
+                    'abc;a=1;b=2; cde_456, (ghi;jk=4 l);q="9";r=w',
+                    "1, 2 ,3,4",
+                    "( a  b ), (  )",
+                ],
+            ),
+            (
+                rfc9651.sf_dictionary,
+                [
+                    'en="Applepie", da=:w4ZibGV0w6ZydGU=:',
+                    "a=?0, b, c; foo=bar",
+                    "rating=1.5, feelings=(joy sadness)",
+                    "a=(1 2), b=3, c=4;aa=bb, d=(5 6);valid",
+                    'a=%"caf%c3%a9", b=@1659578233',
+                ],
+            ),
+            (
+                rfc9651.sf_item,
+                ["5", "5; foo=bar", "1; a; b=?0", "@1659578233", '%"d%c3%a9j%c3%a0"'],
+            ),
+        ]:
+            for value in values:
+                with self.subTest(value=value):
+                    self.assertTrue(fullmatch(rule, value))
+                    self.assertTrue(fullmatch(rfc9651.sf_value, value))
+        for rule, values in [
+            (rfc9651.sf_list, ["", "a,", ",a", "a,,b", "(a", "a)", "(a,b)", "a b", "a;B", "(a)b"]),
+            (rfc9651.sf_dictionary, ["", "A=1", "a=1,", "a=1 b=2", "a=", "=1", "a=(1", "a;B=1"]),
+            (rfc9651.sf_item, ["", "a b", "(a)", "a;", "a;b=", "1;;a", "a=1"]),
+        ]:
+            for value in values:
+                with self.subTest(value=value):
+                    self.assertFalse(fullmatch(rule, value))
+
+    def test_adversarial(self) -> None:
+        "Linear time on non-matching input (this module had no timing tests)."
+        n = 3000
+        bad = "\x80"
+        cases = [
+            ("inner list items", rfc9651.sf_list, "(" + "a " * n + bad),
+            ("inner list spaces", rfc9651.sf_list, "(" + " " * n + bad),
+            ("inner lists", rfc9651.sf_list, "(a), " * n + bad),
+            ("parameters", rfc9651.sf_item, "a" + ";a" * n + bad),
+            ("parameter spaces", rfc9651.sf_item, "a;" + " " * n + bad),
+            ("parameter values", rfc9651.sf_item, "a" + ";a=1" * n + bad),
+            ("list", rfc9651.sf_list, "a, " * n + bad),
+            ("list spaces", rfc9651.sf_list, "a" + " " * n + bad),
+            ("dictionary", rfc9651.sf_dictionary, "a=1, " * n + bad),
+            ("dictionary bare keys", rfc9651.sf_dictionary, "a;b, " * n + bad),
+            ("dictionary spaces", rfc9651.sf_dictionary, "a=1" + " " * n + bad),
+            ("string", rfc9651.sf_item, '"' + "a" * n + bad),
+            ("string escapes", rfc9651.sf_item, '"' + '\\"' * n + bad),
+            ("display string", rfc9651.sf_item, '%"' + "%c3" * n + bad),
+            ("display string text", rfc9651.sf_item, '%"' + "a" * n + bad),
+            ("token", rfc9651.sf_item, "a" * n + bad),
+            ("binary", rfc9651.sf_item, ":" + "a" * n + bad),
+            ("binary padding", rfc9651.sf_item, ":" + "a=" * n + bad),
+            ("decimal", rfc9651.sf_list, "1.5, " * n + bad),
+            ("integer", rfc9651.sf_item, "1" * n),
+        ]
+        for label, rule, value in cases:
+            compiled = re.compile(rf"^\s*(?:{rule})\s*$", re.VERBOSE | re.IGNORECASE)
+            with self.subTest(label):
+                start = time.monotonic()
+                compiled.match(value)
+                elapsed = time.monotonic() - start
+                self.assertLess(elapsed, TIME_LIMIT, f"{label}: {elapsed:.2f}s")
+
+
+class SyntaxCachingAuditTest(unittest.TestCase):
+    """
+    Guards for the audit of rfc9111 and rfc6838 against RFC 9111 Appendix A and RFC 6838
+    section 4.2 (issue #303). Both were already right, so these pass on main too; only the
+    comments about where Pragma and Warning come from (RFC 7234) changed.
+    """
+
+    def test_cache_control(self) -> None:
+        for value in ["", "no-cache", "max-age=5, no-cache", 'private="a, b"', "a=b ,c"]:
+            with self.subTest(value=value):
+                self.assertTrue(matches(rfc9111.Cache_Control, value))
+        for value in ["max-age=", "=5", "a,,b", "a b", ",a", "a;b"]:
+            with self.subTest(value=value):
+                self.assertFalse(matches(rfc9111.Cache_Control, value))
+
+    def test_age_and_pragma(self) -> None:
+        for value in ["0", "12345", "00"]:
+            with self.subTest(value=value):
+                self.assertTrue(matches(rfc9111.Age, value))
+        for value in ["", "-1", "1.5", "a"]:
+            with self.subTest(value=value):
+                self.assertFalse(matches(rfc9111.Age, value))
+        for value in ["no-cache", "no-cache, foo=bar", 'foo="b ar"', "x"]:
+            with self.subTest(value=value):
+                self.assertTrue(matches(rfc9111.Pragma, value))
+        for value in ["", "no-cache,", "=a"]:
+            with self.subTest(value=value):
+                self.assertFalse(matches(rfc9111.Pragma, value))
+
+    def test_warning(self) -> None:
+        date = '"Mon, 01 Jan 2000 00:00:00 GMT"'
+        for value in [
+            '199 example.org:80 "text"',
+            f'110 anderson-1.3.37 "Response is stale" {date}',
+            '299 [::1] "x", 199 a "y"',
+        ]:
+            with self.subTest(value=value):
+                self.assertTrue(matches(rfc9111.Warning_, value))
+        for value in ['19 a "x"', "199 a x", '199  a "x"', '199 a "x" "y"', "199 a"]:
+            with self.subTest(value=value):
+                self.assertFalse(matches(rfc9111.Warning_, value))
+
+    def test_media_type_names(self) -> None:
+        "restricted-name = restricted-name-first *126restricted-name-chars."
+        first = set("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")
+        chars = first | set("!#$&-^_.+")
+        for code in range(256):
+            char = chr(code)
+            with self.subTest(char=repr(char)):
+                self.assertEqual(fullmatch(rfc6838.restricted_name_first, char), char in first)
+                self.assertEqual(fullmatch(rfc6838.restricted_name_chars, char), char in chars)
+        self.assertTrue(fullmatch(rfc6838.type_name, "a" * 127))
+        self.assertFalse(fullmatch(rfc6838.type_name, "a" * 128))
+        self.assertFalse(fullmatch(rfc6838.subtype_name, ""))
+        self.assertFalse(fullmatch(rfc6838.subtype_name, "+a"))
+        self.assertTrue(fullmatch(rfc6838.subtype_name, "vnd.a+json"))
 
 
 # The rule names in RFC 9110 Appendix A and RFC 3986 Appendix A. Python names replace "-" with
