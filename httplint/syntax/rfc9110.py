@@ -239,8 +239,11 @@ token68 = rf"(?: (?: {ALPHA} | {DIGIT} | \- | \. | _ | \~ | \+ | / )+ =* )"
 
 #   credentials = auth-scheme [ 1*SP ( token68 / [ auth-param *( OWS "," OWS auth-param ) ] ) ]
 #
-# As for any list (Section 5.6.1), recipients accept empty elements, so the auth-params can
-# start with a comma: "Basic , realm=x".
+# Deliberate: Section 11.4's body text writes credentials = auth-scheme [ 1*SP ( token68 /
+# #auth-param ) ], which is the recipient syntax of Section 5.6.1.2 (empty elements accepted),
+# and Appendix A, quoted above, expands it with the sender syntax. This follows the body text,
+# so the auth-params can start with a comma ("Basic , realm=x") and can end with one. Every
+# other list here uses the sender syntax (list_rule).
 
 credentials = rf"""(?: {auth_scheme}
                         (?: {SP}+
@@ -503,7 +506,8 @@ Max_Forwards = rf"(?: {DIGIT}+ )"
 
 #   challenge = auth-scheme [ 1*SP ( token68 / [ auth-param *( OWS "," OWS auth-param ) ] ) ]
 #
-# As for credentials, a comma can come before the first auth-param.
+# As for credentials (Section 11.3's body text writes #auth-param, the recipient syntax; Appendix
+# A, quoted above, has the sender expansion), a comma can come before the first auth-param.
 
 challenge = rf"""(?: {auth_scheme}
                         (?: {SP}+
@@ -695,6 +699,8 @@ WWW_Authenticate = list_rule(challenge)
 absolute_path = rf"(?: (?: / {segment} )+ )"
 
 #   authority = <authority, see [URI], Section 3.2>
+
+#   segment = <segment, see [URI], Section 3.3>
 
 #   field-vchar = VCHAR / obs-text
 

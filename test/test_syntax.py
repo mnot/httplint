@@ -1301,6 +1301,32 @@ class SyntaxParametersTest(unittest.TestCase):
                 self.assertLess(time.monotonic() - start, TIME_LIMIT, label)
 
 
+class SyntaxListRuleTest(unittest.TestCase):
+    "list_rule groups its element, so an alternation in it can't bind to the list around it."
+
+    def test_alternation_element(self) -> None:
+        for minimum, accepted, rejected in [
+            (None, ["", "a", "b", "a, b", "b ,a , b"], ["a|b", "a|b, c|", "a,", ", a", "c"]),
+            (1, ["a", "b", "a, b", "b ,a , b"], ["", "a|b", "a|b, c|", "a,", "c"]),
+            (2, ["a, b", "b ,a , b"], ["", "a", "b", "a|b", "a|b, c|", "c, a"]),
+        ]:
+            rule = str(rfc9110.list_rule("a|b", minimum))
+            for value in accepted:
+                with self.subTest(minimum=minimum, value=value):
+                    self.assertTrue(fullmatch(rule, value))
+            for value in rejected:
+                with self.subTest(minimum=minimum, value=value):
+                    self.assertFalse(fullmatch(rule, value))
+
+    def test_sequence_element(self) -> None:
+        "A quantifier-free sequence is unaffected either way; guard for the rule's language."
+        rule = str(rfc9110.list_rule("a b"))
+        for value in ["", "ab", "ab, ab"]:
+            self.assertTrue(fullmatch(rule, value), value)
+        for value in ["a", "ab, a", "ab,"]:
+            self.assertFalse(fullmatch(rule, value), value)
+
+
 class SyntaxIPvFutureTest(unittest.TestCase):
     """
     IPvFuture = "v" ...: an ABNF string is case-insensitive, and the request target is matched
