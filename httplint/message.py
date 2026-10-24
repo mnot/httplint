@@ -12,8 +12,8 @@ from httplint.charset import is_text_encoding, verify_charset, whatwg_encoding
 from httplint.content_encoding import ContentEncodingProcessor
 from httplint.content_type import verify_content_type
 from httplint.field.cors import check_preflight_request, check_preflight_response
+from httplint.field.delta_seconds import parse_digits
 from httplint.field.section import FieldSection
-from httplint.field.utils import parse_digits
 from httplint.i18n import L_, translate
 from httplint.note import Note, Notes, categories, levels
 from httplint.status import StatusChecker

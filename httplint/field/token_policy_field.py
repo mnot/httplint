@@ -2,8 +2,8 @@ from typing import Dict, Optional, Type
 
 from http_sf import Token
 
+from httplint.field.reporting import known_reporting_endpoints
 from httplint.field.structured_field import StructuredField
-from httplint.field.utils import known_reporting_endpoints
 from httplint.note import Note, categories, levels
 from httplint.types import AddNoteMethodType, ResponseLinterProtocol, SFItemType
 

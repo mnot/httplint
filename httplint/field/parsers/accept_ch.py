@@ -3,9 +3,9 @@ from typing import List, cast
 
 from http_sf import Token
 
+from httplint.field.conneg import vary_covers
 from httplint.field.structured_field import StructuredField
 from httplint.field.tests import FakeRequestLinter, FieldTest
-from httplint.field.utils import vary_covers
 from httplint.note import Note, categories, levels
 from httplint.types import (
     AddNoteMethodType,

@@ -1,8 +1,8 @@
 from http_sf import Token
 
+from httplint.field.media_type import check_media_type
 from httplint.field.structured_field import StructuredField
 from httplint.field.tests import FieldTest
-from httplint.field.utils import check_media_type
 from httplint.note import Note, categories, levels
 from httplint.types import (
     AddNoteMethodType,

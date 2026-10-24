@@ -2,8 +2,8 @@ from typing import Optional, Tuple
 
 from httplint.field import FIELD_DEPRECATED
 from httplint.field.list_field import HttpListField
+from httplint.field.params import unquote_string
 from httplint.field.tests import FieldTest
-from httplint.field.utils import unquote_string
 from httplint.syntax import rfc9110
 from httplint.types import (
     AddNoteMethodType,
