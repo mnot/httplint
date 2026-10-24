@@ -187,14 +187,14 @@ class EmptyCodeSpanTest(unittest.TestCase):
         self.assertNotIn("None", detail)
         self.assertIn("requires a value", detail)
 
-    # Known bug, tracked in https://github.com/mnot/httplint/issues/277.
-    # Remove expectedFailure when that issue is fixed.
-    @unittest.expectedFailure
     def test_link_resource_hint_empty_target(self) -> None:
-        # A bracketed target ends at the first ">", so the HTML goes in an unbracketed one.
-        value = f"<>; rel=preload, x{HTML}; rel=preload"
+        # A bracketed target ends at the first ">", so the HTML goes in an unbracketed one. A
+        # target with HTML in it is a syntax error, so it only reaches a note if it's also
+        # unresolvable (the unclosed "[" makes the host a malformed IP address).
+        value = f"<>; rel=preload, http://[{HTML}; rel=preload"
         self.check_escaped(detail_text(b"Link", value.encode("ascii")))
         self.assertNotIn("``", detail_text(b"Link", b"<>; rel=preload"))
+        self.assertIn("(empty)", detail_text(b"Link", b"<>; rel=preload"))
 
 
 class InlineSafeTest(unittest.TestCase):

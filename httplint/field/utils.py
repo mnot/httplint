@@ -264,7 +264,9 @@ _QUOTED_PAIR_CHAR = _char_set(
 )
 
 
-def split_list_field(field_value: str, comments: bool = False) -> List[str]:
+def split_list_field(
+    field_value: str, angle_targets: bool = False, comments: bool = False
+) -> List[str]:
     """
     Split a field value on commas, as the #rule needs.
 
@@ -272,8 +274,16 @@ def split_list_field(field_value: str, comments: bool = False) -> List[str]:
     quoted-string is an ordinary character of its item, so the malformed item reaches the
     field's own syntax check instead of being dropped.
 
+    With ``angle_targets``, a ``<...>`` at the start of an item (as in Link) is skipped
+    over whole, so commas inside it don't split either. It ends at the first ``>``; if there
+    is none, or another ``<`` comes first, the ``<`` is an ordinary character. That last
+    rule departs from RFC 8288 Appendix B.2, which takes the target up to the first ``>``:
+    ``<a<b,c>`` is two (invalid) items here, not one. The target isn't a valid
+    URI-Reference either way, and this keeps ``<a, <b>`` as two items, as before.
+
     With `comments`, commas inside a parenthesised comment (nested to any depth) don't
     split either; an unmatched "(" is an ordinary character, as with a stray quote.
+    ``angle_targets`` has no effect with ``comments``; no field uses both.
 
     This is linear; an earlier regex-based version backtracked quadratically.
     """
@@ -303,8 +313,23 @@ def split_list_field(field_value: str, comments: bool = False) -> List[str]:
             run_end[idx] = idx if char == "," else run_end[idx + 1]
     items: List[str] = []
     pos = 0
+    # close: the first ">" after the last "<" we looked at; -1 if there is none, -2 if unset.
+    # Reusing it is safe: it was the first ">" at or after an earlier "<", so while
+    # close >= start (and start only moves forward) no ">" lies between start and close.
+    # With no ">" at all (-1), nothing later can be a bracketed target. Searching every
+    # time would be quadratic.
+    close = -2
     while pos < size:
         stop = run_end[pos]
+        if angle_targets and close != -1:
+            start = pos
+            while start < size and field_value[start].isspace():
+                start += 1
+            if start < size and field_value[start] == "<":
+                if close < start:
+                    close = field_value.find(">", start)
+                if close != -1 and field_value.find("<", start + 1, close) == -1:
+                    stop = run_end[close + 1]
         item = field_value[pos:stop].strip()
         if item:
             items.append(item)
