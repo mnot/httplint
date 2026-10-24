@@ -2,9 +2,9 @@ from http_sf import Token
 
 from httplint.field import RESPONSE_HDR_IN_REQUEST
 from httplint.field.parsers.cache_control import KNOWN_CC
+from httplint.field.sf_helpers import is_integer
 from httplint.field.structured_field import StructuredField
 from httplint.field.tests import FakeRequestLinter, FieldTest
-from httplint.field.utils import is_integer
 from httplint.note import Note, categories, levels
 from httplint.types import (
     AddNoteMethodType,

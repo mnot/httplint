@@ -1,7 +1,7 @@
 from httplint.field import FIELD_DEPRECATED
 from httplint.field.json_field import BAD_JSON, JsonField
+from httplint.field.sf_helpers import is_integer
 from httplint.field.tests import FieldTest
-from httplint.field.utils import is_integer
 from httplint.note import Note, categories, levels
 from httplint.types import AddNoteMethodType, NoteClassListType, ResponseLinterProtocol
 

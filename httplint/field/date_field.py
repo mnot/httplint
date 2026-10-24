@@ -1,7 +1,7 @@
 from typing import Generic
 
+from httplint.field.http_date import parse_http_date
 from httplint.field.singleton_field import SingletonField
-from httplint.field.utils import parse_http_date
 from httplint.types import AddNoteMethodType, TMessage
 
 
