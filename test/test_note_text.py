@@ -8,9 +8,18 @@ from typing import List, Tuple, Type
 
 from httplint import HttpResponseLinter
 from httplint.field.parsers.cache_status import CACHE_STATUS
-from httplint.field.parsers.content_security_policy import CONTENT_SECURITY_POLICY
-from httplint.field.parsers.cross_origin_embedder_policy import COEP_REQUIRE_CORP
-from httplint.field.parsers.cross_origin_opener_policy import COOP_SAME_ORIGIN
+from httplint.field.parsers.content_security_policy import (
+    CONTENT_SECURITY_POLICY,
+    CSP_REPORT_TO_MISSING,
+)
+from httplint.field.parsers.cross_origin_embedder_policy import (
+    COEP_REPORT_TO_MISSING,
+    COEP_REQUIRE_CORP,
+)
+from httplint.field.parsers.cross_origin_opener_policy import (
+    COOP_REPORT_TO_MISSING,
+    COOP_SAME_ORIGIN,
+)
 from httplint.field.parsers.cross_origin_resource_policy import CORP_SAME_ORIGIN
 from httplint.field.parsers.date import DATE_INCORRECT
 from httplint.field.parsers.nel import NEL_BAD_VALUE
@@ -158,6 +167,101 @@ class ReportOnlyParagraphTest(unittest.TestCase):
         detail = str(note.detail)
         self.assertNotIn("report", detail.lower())
         self.assertTrue(detail.rstrip().endswith("in supporting browsers.</p>"), detail)
+
+
+REPORT_TO_GROUP: Header = (
+    b"Report-To",
+    b'{"group": "rep", "max_age": 10886400, "endpoints": [{"url": "https://example.com/r"}]}',
+)
+
+
+class ReportToMissingTextTest(unittest.TestCase):
+    "The report-to notes say what the specs say, with or without a legacy Report-To group."
+
+    CASES: List[Tuple[str, bytes, bytes, Type[Note]]] = [
+        (
+            "CSP",
+            b"Content-Security-Policy",
+            b"script-src 'self'; report-to {}",
+            CSP_REPORT_TO_MISSING,
+        ),
+        (
+            "CSP-RO",
+            b"Content-Security-Policy-Report-Only",
+            b"script-src 'self'; report-to {}",
+            CSP_REPORT_TO_MISSING,
+        ),
+        (
+            "COEP",
+            b"Cross-Origin-Embedder-Policy",
+            b'require-corp; report-to="{}"',
+            COEP_REPORT_TO_MISSING,
+        ),
+        (
+            "COEP-RO",
+            b"Cross-Origin-Embedder-Policy-Report-Only",
+            b'require-corp; report-to="{}"',
+            COEP_REPORT_TO_MISSING,
+        ),
+        (
+            "COOP",
+            b"Cross-Origin-Opener-Policy",
+            b'same-origin; report-to="{}"',
+            COOP_REPORT_TO_MISSING,
+        ),
+        (
+            "COOP-RO",
+            b"Cross-Origin-Opener-Policy-Report-Only",
+            b'same-origin; report-to="{}"',
+            COOP_REPORT_TO_MISSING,
+        ),
+    ]
+
+    def _check(self, headers: List[Header], note_class: Type[Note], name: str) -> None:
+        note = _one(headers, note_class)
+        summary = str(note.summary)
+        detail = str(note.detail)
+        self.assertIn(f"'{name}'", summary)
+        self.assertIn("Reporting-Endpoints", summary)
+        self.assertNotIn("not defined", summary)
+        self.assertIn("<code>Reporting-Endpoints</code>", detail)
+        self.assertIn("legacy <code>Report-To</code> groups", detail)
+        # Only what the specs say: no claims about browser behaviour.
+        self.assertNotIn("browsers may", detail.lower())
+        self.assertNotIn("``", detail)
+        self.assertNotIn("<code></code>", detail)
+
+    def test_without_a_report_to_group(self) -> None:
+        for label, field, template, note_class in self.CASES:
+            with self.subTest(label):
+                self._check([(field, template.replace(b"{}", b"rep"))], note_class, "rep")
+
+    def test_with_a_report_to_group_of_the_same_name(self) -> None:
+        "The note still fires: the specs do not resolve the name against Report-To groups."
+        for label, field, template, note_class in self.CASES:
+            with self.subTest(label):
+                self._check(
+                    [REPORT_TO_GROUP, (field, template.replace(b"{}", b"rep"))],
+                    note_class,
+                    "rep",
+                )
+
+    def test_a_reporting_endpoints_entry_of_that_name_satisfies_it(self) -> None:
+        "Guard: passes on main too."
+        for label, field, template, note_class in self.CASES:
+            with self.subTest(label):
+                headers = [
+                    (b"Reporting-Endpoints", b'rep="https://example.com/r"'),
+                    (field, template.replace(b"{}", b"rep")),
+                ]
+                self.assertEqual([n for n in _notes(headers) if isinstance(n, note_class)], [])
+
+    def test_empty_name_makes_no_empty_code_span(self) -> None:
+        for label, field, template, note_class in self.CASES:
+            if label.startswith("CSP"):
+                continue  # an empty CSP directive value is a different problem
+            with self.subTest(label):
+                self._check([(field, template.replace(b"{}", b""))], note_class, "")
 
 
 if __name__ == "__main__":
