@@ -462,5 +462,29 @@ class TestStatusCodeSyntax(unittest.TestCase):
                 self.assertIn(STATUS_NONSTANDARD, classes)
 
 
+class TestStatus206(unittest.TestCase):
+    @staticmethod
+    def _notes_206(response_headers):
+        linter = HttpResponseLinter()
+        linter.process_response_topline(b"HTTP/1.1", b"206", b"Partial Content")
+        linter.process_headers([(b"Date", b"Fri, 01 Jan 2021 00:00:00 GMT")] + response_headers)
+        linter.finish_content(True)
+        return list(linter.notes)
+
+    def test_206_without_content_range_subject(self):
+        from httplint.status import PARTIAL_WITHOUT_RANGE
+
+        notes = self._notes_206([])
+        subjects = [n.subject for n in notes if isinstance(n, PARTIAL_WITHOUT_RANGE)]
+        self.assertEqual(subjects, ["field-content-range"])
+
+    def test_206_with_content_range_not_flagged(self):
+        # Guard
+        from httplint.status import PARTIAL_WITHOUT_RANGE
+
+        notes = self._notes_206([(b"Content-Range", b"bytes 0-4/10")])
+        self.assertFalse(any(isinstance(n, PARTIAL_WITHOUT_RANGE) for n in notes))
+
+
 if __name__ == "__main__":
     unittest.main()

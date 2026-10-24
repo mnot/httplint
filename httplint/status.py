@@ -110,7 +110,7 @@ class StatusChecker:
         if self.request and not get_header(self.request.headers.text, "range"):
             self.add_note("", PARTIAL_NOT_REQUESTED)
         if "content-range" not in self.response.headers.parsed:
-            self.add_note("field-location", PARTIAL_WITHOUT_RANGE)
+            self.add_note("field-content-range", PARTIAL_WITHOUT_RANGE)
 
     def status207(self) -> None:  # Multi-Status
         pass
