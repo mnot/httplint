@@ -1,9 +1,8 @@
 from typing import Tuple
 
-from httplint.field.params import split_params_off
+from httplint.field.params import PARAM_STAR_QUOTED, parse_params, split_params_off
 from httplint.field.singleton_field import SINGLE_HEADER_REPEAT, SingletonField
 from httplint.field.tests import FieldTest
-from httplint.field.utils import PARAM_STAR_QUOTED, parse_params
 from httplint.note import Note, categories, levels
 from httplint.syntax import rfc9110
 from httplint.types import (

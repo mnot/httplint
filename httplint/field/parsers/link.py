@@ -3,14 +3,10 @@ from typing import List, Tuple
 
 from httplint.field import BAD_SYNTAX
 from httplint.field.list_field import HttpListField
+from httplint.field.list_split import split_list_field
+from httplint.field.params import PARAM_REPEATS, PARAM_STAR_ERROR, parse_params
 from httplint.field.tests import FieldTest
-from httplint.field.utils import (
-    PARAM_REPEATS,
-    PARAM_STAR_ERROR,
-    parse_params,
-    resolve_url,
-    split_list_field,
-)
+from httplint.field.urls import resolve_url
 from httplint.note import MarkdownSafe, Note, categories, levels
 from httplint.syntax import rfc3986, rfc8288, rfc9110
 from httplint.types import (

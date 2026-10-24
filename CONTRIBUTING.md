@@ -43,6 +43,7 @@ You can run the tests in an individual `field/parsers/foo_bar.py` file by runnin
 
 * All user-visible strings need to be internationalised; see `TRANSLATION.md`.
 * Every new field and every new `Note` should have a test covering it.
+* Shared field helpers live in per-theme modules under `httplint/field/` (`params.py`, `http_date.py`, ...); `httplint/field/utils.py` only re-exports them, so put new helpers in the module for their theme, or a new small one.
 * All Python functions and methods need to have type annotations. See `pyproject.toml` for specific pylint and mypy settings.
 
 

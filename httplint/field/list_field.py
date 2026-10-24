@@ -2,7 +2,7 @@ from functools import partial
 from typing import Any, Generic, List, Union
 
 from httplint.field import HttpField
-from httplint.field.utils import split_list_field
+from httplint.field.list_split import split_list_field
 from httplint.syntax import rfc9110
 from httplint.types import AddNoteMethodType, TMessage
 

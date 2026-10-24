@@ -1,8 +1,8 @@
 from typing import Tuple
 
 from httplint.field.list_field import HttpListField
+from httplint.field.media_type import parse_media_type_once
 from httplint.field.tests import FieldTest
-from httplint.field.utils import parse_media_type_once
 from httplint.note import Note, categories, levels
 from httplint.syntax import rfc9110
 from httplint.types import (

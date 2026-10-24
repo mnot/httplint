@@ -1,10 +1,11 @@
 from dataclasses import dataclass
 from typing import Optional
 
+from httplint.field.conneg import BAD_Q_VALUE, parse_qvalue
 from httplint.field.list_field import HttpListField
+from httplint.field.media_type import parse_media_type_once
 from httplint.field.params import split_params_off
 from httplint.field.tests import FieldTest
-from httplint.field.utils import BAD_Q_VALUE, parse_media_type_once, parse_qvalue
 from httplint.note import Note, categories, levels
 from httplint.syntax import rfc9110
 from httplint.types import (

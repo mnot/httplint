@@ -2,17 +2,11 @@ import re
 from typing import List, Tuple, Union
 
 from httplint.field import BAD_SYNTAX
+from httplint.field.common import RE_FLAGS
+from httplint.field.entity_tag import ENTITY_TAG_WEAK_CASE, is_entity_tag, parse_entity_tag
+from httplint.field.http_date import BAD_DATE_SYNTAX, DATE_OBSOLETE, parse_http_date
 from httplint.field.singleton_field import SingletonField
 from httplint.field.tests import FieldTest
-from httplint.field.utils import (
-    BAD_DATE_SYNTAX,
-    DATE_OBSOLETE,
-    ENTITY_TAG_WEAK_CASE,
-    RE_FLAGS,
-    is_entity_tag,
-    parse_entity_tag,
-    parse_http_date,
-)
 from httplint.note import Note, categories, levels
 from httplint.syntax import rfc9110
 from httplint.types import AddNoteMethodType, NoteClassListType, RequestLinterProtocol

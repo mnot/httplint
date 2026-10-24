@@ -2,14 +2,10 @@ from typing import Any, Tuple
 
 from httplint.charset import normalise_label, whatwg_encoding
 from httplint.charset_data import IANA_NAMES
+from httplint.field.media_type import MEDIA_TYPE_BAD_NAME, MEDIA_TYPE_LONG_NAME, parse_media_type
+from httplint.field.params import PARAM_REPEATS
 from httplint.field.singleton_field import SingletonField
 from httplint.field.tests import FieldTest
-from httplint.field.utils import (
-    MEDIA_TYPE_BAD_NAME,
-    MEDIA_TYPE_LONG_NAME,
-    PARAM_REPEATS,
-    parse_media_type,
-)
 from httplint.note import Note, categories, levels
 from httplint.syntax import rfc9110
 from httplint.types import (
