@@ -81,6 +81,12 @@ class list_rule:
     <https://www.rfc-editor.org/rfc/rfc9110.html#section-5.6.1>
 
     Uses the sender syntax, not the more lenient recipient syntax.
+
+    Matching a whole list against a rule whose alternatives overlap (Accept, Accept-Charset,
+    Accept-Encoding, TE, Vary and media-range, which are transcribed literally) takes
+    exponential time on a list that doesn't match, because each element can match in several
+    ways. List fields don't do that: HttpListField checks one element at a time against the
+    element, so the time depends on the element, not the list.
     """
 
     def __init__(self, element: str, minimum: Optional[int] = None) -> None:
@@ -152,15 +158,23 @@ subtype = token
 media_type = rf"(?: {_type} / {subtype} {parameters} )"
 
 #   media-range = ( "*/*" / ( type "/*" ) / ( type "/" subtype ) ) parameters
+#
+# The alternatives overlap: "*" is a tchar, so each of "*/*" and type "/*" is also type "/"
+# subtype (see list_rule).
 
 media_range = rf"(?: (?: \*/\* | (?: {_type} /\* ) | (?: {_type} / {subtype} ) ) {parameters} )"
 
 #   Accept = [ ( media-range [ weight ] ) *( OWS "," OWS ( media-range [ weight ] ) ) ]
+#
+# A weight is also a parameter (q=0.5 is a token "=" a token), so a weighted element matches
+# two ways (see list_rule).
 
 Accept = list_rule(rf"(?: {media_range} (?: {weight} )? )")
 
 #   Accept-Charset = [ ( ( token / "*" ) [ weight ] )
 #                      *( OWS "," OWS ( ( token / "*" ) [ weight ] ) ) ]
+#
+# "*" is a tchar, so "*" matches twice (see list_rule).
 
 Accept_Charset = list_rule(rf"(?: (?: {token} | \* ) {weight}? )")
 
@@ -169,6 +183,8 @@ Accept_Charset = list_rule(rf"(?: (?: {token} | \* ) {weight}? )")
 content_coding = token
 
 #   codings = content-coding / "identity" / "*"
+#
+# "identity" and "*" are tokens, so they match twice (see list_rule).
 
 codings = rf"(?: {content_coding} | identity | \* )"
 
@@ -601,6 +617,9 @@ transfer_parameter = rf"(?: {token} {BWS} = {BWS} (?: {token} | {quoted_string} 
 transfer_coding = rf"(?: {token} (?: {OWS} ; {OWS} {transfer_parameter} )* )"
 
 #   t-codings = "trailers" / ( transfer-coding [ weight ] )
+#
+# "trailers" is a token, and a weight is also a transfer-parameter, so an element matches two
+# or three ways (see list_rule).
 
 t_codings = rf"(?: trailers | (?: {transfer_coding} (?: {weight}? ) ) )"
 
@@ -637,6 +656,8 @@ Upgrade = list_rule(protocol)
 User_Agent = rf"(?: {product} (?: {RWS} (?: {product} | {comment} ) )* )"
 
 #   Vary = [ ( "*" / field-name ) *( OWS "," OWS ( "*" / field-name ) ) ]
+#
+# "*" is a tchar, so "*" matches twice (see list_rule).
 
 Vary = list_rule(rf"(?: \* | {field_name} )")
 
