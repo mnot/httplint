@@ -192,6 +192,18 @@ class HttpField(ABC, Generic[TMessage]):
         """
         self._syntax_suppressed = True
 
+    def matches_syntax(self, text: str) -> bool:
+        """
+        Does ``text`` conform to the field's syntax, as the syntax check would decide for one
+        value (a list element, field line or singleton value)? Whitespace around the text is
+        allowed, as it is there. A field without a syntax accepts anything.
+
+        For a parse() that has to know whether the rest of a value conforms before it calls
+        suppress_syntax_note().
+        """
+        patterns = self._syntax_patterns()
+        return patterns is None or patterns[0].match(text) is not None
+
     @contextmanager
     def _syntax_checked(self, value: str, add_note: AddNoteMethodType) -> Iterator[None]:
         """

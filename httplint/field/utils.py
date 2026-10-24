@@ -106,8 +106,7 @@ def parse_media_type_once(
     result = parse_media_type(field_value, track, bad_syntax_note, field.reference, **kwargs)
     if reported:
         _, sep, params = field_value.partition(";")
-        full, _ = field._syntax_patterns() or (None, None)  # pylint: disable=protected-access
-        if full is not None and full.match(f"a/b{sep}{params}"):
+        if field.matches_syntax(f"a/b{sep}{params}"):
             field.suppress_syntax_note()
     return result
 

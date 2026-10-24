@@ -131,8 +131,7 @@ browsers that it should only be communicated with using HTTPS, instead of using 
         name, equals, after = raw_directives[index].partition("=")
         fixed = list(raw_directives)
         fixed[index] = f"{name}{equals}1{after}"
-        full, _ = self._syntax_patterns() or (None, None)  # pylint: disable=protected-access
-        if full is not None and full.match(";".join(fixed)):
+        if self.matches_syntax(";".join(fixed)):
             self.suppress_syntax_note()
 
     def evaluate(self, add_note: AddNoteMethodType) -> None:

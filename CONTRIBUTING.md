@@ -200,6 +200,7 @@ One class attribute and one method control the syntax check:
 
 - `report_syntax` (default `True`): if `False`, a value that doesn't match `syntax` adds no syntax note at all (neither `BAD_SYNTAX` nor `BAD_SYNTAX_DETAILED`). Use it when _parse_ reports every syntax problem itself.
 - `suppress_syntax_note()`: call it from _parse_ when it has reported a value's syntax defect with a more specific note, so the value doesn't also get a generic `BAD_SYNTAX` or `BAD_SYNTAX_DETAILED`. It applies to the whole value being parsed (the list item, field line or singleton value), not to one defect in it, so don't call it if the value could have other syntax problems that the specific note doesn't cover. It does nothing when called from _evaluate_ or _post_check_, because the check has already run by then. If _parse_ is called directly (e.g., from a test or an overridden `handle_input`), the call leaves a flag set on the instance until the next value is processed through the normal path.
+- `matches_syntax(text)`: whether `text` conforms to the field's syntax, as the syntax check would decide for one value (whitespace around it is allowed; for a list field, `text` is one element). When _parse_ needs to know if the rest of a value conforms before calling `suppress_syntax_note()`, replace the part the specific note covers with something valid and call this on the result. A field without a `syntax` accepts any text.
 
 
 #### The _evaluate_ method

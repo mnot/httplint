@@ -62,8 +62,7 @@ preferred in the response."""
             rest = EXTRA_PARAM_RE.sub(
                 lambda match: match.group() if match.group(1).lower() == "q" else "", field_value
             )
-            full, _ = self._syntax_patterns() or (None, None)  # pylint: disable=protected-access
-            if full is not None and full.match(rest):
+            if self.matches_syntax(rest):
                 self.suppress_syntax_note()
 
         return AcceptLanguageValue(language, q_val)

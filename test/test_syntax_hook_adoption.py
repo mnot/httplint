@@ -8,7 +8,9 @@ from functools import partial
 from typing import Iterable, List, Tuple, Type
 
 from httplint.field import BAD_SYNTAX, BAD_SYNTAX_DETAILED
+from httplint.field.broken_field import BrokenField
 from httplint.field.cors import CORS_PREFLIGHT_ONLY
+from httplint.field.list_field import HttpListField
 from httplint.field.parsers.accept import ACCEPT_BAD_SYNTAX
 from httplint.field.parsers.accept_language import ACCEPT_LANGUAGE_BAD_SYNTAX
 from httplint.field.parsers.accept_patch import ACCEPT_PATCH_BAD_SYNTAX
@@ -25,9 +27,12 @@ from httplint.field.parsers.content_range import (
     RANGE_INVALID_INTEGER,
 )
 from httplint.field.parsers.strict_transport_security import HSTS_BAD_MAX_AGE
+from httplint.field.singleton_field import SingletonField
 from httplint.field.tests import FakeRequestLinter, FakeResponseLinter
 from httplint.i18n import L_
 from httplint.note import Note
+from httplint.syntax import rfc9110
+from httplint.types import ResponseLinterProtocol
 
 GENERIC = (BAD_SYNTAX, BAD_SYNTAX_DETAILED)
 
@@ -330,6 +335,65 @@ class SyntaxPositionTest(unittest.TestCase):
                 self.assertNotIn("<b>", detail)
                 self.assertIn("&lt;b&gt;", detail)
                 self.assertIn("found at position 10.", detail)
+
+
+class _TokenList(HttpListField[ResponseLinterProtocol]):
+    canonical_name = "X-Test-List"
+    syntax = rfc9110.list_rule(rfc9110.token, 1)
+
+
+class _TokenSingleton(SingletonField[ResponseLinterProtocol]):
+    canonical_name = "X-Test-Singleton"
+    syntax = rfc9110.token
+
+
+class _TokenBroken(BrokenField[ResponseLinterProtocol]):
+    canonical_name = "X-Test-Broken"
+    syntax = rfc9110.token
+
+
+class _NoSyntax(SingletonField[ResponseLinterProtocol]):
+    canonical_name = "X-Test-No-Syntax"
+    syntax = False
+
+
+class MatchesSyntaxTest(unittest.TestCase):
+    "HttpField.matches_syntax() decides one value, with the wrapper the syntax check uses."
+
+    def check(self, field_class: type, text: str) -> bool:
+        field = field_class(field_class.canonical_name, FakeResponseLinter())
+        return bool(field.matches_syntax(text))
+
+    def test_conforming(self) -> None:
+        for field_class in (_TokenList, _TokenSingleton, _TokenBroken):
+            with self.subTest(field=field_class.__name__):
+                self.assertTrue(self.check(field_class, "foo"))
+
+    def test_non_conforming(self) -> None:
+        for field_class in (_TokenList, _TokenSingleton, _TokenBroken):
+            for text in ["foo bar", 'foo"', "a=b", "\x01"]:
+                with self.subTest(field=field_class.__name__, text=text):
+                    self.assertFalse(self.check(field_class, text))
+
+    def test_whitespace_around_the_text_is_allowed(self) -> None:
+        for field_class in (_TokenList, _TokenSingleton, _TokenBroken):
+            for text in [" foo", "foo ", "\tfoo\t", " foo \n"]:
+                with self.subTest(field=field_class.__name__, text=text):
+                    self.assertTrue(self.check(field_class, text))
+
+    def test_empty_and_blank(self) -> None:
+        for field_class in (_TokenList, _TokenSingleton, _TokenBroken):
+            for text in ["", " "]:
+                with self.subTest(field=field_class.__name__, text=text):
+                    self.assertFalse(self.check(field_class, text))
+
+    def test_list_fields_are_checked_per_element(self) -> None:
+        self.assertFalse(self.check(_TokenList, "foo, bar"))
+
+    def test_field_without_syntax_accepts_anything(self) -> None:
+        for text in ["", "anything at all", "\x01"]:
+            with self.subTest(text=text):
+                self.assertTrue(self.check(_NoSyntax, text))
 
 
 if __name__ == "__main__":
