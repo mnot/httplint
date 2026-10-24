@@ -38,7 +38,7 @@ the transmitted content in frames that are part of other web pages.
         return field_value.upper()
 
     def evaluate(self, add_note: AddNoteMethodType) -> None:
-        if not self.value.strip():
+        if not self.value:
             return  # the syntax check has already reported it
         if self.value == "DENY":
             add_note(FRAME_OPTIONS_DENY)
