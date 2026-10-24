@@ -1,8 +1,8 @@
 """
-Regex for RFC5987
+Regex for RFC8187
 
 These regex are directly derived from the ABNF in RFC8187, Section 3.2.1. RFC 8187 obsoletes
-RFC 5987; the module keeps its old name so that existing imports keep working.
+RFC 5987.
 
 The ABNF is the same as RFC 5987's, except that RFC 5987's charset rule also listed
 "ISO-8859-1" (which mime-charset already matches, so the language is the same) and that RFC 5987

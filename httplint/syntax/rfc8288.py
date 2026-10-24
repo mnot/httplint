@@ -89,4 +89,4 @@ hreflang_param_value = Language_Tag
 type_param_value = rf"(?: {type_name} / {subtype_name} )"
 
 #  The value of the "media" parameter is a media-query-list, which RFC 8288 does not define (it
-#  refers to HTML), so there is no rule for it. "title*" takes an ext-value (RFC 8187); see rfc5987.
+#  refers to HTML), so there is no rule for it. "title*" takes an ext-value (RFC 8187); see rfc8187.
