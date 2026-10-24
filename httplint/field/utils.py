@@ -1,4 +1,3 @@
-# pylint: disable=too-many-lines  # one module holds the shared field helpers
 import calendar
 import re
 import time
