@@ -1,7 +1,7 @@
 from httplint.field.cors import CORS_PREFLIGHT_ONLY
+from httplint.field.delta_seconds import is_negative_integer, parse_delta_seconds
 from httplint.field.singleton_field import SingletonField
 from httplint.field.tests import FieldTest
-from httplint.field.utils import is_negative_integer, parse_delta_seconds
 from httplint.note import Note, categories, levels
 from httplint.syntax import rfc9110
 from httplint.types import (

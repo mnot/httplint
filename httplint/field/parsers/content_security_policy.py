@@ -2,8 +2,8 @@ from typing import Dict, List, Optional
 
 from httplint.field import BAD_SYNTAX
 from httplint.field.list_field import HttpListField
+from httplint.field.reporting import known_reporting_endpoints
 from httplint.field.tests import FieldTest
-from httplint.field.utils import known_reporting_endpoints
 from httplint.note import MarkdownSafe, Note, categories, levels
 from httplint.syntax import rfc9110
 from httplint.types import (

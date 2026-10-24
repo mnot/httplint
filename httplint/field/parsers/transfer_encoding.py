@@ -2,8 +2,8 @@ from typing import Set, Tuple
 
 from httplint.field import BAD_SYNTAX
 from httplint.field.list_field import HttpListField
+from httplint.field.params import parse_params
 from httplint.field.tests import FakeRequestLinter, FieldTest
-from httplint.field.utils import parse_params
 from httplint.note import Note, categories, levels
 from httplint.syntax import rfc9112
 from httplint.types import (

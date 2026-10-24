@@ -12,10 +12,11 @@ from typing import (
 )
 
 from httplint.field import BAD_SYNTAX
+from httplint.field.common import RE_FLAGS
+from httplint.field.delta_seconds import parse_digits
 from httplint.field.section import FIELD_VALUE_ENCODING
 from httplint.field.singleton_field import SingletonField
 from httplint.field.tests import FakeResponseLinter, FieldTest
-from httplint.field.utils import RE_FLAGS, parse_digits
 from httplint.note import Note, categories, levels
 from httplint.syntax import rfc9110
 from httplint.types import (

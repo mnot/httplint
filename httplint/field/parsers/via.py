@@ -1,8 +1,8 @@
 from functools import partial
 
 from httplint.field.list_field import HttpListField
+from httplint.field.list_split import split_list_field
 from httplint.field.tests import FieldTest
-from httplint.field.utils import split_list_field
 from httplint.note import Note, categories, levels
 from httplint.syntax import rfc9110
 from httplint.types import (
