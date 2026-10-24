@@ -1,9 +1,12 @@
 # pylint: disable=duplicate-code
+from datetime import datetime, timezone
+from decimal import Decimal
 from typing import Any, Dict
 
 from http_sf import Token
 
 from httplint.field.sf_helpers import check_sf_params
+from httplint.field.sf_member import is_string_or_token, member_text, member_type_phrase
 from httplint.field.structured_field import StructuredField
 from httplint.field.tests import FieldTest
 from httplint.note import MarkdownSafe, Note, categories, levels
@@ -29,8 +32,14 @@ The `Proxy-Status` header field indicates how intermediaries have handled the re
     def evaluate(self, add_note: AddNoteMethodType) -> None:
         status_list = []
         for target, params in self.value:
-
-            target_str = inline_safe(_target_text(target))
+            if not is_string_or_token(target):
+                add_note(
+                    PROXY_STATUS_BAD_MEMBER,
+                    member_type=member_type_phrase(target),
+                    # An empty value would leave an empty code span in the note text.
+                    value=member_text(target) or MarkdownSafe("(empty)"),
+                )
+            target_str = inline_safe(member_text(target))
             param_str = check_sf_params(
                 params,
                 KNOWN_PARAMS,
@@ -44,15 +53,6 @@ The `Proxy-Status` header field indicates how intermediaries have handled the re
 
         if status_list:
             add_note(PROXY_STATUS, status=MarkdownSafe("\n\n".join(status_list)))
-
-
-def _target_text(target: Any) -> str:
-    "Plain text for a target; an inner list (not valid here) is shown as (a b), not as a repr."
-    if isinstance(target, bytes):
-        return target.decode("ascii", "replace")
-    if isinstance(target, list):
-        return "(" + " ".join(_target_text(item) for item, _ in target) + ")"
-    return str(target)
 
 
 KNOWN_PARAMS: Dict[str, Dict[str, Any]] = {
@@ -130,6 +130,16 @@ The `Proxy-Status` header field indicates how intermediaries have handled the re
 """
 
 
+class PROXY_STATUS_BAD_MEMBER(Note):
+    category = categories.CACHING
+    level = levels.BAD
+    _summary = "A Proxy-Status member is %(member_type)s, not a String or Token."
+    _text = """\
+Each member of the `Proxy-Status` list identifies the intermediary that inserted it, and
+[RFC 9209](https://www.rfc-editor.org/rfc/rfc9209.html#section-2) requires it to be a String or
+a Token. This member, `%(value)s`, is %(member_type)s."""
+
+
 class PROXY_STATUS_UNKNOWN_PARAM(Note):
     category = categories.CACHING
     level = levels.INFO
@@ -180,3 +190,90 @@ class ProxyStatusBooleanIntegerTest(FieldTest[ResponseLinterProtocol]):
     inputs = [b"ExampleProxy; received-status=?1"]
     expected_out = [(Token("ExampleProxy"), {"received-status": True})]
     expected_notes: NoteClassListType = [PROXY_STATUS_BAD_PARAM_VAL, PROXY_STATUS]
+
+
+class ProxyStatusBadMemberInnerListTest(FieldTest[ResponseLinterProtocol]):
+    name = "Proxy-Status"
+    inputs = [b"(a b)"]
+    expected_out = [([(Token("a"), {}), (Token("b"), {})], {})]
+    expected_notes: NoteClassListType = [PROXY_STATUS_BAD_MEMBER, PROXY_STATUS]
+
+
+class ProxyStatusBadMemberIntegerTest(FieldTest[ResponseLinterProtocol]):
+    name = "Proxy-Status"
+    inputs = [b"1"]
+    expected_out = [(1, {})]
+    expected_notes: NoteClassListType = [PROXY_STATUS_BAD_MEMBER, PROXY_STATUS]
+
+
+class ProxyStatusBadMemberDecimalTest(FieldTest[ResponseLinterProtocol]):
+    name = "Proxy-Status"
+    inputs = [b"1.5"]
+    expected_out = [(Decimal("1.5"), {})]
+    expected_notes: NoteClassListType = [PROXY_STATUS_BAD_MEMBER, PROXY_STATUS]
+
+
+class ProxyStatusBadMemberBooleanTest(FieldTest[ResponseLinterProtocol]):
+    name = "Proxy-Status"
+    inputs = [b"?1"]
+    expected_out = [(True, {})]
+    expected_notes: NoteClassListType = [PROXY_STATUS_BAD_MEMBER, PROXY_STATUS]
+
+
+class ProxyStatusBadMemberByteSequenceTest(FieldTest[ResponseLinterProtocol]):
+    name = "Proxy-Status"
+    inputs = [b":YWJj:"]
+    expected_out = [(b"abc", {})]
+    expected_notes: NoteClassListType = [PROXY_STATUS_BAD_MEMBER, PROXY_STATUS]
+
+
+class ProxyStatusBadMemberAmongGoodTest(FieldTest[ResponseLinterProtocol]):
+    name = "Proxy-Status"
+    inputs = [b'a, 1, "b"; next-protocol=h2, (c d)']
+    expected_out = [
+        (Token("a"), {}),
+        (1, {}),
+        ("b", {"next-protocol": Token("h2")}),
+        ([(Token("c"), {}), (Token("d"), {})], {}),
+    ]
+    expected_notes: NoteClassListType = [
+        PROXY_STATUS_BAD_MEMBER,
+        PROXY_STATUS_BAD_MEMBER,
+        PROXY_STATUS,
+    ]
+
+
+class ProxyStatusStringAndTokenMembersTest(FieldTest[ResponseLinterProtocol]):
+    "Guard: String and Token members get no member-type note."
+
+    name = "Proxy-Status"
+    inputs = [b'a, "b c"']
+    expected_out = [(Token("a"), {}), ("b c", {})]
+    expected_notes: NoteClassListType = [PROXY_STATUS]
+
+
+class ProxyStatusBadMemberDateTest(FieldTest[ResponseLinterProtocol]):
+    name = "Proxy-Status"
+    inputs = [b"@1659578233"]
+    expected_out = [(datetime.fromtimestamp(1659578233, tz=timezone.utc), {})]
+    expected_notes: NoteClassListType = [PROXY_STATUS_BAD_MEMBER, PROXY_STATUS]
+
+
+class ProxyStatusBadMemberEmptyByteSequenceTest(FieldTest[ResponseLinterProtocol]):
+    name = "Proxy-Status"
+    inputs = [b"::"]
+    expected_out = [(b"", {})]
+    expected_notes: NoteClassListType = [PROXY_STATUS_BAD_MEMBER, PROXY_STATUS]
+
+
+class ProxyStatusBadMemberWithParamsTest(FieldTest[ResponseLinterProtocol]):
+    "The parameters of a bad member are still checked."
+
+    name = "Proxy-Status"
+    inputs = [b"1; next-protocol=1"]
+    expected_out = [(1, {"next-protocol": 1})]
+    expected_notes: NoteClassListType = [
+        PROXY_STATUS_BAD_MEMBER,
+        PROXY_STATUS_BAD_PARAM_VAL,
+        PROXY_STATUS,
+    ]

@@ -446,9 +446,11 @@ class EmbeddedNewlineTest(unittest.TestCase):
         notes = _response_notes([(b"Cache-Status", payload)])
         cache_status_notes = [n for n in notes if isinstance(n, CACHE_STATUS)]
         self.assertTrue(cache_status_notes, "CACHE_STATUS was not raised")
-        detail = str(cache_status_notes[0].detail)
+        # The member is not a String or Token, so it is shown in wire form (base64), not decoded.
+        detail = "".join(str(n.detail) for n in notes if str(n.detail))
         self.assertNotIn("<script>", detail)
-        self.assertIn("&lt;script&gt;", detail)
+        self.assertNotIn("&lt;script&gt;", detail)
+        self.assertIn("<code>:ZXZpbAoKPHNjcmlwdD5hbGVydCgxKTwvc2NyaXB0Pg==:</code>", detail)
 
 
 class CheckSfParamsFalsyBooleanTest(unittest.TestCase):
