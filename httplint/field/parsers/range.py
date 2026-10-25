@@ -316,11 +316,13 @@ class RangeNoteWordingTest(unittest.TestCase):
 
 class RangeSyntaxHookTest(unittest.TestCase):
     """
-    Guard: parse() and the syntax check agree on every short string, so each value gets exactly
-    one note for one defect: RANGE_BAD_SYNTAX if parse() rejects it, nothing if it accepts it.
+    Guard on the note count for every short string: a value parse() rejects gets exactly
+    RANGE_BAD_SYNTAX, with no generic BAD_SYNTAX on top; a value it accepts gets no syntax note,
+    so the syntax regex must not reject anything parse() accepts. (parse() may still reject a
+    value that matches the regex, such as "bytes=a-b".)
     """
 
-    ALPHABET = ["=", "-", ",", " ", "\t", "0", "a", "bytes"]
+    ALPHABET = ["=", "-", ",", " ", "\t", "0", "a", "\xa0", "\x0b", "bytes"]
 
     def check(self, value: str) -> None:
         notes: List[Type[Note]] = []
@@ -346,6 +348,8 @@ class RangeSyntaxHookTest(unittest.TestCase):
             for chars in itertools.product(self.ALPHABET, repeat=size):
                 self.check("".join(chars))
         for prefix in ("bytes=", "bytes= ", "pages=", "x="):
-            for size in (0, 1, 2, 3, 4):  # not range(): the `range` class shadows it here
-                for chars in itertools.product(self.ALPHABET[1:6], repeat=size):
+            for size in (0, 1, 2, 3):  # not range(): the `range` class shadows it here
+                for chars in itertools.product(self.ALPHABET[1:-1], repeat=size):
                     self.check(prefix + "".join(chars))
+            for chars in itertools.product(self.ALPHABET[1:6], repeat=4):
+                self.check(prefix + "".join(chars))

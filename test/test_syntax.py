@@ -2454,8 +2454,8 @@ class SyntaxRangesSpecifierTest(unittest.TestCase):
 
     def test_field(self) -> None:
         """
-        Guard: Range doesn't report syntax from the rule (report_syntax is False; its parser does),
-        so the field's output is the same on main.
+        Guard: Range's parser reports its own syntax errors and suppresses the generic note for a
+        value it rejects (suppress_syntax_note()), so each of these gets one note, or none.
         """
         for value in [b"bytes= 0-999, 4500-5499, -1000", b"bytes=\t0-9", b"bytes=0-9"]:
             with self.subTest(value=value):
