@@ -72,8 +72,8 @@ def parse_media_type_once(
     result = parse_media_type(field_value, track, bad_syntax_note, field.reference, **kwargs)
     if reported:
         # Whatever precedes the first ";", OWS included, is swapped for a valid media type.
-        head_end = field_value.find(";")
-        if field.matches_syntax("a/b" + (field_value[head_end:] if head_end >= 0 else "")):
+        _, semicolon, params = field_value.partition(";")
+        if field.matches_syntax("a/b" + semicolon + params):
             field.suppress_syntax_note()
     return result
 
