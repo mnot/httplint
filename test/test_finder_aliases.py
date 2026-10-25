@@ -18,6 +18,15 @@ def wire_names(key: str) -> List[str]:
     return sorted({key, key.replace("_", "-"), key.upper(), key.replace("_", "-").title()})
 
 
+def request_note_names(name: str) -> List[str]:
+    req = HttpRequestLinter()
+    req.process_request_topline(b"GET", b"http://example.com/", b"HTTP/1.1")
+    req.process_headers([(name.encode("ascii"), b"x")])
+    req.feed_content(b"")
+    req.finish_content(True)
+    return sorted(note_name(n) for n in req.notes)
+
+
 def response_note_names(name: str) -> List[str]:
     res = HttpResponseLinter()
     res.process_response_topline(b"HTTP/1.1", b"200", b"OK")
@@ -57,14 +66,24 @@ class FinderAliasTest(unittest.TestCase):
             with self.subTest(key=key):
                 self.assertNotIn(target, HttpFieldFinder.field_aliases)
 
+    def test_alias_targets_not_underscore_prefixed(self) -> None:
+        "find_module applies aliases before its leading-underscore guard; that is only safe if no target is special."
+        for key, target in HttpFieldFinder.field_aliases.items():
+            with self.subTest(key=key):
+                self.assertFalse(target.startswith("_"))
+
     def test_x_pad_aliases_match_x_pad(self) -> None:
         "Resolving the X-Pad aliases gives the same notes as X-Pad itself."
         expected = response_note_names("X-Pad")
         self.assertIn("FIELD_DEPRECATED", expected)
+        expected_req = request_note_names("X-Pad")
+        self.assertIn("RESPONSE_HDR_IN_REQUEST", expected_req)
         for key, target in HttpFieldFinder.field_aliases.items():
             if target == "x_pad":
+                name = key.replace("_", "-")
                 with self.subTest(key=key):
-                    self.assertEqual(response_note_names(key.replace("_", "-")), expected)
+                    self.assertEqual(response_note_names(name), expected)
+                    self.assertEqual(request_note_names(name), expected_req)
 
     def test_previously_working_aliases(self) -> None:
         "Guard: aliases that resolved before the table was normalised still do."
