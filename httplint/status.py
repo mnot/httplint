@@ -152,16 +152,13 @@ class StatusChecker:
         if "date" not in self.response.headers.parsed:
             self.add_note("status", NO_DATE_304)
 
-        prohibited_headers = []
         for header in ["content-type", "content-encoding", "content-language"]:
             if header in self.response.headers.parsed:
-                prohibited_headers.append(header)
-        if prohibited_headers:
-            self.add_note(
-                "field-content-type",
-                HEADER_SHOULD_NOT_BE_IN_304,
-                headers=markdown_list(prohibited_headers, markup="`"),
-            )
+                self.add_note(
+                    f"field-{header}",
+                    HEADER_SHOULD_NOT_BE_IN_304,
+                    headers=markdown_list([header], markup="`"),
+                )
 
     def status305(self) -> None:  # Use Proxy
         self.add_note("", STATUS_DEPRECATED)

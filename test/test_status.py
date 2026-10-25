@@ -11,6 +11,7 @@ from httplint.note import levels
 from httplint.status import (
     CONNECT_TUNNEL_FRAMING,
     HEADER_SHOULD_NOT_BE_IN_304,
+    NO_DATE_304,
     PARTIAL_WITHOUT_RANGE,
     STATUS_NONSTANDARD,
 )
@@ -28,6 +29,55 @@ class TestStatus304(unittest.TestCase):
 
             notes = [n.__class__ for n in linter.notes]
             self.assertIn(HEADER_SHOULD_NOT_BE_IN_304, notes)
+
+    @staticmethod
+    def _notes_304(headers):
+        linter = HttpResponseLinter()
+        linter.process_response_topline(b"HTTP/1.1", b"304", b"Not Modified")
+        linter.process_headers([(b"Date", b"Fri, 01 Jan 2021 00:00:00 GMT")] + headers)
+        linter.finish_content(True)
+        return [n for n in linter.notes if isinstance(n, HEADER_SHOULD_NOT_BE_IN_304)]
+
+    def test_304_prohibited_header_subject(self):
+        for header in [b"Content-Type", b"Content-Encoding", b"Content-Language"]:
+            with self.subTest(header=header):
+                notes = self._notes_304([(header, b"foo")])
+                self.assertEqual(
+                    [n.subject for n in notes], [f"field-{header.decode().lower()}"]
+                )
+
+    def test_304_several_prohibited_headers(self):
+        notes = self._notes_304(
+            [
+                (b"Content-Type", b"text/plain"),
+                (b"Content-Encoding", b"gzip"),
+                (b"Content-Language", b"en"),
+            ]
+        )
+        self.assertEqual(
+            sorted(n.subject for n in notes),
+            ["field-content-encoding", "field-content-language", "field-content-type"],
+        )
+        for note in notes:
+            field = note.subject.removeprefix("field-")
+            self.assertEqual(note.vars["headers"], f"- `{field}`")
+
+    @staticmethod
+    def _no_date_notes(headers):
+        linter = HttpResponseLinter()
+        linter.process_response_topline(b"HTTP/1.1", b"304", b"Not Modified")
+        linter.process_headers(headers)
+        linter.finish_content(True)
+        return [n for n in linter.notes if isinstance(n, NO_DATE_304)]
+
+    def test_304_without_date_subject(self):
+        # Guard: NO_DATE_304 stays on the "status" subject (an absent Date has no row to mark).
+        notes = self._no_date_notes([(b"ETag", b'"abc"')])
+        self.assertEqual([n.subject for n in notes], ["status"])
+
+    def test_304_with_date_not_flagged(self):
+        # Guard
+        self.assertEqual(self._no_date_notes([(b"Date", b"Fri, 01 Jan 2021 00:00:00 GMT")]), [])
 
     def test_304_allowed_headers(self):
         linter = HttpResponseLinter()
