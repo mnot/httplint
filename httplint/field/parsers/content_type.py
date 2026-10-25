@@ -204,3 +204,21 @@ class CTRepeatedCharsetTest(FieldTest[AnyMessageLinterProtocol]):
     inputs = [b"text/plain; charset=utf-8; charset=nonesuch"]
     expected_out: Any = ("text/plain", {"charset": "utf-8"})
     expected_notes: NoteClassListType = [PARAM_REPEATS]
+
+
+class CTSpaceBeforeSemicolonTest(FieldTest[AnyMessageLinterProtocol]):
+    "Guard: OWS before the ';' was already stripped on main."
+
+    name = "Content-Type"
+    inputs = [b"text/html ; charset=utf-8"]
+    expected_out = ("text/html", {"charset": "utf-8"})
+    expected_notes: NoteClassListType = []
+
+
+class CTTabBeforeSemicolonTest(FieldTest[AnyMessageLinterProtocol]):
+    "Guard: as above, with tabs."
+
+    name = "Content-Type"
+    inputs = [b"text/html\t;\tcharset=utf-8"]
+    expected_out = ("text/html", {"charset": "utf-8"})
+    expected_notes: NoteClassListType = []

@@ -1,8 +1,9 @@
 """
 split_params_off splits a field value at its first ";" into a head and parameter text, in linear
-time, exactly as the "split(';', 1)" blocks it replaced did.
+time, as the "split(';', 1)" blocks it replaced did, except that the head is stripped of the OWS
+(SP and HTAB) that the grammars allow before the ";" (#330).
 
-The tests marked as guards pass on main too: the helper is a pure refactor.
+The tests marked as guards pass on main too; the ones about the head's whitespace don't.
 """
 
 import itertools
@@ -33,8 +34,24 @@ class SplitParamsOffTest(unittest.TestCase):
 
     def test_params(self):
         self.assertEqual(split_params_off("gzip;q=0.5"), ("gzip", "q=0.5"))
-        self.assertEqual(split_params_off("gzip ; q=0.5"), ("gzip ", " q=0.5"))
+        self.assertEqual(split_params_off("gzip ; q=0.5"), ("gzip", " q=0.5"))
         self.assertEqual(split_params_off("a;b=c;d=e"), ("a", "b=c;d=e"))
+
+    def test_head_whitespace(self):
+        "The grammars allow OWS before the ';', so it isn't part of the head (#330)."
+        self.assertEqual(split_params_off("gzip ; q=0.5"), ("gzip", " q=0.5"))
+        self.assertEqual(split_params_off("gzip\t;\tq=0.5"), ("gzip", "\tq=0.5"))
+        self.assertEqual(split_params_off("gzip \t ;q=0.5"), ("gzip", "q=0.5"))
+        self.assertEqual(split_params_off(" gzip ;q=0.5"), ("gzip", "q=0.5"))
+        self.assertEqual(split_params_off("gzip "), ("gzip", ""))
+        self.assertEqual(split_params_off(" ; q=1"), ("", " q=1"))
+
+    def test_only_ows_is_stripped(self):
+        "Only SP and HTAB are OWS; other whitespace stays in the head, as before."
+        for char in "\xa0\x0b\x0c\x1c\x1f\x85\r\n":
+            with self.subTest(char=repr(char)):
+                self.assertEqual(split_params_off(f"gzip{char};q=0.5"), (f"gzip{char}", "q=0.5"))
+                self.assertEqual(split_params_off(f"{char}gzip ;q=0.5"), (f"{char}gzip", "q=0.5"))
 
     def test_empty_parts(self):
         self.assertEqual(split_params_off(";"), ("", ""))
@@ -64,11 +81,15 @@ class SplitParamsOffTest(unittest.TestCase):
         self.assertEqual(notes, [])
 
     def test_matches_old_split(self):
-        "Guard: same result as the replaced blocks, for every short string over a small alphabet."
+        """
+        Guard: same result as the replaced blocks, for every short string over a small alphabet,
+        apart from the whitespace now stripped from the head.
+        """
         for length in range(7):
-            for chars in itertools.product('a;="\\ ', repeat=length):
+            for chars in itertools.product('a;="\\ \t\xa0', repeat=length):
                 value = "".join(chars)
-                self.assertEqual(split_params_off(value), old_split(value), value)
+                head, param_str = old_split(value)
+                self.assertEqual(split_params_off(value), (head.strip(" \t"), param_str), value)
 
     def test_linear_time(self):
         for value in (
