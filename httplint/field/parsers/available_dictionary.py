@@ -183,6 +183,54 @@ class AvailableDictionaryWildcardQZeroTest(FieldTest[RequestLinterProtocol]):
         message.headers.process([(b"accept-encoding", b"*, dcb;q=0")])
 
 
+class AvailableDictionarySpaceBeforeSemicolonTest(FieldTest[RequestLinterProtocol]):
+    "OWS before the ';' of an Accept-Encoding weight doesn't hide dcb (#330)."
+
+    name = "Available-Dictionary"
+    inputs = [b":pZGm1Av0IEBKARczz7exkNYsZb8LzaMrV7J32a2fFG4=:"]
+    expected_out: tuple[bytes, dict[str, Any]] = (
+        b"\xa5\x91\xa6\xd4\x0b\xf4 @J\x01\x173\xcf\xb7\xb1\x90\xd6,e\xbf\x0b\xcd\xa3"
+        b"+W\xb2w\xd9\xad\x9f\x14n",
+        {},
+    )
+    expected_notes: NoteClassListType = []
+
+    def set_request_context(self, message: RequestLinterProtocol) -> None:
+        message.headers.process([(b"accept-encoding", b"gzip, dcb ;q=0.5")])
+
+
+class AvailableDictionaryTabBeforeSemicolonTest(FieldTest[RequestLinterProtocol]):
+    "As above, with a tab."
+
+    name = "Available-Dictionary"
+    inputs = [b":pZGm1Av0IEBKARczz7exkNYsZb8LzaMrV7J32a2fFG4=:"]
+    expected_out: tuple[bytes, dict[str, Any]] = (
+        b"\xa5\x91\xa6\xd4\x0b\xf4 @J\x01\x173\xcf\xb7\xb1\x90\xd6,e\xbf\x0b\xcd\xa3"
+        b"+W\xb2w\xd9\xad\x9f\x14n",
+        {},
+    )
+    expected_notes: NoteClassListType = []
+
+    def set_request_context(self, message: RequestLinterProtocol) -> None:
+        message.headers.process([(b"accept-encoding", b"dcz\t;\tq=0.5")])
+
+
+class AvailableDictionaryQZeroSpaceBeforeSemicolonTest(FieldTest[RequestLinterProtocol]):
+    "Guard: a refusal after OWS is still a refusal."
+
+    name = "Available-Dictionary"
+    inputs = [b":pZGm1Av0IEBKARczz7exkNYsZb8LzaMrV7J32a2fFG4=:"]
+    expected_out: tuple[bytes, dict[str, Any]] = (
+        b"\xa5\x91\xa6\xd4\x0b\xf4 @J\x01\x173\xcf\xb7\xb1\x90\xd6,e\xbf\x0b\xcd\xa3"
+        b"+W\xb2w\xd9\xad\x9f\x14n",
+        {},
+    )
+    expected_notes: NoteClassListType = [AVAILABLE_DICTIONARY_MISSING_AE]
+
+    def set_request_context(self, message: RequestLinterProtocol) -> None:
+        message.headers.process([(b"accept-encoding", b"dcb ;q=0, dcz\t;q=0")])
+
+
 class AvailableDictionaryDczOnlyTest(FieldTest[RequestLinterProtocol]):
     "Guard: dcz alone is support; main also accepts this."
 
