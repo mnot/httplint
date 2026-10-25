@@ -1,8 +1,10 @@
 from typing import Tuple
 
+from httplint.field import BAD_SYNTAX_DETAILED
 from httplint.field.codings import CODING_ALIAS_DEPRECATED, note_deprecated_codings
 from httplint.field.list_field import HttpListField
 from httplint.field.params import parse_params, split_params_off
+from httplint.field.section import FIELD_VALUE_ENCODING
 from httplint.field.tests import FieldTest
 from httplint.note import categories
 from httplint.syntax import rfc9110
@@ -97,6 +99,15 @@ class AcceptEncodingNoSpaceBeforeSemicolonTest(FieldTest[RequestLinterProtocol])
     inputs = [b"gzip;q=0.5"]
     expected_out = [("gzip", {"q": "0.5"})]
     expected_notes: NoteClassListType = []
+
+
+class AcceptEncodingNonOWSBeforeSemicolonTest(FieldTest[RequestLinterProtocol]):
+    "Guard: only SP and HTAB are stripped; a no-break space stays in the coding (same on main)."
+
+    name = "Accept-Encoding"
+    inputs = [b"gzip\xa0;q=0.5"]
+    expected_out = [("gzip\xa0", {"q": "0.5"})]
+    expected_notes: NoteClassListType = [FIELD_VALUE_ENCODING, BAD_SYNTAX_DETAILED]
 
 
 class AcceptEncodingAliasSpaceBeforeSemicolonTest(FieldTest[RequestLinterProtocol]):

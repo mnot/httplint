@@ -1,8 +1,9 @@
 """
 split_params_off splits a field value at its first ";" into a head and parameter text, in linear
-time, exactly as the "split(';', 1)" blocks it replaced did.
+time, as the "split(';', 1)" blocks it replaced did, except that the head is stripped of the OWS
+(SP and HTAB) that the grammars allow before the ";" (#330).
 
-The tests marked as guards pass on main too: the helper is a pure refactor.
+The tests marked as guards pass on main too; the ones about the head's whitespace don't.
 """
 
 import itertools
@@ -45,6 +46,13 @@ class SplitParamsOffTest(unittest.TestCase):
         self.assertEqual(split_params_off("gzip "), ("gzip", ""))
         self.assertEqual(split_params_off(" ; q=1"), ("", " q=1"))
 
+    def test_only_ows_is_stripped(self):
+        "Only SP and HTAB are OWS; other whitespace stays in the head, as before."
+        for char in "\xa0\x0b\x0c\x1c\x1f\x85\r\n":
+            with self.subTest(char=repr(char)):
+                self.assertEqual(split_params_off(f"gzip{char};q=0.5"), (f"gzip{char}", "q=0.5"))
+                self.assertEqual(split_params_off(f"{char}gzip ;q=0.5"), (f"{char}gzip", "q=0.5"))
+
     def test_empty_parts(self):
         self.assertEqual(split_params_off(";"), ("", ""))
         self.assertEqual(split_params_off(";;"), ("", ";"))
@@ -78,10 +86,10 @@ class SplitParamsOffTest(unittest.TestCase):
         apart from the whitespace now stripped from the head.
         """
         for length in range(7):
-            for chars in itertools.product('a;="\\ ', repeat=length):
+            for chars in itertools.product('a;="\\ \t\xa0', repeat=length):
                 value = "".join(chars)
                 head, param_str = old_split(value)
-                self.assertEqual(split_params_off(value), (head.strip(), param_str), value)
+                self.assertEqual(split_params_off(value), (head.strip(" \t"), param_str), value)
 
     def test_linear_time(self):
         for value in (
