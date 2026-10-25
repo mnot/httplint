@@ -235,9 +235,10 @@ def _port_invalid(port: str) -> bool:
 def _authority_form_incomplete(target: str) -> bool:
     """
     True if a target that matches rfc9112.authority_form has no host, no port, or a port out of
-    range. The grammar allows an empty host and an empty port (RFC 3986's reg-name and port can
-    be empty), but a CONNECT target needs both. The last ":" separates them: a reg-name or IP
-    literal can't contain one.
+    range. RFC 9112 Section 3.2.3 defines authority-form as uri-host ":" port, but RFC 3986
+    allows an empty reg-name and an empty port, so the grammar accepts ":443" and "example.com:".
+    A CONNECT target needs both, hence this check. The last ":" separates them: a reg-name or
+    IP literal can't contain one.
     """
     host, _, port = target.rpartition(":")
     return not host or _port_invalid(port)
