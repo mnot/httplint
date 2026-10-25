@@ -219,10 +219,6 @@ class HttpMessageLinter:
         return state
 
 
-# RFC 9112 Section 3.2.3: uri-host ":" port, but stricter than rfc9112.authority_form: the host
-# and the port must not be empty (RFC 3986's reg-name and port can be)
-AUTHORITY_FORM = rf"(?= [^:] ) {rfc3986.host} : [0-9]+"
-
 # RFC 3987's iuserinfo: userinfo, plus non-ASCII characters
 IUSERINFO = (
     rf"(?: {rfc3986.unreserved} | {rfc3986.pct_encoded} | {rfc3986.sub_delims} | : "
@@ -234,6 +230,17 @@ def _port_invalid(port: str) -> bool:
     "True if the port isn't DIGIT+ with a value of 65535 or less."
     value = parse_digits(port, max_digits=5)
     return value is None or value > 65535
+
+
+def _authority_form_incomplete(target: str) -> bool:
+    """
+    True if a target that matches rfc9112.authority_form has no host, no port, or a port out of
+    range. The grammar allows an empty host and an empty port (RFC 3986's reg-name and port can
+    be empty), but a CONNECT target needs both. The last ":" separates them: a reg-name or IP
+    literal can't contain one.
+    """
+    host, _, port = target.rpartition(":")
+    return not host or _port_invalid(port)
 
 
 def _userinfo_valid(iri: str) -> bool:
@@ -283,7 +290,7 @@ class HttpRequestLinter(HttpMessageLinter):
         authority_form = self.method == "CONNECT"
         absolute_form = False
         if authority_form:
-            pattern = AUTHORITY_FORM
+            pattern = rfc9112.authority_form
         elif target == "*":
             pattern = r"\*"
         elif target.startswith("/"):
@@ -309,7 +316,7 @@ class HttpRequestLinter(HttpMessageLinter):
         if (
             bad_userinfo
             or not re.fullmatch(pattern, self.uri, re.VERBOSE)
-            or (authority_form and _port_invalid(self.uri.rpartition(":")[2]))
+            or (authority_form and _authority_form_incomplete(self.uri))
         ):
             if authority_form or target == "*":
                 self.notes.add("uri", REQUEST_TARGET_FORM, method=method)
