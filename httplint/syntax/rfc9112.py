@@ -4,12 +4,9 @@ Regex for RFC9112
 
 # pylint: disable=invalid-name, line-too-long
 
-from .rfc3986 import (
-    absolute_URI,
-    authority,
-    query,
-    segment,
-)
+from .rfc3986 import absolute_URI
+from .rfc3986 import host as uri_host
+from .rfc3986 import port, query
 from .rfc5234 import (
     CRLF,
     DIGIT,
@@ -19,14 +16,21 @@ from .rfc5234 import (
     SP,
     VCHAR,
 )
+
+# RFC 9112 refers to these rules, which RFC 9110 defines (and uri-host, port, which RFC 3986
+# does); they are imported, not redefined, so that there is one transcription of each.
 from .rfc9110 import (
     BWS,
     OWS,
+    RWS,
+    absolute_path,
     field_name,
     field_value,
     list_rule,
+    obs_text,
     quoted_string,
     token,
+    transfer_coding,
 )
 
 SPEC_URL = "http://httpwg.org/specs/rfc9112"
@@ -34,6 +38,11 @@ SPEC_URL = "http://httpwg.org/specs/rfc9112"
 #   field-line = field-name ":" OWS field-value OWS
 
 field_line = rf"(?: {field_name} : {OWS} {field_value} {OWS} )"
+
+#   obs-fold = OWS CRLF RWS
+#            ; obsolete line folding
+
+obs_fold = rf"(?: {OWS} {CRLF} {RWS} )"
 
 ## Chunked Encoding
 
@@ -82,31 +91,25 @@ chunked_body = rf"(?: (?: {chunk} )* {last_chunk} {trailer_section} {CRLF} )"
 
 ## Transfer-Encoding
 
-#   transfer-parameter = token BWS "=" BWS ( token / quoted-string )
-
-transfer_parameter = rf"(?: {token} {BWS} = {BWS} (?: {token} | {quoted_string} ) )"
-
-#   transfer-extension = token *( OWS ";" OWS transfer-parameter )
-
-transfer_extension = rf"(?: {token} (?: {OWS} ; {OWS} {transfer_parameter} )* )"
-
-#   transfer-coding = "chunked" / "compress" / "deflate" / "gzip" / transfer-extension
-
-transfer_coding = rf"(?: chunked | compress | deflate | gzip | {transfer_extension} )"
-
 #   Transfer-Encoding = #transfer-coding
+#                     ; defined in [HTTP], Section 10.1.4
+#
+# transfer-coding (and its transfer-parameter) is defined by RFC 9110 and imported above. The
+# RFC 7230 form, "chunked / compress / deflate / gzip / transfer-extension", matched a
+# registered name by two routes, so a long list that failed to match backtracked exponentially.
 
 Transfer_Encoding = list_rule(transfer_coding)
 
 ## Message
 
-#   HTTP-name = %x48.54.54.50 ; HTTP
+#   HTTP-name = %s"HTTP"
+#             ; case-sensitive (RFC 9112 Appendix A has %x48.54.54.50 ; HTTP)
 
 HTTP_name = r"(?-i:HTTP)"
 
 #   HTTP-version = HTTP-name "/" DIGIT "." DIGIT
 
-HTTP_version = rf"{HTTP_name} / {DIGIT} \. {DIGIT}"
+HTTP_version = rf"(?: {HTTP_name} / {DIGIT} \. {DIGIT} )"
 
 #   method = token
 
@@ -116,17 +119,18 @@ method = token
 
 absolute_form = absolute_URI
 
-#   absolute-path = 1*( "/" segment )
-
-absolute_path = rf"(?: / {segment} )+"
-
 #   asterisk-form = "*"
 
 asterisk_form = r"\*"
 
-#   authority-form = authority
+#   authority = <authority, see [URI], Section 3.2>
+#
+# RFC 9112 Appendix A lists it, but nothing in RFC 9112 uses it any more (authority-form is
+# uri-host ":" port); like rfc9110.py, this is a comment line, not a rule.
 
-authority_form = authority
+#   authority-form = uri-host ":" port
+
+authority_form = rf"(?: {uri_host} : {port} )"
 
 #   origin-form = absolute-path [ "?" query ]
 
@@ -136,24 +140,21 @@ origin_form = rf"(?: {absolute_path} (?: \? {query} )? )"
 
 request_target = rf"(?: {origin_form} | {absolute_form} | {authority_form} | {asterisk_form} )"
 
-#   request-line = method SP request-target SP HTTP-version CRLF
+#   request-line = method SP request-target SP HTTP-version
 
-request_line = rf"(?: {method} [ ] {request_target} [ ] {HTTP_version} {CRLF} )"
+request_line = rf"(?: {method} {SP} {request_target} {SP} {HTTP_version} )"
 
 #   status-code = 3DIGIT
 
 status_code = rf"(?: {DIGIT}{{3}} )"
 
-#   obs-text = %x80-FF
-obs_text = r"[\x80-\xff]"
+#   reason-phrase = 1*( HTAB / SP / VCHAR / obs-text )
 
-#   reason-phrase = *( HTAB / SP / VCHAR / obs-text )
+reason_phrase = rf"(?: (?: {HTAB} | {SP} | {VCHAR} | {obs_text} )+ )"
 
-reason_phrase = rf"(?: {HTAB} | {SP} | {VCHAR} | {obs_text} )*"
+#   status-line = HTTP-version SP status-code SP [ reason-phrase ]
 
-#   status-line = HTTP-version SP status-code SP reason-phrase CRLF
-
-status_line = rf"(?: {HTTP_version} [ ] {status_code} [ ] {reason_phrase} {CRLF} )"
+status_line = rf"(?: {HTTP_version} {SP} {status_code} {SP} (?: {reason_phrase} )? )"
 
 #   start-line = request-line / status-line
 
@@ -163,8 +164,9 @@ start_line = rf"(?: {request_line} | {status_line} )"
 
 message_body = rf"(?: {OCTET}* )"
 
-#   HTTP-message = start-line CRLF *( field-line CRLF ) CRLF [ message-body ]
-#
-# Here start-line includes its own CRLF, as in RFC 7230.
+#   HTTP-message = start-line CRLF
+#                  *( field-line CRLF )
+#                  CRLF
+#                  [ message-body ]
 
-HTTP_message = rf"(?: {start_line} (?: {field_line} {CRLF} )* {CRLF} (?: {message_body} )? )"
+HTTP_message = rf"(?: {start_line} {CRLF} (?: {field_line} {CRLF} )* {CRLF} (?: {message_body} )? )"
