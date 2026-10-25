@@ -33,8 +33,17 @@ class SplitParamsOffTest(unittest.TestCase):
 
     def test_params(self):
         self.assertEqual(split_params_off("gzip;q=0.5"), ("gzip", "q=0.5"))
-        self.assertEqual(split_params_off("gzip ; q=0.5"), ("gzip ", " q=0.5"))
+        self.assertEqual(split_params_off("gzip ; q=0.5"), ("gzip", " q=0.5"))
         self.assertEqual(split_params_off("a;b=c;d=e"), ("a", "b=c;d=e"))
+
+    def test_head_whitespace(self):
+        "The grammars allow OWS before the ';', so it isn't part of the head (#330)."
+        self.assertEqual(split_params_off("gzip ; q=0.5"), ("gzip", " q=0.5"))
+        self.assertEqual(split_params_off("gzip\t;\tq=0.5"), ("gzip", "\tq=0.5"))
+        self.assertEqual(split_params_off("gzip \t ;q=0.5"), ("gzip", "q=0.5"))
+        self.assertEqual(split_params_off(" gzip ;q=0.5"), ("gzip", "q=0.5"))
+        self.assertEqual(split_params_off("gzip "), ("gzip", ""))
+        self.assertEqual(split_params_off(" ; q=1"), ("", " q=1"))
 
     def test_empty_parts(self):
         self.assertEqual(split_params_off(";"), ("", ""))
@@ -64,11 +73,15 @@ class SplitParamsOffTest(unittest.TestCase):
         self.assertEqual(notes, [])
 
     def test_matches_old_split(self):
-        "Guard: same result as the replaced blocks, for every short string over a small alphabet."
+        """
+        Guard: same result as the replaced blocks, for every short string over a small alphabet,
+        apart from the whitespace now stripped from the head.
+        """
         for length in range(7):
             for chars in itertools.product('a;="\\ ', repeat=length):
                 value = "".join(chars)
-                self.assertEqual(split_params_off(value), old_split(value), value)
+                head, param_str = old_split(value)
+                self.assertEqual(split_params_off(value), (head.strip(), param_str), value)
 
     def test_linear_time(self):
         for value in (

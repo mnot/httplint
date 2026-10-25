@@ -128,3 +128,28 @@ class AcceptLanguageQTrailingDotTest(FieldTest[RequestLinterProtocol]):
     inputs = [b"en; q=1., fr; q=0.123"]
     expected_out = [AcceptLanguageValue("en", 1.0), AcceptLanguageValue("fr", 0.123)]
     expected_notes: NoteClassListType = []
+
+
+class AcceptLanguageSpaceBeforeSemicolonTest(FieldTest[RequestLinterProtocol]):
+    "OWS before the ';' is part of the weight, not of the language (#330)."
+
+    name = "Accept-Language"
+    inputs = [b"en-GB ; q=0.5, fr ;q=0.1"]
+    expected_out = [AcceptLanguageValue("en-gb", 0.5), AcceptLanguageValue("fr", 0.1)]
+    expected_notes: NoteClassListType = []
+
+
+class AcceptLanguageTabBeforeSemicolonTest(FieldTest[RequestLinterProtocol]):
+    name = "Accept-Language"
+    inputs = [b"en\t;\tq=0.5"]
+    expected_out = [AcceptLanguageValue("en", 0.5)]
+    expected_notes: NoteClassListType = []
+
+
+class AcceptLanguageNoSpaceBeforeSemicolonTest(FieldTest[RequestLinterProtocol]):
+    "Guard: no whitespace before the ';' (same on main)."
+
+    name = "Accept-Language"
+    inputs = [b"en;q=0.5"]
+    expected_out = [AcceptLanguageValue("en", 0.5)]
+    expected_notes: NoteClassListType = []

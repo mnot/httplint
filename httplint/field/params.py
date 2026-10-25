@@ -283,7 +283,9 @@ interoperability issues with some browsers. It should be `UTF-8`."""
 def split_params_off(value: str) -> Tuple[str, str]:
     """
     Split ``value`` at its first ';' (quoted or not) into (head, parameter text); empty if none.
-    Not ``split_params``, which splits a parameter list into its ``name=value`` items.
+    The head is stripped of surrounding whitespace, because the grammars that put parameters
+    after a head allow OWS before the ';'. Not ``split_params``, which splits a parameter list
+    into its ``name=value`` items.
     """
     head, _, param_str = value.partition(";")
-    return head, param_str
+    return head.strip(), param_str

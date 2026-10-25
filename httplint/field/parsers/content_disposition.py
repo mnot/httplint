@@ -178,3 +178,37 @@ class FilenameStarSlashCDTest(FieldTest[AnyMessageLinterProtocol]):
     inputs = [b"attachment; filename=foo.txt; filename*=UTF-8''%2Ffoo.txt"]
     expected_out = ("attachment", {"filename": "foo.txt", "filename*": "/foo.txt"})
     expected_notes: NoteClassListType = [DISPOSITION_FILENAME_PATH_CHAR]
+
+
+class SpaceBeforeSemicolonCDTest(FieldTest[AnyMessageLinterProtocol]):
+    "OWS before the ';' (RFC 6266) isn't part of the disposition type (#330)."
+
+    name = "Content-Disposition"
+    inputs = [b"attachment ; filename=x"]
+    expected_out = ("attachment", {"filename": "x"})
+    expected_notes: NoteClassListType = []
+
+
+class TabBeforeSemicolonCDTest(FieldTest[AnyMessageLinterProtocol]):
+    name = "Content-Disposition"
+    inputs = [b"inline\t;\tfilename=x"]
+    expected_out = ("inline", {"filename": "x"})
+    expected_notes: NoteClassListType = []
+
+
+class NoSpaceBeforeSemicolonCDTest(FieldTest[AnyMessageLinterProtocol]):
+    "Guard: no whitespace before the ';' (same on main)."
+
+    name = "Content-Disposition"
+    inputs = [b"attachment;filename=x"]
+    expected_out = ("attachment", {"filename": "x"})
+    expected_notes: NoteClassListType = []
+
+
+class UnknownSpaceBeforeSemicolonCDTest(FieldTest[AnyMessageLinterProtocol]):
+    "An unknown type is still reported, without the whitespace."
+
+    name = "Content-Disposition"
+    inputs = [b"form-data ; filename=x"]
+    expected_out = ("form-data", {"filename": "x"})
+    expected_notes: NoteClassListType = [DISPOSITION_UNKNOWN]

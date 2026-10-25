@@ -140,3 +140,24 @@ class AcceptQTrailingDotTest(FieldTest[RequestLinterProtocol]):
         AcceptValue("text/csv", {}, 1.0),
     ]
     expected_notes: NoteClassListType = []
+
+
+class AcceptSpaceBeforeSemicolonTest(FieldTest[RequestLinterProtocol]):
+    "Guard: OWS before the ';' (media-range parameters and weight) was already stripped on main."
+
+    name = "Accept"
+    inputs = [b"text/html ; level=1 ; q=0.5, text/plain\t;\tq=0.1"]
+    expected_out = [
+        AcceptValue("text/html", {"level": "1"}, 0.5),
+        AcceptValue("text/plain", {}, 0.1),
+    ]
+    expected_notes: NoteClassListType = []
+
+
+class AcceptNoSpaceBeforeSemicolonTest(FieldTest[RequestLinterProtocol]):
+    "Guard: no whitespace before the ';' (same on main)."
+
+    name = "Accept"
+    inputs = [b"text/html;q=0.5"]
+    expected_out = [AcceptValue("text/html", {}, 0.5)]
+    expected_notes: NoteClassListType = []
