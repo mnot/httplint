@@ -9,11 +9,12 @@ from httplint.types import AddNoteMethodType, LinterProtocol, SectionProtocol
 class HttpFieldFinder:
     """Finds the linter for a given HTTP field."""
 
-    # map of field name aliases, lowercase-normalised
+    # Map of field name aliases. Keys and values are module names, as name_token() produces them
+    # (lowercase, hyphens as underscores): a hyphenated key can never match a looked-up name.
     field_aliases = {
-        "x-pad-for-netscrape-bug": "x-pad",
-        "xx-pad": "x-pad",
-        "x-browseralignment": "x-pad",
+        "x_pad_for_netscrape_bug": "x_pad",
+        "xx_pad": "x_pad",
+        "x_browseralignment": "x_pad",
         "nncoection": "connectiox",
         "cneonction": "connectiox",
         "yyyyyyyyyy": "connectiox",
@@ -75,10 +76,10 @@ class HttpFieldFinder:
         by httplint.field.parsers (see the end of this file), not on demand.
         """
         name_token = HttpFieldFinder.name_token(field_name)
-        if name_token[0:1] == "_":  # these are special
-            return None
         if name_token in HttpFieldFinder.field_aliases:
             name_token = HttpFieldFinder.field_aliases[name_token]
+        if name_token[0:1] == "_":  # these are special; check after aliases ("_onnection")
+            return None
         try:
             module_name = f"httplint.field.parsers.{name_token}"
             return sys.modules[module_name]
