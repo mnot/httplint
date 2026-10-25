@@ -33,7 +33,7 @@ SPEC_URL = "http://httpwg.org/specs/rfc9110"
 
 #   OWS = *( SP / HTAB )
 
-OWS = rf"(?: {SP} | {HTAB} )*"
+OWS = rf"(?: (?: {SP} | {HTAB} )* )"
 
 #   BWS = OWS
 
@@ -41,7 +41,7 @@ BWS = OWS
 
 #   RWS = 1*( SP / HTAB )
 
-RWS = rf"(?: {SP} | {HTAB} )+"
+RWS = rf"(?: (?: {SP} | {HTAB} )+ )"
 
 #   obs-text = %x80-FF
 
@@ -56,7 +56,7 @@ tchar = (
 
 #   token = 1*tchar
 
-token = rf"{tchar}+"
+token = rf"(?: {tchar}+ )"
 
 #   qdtext = HTAB / SP / "!" / %x23-5B ; '#'-'['
 #    / %x5D-7E ; ']'-'~'
@@ -81,6 +81,12 @@ class list_rule:
     <https://www.rfc-editor.org/rfc/rfc9110.html#section-5.6.1>
 
     Uses the sender syntax, not the more lenient recipient syntax.
+
+    Matching a whole list against a rule whose alternatives overlap (Accept, Accept-Charset,
+    Accept-Encoding, TE, Vary and media-range, which are transcribed literally) takes
+    exponential time on a list that doesn't match, because each element can match in several
+    ways. List fields don't do that: HttpListField checks one element at a time against the
+    element, so the time depends on the element, not the list.
     """
 
     def __init__(self, element: str, minimum: Optional[int] = None) -> None:
@@ -88,21 +94,22 @@ class list_rule:
         self.minimum = minimum
 
     def __str__(self) -> str:
+        # The element is grouped so that an alternation or a sequence in it can't change
+        # how the list around it is parsed.
+        element = f"(?: {self.element} )"
         if self.minimum and self.minimum == 1:
             # 1#element => element *( OWS "," OWS element )
             return r"(?: {element} (?: {OWS} , {OWS} {element} )* )".format(
-                element=self.element, OWS=OWS
+                element=element, OWS=OWS
             )
         if self.minimum and self.minimum > 1:
             # <n>#<m>element => element <n-1>*<m-1>( OWS "," OWS element )
             adj_min = self.minimum - 1
             return r"(?: {element} (?: {OWS} , {OWS} {element} ){{{adj_min},}} )".format(
-                element=self.element, OWS=OWS, adj_min=adj_min
+                element=element, OWS=OWS, adj_min=adj_min
             )
         # element => [ 1#element ]
-        return r"(?: {element} (?: {OWS} , {OWS} {element} )* )?".format(
-            element=self.element, OWS=OWS
-        )
+        return r"(?: {element} (?: {OWS} , {OWS} {element} )* )?".format(element=element, OWS=OWS)
 
 
 #   parameter-name = token
@@ -118,8 +125,17 @@ parameter_value = rf"(?: {token} | {quoted_string} )"
 parameter = rf"(?: {parameter_name} = {parameter_value} )"
 
 #   parameters = *( OWS ";" OWS [ parameter ] )
+#
+# Written so that each run of whitespace can only be matched one way. The literal form
+# *( OWS ";" OWS [ parameter ] ) can match the whitespace after a ";" as that item's second
+# OWS or as the next item's first, so it backtracks exponentially (issue #224). Here the OWS
+# before a parameter belongs to the parameter, and the loop accepts the same strings except
+# for whitespace after a final bare ";", which the last term takes: all of it, so that the
+# OWS of an enclosing list can't also match it, and the term is a choice between "after a ;"
+# and "not after a ;" rather than an optional group, which would also be ambiguous.
 
-parameters = rf"(?: {OWS} ; (?: {OWS} {parameter} )? )*"
+parameters = rf"""(?: (?: {OWS} ; (?: {OWS} {parameter} )? )*
+                    (?: (?<= ; ) {OWS} (?! {SP} | {HTAB} ) | (?<! ; ) ) )"""
 
 #   qvalue = ( "0" [ "." *3DIGIT ] ) / ( "1" [ "." *3"0" ] )
 
@@ -142,15 +158,23 @@ subtype = token
 media_type = rf"(?: {_type} / {subtype} {parameters} )"
 
 #   media-range = ( "*/*" / ( type "/*" ) / ( type "/" subtype ) ) parameters
+#
+# The alternatives overlap: "*" is a tchar, so each of "*/*" and type "/*" is also type "/"
+# subtype (see list_rule).
 
 media_range = rf"(?: (?: \*/\* | (?: {_type} /\* ) | (?: {_type} / {subtype} ) ) {parameters} )"
 
 #   Accept = [ ( media-range [ weight ] ) *( OWS "," OWS ( media-range [ weight ] ) ) ]
+#
+# A weight is also a parameter (q=0.5 is a token "=" a token), so a weighted element matches
+# two ways (see list_rule).
 
 Accept = list_rule(rf"(?: {media_range} (?: {weight} )? )")
 
 #   Accept-Charset = [ ( ( token / "*" ) [ weight ] )
 #                      *( OWS "," OWS ( ( token / "*" ) [ weight ] ) ) ]
+#
+# "*" is a tchar, so "*" matches twice (see list_rule).
 
 Accept_Charset = list_rule(rf"(?: (?: {token} | \* ) {weight}? )")
 
@@ -159,6 +183,8 @@ Accept_Charset = list_rule(rf"(?: (?: {token} | \* ) {weight}? )")
 content_coding = token
 
 #   codings = content-coding / "identity" / "*"
+#
+# "identity" and "*" are tokens, so they match twice (see list_rule).
 
 codings = rf"(?: {content_coding} | identity | \* )"
 
@@ -213,8 +239,11 @@ token68 = rf"(?: (?: {ALPHA} | {DIGIT} | \- | \. | _ | \~ | \+ | / )+ =* )"
 
 #   credentials = auth-scheme [ 1*SP ( token68 / [ auth-param *( OWS "," OWS auth-param ) ] ) ]
 #
-# As for any list (Section 5.6.1), recipients accept empty elements, so the auth-params can
-# start with a comma: "Basic , realm=x".
+# Deliberate: Section 11.4's body text writes credentials = auth-scheme [ 1*SP ( token68 /
+# #auth-param ) ], which is the recipient syntax of Section 5.6.1.2 (empty elements accepted),
+# and Appendix A, quoted above, expands it with the sender syntax. This follows the body text,
+# so the auth-params can start with a comma ("Basic , realm=x") and can end with one. Every
+# other list here uses the sender syntax (list_rule).
 
 credentials = rf"""(?: {auth_scheme}
                         (?: {SP}+
@@ -253,7 +282,7 @@ Content_Language = list_rule(language_tag)
 
 #   Content-Length = 1*DIGIT
 
-Content_Length = rf"{DIGIT}+"
+Content_Length = rf"(?: {DIGIT}+ )"
 
 #   absolute-URI = <absolute-URI, see [URI], Section 4.3>
 
@@ -271,11 +300,11 @@ Content_Location = rf"(?: {absolute_URI} | {partial_URI} )"
 
 #   first-pos = 1*DIGIT
 
-first_pos = rf"{DIGIT}+"
+first_pos = rf"(?: {DIGIT}+ )"
 
 #   last-pos = 1*DIGIT
 
-last_pos = rf"{DIGIT}+"
+last_pos = rf"(?: {DIGIT}+ )"
 
 #   incl-range = first-pos "-" last-pos
 
@@ -283,7 +312,7 @@ incl_range = rf"(?: {first_pos} \- {last_pos} )"
 
 #   complete-length = 1*DIGIT
 
-complete_length = rf"{DIGIT}+"
+complete_length = rf"(?: {DIGIT}+ )"
 
 #   range-resp = incl-range "/" ( complete-length / "*" )
 
@@ -404,7 +433,8 @@ Date = HTTP_date
 
 weak = r"(?-i: \x57\x2F )"
 
-#   etagc = "!" / %x23-7E ; '#'-'~' / obs-text
+#   etagc = "!" / %x23-7E ; '#'-'~'
+#    / obs-text
 
 etagc = rf"(?: ! | [\x23-\x7E] | {obs_text} )"
 
@@ -438,7 +468,7 @@ From = mailbox
 
 #   Host = uri-host [ ":" port ]
 
-Host = rf"{uri_host} (?: : {port} )?"
+Host = rf"(?: {uri_host} (?: : {port} )? )"
 
 #   If-Match = "*" / [ entity-tag *( OWS "," OWS entity-tag ) ]
 
@@ -476,7 +506,8 @@ Max_Forwards = rf"(?: {DIGIT}+ )"
 
 #   challenge = auth-scheme [ 1*SP ( token68 / [ auth-param *( OWS "," OWS auth-param ) ] ) ]
 #
-# As for credentials, a comma can come before the first auth-param.
+# As for credentials (Section 11.3's body text writes #auth-param, the recipient syntax; Appendix
+# A, quoted above, has the sender expansion), a comma can come before the first auth-param.
 
 challenge = rf"""(?: {auth_scheme}
                         (?: {SP}+
@@ -505,12 +536,25 @@ Proxy_Authorization = credentials
 #    / %x2D-7E ; '-'-'~'
 #   )
 
-other_range = r"(?: [\x21-\x2B] | [\x2D-\x7E] )+"
+other_range = r"(?: (?: [\x21-\x2B] | [\x2D-\x7E] )+ )"
+
+#   int-range = first-pos "-" [ last-pos ]
+
+int_range = rf"(?: {first_pos} \- {last_pos}? )"
+
+#   suffix-length = 1*DIGIT
+
+suffix_length = rf"(?: {DIGIT}+ )"
+
+#   suffix-range = "-" suffix-length
+
+suffix_range = rf"(?: \- {suffix_length} )"
 
 #   range-spec = int-range / suffix-range / other-range
 
 # other-range is a superset of int-range and suffix-range, so alternating them only adds
 # ambiguous parses (exponential backtracking); other-range alone accepts the same strings.
+# int_range and suffix_range are transcribed above but not used for that reason.
 
 range_spec = other_range
 
@@ -519,8 +563,13 @@ range_spec = other_range
 range_set = list_rule(range_spec, 1)
 
 #   ranges-specifier = range-unit "=" range-set
+#
+# Deliberate deviation from the published ABNF, following RFC 9110 Errata ID 7306 (Verified,
+# Section 14.1.1): the rule should be range-unit "=" OWS range-set. The published text
+# contradicts the RFC's own example in Section 14.1.2, "bytes= 0-999, 4500-5499, -1000". Drop
+# the OWS if the RFC is republished with the original text.
 
-ranges_specifier = rf"(?: {range_unit} = {range_set} )"
+ranges_specifier = rf"(?: {range_unit} = {OWS} {range_set} )"
 
 #   Range = ranges-specifier
 
@@ -577,6 +626,9 @@ transfer_parameter = rf"(?: {token} {BWS} = {BWS} (?: {token} | {quoted_string} 
 transfer_coding = rf"(?: {token} (?: {OWS} ; {OWS} {transfer_parameter} )* )"
 
 #   t-codings = "trailers" / ( transfer-coding [ weight ] )
+#
+# "trailers" is a token, and a weight is also a transfer-parameter, so an element matches two
+# or three ways (see list_rule).
 
 t_codings = rf"(?: trailers | (?: {transfer_coding} (?: {weight}? ) ) )"
 
@@ -613,6 +665,8 @@ Upgrade = list_rule(protocol)
 User_Agent = rf"(?: {product} (?: {RWS} (?: {product} | {comment} ) )* )"
 
 #   Vary = [ ( "*" / field-name ) *( OWS "," OWS ( "*" / field-name ) ) ]
+#
+# "*" is a tchar, so "*" matches twice (see list_rule).
 
 Vary = list_rule(rf"(?: \* | {field_name} )")
 
@@ -647,9 +701,11 @@ WWW_Authenticate = list_rule(challenge)
 
 #   absolute-path = 1*( "/" segment )
 
-absolute_path = rf"(?: / {segment} )+"
+absolute_path = rf"(?: (?: / {segment} )+ )"
 
 #   authority = <authority, see [URI], Section 3.2>
+
+#   segment = <segment, see [URI], Section 3.3>
 
 #   field-vchar = VCHAR / obs-text
 
@@ -660,14 +716,16 @@ field_vchar = rf"(?: {VCHAR} | {obs_text} )"
 field_content = rf"(?: {field_vchar} (?: (?: {SP} | {HTAB} | {field_vchar} )+ {field_vchar} )? )"
 
 #   field-value = *field-content
-
 #
-# Written out, not as a repetition of field-content: a field-content can be split into several
-# field-contents in many ways, so "*field-content" backtracks exponentially on non-matching
-# input. The accepted language is the same: empty, or any run of field-vchar, SP and HTAB
-# that starts and ends with a field-vchar.
+# Deliberately not a literal "*field-content": a run of field-vchar can be split into
+# field-contents in many ways, so that backtracks exponentially on input that doesn't match.
+# This accepts the same language (SyntaxTranscriptionTest checks it against the literal rule on
+# short strings): empty, or any run of field-vchar, SP and HTAB that starts and ends with a
+# field-vchar.
 
-field_value = rf"(?: {field_vchar} (?: (?: {SP} | {HTAB} | {field_vchar} )* {field_vchar} )? )?"
+field_value = (
+    rf"(?: (?: {field_vchar} (?: (?: {SP} | {HTAB} | {field_vchar} )* {field_vchar} )? )? )"
+)
 
 #   http-URI = "http://" authority path-abempty [ "?" query ]
 

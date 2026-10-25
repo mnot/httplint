@@ -6,6 +6,7 @@ import time
 import unittest
 from functools import partial
 from typing import Any, Callable, Iterator, List, Sequence, Tuple, Type
+from urllib.parse import urlsplit
 
 from httplint import HttpRequestLinter, HttpResponseLinter, syntax
 from httplint.field import BAD_SYNTAX, BAD_SYNTAX_DETAILED, HttpField
@@ -508,9 +509,9 @@ class SyntaxLanguageTagTest(unittest.TestCase):
         self.assertGreater(newly_accepted, 100)
 
 
-def fullmatch(rule: str, value: str) -> bool:
+def fullmatch(rule: str, value: str, flags: int = re.VERBOSE | re.IGNORECASE) -> bool:
     "Like matches(), but without the whitespace padding."
-    return re.fullmatch(rule, value, re.VERBOSE | re.IGNORECASE) is not None
+    return re.fullmatch(rule, value, flags) is not None
 
 
 def strings(alphabet: Sequence[str], max_length: int) -> Iterator[str]:
@@ -2035,6 +2036,433 @@ class SyntaxCachingAuditTest(unittest.TestCase):
         self.assertFalse(fullmatch(rfc6838.subtype_name, ""))
         self.assertFalse(fullmatch(rfc6838.subtype_name, "+a"))
         self.assertTrue(fullmatch(rfc6838.subtype_name, "vnd.a+json"))
+
+
+# The rule names in RFC 9110 Appendix A and RFC 3986 Appendix A. Python names replace "-" with
+# "_"; ABNF_NAMES lists the exceptions.
+RFC9110_RULES = """
+Accept Accept-Charset Accept-Encoding Accept-Language Accept-Ranges Allow Authentication-Info
+Authorization BWS Connection Content-Encoding Content-Language Content-Length Content-Location
+Content-Range Content-Type Date ETag Expect From GMT HTTP-date Host IMF-fixdate If-Match
+If-Modified-Since If-None-Match If-Range If-Unmodified-Since Last-Modified Location Max-Forwards
+OWS Proxy-Authenticate Proxy-Authentication-Info Proxy-Authorization RWS Range Referer
+Retry-After Server TE Trailer URI-reference Upgrade User-Agent Vary Via WWW-Authenticate
+absolute-URI absolute-path acceptable-ranges asctime-date auth-param auth-scheme authority
+challenge codings comment complete-length connection-option content-coding credentials ctext
+date1 date2 date3 day day-name day-name-l delay-seconds entity-tag etagc expectation
+field-content field-name field-value field-vchar first-pos hour http-URI https-URI incl-range
+int-range language-range language-tag last-pos mailbox media-range media-type method minute
+month obs-date obs-text opaque-tag other-range parameter parameter-name parameter-value
+parameters partial-URI path-abempty port product product-version protocol protocol-name
+protocol-version pseudonym qdtext query quoted-pair quoted-string qvalue range-resp range-set
+range-spec range-unit ranges-specifier received-by received-protocol relative-part rfc850-date
+second segment subtype suffix-length suffix-range t-codings tchar time-of-day token token68
+transfer-coding transfer-parameter type unsatisfied-range uri-host weak weight year
+""".split()
+
+RFC3986_RULES = """
+URI hier-part URI-reference absolute-URI relative-ref relative-part scheme authority userinfo
+host port IP-literal IPvFuture IPv6address h16 ls32 IPv4address dec-octet reg-name path
+path-abempty path-absolute path-noscheme path-rootless path-empty segment segment-nz
+segment-nz-nc pchar query fragment pct-encoded unreserved reserved gen-delims sub-delims
+""".split()
+
+ABNF_NAMES = {"type": "_type"}
+
+
+def is_single_atom(rule: str) -> bool:
+    """
+    True if the pattern is one character class or one group with nothing after it, so it can be
+    put inside another pattern, or have a quantifier added, without changing its meaning.
+    """
+    text = rule.strip()
+    if text.startswith("["):
+        end = 1
+        while end < len(text) and text[end] != "]":
+            end += 2 if text[end] == "\\" else 1
+        return end == len(text) - 1
+    if not text.startswith("("):
+        return False
+    depth = 0
+    in_class = False
+    index = 0
+    while index < len(text):
+        char = text[index]
+        if char == "\\":
+            index += 1
+        elif in_class:
+            in_class = char != "]"
+        elif char == "[":
+            in_class = True
+        elif char == "(":
+            depth += 1
+        elif char == ")":
+            depth -= 1
+            if depth == 0:
+                return index == len(text) - 1
+        index += 1
+    return False
+
+
+class SyntaxTranscriptionTest(unittest.TestCase):
+    """
+    rfc9110.py and rfc3986.py are complete, composable transcriptions of the ABNF (issue #303).
+    """
+
+    def test_every_rule_is_present(self) -> None:
+        for module, names in [(rfc9110, RFC9110_RULES), (rfc3986, RFC3986_RULES)]:
+            for name in names:
+                attr = ABNF_NAMES.get(name, name.replace("-", "_"))
+                with self.subTest(rule=name):
+                    self.assertTrue(hasattr(module, attr), f"{module.__name__}.{attr}")
+
+    def test_rules_are_single_atoms(self) -> None:
+        """
+        Every string rule is one group or class. Rules that are a bare sequence, alternation or
+        repetition (pct-encoded, scheme, IPv4address, token, ...) are only safe where they happen
+        to be used today: "{rule}?" or "{rule}|x" silently means something else.
+        """
+        for module in [rfc9110, rfc3986]:
+            for name, value in vars(module).items():
+                if isinstance(value, str) and not name.startswith("__") and name != "SPEC_URL":
+                    with self.subTest(rule=f"{module.__name__}.{name}"):
+                        self.assertTrue(is_single_atom(value), value[:80])
+
+    def test_ungrouped_rules_misused(self) -> None:
+        "The rules named in #303, composed the way a new user might: optionally, or repeated."
+        for rule in [rfc3986.pct_encoded, rfc3986.scheme, rfc3986.IPv4address]:
+            with self.subTest(rule=rule[:30]):
+                self.assertTrue(fullmatch(rf"{rule}?", ""))
+        self.assertTrue(fullmatch(rf"{rfc3986.pct_encoded}+", "%41%42"))
+        self.assertTrue(fullmatch(rf"{rfc3986.IPv4address}{{2}}", "1.2.3.41.2.3.4"))
+        self.assertTrue(fullmatch(rf"x|{rfc3986.scheme}", "ab+"))
+        self.assertFalse(fullmatch(rf"{rfc3986.scheme}x", "ab"))
+
+    def test_is_single_atom(self) -> None:
+        "Guard for the helper above."
+        for good in ["(?: a b )", "[a-z]", r"(?: \) [)] \\ (?: x )* )", "(?-i: a | b )"]:
+            self.assertTrue(is_single_atom(good), good)
+        for bad in ["a b", "(?: a )*", "(?: a ) (?: b )", "a | b", "(?: a )?", "[a] [b]", ""]:
+            self.assertFalse(is_single_atom(bad), bad)
+
+    def test_range_spec_parts(self) -> None:
+        "int-range and suffix-range are transcribed, but range-spec is other-range alone."
+        for value in ["0-", "0-9", "10-20"]:
+            self.assertTrue(fullmatch(rfc9110.int_range, value), value)
+        for value in ["-", "-9", "0", "a-", "0-a", "0--", ""]:
+            self.assertFalse(fullmatch(rfc9110.int_range, value), value)
+        for value in ["-1", "-100"]:
+            self.assertTrue(fullmatch(rfc9110.suffix_range, value), value)
+        for value in ["-", "1-", "1", "--1", "-a", ""]:
+            self.assertFalse(fullmatch(rfc9110.suffix_range, value), value)
+        faithful = rf"(?: {rfc9110.int_range} | {rfc9110.suffix_range} | {rfc9110.other_range} )"
+        differ = [
+            value
+            for value in strings(["0", "9", "-", "a", ",", " ", "\x7f", "\x80"], 5)
+            if fullmatch(faithful, value) != fullmatch(rfc9110.range_spec, value)
+        ]
+        self.assertEqual(differ, [])
+
+    def test_field_value_is_field_content_repeated(self) -> None:
+        "Guard: the linear field-value rule accepts what the literal *field-content does."
+        literal = rf"(?: {rfc9110.field_content} )*"
+        differ = [
+            value
+            for value in strings(["a", " ", "\t", "\x80", "\x01", "\x7f"], 6)
+            if fullmatch(literal, value) != fullmatch(rfc9110.field_value, value)
+        ]
+        self.assertEqual(differ, [])
+
+
+class SyntaxLinearTimeTest(unittest.TestCase):
+    "Time limits for the rules audited for #303 (as for SyntaxBacktrackingTest.check_rule)."
+
+    def check_rule(self, label: str, rule: str, value: str) -> None:
+        compiled = re.compile(rf"^\s*(?:{rule})\s*$", re.VERBOSE | re.IGNORECASE)
+        with self.subTest(label):
+            start = time.monotonic()
+            compiled.match(value)
+            elapsed = time.monotonic() - start
+            self.assertLess(elapsed, TIME_LIMIT, f"{label}: {elapsed:.2f}s")
+
+    def test_uri_rules(self) -> None:
+        "Guards: grouping the rfc3986 rules changed no timing; main is fast on these too."
+        n = 3000
+        bad = "\x01"
+        for label, rule, value in [
+            ("userinfo", rfc3986.URI, "http://" + "a:" * n + bad),
+            ("host dots", rfc3986.URI, "http://" + "1." * n + bad),
+            ("IPv4 look-alikes", rfc3986.URI, "http://" + "1.2.3." * n + bad),
+            ("port", rfc3986.URI, "http://a:" + "1" * n + bad),
+            ("IPv6", rfc3986.URI, "http://[" + "1:" * n + bad),
+            ("IPv6 compression", rfc3986.URI, "http://[" + "1::" * n + bad),
+            ("IPvFuture", rfc3986.IP_literal, "[v1." + "a:" * n + bad),
+            ("path", rfc3986.URI, "http://a/" + "b/" * n + bad),
+            ("pct-encoded", rfc3986.URI, "http://a/" + "%41" * n + bad),
+            ("query", rfc3986.URI, "http://a/?" + "b/?" * n + bad),
+            ("relative-ref", rfc3986.URI_reference, "a/" * n + bad),
+            ("scheme", rfc3986.URI_reference, "a+" * n + bad),
+            ("Host", rfc9110.Host, "[::1]:" + "1" * n + bad),
+            ("http-URI", rfc9110.http_URI, "http://" + "a@" * n + bad),
+        ]:
+            self.check_rule(label, rule, value)
+
+
+class SyntaxParametersTest(unittest.TestCase):
+    """
+    parameters = *( OWS ";" OWS [ parameter ] ) accepts whitespace after a bare ";" (issue #303).
+    """
+
+    LITERAL = rf"(?: {rfc9110.OWS} ; {rfc9110.OWS} (?: {rfc9110.parameter} )? )*"
+
+    def test_trailing_whitespace(self) -> None:
+        for value in ["a/b; ", "a/b;\t", "a/b ; ", "a/b;c=d; ", "a/b; ; ", "a/b;  \t ", "a/b;;  "]:
+            with self.subTest(value=value):
+                self.assertTrue(fullmatch(rfc9110.media_type, value))
+                self.assertTrue(fullmatch(rfc9110.Content_Type, value))
+        for value in ["a/b ", "a/b;c=d ", 'a/b;c="d;" ', "a/b; c", "a/b; c ", "a/b ;  x"]:
+            with self.subTest(value=value):
+                self.assertFalse(fullmatch(rfc9110.media_type, value))
+
+    def test_in_a_list(self) -> None:
+        "The whitespace is matched once, whether the parameters or the list take it."
+        accept, expect = str(rfc9110.Accept), str(rfc9110.Expect)
+        self.assertTrue(fullmatch(accept, "a/b; , c/d;  ,e/f; "))
+        self.assertTrue(fullmatch(accept, "a/b;q=1 , c/d; ;q=0.5"))
+        self.assertTrue(fullmatch(expect, "a=b; ,c=d;  "))
+        self.assertFalse(fullmatch(accept, "a/b; ,, c/d"))
+
+    def test_detailed_note_position(self) -> None:
+        """
+        The whitespace after a ";" now belongs to the match, so the invalid character reported
+        for a bad parameter is the start of the parameter, not the whitespace before it.
+        """
+        for response, name, value, problem in [
+            (True, b"Content-Type", b"text/plain; charset = utf-8", "'c' was found at position 13"),
+            (True, b"Content-Type", b"text/plain; \x80", "'\x80' was found at position 13"),
+            (True, b"Content-Type", b"text/plain; ; a b", "'a' was found at position 15"),
+            (True, b"Content-Type", b"text/plain;a b", "'a' was found at position 12"),
+            (False, b"Accept", b"text/html; q = 1", "'q' was found at position 12"),
+            (True, b"Server-Timing", b"db; dur = 5", "'d' was found at position 5"),
+        ]:
+            with self.subTest(value=value):
+                if response:
+                    linter = HttpResponseLinter()
+                    linter.process_response_topline(b"HTTP/1.1", b"200", b"OK")
+                else:
+                    linter = HttpRequestLinter()
+                    linter.process_request_topline(b"GET", b"/", b"HTTP/1.1")
+                linter.process_headers([(name, value)])
+                linter.finish_content(True)
+                problems = [
+                    str(note.vars["problem"])
+                    for note in linter.notes
+                    if isinstance(note, BAD_SYNTAX_DETAILED)
+                ]
+                self.assertEqual(len(problems), 1)
+                self.assertIn(problem, problems[0])
+
+    def test_differential(self) -> None:
+        "Every short string is accepted exactly when the literal ABNF accepts it."
+        literal = re.compile(self.LITERAL, re.VERBOSE | re.IGNORECASE)
+        rule = re.compile(rfc9110.parameters, re.VERBOSE | re.IGNORECASE)
+        differ = [
+            value
+            for value in strings(["a", "=", ";", " ", "\t", '"'], 7)
+            if bool(literal.fullmatch(value)) != bool(rule.fullmatch(value))
+        ]
+        self.assertEqual(differ, [])
+
+    def test_timing(self) -> None:
+        "Guards: the literal rule is exponential on these, and this one must not be."
+        n = 2000
+        cases = [
+            ("bare semicolons", rfc9110.media_type, "a/b" + "; " * n + "\x80"),
+            ("bare, no space", rfc9110.media_type, "a/b" + ";" * n + "\x80"),
+            ("wide gaps", rfc9110.media_type, "a/b" + ";  \t " * n + "\x80"),
+            ("parameters", rfc9110.media_type, "a/b" + "; c=d " * n + "\x80"),
+            ("list", rfc9110.Accept, "a/b; , " * 24 + "\x80"),
+            ("long list", rfc9110.Accept, "a/b; , " * n + "\x80"),
+            ("list, gaps", rfc9110.Accept, "a/b;  \t , " * n + "\x80"),
+            ("Expect list", rfc9110.Expect, "a=b; , " * n + "\x80"),
+        ]
+        for label, rule, value in cases:
+            compiled = re.compile(rf"^\s*(?:{rule})\s*$", re.VERBOSE | re.IGNORECASE)
+            with self.subTest(label):
+                start = time.monotonic()
+                compiled.match(value)
+                self.assertLess(time.monotonic() - start, TIME_LIMIT, label)
+
+
+class SyntaxListRuleTest(unittest.TestCase):
+    "list_rule groups its element, so an alternation in it can't bind to the list around it."
+
+    def test_alternation_element(self) -> None:
+        for minimum, accepted, rejected in [
+            (None, ["", "a", "b", "a, b", "b ,a , b"], ["a|b", "a|b, c|", "a,", ", a", "c"]),
+            (1, ["a", "b", "a, b", "b ,a , b"], ["", "a|b", "a|b, c|", "a,", "c"]),
+            (2, ["a, b", "b ,a , b"], ["", "a", "b", "a|b", "a|b, c|", "c, a"]),
+        ]:
+            rule = str(rfc9110.list_rule("a|b", minimum))
+            for value in accepted:
+                with self.subTest(minimum=minimum, value=value):
+                    self.assertTrue(fullmatch(rule, value))
+            for value in rejected:
+                with self.subTest(minimum=minimum, value=value):
+                    self.assertFalse(fullmatch(rule, value))
+
+    def test_sequence_element(self) -> None:
+        "A quantifier-free sequence is unaffected either way; guard for the rule's language."
+        rule = str(rfc9110.list_rule("a b"))
+        for value in ["", "ab", "ab, ab"]:
+            self.assertTrue(fullmatch(rule, value), value)
+        for value in ["a", "ab, a", "ab,"]:
+            self.assertFalse(fullmatch(rule, value), value)
+
+
+class SyntaxIPvFutureTest(unittest.TestCase):
+    """
+    IPvFuture = "v" ...: an ABNF string is case-insensitive, and the request target is matched
+    with re.VERBOSE alone, so "V" has to be in the pattern (issue #303).
+    """
+
+    @staticmethod
+    def target_notes(target: bytes) -> List[str]:
+        linter = HttpRequestLinter()
+        linter.process_request_topline(b"GET", target, b"HTTP/1.1")
+        linter.finish_content(True)
+        return [type(note).__name__ for note in linter.notes]
+
+    def test_request_target(self) -> None:
+        for target in [b"http://[v1.a]/", b"http://[vF.a:b]/"]:
+            with self.subTest(target=target):
+                self.assertNotIn("URI_BAD_SYNTAX", self.target_notes(target))
+        for target in [b"http://[x1.a]/", b"http://[V.a]/", b"http://[v1.]/", b"http://[V1]/"]:
+            with self.subTest(target=target):
+                self.assertIn("URI_BAD_SYNTAX", self.target_notes(target))
+
+    def test_request_target_upper_case(self) -> None:
+        """
+        Through the linter. urllib.parse.urlsplit, which runs first, rejected "V" in some
+        releases (it was fixed in later patch levels), so this is skipped there; the rule
+        itself is checked by test_rule whatever Python runs it.
+        """
+        try:
+            urlsplit("http://[V1.a]/")
+        except ValueError:
+            self.skipTest("urlsplit rejects an upper-case V in this Python")
+        for target in [b"http://[V1.a]/", b"http://[VF.a:b]:80/x"]:
+            with self.subTest(target=target):
+                self.assertNotIn("URI_BAD_SYNTAX", self.target_notes(target))
+
+    def test_fields(self) -> None:
+        "Location and Origin match the host with the rule alone, on every Python."
+        self.assertNotIn("LOCATION_NOT_ABSOLUTE", field_notes(True, b"Location", b"http://[V1.a]/"))
+        self.assertNotIn("BAD_ORIGIN_SYNTAX", field_notes(False, b"Origin", b"http://[V1.a]:80"))
+        self.assertIn("BAD_ORIGIN_SYNTAX", field_notes(False, b"Origin", b"http://[x1.a]:80"))
+
+    def test_rule(self) -> None:
+        for value in ["v1.a", "V1.a", "vF.a:b", "Vf.~!:"]:
+            self.assertTrue(fullmatch(rfc3986.IPvFuture, value, re.VERBOSE), value)
+            self.assertTrue(fullmatch(rfc3986.IP_literal, f"[{value}]", re.VERBOSE), value)
+        for value in ["x1.a", "V.a", "v1.", "V1", "vg.a", ""]:
+            self.assertFalse(fullmatch(rfc3986.IPvFuture, value, re.VERBOSE), value)
+
+    def test_differential(self) -> None:
+        """
+        Against the old rule (a bare "v"): the same strings with re.IGNORECASE (what fields use),
+        and with re.VERBOSE alone only the strings that start with "V" are newly accepted.
+        """
+        old = rfc3986.IPvFuture.replace("[vV]", "v")
+        self.assertNotEqual(old, rfc3986.IPvFuture)
+        newly_accepted = 0
+        for value in strings(["v", "V", "1", "F", "g", ".", "a"], 5):
+            with self.subTest(value=value):
+                self.assertEqual(
+                    fullmatch(old, value, re.VERBOSE | re.IGNORECASE),
+                    fullmatch(rfc3986.IPvFuture, value, re.VERBOSE | re.IGNORECASE),
+                )
+                was = fullmatch(old, value, re.VERBOSE)
+                now = fullmatch(rfc3986.IPvFuture, value, re.VERBOSE)
+                if value.startswith("V"):
+                    self.assertEqual(now, fullmatch(old, "v" + value[1:], re.VERBOSE))
+                    newly_accepted += now and not was
+                else:
+                    self.assertEqual(was, now)
+        self.assertGreater(newly_accepted, 10)
+
+
+class SyntaxRangesSpecifierTest(unittest.TestCase):
+    """
+    ranges-specifier allows OWS after the "=", as RFC 9110 Errata ID 7306 says it should (the
+    published ABNF contradicts the example in Section 14.1.2).
+    """
+
+    OLD = rf"(?: {rfc9110.range_unit} = {rfc9110.range_set} )"
+
+    def test_accepts(self) -> None:
+        for value in [
+            "bytes= 0-999, 4500-5499, -1000",
+            "bytes=\t0-9",
+            "bytes=  \t 0-",
+            "bytes=0-9",
+            "bytes=0-9, -1",
+            "bytes= -1",
+            "a= b",
+        ]:
+            with self.subTest(value=value):
+                self.assertTrue(fullmatch(rfc9110.ranges_specifier, value))
+                self.assertTrue(fullmatch(rfc9110.Range, value))
+
+    def test_rejects(self) -> None:
+        for value in ["bytes=", "bytes= ", "bytes =0-9", "bytes= 0-9,", "bytes= 0 -9", "= 0-9"]:
+            with self.subTest(value=value):
+                self.assertFalse(fullmatch(rfc9110.ranges_specifier, value))
+
+    def test_differential(self) -> None:
+        "The only strings newly accepted have whitespace after the first '='."
+        old = re.compile(self.OLD, re.VERBOSE | re.IGNORECASE)
+        new = re.compile(rfc9110.ranges_specifier, re.VERBOSE | re.IGNORECASE)
+        wrong = []
+        newly_accepted = 0
+        for value in strings(["a", "=", "0", "-", " ", "\t", ",", "\x80"], 6):
+            was, now = old.fullmatch(value) is not None, new.fullmatch(value) is not None
+            if was and not now:
+                wrong.append(value)
+            elif now and not was:
+                newly_accepted += 1
+                head, _, tail = value.partition("=")
+                without_ows = head + "=" + tail.lstrip(" \t")
+                if tail[:1] not in (" ", "\t") or not old.fullmatch(without_ows):
+                    wrong.append(value)
+        self.assertEqual(wrong, [])
+        self.assertGreater(newly_accepted, 20)
+
+    def test_timing(self) -> None:
+        n = 3000
+        for label, value in [
+            ("whitespace", "bytes=" + " \t" * n + "\x80"),
+            ("whitespace, then ranges", "bytes=" + " " * n + "0-1, " * 24 + "\x80"),
+            ("ranges", "bytes= " + "0-1, " * n + "\x80"),
+            ("only whitespace", "bytes=" + " " * n),
+        ]:
+            compiled = re.compile(rf"^\s*(?:{rfc9110.Range})\s*$", re.VERBOSE | re.IGNORECASE)
+            with self.subTest(label):
+                start = time.monotonic()
+                compiled.match(value)
+                self.assertLess(time.monotonic() - start, TIME_LIMIT, label)
+
+    def test_field(self) -> None:
+        """
+        Guard: Range doesn't report syntax from the rule (report_syntax is False; its parser does),
+        so the field's output is the same on main.
+        """
+        for value in [b"bytes= 0-999, 4500-5499, -1000", b"bytes=\t0-9", b"bytes=0-9"]:
+            with self.subTest(value=value):
+                self.assertNotIn("RANGE_BAD_SYNTAX", field_notes(False, b"Range", value))
+        for value in [b"bytes=", b"bytes= 0 -9"]:
+            with self.subTest(value=value):
+                self.assertIn("RANGE_BAD_SYNTAX", field_notes(False, b"Range", value))
 
 
 def run_regex_check() -> None:
