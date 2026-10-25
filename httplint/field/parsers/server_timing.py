@@ -2,7 +2,7 @@ from typing import Tuple
 
 from httplint.field import BAD_SYNTAX_DETAILED
 from httplint.field.list_field import HttpListField
-from httplint.field.params import PARAM_REPEATS, parse_params
+from httplint.field.params import PARAM_REPEATS, parse_params, split_params_off
 from httplint.field.tests import FieldTest
 from httplint.note import Note, categories, levels
 from httplint.syntax import rfc9110
@@ -27,11 +27,7 @@ consumer of Server-Timing."""
     structured_field = False
 
     def parse(self, field_value: str, add_note: AddNoteMethodType) -> Tuple[str, ParamDictType]:
-        try:
-            metric_name, param_str = field_value.split(";", 1)
-        except ValueError:
-            metric_name, param_str = field_value, ""
-
+        metric_name, param_str = split_params_off(field_value)
         metric_name = metric_name.strip()
         param_dict = parse_params(param_str, add_note, ["desc"])
 
