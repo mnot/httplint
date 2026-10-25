@@ -1,3 +1,4 @@
+import time
 import unittest
 
 from httplint.message import (
@@ -368,3 +369,40 @@ class TestRequestTargetForms(unittest.TestCase):
 
     def test_authority_form_ipv6(self) -> None:
         self.assertClean(b"CONNECT", b"[::1]:443")
+
+    def test_authority_form_empty_host_or_port(self) -> None:
+        "Guard: the grammar allows these, but a CONNECT target needs a host and a port."
+        for target in [b":443", b"example.com:", b"[::1]:", b":", b"%41:", b"[::1]:65536"]:
+            self.assertEqual(
+                classes(lint(b"CONNECT", target)) & TARGET_NOTES,
+                {REQUEST_TARGET_FORM},
+                repr(target),
+            )
+        for target in [b"example.com:0", b"example.com:65535", b"example.com:00080", b"a%41:1"]:
+            self.assertClean(b"CONNECT", target)
+        self.assertEqual(
+            classes(lint(b"CONNECT", b"example.com:65536")) & TARGET_NOTES, {REQUEST_TARGET_FORM}
+        )
+
+    def test_authority_form_backtracking(self) -> None:
+        "Long CONNECT targets that don't match rfc9112.authority_form fail in bounded time."
+        n = 15000
+        bad = b"^"  # fails the grammar; a control character would be rejected before it
+        for label, target in [
+            ("host", b"a" * n + b":443" + bad),
+            ("pct", b"%41" * n + b":443" + bad),
+            ("dots", b"1." * n + b":443" + bad),
+            ("port", b"a:" + b"1" * n + bad),
+            ("IPv6", b"[" + b"1:" * n + b"]:443" + bad),
+            ("no port", b"a" * n),
+            ("host colons", b"a:" * n + bad),
+        ]:
+            with self.subTest(label):
+                start = time.monotonic()
+                self.assertNote(b"CONNECT", target, REQUEST_TARGET_FORM)
+                elapsed = time.monotonic() - start
+                self.assertLess(elapsed, 1.0, f"{label}: {elapsed:.2f}s")
+
+
+if __name__ == "__main__":
+    unittest.main()
