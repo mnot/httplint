@@ -51,6 +51,7 @@ class StatusChecker:
         if response.status_code is None:  # invalid or missing; already noted
             return
         self.add_note = partial(response.notes.add, status=response.status_code or 0)
+        self._check_connect_tunnel()
         try:
             status_method = getattr(self, f"status{response.status_code}")
         except AttributeError:
@@ -67,6 +68,17 @@ class StatusChecker:
             if name.lower() == "range" and sep and unit.strip().lower() == "bytes":
                 return True
         return False
+
+    def _check_connect_tunnel(self) -> None:
+        "Flag framing headers in a 2xx response to a known CONNECT request (RFC 9110, 9.3.6)."
+        if not self.response.is_connect_tunnel():
+            return
+        present = {name.lower() for name, _ in self.response.headers.text}
+        for field_name in ("Content-Length", "Transfer-Encoding"):
+            if field_name.lower() in present:
+                self.add_note(
+                    f"field-{field_name.lower()}", CONNECT_TUNNEL_FRAMING, field_name=field_name
+                )
 
     def status100(self) -> None:  # Continue
         if self.request and not "100-continue" in get_header(self.request.headers.text, "expect"):
@@ -110,7 +122,7 @@ class StatusChecker:
         if self.request and not get_header(self.request.headers.text, "range"):
             self.add_note("", PARTIAL_NOT_REQUESTED)
         if "content-range" not in self.response.headers.parsed:
-            self.add_note("field-location", PARTIAL_WITHOUT_RANGE)
+            self.add_note("field-content-range", PARTIAL_WITHOUT_RANGE)
 
     def status207(self) -> None:  # Multi-Status
         pass
@@ -418,6 +430,18 @@ The `206 (Partial Response)` status code indicates that the response content is 
 
 However, for a response to be partial, it needs to have a `Content-Range` header to indicate
 what part of the full response it carries. This response does not have one."""
+
+
+class CONNECT_TUNNEL_FRAMING(Note):
+    category = categories.GENERAL
+    level = levels.BAD
+    _summary = "A successful response to CONNECT can't have a %(field_name)s header."
+    _text = """\
+A `2xx` response to a `CONNECT` request switches the connection to a tunnel, so what follows the
+header section is tunnelled data, not message content. A server MUST NOT send `Content-Length` or
+`Transfer-Encoding` in such a response, and clients ignore them.
+
+See [RFC 9110 Section 9.3.6](https://www.rfc-editor.org/rfc/rfc9110.html#section-9.3.6)."""
 
 
 class PARTIAL_NOT_REQUESTED(Note):
