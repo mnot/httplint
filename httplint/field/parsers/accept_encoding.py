@@ -2,7 +2,7 @@ from typing import Tuple
 
 from httplint.field.codings import CODING_ALIAS_DEPRECATED, note_deprecated_codings
 from httplint.field.list_field import HttpListField
-from httplint.field.params import parse_params
+from httplint.field.params import parse_params, split_params_off
 from httplint.field.tests import FieldTest
 from httplint.note import categories
 from httplint.syntax import rfc9110
@@ -25,10 +25,7 @@ acceptable in the response."""
     deprecated = False
 
     def parse(self, field_value: str, add_note: AddNoteMethodType) -> Tuple[str, ParamDictType]:
-        try:
-            encoding, param_str = field_value.split(";", 1)
-        except ValueError:
-            encoding, param_str = field_value, ""
+        encoding, param_str = split_params_off(field_value)
         encoding = encoding.lower()
         param_dict = parse_params(param_str, add_note, ["q"], delim=";")
         return encoding, param_dict

@@ -6,7 +6,7 @@ from httplint.field import BAD_SYNTAX
 from httplint.field.common import RE_FLAGS, syntax_position
 from httplint.field.conneg import parse_qvalue
 from httplint.field.list_field import HttpListField
-from httplint.field.params import parse_params
+from httplint.field.params import parse_params, split_params_off
 from httplint.field.tests import FieldTest
 from httplint.note import Note, categories, levels
 from httplint.syntax import rfc9110
@@ -41,11 +41,7 @@ preferred in the response."""
     deprecated = False
 
     def parse(self, field_value: str, add_note: AddNoteMethodType) -> AcceptLanguageValue:
-        try:
-            language, param_str = field_value.split(";", 1)
-        except ValueError:
-            language, param_str = field_value, ""
-
+        language, param_str = split_params_off(field_value)
         language = language.lower()
         param_dict = parse_params(param_str, add_note, ["q"], delim=";")
 

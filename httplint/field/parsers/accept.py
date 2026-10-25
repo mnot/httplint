@@ -4,6 +4,7 @@ from typing import Optional
 from httplint.field.conneg import BAD_Q_VALUE, parse_qvalue
 from httplint.field.list_field import HttpListField
 from httplint.field.media_type import parse_media_type_once
+from httplint.field.params import split_params_off
 from httplint.field.tests import FieldTest
 from httplint.note import Note, categories, levels
 from httplint.syntax import rfc9110
@@ -42,7 +43,7 @@ acceptable in responses."""
             nostar=["q"],
         )
 
-        raw_params = field_value.partition(";")[2]
+        _, raw_params = split_params_off(field_value)
         q_val = parse_qvalue(param_dict, add_note, raw_params, item=media_type)
 
         return AcceptValue(media_type, param_dict, q_val)

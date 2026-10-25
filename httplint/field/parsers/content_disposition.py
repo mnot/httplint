@@ -1,6 +1,6 @@
 from typing import Tuple
 
-from httplint.field.params import PARAM_STAR_QUOTED, parse_params
+from httplint.field.params import PARAM_STAR_QUOTED, parse_params, split_params_off
 from httplint.field.singleton_field import SINGLE_HEADER_REPEAT, SingletonField
 from httplint.field.tests import FieldTest
 from httplint.note import Note, categories, levels
@@ -25,10 +25,7 @@ the file, rather than display it."""
     deprecated = False
 
     def parse(self, field_value: str, add_note: AddNoteMethodType) -> Tuple[str, ParamDictType]:
-        try:
-            disposition, param_str = field_value.split(";", 1)
-        except ValueError:
-            disposition, param_str = field_value, ""
+        disposition, param_str = split_params_off(field_value)
         disposition = disposition.lower()
         param_dict = parse_params(param_str, add_note)
         if disposition not in ["inline", "attachment"]:
@@ -106,6 +103,14 @@ class QuotedCDTest(FieldTest[AnyMessageLinterProtocol]):
     name = "Content-Disposition"
     inputs = [b'attachment; filename="foo.txt"']
     expected_out = ("attachment", {"filename": "foo.txt"})
+
+
+class QuotedSemicolonCDTest(FieldTest[AnyMessageLinterProtocol]):
+    "Guard: a semicolon inside a quoted parameter value stays in the value (same on main)."
+
+    name = "Content-Disposition"
+    inputs = [b'attachment; filename="a;b.txt"']
+    expected_out = ("attachment", {"filename": "a;b.txt"})
 
 
 class TokenCDTest(FieldTest[AnyMessageLinterProtocol]):
