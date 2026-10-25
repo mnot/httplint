@@ -804,7 +804,9 @@ class SyntaxTranslationTest(unittest.TestCase):
 
     def test_rules_defined_by_rfc9110(self) -> None:
         "absolute-path and obs-text are RFC 9110's; the copies in rfc9112 had the same text."
-        self.assertEqual(rfc9112.absolute_path, rf"(?: / {rfc3986.segment} )+")
+        self.assertEqual(
+            rfc9112.absolute_path, rf"(?: (?: / {rfc3986.segment} )+ )"
+        )
         self.assertEqual(rfc9112.obs_text, r"[\x80-\xff]")
         self.assertIs(rfc9112.absolute_path, rfc9110.absolute_path)
         self.assertIs(rfc9112.obs_text, rfc9110.obs_text)
