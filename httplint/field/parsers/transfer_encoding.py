@@ -175,3 +175,12 @@ class TransferEncodingRequestTest(FieldTest[AnyMessageLinterProtocol]):
     expected_out = [("gzip", {})]
     expected_notes: NoteClassListType = []
     linter_class = FakeRequestLinter
+
+
+class TransferEncodingQuotedSemicolonTest(FieldTest[AnyMessageLinterProtocol]):
+    "Guard: the head is split off at the first ';' even inside quotes; it's invalid either way."
+
+    name = "Transfer-Encoding"
+    inputs = [b'"a;b"']
+    expected_out = [('"a', {})]
+    expected_notes: NoteClassListType = [BAD_SYNTAX, TRANSFER_CODING_UNWANTED]

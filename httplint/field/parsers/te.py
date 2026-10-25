@@ -1,10 +1,16 @@
 from typing import Tuple
 
+from httplint.field import BAD_SYNTAX
 from httplint.field.list_field import HttpListField
 from httplint.field.params import parse_params, split_params_off
 from httplint.field.tests import FieldTest
 from httplint.syntax import rfc9110
-from httplint.types import AddNoteMethodType, AnyMessageLinterProtocol, ParamDictType
+from httplint.types import (
+    AddNoteMethodType,
+    AnyMessageLinterProtocol,
+    NoteClassListType,
+    ParamDictType,
+)
 
 
 class te(HttpListField[AnyMessageLinterProtocol]):
@@ -32,3 +38,12 @@ class TETest(FieldTest[AnyMessageLinterProtocol]):
     name = "TE"
     inputs = [b"trailers, deflate; q=0.5"]
     expected_out = [("trailers", {}), ("deflate", {"q": "0.5"})]
+
+
+class TEQuotedSemicolonTest(FieldTest[AnyMessageLinterProtocol]):
+    "Guard: the head is split off at the first ';' even inside quotes; it's invalid either way."
+
+    name = "TE"
+    inputs = [b'"a;b"']
+    expected_out = [('"a', {})]
+    expected_notes: NoteClassListType = [BAD_SYNTAX]

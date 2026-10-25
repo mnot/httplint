@@ -1,6 +1,6 @@
 from typing import Tuple
 
-from httplint.field import BAD_SYNTAX_DETAILED
+from httplint.field import BAD_SYNTAX, BAD_SYNTAX_DETAILED
 from httplint.field.list_field import HttpListField
 from httplint.field.params import PARAM_REPEATS, parse_params, split_params_off
 from httplint.field.tests import FieldTest
@@ -137,4 +137,17 @@ class ServerTimingInvalidFirstParamTest(FieldTest[ResponseLinterProtocol]):
         BAD_SYNTAX_DETAILED,
         PARAM_REPEATS,
         SERVER_TIMING_MISSING_DUR,
+    ]
+
+
+class ServerTimingQuotedSemicolonTest(FieldTest[ResponseLinterProtocol]):
+    "Guard: the head is split off at the first ';' even inside quotes; it's invalid either way."
+
+    name = "Server-Timing"
+    inputs = [b'"a;b"']
+    expected_out = [('"a', {})]
+    expected_notes: NoteClassListType = [
+        BAD_SYNTAX,
+        SERVER_TIMING_MISSING_DUR,
+        SERVER_TIMING_MISSING_DESC,
     ]
