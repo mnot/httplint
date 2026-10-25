@@ -37,7 +37,7 @@ def parse_media_type(
 
     Returns a tuple of the lowercased media-type and its parameter dict; see
     ``check_media_type`` for the checks applied along the way. ``nostar`` is passed
-    through to ``parse_params`` to flag RFC 5987-style ``param*`` keys.
+    through to ``parse_params`` to flag RFC 8187-style ``param*`` keys.
     """
     try:
         media_type, param_str = field_value.split(";", 1)
