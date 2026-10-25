@@ -1,4 +1,4 @@
-from functools import partial
+from typing import List
 
 from httplint.field.list_field import HttpListField
 from httplint.field.list_split import split_list_field
@@ -22,20 +22,9 @@ the request/response chain."""
     syntax = rfc9110.Via
     deprecated = False
 
-    def handle_input(self, field_value: str, add_note: AddNoteMethodType, offset: int) -> None:
-        # Same as the base class, except that commas inside a comment don't split.
-        for value in split_list_field(field_value, comments=True):
-            offset_add_note = partial(
-                self.message.notes.add,
-                f"offset-{offset}",
-                field_name=self.canonical_name,
-            )
-            try:
-                with self._syntax_checked(value, offset_add_note):
-                    parsed_value = self.parse(value.strip(), offset_add_note)
-            except ValueError:
-                continue
-            self.value.append(parsed_value)
+    def split_values(self, field_value: str) -> List[str]:
+        "A comma inside a comment is part of the comment, not a list delimiter."
+        return split_list_field(field_value, comments=True)
 
     def evaluate(self, add_note: AddNoteMethodType) -> None:
         via_list = "<ul>" + "\n".join([f"<li><code>{v}</code></li>" for v in self.value]) + "</ul>"
