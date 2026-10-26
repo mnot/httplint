@@ -8,7 +8,7 @@ from dataclasses import dataclass
 from enum import Enum, auto
 
 from . import heuristics
-from .utils import load_catalog, find_po_files, get_lang_from_path
+from .utils import load_catalog, find_po_files, get_lang_from_path, save_catalog
 
 class IssueType(Enum):
     MISSING = auto()
@@ -157,6 +157,23 @@ class CatalogChecker:
             if details
         ]
 
+def mark_fuzzy(catalog, issues: List[TranslationIssue]) -> int:
+    """
+    Set the fuzzy flag on translated entries that have any issue other than MISSING
+    or FUZZY, so 'make i18n-clear-fuzzy' can blank them. Returns the number marked.
+    """
+    flagged = {
+        i.message_id
+        for i in issues
+        if i.issue_type not in (IssueType.MISSING, IssueType.FUZZY)
+    }
+    count = 0
+    for message in catalog:
+        if message.id in flagged and message.string and "fuzzy" not in message.flags:
+            message.flags.add("fuzzy")
+            count += 1
+    return count
+
 class Reporter:
     """Handles formatted output for translation issues."""
 
@@ -191,6 +208,12 @@ def main():
         "--locale_dir", default="httplint/translations", help="Path to locale directory"
     )
 
+    parser.add_argument(
+        "--mark-fuzzy",
+        action="store_true",
+        help="Set the fuzzy flag on entries with issues, and save the catalogs",
+    )
+
     args = parser.parse_args()
 
     checker = CatalogChecker()
@@ -205,7 +228,14 @@ def main():
 
     for po_file in po_files:
         lang = get_lang_from_path(po_file)
-        issues = checker.check_file(po_file)
+        catalog = load_catalog(po_file)
+        issues = checker.check_catalog(catalog, lang)
+        if args.mark_fuzzy:
+            marked = mark_fuzzy(catalog, issues)
+            if marked:
+                save_catalog(po_file, catalog)
+            noun = "entry" if marked == 1 else "entries"
+            print(f"{lang}: marked {marked} {noun} fuzzy")
         reporter.report_file(lang, po_file, issues)
 
         # Missing, fuzzy and the heuristic reports are advisory; the original script

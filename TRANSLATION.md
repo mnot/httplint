@@ -128,6 +128,15 @@ There is no check for a translation that is identical to the English (an untrans
 
 A flag means "look at this", not "this is wrong".
 
+To have the flagged entries retranslated, mark them fuzzy, blank them (this discards their text), and translate again:
+
+```bash
+make i18n-check MARK_FUZZY=1   # exits 1 if there are critical errors, after marking
+make i18n-clear-fuzzy
+make i18n-autotranslate
+make i18n-check
+```
+
 ### Model review
 
 `make i18n-review` asks a language model to judge each translation (meaning, technical register, header names and acronyms left in English, Markdown and placeholders preserved). It is not part of `make test`, and it needs a model you choose; there is no default.
