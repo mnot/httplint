@@ -95,12 +95,17 @@ def names_in(msgid: str) -> List[str]:
     return names
 
 
-def has_name(name: str, msgstr: str) -> bool:
-    """name is in msgstr as a whole token, in any case (not a prefix of a longer name)."""
+def name_pattern(name: str) -> str:
+    """A regex for name as a whole token (not part of a longer name)."""
     after = (
         r"(?![A-Za-z0-9_])" if name.lower() in CODING_NAMES else r"(?![A-Za-z0-9_]|-[A-Za-z0-9])"
     )
-    return bool(re.search(rf"(?<![A-Za-z0-9_-]){re.escape(name)}{after}", msgstr, re.IGNORECASE))
+    return rf"(?<![A-Za-z0-9_-]){re.escape(name)}{after}"
+
+
+def has_name(name: str, msgstr: str) -> bool:
+    """name is in msgstr as a whole token, in any case (not a prefix of a longer name)."""
+    return bool(re.search(name_pattern(name), msgstr, re.IGNORECASE))
 
 
 def field_name_changed(msgid: str, msgstr: str) -> Optional[str]:

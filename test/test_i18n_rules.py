@@ -10,6 +10,7 @@ from tools.i18n import glossary as glossary_data, rules
 from tools.i18n.autotranslate import (
     HARD_PREFIXES,
     PROMPT_END,
+    PROTECT_LINKS,
     build_prompt,
     match_whitespace,
     translate,
@@ -465,21 +466,21 @@ class TranslateRulesTest(unittest.TestCase):
         ask, prompts = replies(
             "キャッシュステータスヘッダーが不正です。", "Cache-Status ヘッダーが不正です。"
         )
-        result = translate(ask, "ja", self.MSGID)
+        result = translate(ask, "ja", self.MSGID, mode=PROTECT_LINKS)
         self.assertEqual(result.text, "Cache-Status ヘッダーが不正です。")
         self.assertEqual(result.retries, 1)
         self.assertIn("keep the field name `Cache-Status` exactly as written", prompts[1])
 
     def test_field_name_failure_is_blanked(self) -> None:
         ask, _ = replies(*["ヘッダーが不正です。"] * 3)
-        result = translate(ask, "ja", self.MSGID)
+        result = translate(ask, "ja", self.MSGID, mode=PROTECT_LINKS)
         self.assertIsNone(result.text)
         self.assertIn("FIELD_NAME_CHANGED", result.error)
         self.assertIn("FIELD_NAME_CHANGED", HARD_PREFIXES)
 
     def test_coding_name_is_hard(self) -> None:
         ask, _ = replies(*["ブロトリで圧縮。"] * 3)
-        self.assertIsNone(translate(ask, "ja", "Compressed with Brotli.").text)
+        self.assertIsNone(translate(ask, "ja", "Compressed with Brotli.", mode=PROTECT_LINKS).text)
 
     def test_advisory_rules_end_as_fuzzy(self) -> None:
         cases = [

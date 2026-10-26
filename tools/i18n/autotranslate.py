@@ -7,20 +7,22 @@ from dataclasses import dataclass
 from typing import Any, Callable, List, Optional, Tuple
 
 from .check import CatalogChecker
-from .rules import collapse_cjk_breaks, glossary_hint
+from .rules import OPAQUE_RE, collapse_cjk_breaks, glossary_hint, name_pattern, names_in
 from .utils import load_catalog, save_catalog, find_po_files, get_lang_from_path
 
 DEFAULT_MODEL = "mlx-community/aya-expanse-8b-4bit"
 DEFAULT_TEMPERATURE = 0.2
 RETRIES = 2
 
-# --protect modes. "links": only URLs and Markdown link targets are masked; code spans
-# and placeholders stay visible and are checked after translation. "all": everything is
-# masked. "all" dropped tokens (header names, noun-phrase variables) in 5% of ja entries.
+# --protect modes. "names": links and known field and coding names are masked; code spans
+# and placeholders stay visible and are checked after translation. "links": only URLs and
+# Markdown link targets are masked. "all": everything is masked ("all" dropped tokens in 5%
+# of ja entries). Models translate or transliterate a name left in view (FIELD_NAME_CHANGED).
+PROTECT_NAMES = "names"
 PROTECT_LINKS = "links"
 PROTECT_ALL = "all"
-PROTECT_MODES = (PROTECT_LINKS, PROTECT_ALL)
-DEFAULT_PROTECT = PROTECT_LINKS
+PROTECT_MODES = (PROTECT_NAMES, PROTECT_LINKS, PROTECT_ALL)
+DEFAULT_PROTECT = PROTECT_NAMES
 
 # Spans the model must not touch are swapped for opaque tokens (@@1@@, @@2@@, ...) and
 # put back afterwards. ASCII, no Markdown meaning, and not a word the model translates.
@@ -75,25 +77,49 @@ VISIBLE_SENTENCE_PERCENT = (
 PROMPT_END = " Here is the text to translate:\n\n{text}"
 
 
+def name_spans(text: str) -> List[Tuple[int, int]]:
+    """
+    (start, end) of every occurrence, as spelled, of a field or coding name that
+    rules.names_in() finds (the FIELD_NAME_CHANGED rule's detection), including inside
+    code spans, but not inside placeholders, link targets or URLs.
+    """
+    opaque = [(m.start(), m.end()) for m in OPAQUE_RE.finditer(text)]
+    return [
+        (m.start(), m.end())
+        for name in names_in(text)
+        for m in re.finditer(name_pattern(name), text)
+        if not any(m.start() < end and start < m.end() for start, end in opaque)
+    ]
+
+
 def protect(text: str, mark: str = MARK, mode: str = DEFAULT_PROTECT) -> Tuple[str, List[str]]:
     """
-    Replace protected spans with tokens; return the new text and the spans. In links
-    mode, only URLs and Markdown link targets are replaced.
+    Replace protected spans with tokens; return the new text and the spans. Always
+    masked: URLs and Markdown link targets. Names mode adds field and coding names;
+    all mode adds code spans and placeholders.
     """
-    spans: List[str] = []
-
-    def mask(match: "re.Match[str]") -> str:
-        span = match.group(0)
-        if mode == PROTECT_LINKS and match.lastgroup in ("code", "var"):
-            return span
-        tail = ""
+    found: List[Tuple[int, int]] = []
+    for match in PROTECTED_RE.finditer(text):
+        if mode != PROTECT_ALL and match.lastgroup in ("code", "var"):
+            continue
+        end = match.end()
         if match.lastgroup == "url":
-            stripped = span.rstrip(URL_TRAILING)
-            span, tail = stripped, span[len(stripped) :]
-        spans.append(span)
-        return f"{mark}{len(spans)}{mark}{tail}"
-
-    return PROTECTED_RE.sub(mask, text), spans
+            end = match.start() + len(match.group(0).rstrip(URL_TRAILING))
+        found.append((match.start(), end))
+    if mode == PROTECT_NAMES:
+        found += name_spans(text)
+    found.sort(key=lambda s: (s[0], s[0] - s[1]))  # longest first at one position
+    spans: List[str] = []
+    out: List[str] = []
+    pos = 0
+    for start, end in found:
+        if start < pos:  # overlaps a span already masked
+            continue
+        spans.append(text[start:end])
+        out.append(f"{text[pos:start]}{mark}{len(spans)}{mark}")
+        pos = end
+    out.append(text[pos:])
+    return "".join(out), spans
 
 
 def token_error(
@@ -124,6 +150,37 @@ def restore(translation: str, spans: List[str], mark: str = MARK) -> str:
         return spans[n - 1] if 1 <= n <= len(spans) else match.group(0)
 
     return token_re(mark).sub(put, translation)
+
+
+PLACEHOLDER_RE = re.compile(r"%%|%\((?P<name>[^)]+)\)(?P<fmt>[-#0 +]*[\d.]*[diouxXeEfFgGcrsa])")
+
+
+def placeholders(text: str) -> List[Tuple[str, str]]:
+    """(name, format) of each %(name)s in text, in order; %% is skipped."""
+    return [(m["name"], m["fmt"]) for m in PLACEHOLDER_RE.finditer(text) if m["name"]]
+
+
+def repair_placeholders(msgid: str, text: str) -> str:
+    """
+    Undo placeholders the model renamed (%(field_name)s -> %(フィールド名)s), in code spans
+    too. Only when as many distinct names are unknown as are missing; the n-th unknown name
+    (by first appearance) becomes the n-th missing one, with msgid's format. The repair is
+    dropped unless the placeholders then equal msgid's exactly. %% is never touched.
+    """
+    want, got = placeholders(msgid), placeholders(text)
+    unknown = list(dict.fromkeys(n for n, _ in got if n not in {w for w, _ in want}))
+    missing = list(dict.fromkeys(n for n, _ in want if n not in {g for g, _ in got}))
+    if not unknown or len(unknown) != len(missing):
+        return text
+    rename = dict(zip(unknown, missing))
+    fmt = {name: f for name, f in reversed(want)}
+
+    def put(match: "re.Match[str]") -> str:
+        name = match["name"]
+        return f"%({rename[name]}){fmt[rename[name]]}" if name in rename else match.group(0)
+
+    fixed = PLACEHOLDER_RE.sub(put, text)
+    return fixed if Counter(placeholders(fixed)) == Counter(want) else text
 
 
 def shorten(text: str) -> str:
@@ -266,7 +323,7 @@ def translate(
     """
     mark = pick_mark(msgid)
     masked, spans = protect(msgid, mark, mode)
-    visible = mode == PROTECT_LINKS and bool(VISIBLE_RE.search(masked))
+    visible = mode != PROTECT_ALL and bool(VISIBLE_RE.search(masked))
     percent = visible and "%%" in masked
     hint = glossary_hint(lang, msgid)
     error = ""
@@ -286,7 +343,7 @@ def translate(
         error = token_error(masked, raw, len(spans), mark, mode == PROTECT_ALL) or ""
         if error:
             continue
-        text = match_whitespace(msgid, restore(raw, spans, mark), lang)
+        text = match_whitespace(msgid, repair_placeholders(msgid, restore(raw, spans, mark)), lang)
         problems = [
             p for rule in (RULES if rules is None else rules) for p in rule(msgid, text, lang)
         ]
@@ -440,9 +497,10 @@ def build_parser() -> argparse.ArgumentParser:
         "--protect",
         choices=PROTECT_MODES,
         default=DEFAULT_PROTECT,
-        help="Text hidden from the model: 'links' (URLs and link targets only; code spans "
-        "and placeholders are verified afterwards) or 'all' (everything; it dropped tokens "
-        "in 5%% of ja entries) (default: %(default)s)",
+        help="Text hidden from the model: 'names' (URLs, link targets, field and coding "
+        "names), 'links' (URLs and link targets only) or 'all' (everything, code spans and "
+        "placeholders too; it dropped tokens in 5%% of ja entries). Code spans and "
+        "placeholders left visible are verified afterwards (default: %(default)s)",
     )
     return parser
 

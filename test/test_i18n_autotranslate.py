@@ -9,6 +9,7 @@ from typing import Any, Callable, Dict, List, Optional, Tuple
 from unittest import mock
 
 from babel.messages.catalog import Catalog
+from babel.messages.pofile import read_po
 
 from tools.i18n import autotranslate
 from tools.i18n.autotranslate import (
@@ -19,11 +20,14 @@ from tools.i18n.autotranslate import (
     PROTECT_ALL,
     PROTECT_LINKS,
     PROTECT_MODES,
+    PROTECT_NAMES,
     RETRIES,
     build_parser,
     code_span_rule,
     drop_added_backticks,
+    pick_mark,
     protect,
+    repair_placeholders,
     Result,
     restore,
     supports_option,
@@ -31,6 +35,8 @@ from tools.i18n.autotranslate import (
     translate,
 )
 from tools.i18n.utils import load_catalog, save_catalog
+
+POT = os.path.join(os.path.dirname(__file__), "..", "httplint", "translations", "messages.pot")
 
 TEXT_MARK = "Here is the text to translate:\n\n"
 OLD_PROMPT = (
@@ -98,6 +104,13 @@ class FakeModelWithoutTemperature(FakeModel):
 def faithful(prompt: str) -> str:
     """A 'translation' that keeps everything (tokens included) but adds a prefix."""
     return "FR: " + text_of(prompt)
+
+
+def masked_reply(msgid: str, reply: str, mode: str) -> str:
+    """reply as a model that copies the tokens would write it: protected text -> tokens."""
+    for number, span in enumerate(protect(msgid, mode=mode)[1], 1):
+        reply = reply.replace(span, f"@@{number}@@")
+    return reply
 
 
 def ask_for(model: FakeModel) -> Callable[[str], str]:
@@ -359,18 +372,20 @@ class LinksModeTest(unittest.TestCase):
         self, reply: Callable[[str], str], msgid: Optional[str] = None
     ) -> Tuple[Result, FakeModel]:
         model = FakeModel(reply)
-        return translate(ask_for(model), "fr", msgid or self.MSGID), model
+        return translate(ask_for(model), "fr", msgid or self.MSGID, mode=PROTECT_LINKS), model
 
-    def test_default_mode_is_links(self) -> None:
-        self.assertEqual(DEFAULT_PROTECT, PROTECT_LINKS)
-        self.assertEqual(build_parser().parse_args([]).protect, "links")
+    def test_modes_and_default(self) -> None:
+        self.assertEqual(PROTECT_MODES, ("names", "links", "all"))
+        self.assertEqual(DEFAULT_PROTECT, PROTECT_NAMES)
+        self.assertEqual(build_parser().parse_args([]).protect, "names")
+        self.assertEqual(build_parser().parse_args(["--protect", "names"]).protect, "names")
         self.assertEqual(build_parser().parse_args(["--protect", "all"]).protect, "all")
         self.assertEqual(build_parser().parse_args(["--protect", "links"]).protect, "links")
         with contextlib.redirect_stderr(io.StringIO()), self.assertRaises(SystemExit):
             build_parser().parse_args(["--protect", "none"])
 
     def test_main_passes_the_mode_on(self) -> None:
-        for argv, want in ((["--protect", "all"], "all"), ([], "links")):
+        for argv, want in ((["--protect", "all"], "all"), ([], "names")):
             calls: List[Tuple[Tuple[Any, ...], Dict[str, Any]]] = []
             args = ["autotranslate", "--po_file", "x.po", "--lang", "fr", *argv]
             with (
@@ -429,7 +444,7 @@ class LinksModeTest(unittest.TestCase):
 
     def test_renamed_placeholder_fails_hard(self) -> None:
         result, model = self.run_translate(
-            lambda p: text_of(p).replace("%(declared_charset)s", "%(charset)s")
+            lambda p: text_of(p).replace("%(declared_charset)s", "%(charset)s %(other)s")
         )
         self.assertIsNone(result.text)
         self.assertEqual(len(model.calls), 3)
@@ -438,7 +453,7 @@ class LinksModeTest(unittest.TestCase):
 
     def test_renamed_placeholder_outside_a_span_fails_hard(self) -> None:
         result, _ = self.run_translate(
-            lambda p: text_of(p).replace("%(x)s", "%(y)s"), "Value %(x)s is not valid here."
+            lambda p: text_of(p).replace("%(x)s", "%(y)s %(z)s"), "Value %(x)s is not valid here."
         )
         self.assertIsNone(result.text)
         self.assertIn("BAD_VARIABLE", result.error)
@@ -559,7 +574,7 @@ class DropAddedBackticksTest(unittest.TestCase):
     ]
 
     def run_translate(self, msgid: str, reply: str, mode: str) -> Tuple[Result, FakeModel]:
-        model = FakeModel(lambda p: reply)
+        model = FakeModel(lambda p: masked_reply(msgid, reply, mode))
         return translate(ask_for(model), "fr", msgid, mode=mode), model
 
     def test_backticks_around_names_are_stripped_without_a_retry(self) -> None:
@@ -624,7 +639,8 @@ class DropAddedBackticksTest(unittest.TestCase):
     def test_msgid_with_backticks_is_untouched(self) -> None:
         msgid = "The `Content-Type` header isn't valid, and Vary is long enough."
         for mode in PROTECT_MODES:
-            model = FakeModel(lambda p: "L'en-tête `Content-Type` est invalide, et `Vary` aussi.")
+            reply = masked_reply(msgid, "L'en-tête `Content-Type` est invalide, et `Vary` aussi.", mode)
+            model = FakeModel(lambda p: reply)
             result = translate(ask_for(model), "fr", msgid, mode=mode)
             if mode == PROTECT_ALL:  # `all` masks the span; the added one is rejected
                 self.assertIsNone(result.text)
@@ -760,7 +776,9 @@ class FileTest(unittest.TestCase):
             self.assertEqual("`Content-Type`" in model.calls[0][0], visible, mode)
 
     def test_left_empty_in_links_mode_says_so(self) -> None:
-        output = self.run_file(FakeModel(lambda p: text_of(p).replace("`Link` ", "")))
+        output = self.run_file(
+            FakeModel(lambda p: text_of(p).replace("`Link` ", "")), protect_mode=PROTECT_LINKS
+        )
         self.assertIn("1 entries left empty (no valid translation; --protect links)", output)
         self.assertIn("keep `Link` exactly", output)
 
@@ -779,6 +797,234 @@ class FileTest(unittest.TestCase):
             self.assertEqual(options, {})
         self.assertIn("no temperature option", output)
         self.assertNotIn("left empty", output)
+
+
+def pot_msgids() -> List[str]:
+    with open(POT, "rb") as f:
+        return [m.id for m in read_po(f) if m.id and isinstance(m.id, str)]
+
+
+class NamesModeTest(unittest.TestCase):
+    """--protect names: links, field names and coding names are masked."""
+
+    def names(self, text: str) -> Tuple[str, List[str]]:
+        return protect(text, mode=PROTECT_NAMES)
+
+    def test_bare_name_in_a_summary(self) -> None:
+        self.assertEqual(
+            self.names("The Content-Length header is incorrect."),
+            ("The @@1@@ header is incorrect.", ["Content-Length"]),
+        )
+
+    def test_two_names(self) -> None:
+        self.assertEqual(
+            self.names("Content-Length and Transfer-Encoding should not be present."),
+            ("@@1@@ and @@2@@ should not be present.", ["Content-Length", "Transfer-Encoding"]),
+        )
+
+    def test_name_next_to_punctuation(self) -> None:
+        self.assertEqual(
+            self.names("Cache-Control: max-age and Expires. (Vary: User-Agent)"),
+            ("@@1@@: max-age and Expires. (Vary: @@2@@)", ["Cache-Control", "User-Agent"]),
+        )
+
+    def test_every_occurrence_as_spelled_is_masked(self) -> None:
+        masked, spans = self.names("(Content-Length), Content-Length-Foo and Content-Length.")
+        self.assertEqual(masked, "(@@1@@), Content-Length-Foo and @@2@@.")
+        self.assertEqual(spans, ["Content-Length"] * 2)
+
+    def test_name_inside_a_code_span_is_masked_inside_it(self) -> None:
+        masked, spans = self.names("The `Content-Type` field says `%(declared_charset)s`.")
+        self.assertEqual(masked, "The `@@1@@` field says `%(declared_charset)s`.")
+        self.assertEqual(spans, ["Content-Type"])
+        masked, spans = self.names("The `Content-Encoding: gzip` header.")
+        self.assertEqual(masked, "The `@@1@@: @@2@@` header.")
+        self.assertEqual(spans, ["Content-Encoding", "gzip"])
+
+    def test_coding_names_are_masked_in_any_position(self) -> None:
+        masked, spans = self.names("The gzip and compress codings; `brotli`, Brotli.")
+        self.assertEqual(masked, "The @@1@@ and compress codings; `@@2@@`, @@3@@.")
+        self.assertEqual(spans, ["gzip", "brotli", "Brotli"])
+
+    def test_ordinary_words_are_not_masked(self) -> None:
+        for text in ("Follow the link and check the date.", "The link header and the date field."):
+            self.assertEqual(self.names(text), (text, []), text)
+        self.assertEqual(self.names("The Date header and a link.")[1], ["Date"])
+
+    def test_names_in_placeholders_and_link_targets_are_not_masked_alone(self) -> None:
+        masked, spans = self.names("The Link header: %(Link)s, see [Link](https://e.org/Link).")
+        self.assertEqual(masked, "The @@1@@ header: %(Link)s, see [@@2@@]@@3@@.")
+        self.assertEqual(spans, ["Link", "Link", "(https://e.org/Link)"])
+
+    def test_code_spans_and_placeholders_stay_visible(self) -> None:
+        masked, spans = self.names("Use `a b` and %(c)s here; 50%% of https://e.org/x.")
+        self.assertEqual(masked, "Use `a b` and %(c)s here; 50%% of @@1@@.")
+        self.assertEqual(spans, ["https://e.org/x"])
+
+    def test_the_three_modes(self) -> None:
+        text = "The `Content-Type` field is %(v)s: https://e.org/x, Foo header."
+        self.assertEqual(
+            protect(text, mode=PROTECT_NAMES)[0],
+            "The `@@1@@` field is %(v)s: @@2@@, Foo header.",
+        )
+        self.assertEqual(
+            protect(text, mode=PROTECT_LINKS)[0],
+            "The `Content-Type` field is %(v)s: @@1@@, Foo header.",
+        )
+        self.assertEqual(
+            protect(text, mode=PROTECT_ALL)[0], "The @@1@@ field is @@2@@: @@3@@, Foo header."
+        )
+
+    def test_round_trip_of_every_msgid_in_every_mode(self) -> None:
+        msgids = pot_msgids()
+        self.assertGreater(len(msgids), 500)
+        for mode in PROTECT_MODES:
+            for msgid in msgids:
+                mark = pick_mark(msgid)
+                masked, spans = protect(msgid, mark, mode)
+                self.assertEqual(restore(masked, spans, mark), msgid, (mode, msgid))
+
+    def test_echo_model_passes_for_every_msgid_in_every_mode(self) -> None:
+        for mode in PROTECT_MODES:
+            for msgid in pot_msgids():
+                result = translate(text_of, "fr", msgid, mode=mode)
+                self.assertEqual(result, Result(msgid), (mode, msgid))
+
+    def test_model_sees_no_names_and_one_token_sentence(self) -> None:
+        model = FakeModel(faithful)
+        result = translate(ask_for(model), "fr", "Content-Length is wrong.")
+        self.assertEqual(result, Result("FR: Content-Length is wrong."))
+        prompt = model.calls[0][0]
+        self.assertEqual(text_of(prompt), "@@1@@ is wrong.")
+        self.assertEqual(prompt.count("Tokens like"), 1)
+        self.assertNotIn("backticks", prompt)  # nothing visible to copy
+
+    def test_visible_sentence_when_code_spans_remain(self) -> None:
+        model = FakeModel(faithful)
+        translate(ask_for(model), "fr", "The `Content-Type` field is wrong here, as said.")
+        self.assertIn("Copy text in backticks", model.calls[0][0])
+        self.assertEqual(text_of(model.calls[0][0]), "The `@@1@@` field is wrong here, as said.")
+
+    def test_dropped_token_is_retried_naming_it(self) -> None:
+        replies = iter(["Elle est fausse.", None])
+
+        def reply(prompt: str) -> str:
+            first = next(replies)
+            return first if first is not None else faithful(prompt)
+
+        model = FakeModel(reply)
+        result = translate(ask_for(model), "fr", "Content-Length is wrong.")
+        self.assertEqual(result, Result("FR: Content-Length is wrong.", 1))
+        self.assertIn("rejected: missing @@1@@", model.calls[1][0])
+
+    def test_dropped_token_everywhere_is_left_empty(self) -> None:
+        model = FakeModel(lambda p: "Elle est fausse.")
+        result = translate(ask_for(model), "fr", "Content-Length is wrong.")
+        self.assertEqual(len(model.calls), RETRIES + 1)
+        self.assertIsNone(result.text)
+        self.assertFalse(result.fuzzy)
+        self.assertIn("missing @@1@@", result.error)
+
+    def test_field_name_rule_still_guards_the_text(self) -> None:
+        # with the name visible (links mode) a reply that loses it is a hard failure
+        result = translate(
+            lambda p: "Faux.", "fr", "Content-Length is wrong.", mode=PROTECT_LINKS
+        )
+        self.assertIsNone(result.text)
+        self.assertIn("FIELD_NAME_CHANGED", result.error)
+
+
+class RepairPlaceholdersTest(unittest.TestCase):
+    """A placeholder the model renamed is put back, when that is unambiguous."""
+
+    CASES = [
+        (
+            "The `%(field_name)s` field is not valid.",
+            "`%(フィールド名)s` フィールドは無効です。",
+            "`%(field_name)s` フィールドは無効です。",
+        ),
+        (
+            "The `%(directive)s` cache directive requires a value.",
+            "`%(ディレクティブ)s` には値が必要です。",
+            "`%(directive)s` には値が必要です。",
+        ),
+        (
+            "Status %(status)s is wrong.",
+            "ステータス %(ステータスコード)s は誤りです。",
+            "ステータス %(status)s は誤りです。",
+        ),
+        (
+            "Fresh for %(effective)s seconds.",
+            "%(有効)s 秒間有効です。",
+            "%(effective)s 秒間有効です。",
+        ),
+        (
+            "The value `%(value)s` is not defined for the `%(param)s` parameter.",
+            "`%(値)s` は `%(パラメータ)s` では定義されていません。",
+            "`%(value)s` は `%(param)s` では定義されていません。",
+        ),
+    ]
+
+    def test_renamed_placeholders_are_put_back(self) -> None:
+        for msgid, text, want in self.CASES:
+            self.assertEqual(repair_placeholders(msgid, text), want, msgid)
+
+    def test_format_character_comes_from_the_msgid(self) -> None:
+        self.assertEqual(repair_placeholders("Age %(age)d.", "年齢 %(年齢)s。"), "年齢 %(age)d。")
+
+    def test_valid_text_is_untouched(self) -> None:
+        for msgid, _, want in self.CASES:
+            self.assertEqual(repair_placeholders(msgid, want), want)
+        self.assertEqual(repair_placeholders("No placeholders.", "Aucun."), "Aucun.")
+        self.assertEqual(repair_placeholders("%(a)s %(b)s", "%(b)s %(a)s"), "%(b)s %(a)s")
+
+    def test_ambiguous_or_mismatched_counts_are_not_repaired(self) -> None:
+        for msgid, text in (
+            ("A %(a)s.", "A %(x)s %(y)s."),  # two unknown, one missing
+            ("A %(a)s %(b)s.", "A %(x)s."),  # one unknown, two missing
+            ("A %(a)s %(b)s.", "A %(x)s %(b)s %(y)s."),
+            ("Plain.", "A %(x)s."),  # nothing is missing
+            ("A %(a)s.", "A."),  # nothing is unknown
+        ):
+            self.assertEqual(repair_placeholders(msgid, text), text, text)
+
+    def test_repair_is_dropped_unless_the_placeholders_match_exactly(self) -> None:
+        for msgid, text in (
+            ("%(a)s and %(a)s", "%(b)s"),
+            ("%(a)s", "%(b)s %(b)s"),
+            ("%(a)s %(c)s", "%(b)s %(c)s %(c)s"),
+        ):
+            self.assertEqual(repair_placeholders(msgid, text), text, text)
+
+    def test_percent_percent_is_never_touched(self) -> None:
+        self.assertEqual(repair_placeholders("50%% of %(x)s", "50%% の %(数)s"), "50%% の %(x)s")
+        text = "%%(数)s 100%%"
+        self.assertEqual(repair_placeholders("%(x)s 100%%", text), text)
+
+    def test_repaired_entry_costs_one_call_and_is_clean(self) -> None:
+        msgid = "The `%(field_name)s` field is not valid here, as it is long enough."
+        for mode in (PROTECT_NAMES, PROTECT_LINKS):
+            model = FakeModel(lambda p: text_of(p).replace("%(field_name)s", "%(フィールド名)s"))
+            result = translate(ask_for(model), "fr", msgid, mode=mode)
+            self.assertEqual(result, Result(msgid), mode)
+            self.assertEqual(len(model.calls), 1, mode)
+
+    def test_two_renamed_placeholders_in_one_call(self) -> None:
+        msgid = "The value `%(value)s` is not defined for the `%(param)s` parameter."
+        model = FakeModel(
+            lambda p: text_of(p).replace("%(value)s", "%(値)s").replace("%(param)s", "%(パラメータ)s")
+        )
+        result = translate(ask_for(model), "ja", msgid)
+        self.assertEqual(result, Result(msgid))
+        self.assertEqual(len(model.calls), 1)
+
+    def test_unrepairable_rename_is_still_retried_and_left_empty(self) -> None:
+        msgid = "The `%(field_name)s` field is not valid here, as it is long enough."
+        model = FakeModel(lambda p: text_of(p).replace("%(field_name)s", "%(a)s %(b)s"))
+        result = translate(ask_for(model), "fr", msgid)
+        self.assertIsNone(result.text)
+        self.assertEqual(len(model.calls), RETRIES + 1)
+        self.assertIn("BAD_VARIABLE", result.error)
 
 
 if __name__ == "__main__":
