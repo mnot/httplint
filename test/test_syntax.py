@@ -33,6 +33,7 @@ from httplint.syntax import (
 )
 from httplint.types import AddNoteMethodType, ResponseLinterProtocol
 from httplint.util import invalid_char_problem
+from test.slow import Mismatches, size
 
 
 def check_regex() -> None:
@@ -487,11 +488,12 @@ class SyntaxLanguageTagTest(unittest.TestCase):
         subtags = ["en", "de", "Latn", "CH", "419", "1996", "x", "u", "ca", "foo", "rozaj"]
         subtags.append("abcdefghi")
         newly_accepted = 0
-        for count in range(1, 5):
+        bad = Mismatches()
+        for count in range(1, size(3, 4) + 1):
             for combo in itertools.product(subtags, repeat=count):
                 value = "-".join(combo)
                 was, now = matches(old, value), matches(rfc5646.Language_Tag, value)
-                with self.subTest(value=value):
+                with bad.case(value):
                     if was:
                         self.assertTrue(now)
                     elif now:
@@ -506,7 +508,8 @@ class SyntaxLanguageTagTest(unittest.TestCase):
                             ),
                             value,
                         )
-        self.assertGreater(newly_accepted, 100)
+        bad.assert_none(self)
+        self.assertGreater(newly_accepted, size(20, 100))
 
 
 def fullmatch(rule: str, value: str, flags: int = re.VERBOSE | re.IGNORECASE) -> bool:
@@ -576,19 +579,21 @@ class SyntaxTranslationTest(unittest.TestCase):
         old_value = (
             rf"(?: < {rfc3986.URI_reference} > (?: {rfc9110.OWS} ; {rfc9110.OWS} {old_param} )* )"
         )
+        bad = Mismatches()
         for old, new, prefix in [
             (old_param, rfc8288.link_param, ""),
             (old_value, rfc8288.link_value, "<a>;"),
         ]:
-            for tail in strings(["a", "=", " ", '"', ";"], 6):
+            for tail in strings(["a", "=", " ", '"', ";"], size(5, 6)):
                 value = prefix + tail
-                with self.subTest(value=value):
+                with bad.case(value):
                     was, now = fullmatch(old, value), fullmatch(new, value)
                     # The new rule differs only by allowing whitespace around "=".
                     self.assertEqual(now, fullmatch(old, re.sub(r"[ \t]*=[ \t]*", "=", value)))
                     if was != now:
                         self.assertTrue(now)
                         self.assertRegex(value, r"[ \t]=|=[ \t]")
+        bad.assert_none(self)
         for value in ['<a>; rel = "next"', "<a>; rel =next", "<a>; rel= next", "<a> ;a ;b = c ;d"]:
             with self.subTest(value=value):
                 self.assertTrue(matches(rfc8288.Link, value))
@@ -614,8 +619,9 @@ class SyntaxTranslationTest(unittest.TestCase):
         sp_htab = rf"(?: {rfc9110.SP} | {rfc9110.HTAB} )"
         old_content = rf"(?: {rfc9110.field_vchar} (?: {sp_htab}+ {rfc9110.field_vchar} )? )"
         old_value = rf"(?: {old_content} )*"
-        for value in strings(["a", "b", " ", "\t", "\x01", "\x80"], 6):
-            with self.subTest(value=repr(value)):
+        bad = Mismatches()
+        for value in strings(["a", "b", " ", "\t", "\x01", "\x80"], size(5, 6)):
+            with bad.case(value):
                 now = fullmatch(rfc9110.field_value, value)
                 self.assertEqual(now, reference_value(value))
                 if fullmatch(old_value, value):
@@ -625,6 +631,7 @@ class SyntaxTranslationTest(unittest.TestCase):
                     fullmatch(rfc9110.field_content, value),
                     reference_value(value) and value != "" and len(value) != 2,
                 )
+        bad.assert_none(self)
         self.assertFalse(fullmatch(old_value, "a a a"))
         for value in ["a a a", "a  b\tc d", "a b c d e"]:
             with self.subTest(value=value):
@@ -634,8 +641,9 @@ class SyntaxTranslationTest(unittest.TestCase):
     def test_received_by(self) -> None:
         host, port = rfc9110.uri_host, rfc9110.port
         old = rf"(?: (?: {host} (?: : {port} )? ) | {rfc9110.pseudonym} )"
-        for value in strings(["a", "1", "#", ":", "[", "]", "(", "=", ".", "%"], 5):
-            with self.subTest(value=value):
+        bad = Mismatches()
+        for value in strings(["a", "1", "#", ":", "[", "]", "(", "=", ".", "%"], size(4, 5)):
+            with bad.case(value):
                 was, now = fullmatch(old, value), fullmatch(rfc9110.received_by, value)
                 if was and not now:
                     # RFC 9110 has no empty received-by, and a pseudonym is a token: no "(" or "=".
@@ -643,6 +651,7 @@ class SyntaxTranslationTest(unittest.TestCase):
                 elif now and not was:
                     # A token that isn't a host has a character that a host can't have.
                     self.assertTrue(any(c in value for c in "#%"), value)
+        bad.assert_none(self)
         for value in ["a#b:80", "a#b", "a^b", "example.org:8080", "[::1]:80", "[::1]", "a:"]:
             with self.subTest(value=value):
                 self.assertTrue(fullmatch(rfc9110.received_by, value))
@@ -678,14 +687,16 @@ class SyntaxTranslationTest(unittest.TestCase):
         extension = rf"(?: {rfc9110.token} (?: {rfc9110.OWS} ; {rfc9110.OWS} {param} )* )"
         old = rf"(?: chunked | compress | deflate | gzip | {extension} )"
         old_list = str(rfc9110.list_rule(old))
-        for value in strings(["gzip", "chunked", "a", " ", ";", "=", '"', ","], 5):
-            with self.subTest(value=value):
+        bad = Mismatches()
+        for value in strings(["gzip", "chunked", "a", " ", ";", "=", '"', ","], size(4, 5)):
+            with bad.case(value):
                 self.assertEqual(
                     fullmatch(old, value), fullmatch(rfc9112.transfer_coding, value), value
                 )
                 self.assertEqual(
                     matches(old_list, value), matches(str(rfc9112.Transfer_Encoding), value), value
                 )
+        bad.assert_none(self)
         for value in ["gzip", "Chunked", "gzip;a=b", 'x;a="b c" ; d=e', "x-gzip"]:
             self.assertTrue(fullmatch(rfc9112.transfer_coding, value))
         for value in ["", "gzip;", "gzip;a", "a b", "gzip,chunked"]:
@@ -720,13 +731,15 @@ class SyntaxTranslationTest(unittest.TestCase):
                 and fullmatch(rfc3986.host, host)
             )
 
-        for value in strings(["a", "1", ":", "@", "[", "]", "."], 6):
-            with self.subTest(value=value):
+        bad = Mismatches()
+        for value in strings(["a", "1", ":", "@", "[", "]", "."], size(5, 6)):
+            with bad.case(value):
                 now = fullmatch(rfc9112.authority_form, value)
                 self.assertEqual(now, reference(value))
                 # Narrower than authority: nothing new is accepted.
                 if now:
                     self.assertTrue(fullmatch(rfc3986.authority, value))
+        bad.assert_none(self)
         # An empty host (reg-name = *( ... )) and an empty port (port = *DIGIT) are valid ABNF.
         for value in ["example.org:80", "a:", ":80", ":", "[::1]:443", "1.2.3.4:8080", "a%41:1"]:
             with self.subTest(value=value):
@@ -745,8 +758,9 @@ class SyntaxTranslationTest(unittest.TestCase):
         old_authority = rfc3986.authority
         old_target = self.OLD_REQUEST_TARGET
         old_line = self.OLD_REQUEST_LINE
-        for target in strings(["a", "1", ":", "@", "/", "?", "*", "[", "]"], 5):
-            with self.subTest(target=target):
+        bad = Mismatches()
+        for target in strings(["a", "1", ":", "@", "/", "?", "*", "[", "]"], size(4, 5)):
+            with bad.case(target):
                 was = fullmatch(old_target, target)
                 now = fullmatch(rfc9112.request_target, target)
                 if was != now:
@@ -758,6 +772,7 @@ class SyntaxTranslationTest(unittest.TestCase):
                 line = f"GET {target} HTTP/1.1"
                 self.assertEqual(fullmatch(old_line, line + "\r\n"), was)
                 self.assertEqual(fullmatch(rfc9112.request_line, line), now)
+        bad.assert_none(self)
         for line in ["GET / HTTP/1.1", "OPTIONS * HTTP/1.1", "CONNECT a.example:443 HTTP/1.1"]:
             self.assertTrue(fullmatch(rfc9112.request_line, line))
             self.assertFalse(fullmatch(rfc9112.request_line, line + "\r\n"))
@@ -768,11 +783,13 @@ class SyntaxTranslationTest(unittest.TestCase):
         "status-line loses its CRLF, and reason-phrase is 1*( ... ) inside [ ]."
         old_reason, old = self.OLD_REASON_PHRASE, self.OLD_STATUS_LINE
         pieces = ["HTTP/1.1", " ", "200", "OK", "\t", "\x80", "\x7f", "\x01", "\r\n", "\n"]
-        for value in strings(pieces, 5):
-            with self.subTest(value=value):
+        bad = Mismatches()
+        for value in strings(pieces, size(4, 5)):
+            with bad.case(value):
                 self.assertEqual(
                     fullmatch(old, value + "\r\n"), fullmatch(rfc9112.status_line, value), value
                 )
+        bad.assert_none(self)
         for value in [
             "HTTP/1.1 200 OK",
             "HTTP/1.1 200 ",
@@ -817,12 +834,14 @@ class SyntaxTranslationTest(unittest.TestCase):
         old = rf"(?: {old_start} (?: {rfc9112.field_line} {rfc9112.CRLF} )* {rfc9112.CRLF} (?: {rfc9112.message_body} )? )"
         pieces = ["GET / HTTP/1.1", "HTTP/1.1 200 OK", "\r\n", "A: b", "A:", " c", "\n"]
         count = 0
-        for value in strings(pieces, 5):
-            with self.subTest(value=value):
+        bad = Mismatches()
+        for value in strings(pieces, size(4, 5)):
+            with bad.case(value):
                 now = fullmatch(rfc9112.HTTP_message, value)
                 self.assertEqual(fullmatch(old, value), now, value)
                 count += now
-        self.assertGreater(count, 100)
+        bad.assert_none(self)
+        self.assertGreater(count, size(10, 100))
         for value in [
             "GET / HTTP/1.1\r\n\r\n",
             "GET / HTTP/1.1\r\nHost: a\r\nA:\r\n\r\nbody\r\n",
@@ -872,11 +891,13 @@ class SyntaxTranslationTest(unittest.TestCase):
             return deepest if level == 0 and deepest else -1
 
         old = rf"(?: \( (?: {rfc9110.ctext} | {rfc9110.quoted_pair} )* \) )"
-        for value in strings(["(", ")", "a", "\\", " "], 7):
-            with self.subTest(value=value):
+        bad = Mismatches()
+        for value in strings(["(", ")", "a", "\\", " "], size(6, 7)):
+            with bad.case(value):
                 level = depth(value)
                 self.assertEqual(fullmatch(rfc9110.comment, value), 1 <= level <= 3)
                 self.assertEqual(fullmatch(old, value), level == 1)
+        bad.assert_none(self)
         for value in ["(a (b) c)", "(a (b (c)) d)", r"(a (b \) (c)) d)", "()", "(())", "((()))"]:
             with self.subTest(value=value):
                 self.assertTrue(fullmatch(rfc9110.comment, value))
@@ -976,9 +997,10 @@ class SyntaxChallengeTest(unittest.TestCase):
             len({re.sub(r"\s+", "", r) for r in (rfc9110.challenge, rfc9110.credentials)}), 1
         )
         newly_accepted = 0
-        for tail in strings([" ", "a", "=", ",", '"'], 7):
+        bad = Mismatches()
+        for tail in strings([" ", "a", "=", ",", '"'], size(6, 7)):
             value = "A" + tail
-            with self.subTest(value=value):
+            with bad.case(value):
                 was, now = fullmatch(old, value), fullmatch(rfc9110.challenge, value)
                 self.assertEqual(now, fullmatch(rfc9110.credentials, value))
                 self.assertEqual(now, fullmatch(reference, value))
@@ -987,7 +1009,8 @@ class SyntaxChallengeTest(unittest.TestCase):
                 elif now:
                     newly_accepted += 1
                     self.assertIn(",", value)
-        self.assertGreater(newly_accepted, 20)
+        bad.assert_none(self)
+        self.assertGreater(newly_accepted, size(5, 20))
 
     def test_accept_reject(self) -> None:
         for rule in [rfc9110.challenge, rfc9110.credentials]:
@@ -1358,13 +1381,15 @@ class SyntaxLanguageTagAuditTest(unittest.TestCase):
         subtags = ["en", "i", "ami", "zh", "min", "nan", "GB", "oed", "x", "a", "bb", "sgn", "BE"]
         subtags += ["FR", "art", "lojban", "1996", "Latn"]
         accepted = 0
+        bad = Mismatches()
         for count in range(1, 4):
             for combo in itertools.product(subtags, repeat=count):
                 value = "-".join(combo)
                 was, now = matches(old_tag, value), matches(rfc5646.Language_Tag, value)
-                with self.subTest(value=value):
+                with bad.case(value):
                     self.assertEqual(was, now)
                 accepted += now
+        bad.assert_none(self)
         self.assertGreater(accepted, 100)
         for value in ["i-ami", "zh-min-nan", "en-GB-oed", "sgn-BE-FR", "art-lojban", "x-a"]:
             with self.subTest(value=value):
@@ -1422,8 +1447,9 @@ class SyntaxRfc5322AuditTest(unittest.TestCase):
         new = rfc5322.quoted_string_core
         self.assertNotEqual(old, new)
         differences = 0
-        for value in strings(['"', "a", " ", "\t", "\\", "\r", "\n"], 6):
-            with self.subTest(value=repr(value)):
+        bad = Mismatches()
+        for value in strings(['"', "a", " ", "\t", "\\", "\r", "\n"], size(5, 6)):
+            with bad.case(value):
                 was, now = fullmatch(old, value), fullmatch(new, value)
                 shorter = value.endswith('"') and any(
                     fullmatch(rfc5322.FWS, value[split:-1]) and fullmatch(old, value[:split] + '"')
@@ -1432,6 +1458,7 @@ class SyntaxRfc5322AuditTest(unittest.TestCase):
                 # The only new strings are an old one with FWS added before the closing quote.
                 self.assertEqual(now, was or shorter)
                 differences += now and not was
+        bad.assert_none(self)
         self.assertGreater(differences, 10)
         for value in ['"a "', '" "', '"a\t"', '"a \r\n "', '"a b "', '"a\\ "']:
             with self.subTest(value=repr(value)):
@@ -1475,11 +1502,13 @@ class SyntaxRfc5322AuditTest(unittest.TestCase):
     def test_nested_comments(self) -> None:
         "comment = '(' *([FWS] ccontent) [FWS] ')' where ccontent can be a comment."
         old = rf"(?: \( (?: {rfc5322.fws_unit} | {rfc5322.ctext} | {rfc5322.quoted_pair} )* \) )"
-        for value in strings(["(", ")", "a", "\\", " "], 7):
-            with self.subTest(value=value):
+        bad = Mismatches()
+        for value in strings(["(", ")", "a", "\\", " "], size(6, 7)):
+            with bad.case(value):
                 level = self.depth(value)
                 self.assertEqual(fullmatch(rfc5322.comment, value), 1 <= level <= 3)
                 self.assertEqual(fullmatch(old, value), level == 1)
+        bad.assert_none(self)
         for value in ["(a (b) c)", "(a (b (c)) d)", "(a\r\n (b))", "(a (b) (c))"]:
             with self.subTest(value=repr(value)):
                 self.assertTrue(fullmatch(rfc5322.comment, value))
@@ -1737,7 +1766,8 @@ class SyntaxStructuredFieldAuditTest(unittest.TestCase):
         "sf-binary = ':' base64 ':' and base64 = *( ALPHA / DIGIT / '+' / '/' ) *'='."
         old = r":[a-zA-Z0-9+/=]*:"
         changed = 0
-        for value in strings([":", "a", "=", "+", "/", "A", "1"], 6):
+        bad = Mismatches()
+        for value in strings([":", "a", "=", "+", "/", "A", "1"], size(5, 6)):
             inner = value[1:-1]
             expected = (
                 len(value) >= 2
@@ -1745,7 +1775,7 @@ class SyntaxStructuredFieldAuditTest(unittest.TestCase):
                 and value[-1] == ":"
                 and re.fullmatch(r"[A-Za-z0-9+/]*=*", inner) is not None
             )
-            with self.subTest(value=value):
+            with bad.case(value):
                 was, now = fullmatch(old, value), fullmatch(rfc9651.sf_binary, value)
                 self.assertEqual(now, expected)
                 if was != now:
@@ -1753,7 +1783,8 @@ class SyntaxStructuredFieldAuditTest(unittest.TestCase):
                     self.assertTrue(was)
                     self.assertRegex(inner, r"=[^=]")
                     changed += 1
-        self.assertGreater(changed, 50)
+        bad.assert_none(self)
+        self.assertGreater(changed, size(10, 50))
         for value in [
             "::",
             ":YQ==:",
@@ -1773,15 +1804,17 @@ class SyntaxStructuredFieldAuditTest(unittest.TestCase):
         old = rf"(?: {old_member} (?: {rfc9110.OWS} , {rfc9110.OWS} {old_member} )* )"
         with_params = re.compile(r"(?:^|,)\s*[a-z*][a-z0-9_.*-]*;")
         changed = 0
-        for value in strings(["a", "=", "1", ";", " ", ","], 6):
-            with self.subTest(value=value):
+        bad = Mismatches()
+        for value in strings(["a", "=", "1", ";", " ", ","], size(5, 6)):
+            with bad.case(value):
                 was, now = fullmatch(old, value), fullmatch(rfc9651.sf_dictionary, value)
                 if was:
                     self.assertTrue(now)
                 elif now:
                     changed += 1
                     self.assertRegex(value, with_params)
-        self.assertGreater(changed, 20)
+        bad.assert_none(self)
+        self.assertGreater(changed, size(10, 20))
         for value in [
             "a=?0, b, c; foo=bar",
             "a;b",
@@ -1870,9 +1903,11 @@ class SyntaxStructuredFieldAuditTest(unittest.TestCase):
         self.assertLess(
             rfc9651.bare_item.index(rfc9651.sf_integer), rfc9651.bare_item.index(rfc9651.sf_decimal)
         )
-        for value in strings(["1", ".", "-", "a", "?", "0", ";", "@", "="], 5):
-            with self.subTest(value=value):
+        bad = Mismatches()
+        for value in strings(["1", ".", "-", "a", "?", "0", ";", "@", "="], size(4, 5)):
+            with bad.case(value):
                 self.assertEqual(fullmatch(old, value), fullmatch(rfc9651.sf_item, value))
+        bad.assert_none(self)
 
     def test_items(self) -> None:
         for rule, accepted, rejected in [
@@ -2378,8 +2413,9 @@ class SyntaxIPvFutureTest(unittest.TestCase):
         old = rfc3986.IPvFuture.replace("[vV]", "v")
         self.assertNotEqual(old, rfc3986.IPvFuture)
         newly_accepted = 0
-        for value in strings(["v", "V", "1", "F", "g", ".", "a"], 5):
-            with self.subTest(value=value):
+        bad = Mismatches()
+        for value in strings(["v", "V", "1", "F", "g", ".", "a"], size(4, 5)):
+            with bad.case(value):
                 self.assertEqual(
                     fullmatch(old, value, re.VERBOSE | re.IGNORECASE),
                     fullmatch(rfc3986.IPvFuture, value, re.VERBOSE | re.IGNORECASE),
@@ -2391,6 +2427,7 @@ class SyntaxIPvFutureTest(unittest.TestCase):
                     newly_accepted += now and not was
                 else:
                     self.assertEqual(was, now)
+        bad.assert_none(self)
         self.assertGreater(newly_accepted, 10)
 
 

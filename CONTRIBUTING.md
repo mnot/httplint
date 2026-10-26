@@ -38,6 +38,8 @@ Helpful make targets include:
 
 You can run the tests in an individual `field/parsers/foo_bar.py` file by running `make test_field_foo_bar`.
 
+Tests that enumerate every short string over an alphabet, or compare a grammar with an older version of itself, run a capped enumeration by default so that `make test` stays quick. When you change a grammar, run the full enumeration with `HTTPLINT_SLOW_TESTS=1 make test`, or for one file, `HTTPLINT_SLOW_TESTS=1 make test_syntax`. A new exhaustive test should use the helpers in _test/slow.py_ and stay within a time budget (well under a second for the capped run): `size(capped, full)` picks the string length for the current run, and `Mismatches` collects failures from the loop and reports the first few in one assertion. Don't use `subTest` for each case in a long loop; it costs around 30 microseconds a case, which adds up to minutes at a million cases. Keep the characters and edge cases the test exists to guard in the capped alphabet, and check that the capped run still fails when you deliberately break the code under test.
+
 
 ## Coding Conventions
 

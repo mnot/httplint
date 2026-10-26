@@ -27,6 +27,7 @@ from httplint.field.parsers.strict_transport_security import (
 from httplint.field.utils import RE_FLAGS
 from httplint.note import Note, levels
 from httplint.syntax import rfc9110
+from test.slow import Mismatches, size
 
 TIME_LIMIT = 1.0  # seconds; these take milliseconds
 
@@ -141,22 +142,24 @@ class HSTSSyntaxTest(unittest.TestCase):
                 s == "" or simple_dir.fullmatch(s) for s in (p.strip() for p in value.split(";"))
             )
 
-        checked = 0
-        for length in range(0, 8):
+        bad = Mismatches()
+        # Every string over this alphabet; 6 characters is long enough for each directive form
+        # ("a = a") next to an empty one (";;"), and 7 is the full enumeration.
+        for length in range(0, size(6, 7) + 1):
             for chars in itertools.product("a=; -", repeat=length):
                 value = "".join(chars)
                 old = sts_matches(OLD_STS_SYNTAX, value)
                 new = sts_matches(strict_transport_security.syntax, value)
                 segments = [p.strip() for p in value.split(";")]
                 has_empty = "" in segments[:-1] or value.strip() == ""
-                with self.subTest(value=value):
+                with bad.case(value):
                     if old:
                         self.assertTrue(new)
                     if new and not old:
                         self.assertTrue(has_empty)
                     self.assertEqual(new, reference(value))
-                checked += 1
-        self.assertGreater(checked, 50000)
+        bad.assert_none(self)
+        self.assertGreater(bad.cases, size(10000, 50000))
 
     def test_quoted(self) -> None:
         accepted = [
@@ -319,10 +322,11 @@ def leading_digits(token: str) -> int:
 class CookieDateRegexTest(unittest.TestCase):
     def test_day_of_month(self) -> None:
         "Only a longer digit run than 1*2DIGIT is newly rejected."
-        for token in tokens("019a:", 6):
+        bad = Mismatches()
+        for token in tokens("019a:", size(5, 6)):
             old = re.match(OLD_DAY, token)
             new = re.match(DAY_OF_MONTH_TOKEN, token)
-            with self.subTest(token=token):
+            with bad.case(token):
                 self.assertEqual(new is not None, leading_digits(token) in (1, 2))
                 if new:
                     self.assertIsNotNone(old)
@@ -330,12 +334,14 @@ class CookieDateRegexTest(unittest.TestCase):
                     self.assertEqual(old.group(1), new.group(1))
                 if old and not new:
                     self.assertGreater(leading_digits(token), 2)
+        bad.assert_none(self)
 
     def test_year(self) -> None:
-        for token in tokens("019a:", 7):
+        bad = Mismatches()
+        for token in tokens("019a:", size(6, 7)):
             old = re.match(OLD_YEAR, token)
             new = re.match(YEAR_TOKEN, token)
-            with self.subTest(token=token):
+            with bad.case(token):
                 self.assertEqual(new is not None, leading_digits(token) in (2, 3, 4))
                 if new:
                     self.assertIsNotNone(old)
@@ -343,14 +349,16 @@ class CookieDateRegexTest(unittest.TestCase):
                     self.assertEqual(old.group(1), new.group(1))
                 if old and not new:
                     self.assertGreater(leading_digits(token), 4)
+        bad.assert_none(self)
 
     def test_time(self) -> None:
         "Fields may be one digit; the last field may not run on into more digits."
         reference = re.compile(r"\d{1,2}:\d{1,2}:\d{1,2}(?:\D.*)?", re.DOTALL)
-        for token in tokens("019:a", 8):
+        bad = Mismatches()
+        for token in tokens("019:a", size(7, 8)):
             old = re.match(OLD_TIME, token)
             new = re.match(TIME_TOKEN, token)
-            with self.subTest(token=token):
+            with bad.case(token):
                 self.assertEqual(new is not None, reference.fullmatch(token) is not None)
                 if old and not new:
                     self.assertRegex(token, r"^\d\d:\d\d:\d\d\d")
@@ -358,6 +366,7 @@ class CookieDateRegexTest(unittest.TestCase):
                     self.assertNotRegex(token, r"^\d\d:\d\d:\d\d")
                 if new and old:
                     self.assertEqual(old.group(1), new.group(1))
+        bad.assert_none(self)
 
     def test_loose_date_parse(self) -> None:
         self.assertEqual(loose_date_parse("Wed, 09 Jun 2021 10:18:14 GMT"), 1623233894)
