@@ -83,11 +83,14 @@ def main():
     )
     parser.add_argument(
         "--model",
-        default="gemini-1.5-flash-latest",
-        help="LLM model to use (default: gemini-1.5-flash-latest)",
+        default="mlx-community/aya-expanse-8b-4bit",
+        help="LLM model to use (default: %(default)s)",
     )
     parser.add_argument(
-        "--rpm", type=int, default=60, help="Requests per minute (default: 60)"
+        "--rpm",
+        type=int,
+        default=0,
+        help="Requests per minute (default: 0; 0 or less: unlimited)",
     )
 
     args = parser.parse_args()
