@@ -1,11 +1,18 @@
 """Tests for the report-only heuristics in tools/i18n/check.py."""
 
+import contextlib
+import io
+import os
+import tempfile
 import unittest
+from unittest import mock
 
 from babel.messages.catalog import Catalog
 
 from tools.i18n import heuristics
+from tools.i18n import check
 from tools.i18n.check import CRITICAL_ISSUES, CatalogChecker, IssueType
+from tools.i18n.utils import load_catalog, save_catalog
 
 
 class LinkMismatchTest(unittest.TestCase):
@@ -328,6 +335,108 @@ class CatalogReportingTest(unittest.TestCase):
             [i.issue_type for i in CatalogChecker().check_catalog(catalog, "fr")],
             [IssueType.MISSING],
         )
+
+
+class MarkFuzzyTest(unittest.TestCase):
+    """--mark-fuzzy flags entries with issues; it never touches the others."""
+
+    FLAGGED = "The `Sunset` header indicates that this resource is gone, which is bad."
+    BAD_VAR = "Found %(count)s items."
+    FUZZY = "Already fuzzy string, with `Cache-Control` in it for good measure."
+
+    def setUp(self) -> None:
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        self.locale_dir = tmp.name
+        self.po_path = os.path.join(tmp.name, "fr", "LC_MESSAGES", "messages.po")
+        os.makedirs(os.path.dirname(self.po_path))
+        catalog = Catalog(locale="fr")
+        catalog.add(self.FLAGGED, "La requête a expiré.", locations=[("x.py", 1)])
+        catalog.add(self.BAD_VAR, "Trouvé des éléments.", locations=[("x.py", 2)])
+        catalog.add("Fine string.", "Chaîne correcte.", locations=[("x.py", 3)])
+        catalog.add("Missing string, `Sunset` is here too.", "", locations=[("x.py", 4)])
+        catalog.add(
+            self.FUZZY, "La requête a expiré.", flags=["fuzzy"], locations=[("x.py", 5)]
+        )
+        save_catalog(self.po_path, catalog)
+
+    def run_check(self, *args: str) -> "tuple[int, str]":
+        out = io.StringIO()
+        argv = ["check.py", "--locale_dir", self.locale_dir, *args]
+        code = 0
+        with mock.patch("sys.argv", argv), contextlib.redirect_stdout(out):
+            try:
+                check.main()
+            except SystemExit as exc:
+                code = int(exc.code or 0)
+        return code, out.getvalue()
+
+    def flags(self) -> "dict[str, set[str]]":
+        return {str(m.id): set(m.flags) for m in load_catalog(self.po_path) if m.id}
+
+    def read_bytes(self) -> bytes:
+        with open(self.po_path, "rb") as handle:
+            return handle.read()
+
+    def test_marks_only_flagged(self) -> None:
+        _, out = self.run_check("--mark-fuzzy")
+        flags = self.flags()
+        self.assertIn("fuzzy", flags[self.FLAGGED])
+        self.assertIn("fuzzy", flags[self.BAD_VAR])
+        self.assertNotIn("fuzzy", flags["Fine string."])
+        self.assertNotIn("fuzzy", flags["Missing string, `Sunset` is here too."])
+        self.assertIn("fr: marked 2 entries fuzzy", out)
+        self.assertIn("TOKEN_CHANGED", out)
+
+    def test_translations_not_changed(self) -> None:
+        before = {str(m.id): m.string for m in load_catalog(self.po_path) if m.id}
+        self.run_check("--mark-fuzzy")
+        after = {str(m.id): m.string for m in load_catalog(self.po_path) if m.id}
+        self.assertEqual(before, after)
+
+    def test_already_fuzzy_untouched(self) -> None:
+        self.run_check("--mark-fuzzy")
+        self.assertIn("fuzzy", self.flags()[self.FUZZY])
+        _, out = self.run_check("--mark-fuzzy")
+        self.assertIn("fr: marked 0 entries fuzzy", out)
+
+    def test_idempotent(self) -> None:
+        self.run_check("--mark-fuzzy")
+        saved = self.read_bytes()
+        _, out = self.run_check("--mark-fuzzy")
+        self.assertIn("marked 0 entries", out)
+        self.assertEqual(self.read_bytes(), saved)
+
+    def test_file_not_rewritten_when_nothing_marked(self) -> None:
+        catalog = load_catalog(self.po_path)
+        for message in list(catalog):
+            if message.id in (self.FLAGGED, self.BAD_VAR):
+                del catalog[message.id]
+        save_catalog(self.po_path, catalog)
+        with mock.patch.object(check, "save_catalog") as save:
+            _, out = self.run_check("--mark-fuzzy")
+        save.assert_not_called()
+        self.assertIn("marked 0 entries", out)
+
+    def test_default_does_not_modify(self) -> None:
+        before = self.read_bytes()
+        _, out = self.run_check()
+        self.assertEqual(self.read_bytes(), before)
+        self.assertNotIn("marked", out)
+
+    def test_exit_code_unchanged(self) -> None:
+        # BAD_VARIABLE is critical, so the exit status is 1 with or without the option.
+        plain, _ = self.run_check()
+        marking, _ = self.run_check("--mark-fuzzy")
+        self.assertEqual((plain, marking), (1, 1))
+
+    def test_exit_code_zero_without_critical(self) -> None:
+        catalog = load_catalog(self.po_path)
+        del catalog[self.BAD_VAR]
+        save_catalog(self.po_path, catalog)
+        code, out = self.run_check("--mark-fuzzy")
+        self.assertEqual(code, 0)
+        self.assertIn("marked 1 entry fuzzy", out)
 
 
 if __name__ == "__main__":
