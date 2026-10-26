@@ -2,7 +2,7 @@ from typing import Set, Tuple
 
 from httplint.field import BAD_SYNTAX
 from httplint.field.list_field import HttpListField
-from httplint.field.params import parse_params
+from httplint.field.params import parse_params, split_params_off
 from httplint.field.tests import FakeRequestLinter, FieldTest
 from httplint.note import Note, categories, levels
 from httplint.syntax import rfc9112
@@ -35,10 +35,7 @@ Transfer codings can only be used in HTTP/1; HTTP/2 and HTTP/3 do not support th
     deprecated = False
 
     def parse(self, field_value: str, add_note: AddNoteMethodType) -> Tuple[str, ParamDictType]:
-        try:
-            coding, param_str = field_value.split(";", 1)
-        except ValueError:
-            coding, param_str = field_value, ""
+        coding, param_str = split_params_off(field_value)
         coding = coding.lower()
         param_dict = parse_params(param_str, add_note, True)
         if param_dict:
@@ -178,3 +175,12 @@ class TransferEncodingRequestTest(FieldTest[AnyMessageLinterProtocol]):
     expected_out = [("gzip", {})]
     expected_notes: NoteClassListType = []
     linter_class = FakeRequestLinter
+
+
+class TransferEncodingQuotedSemicolonTest(FieldTest[AnyMessageLinterProtocol]):
+    "Guard: the head is split off at the first ';' even inside quotes; it's invalid either way."
+
+    name = "Transfer-Encoding"
+    inputs = [b'"a;b"']
+    expected_out = [('"a', {})]
+    expected_notes: NoteClassListType = [BAD_SYNTAX, TRANSFER_CODING_UNWANTED]
