@@ -96,49 +96,59 @@ class CatalogChecker:
                 )
                 continue
 
-            # 3. Check variables
-            orig_vars = self.find_variables(message.id)
-            trans_vars = self.find_variables(message.string)
-
-            missing_vars = orig_vars - trans_vars
-            extra_vars = trans_vars - orig_vars
-
-            if missing_vars:
-                issues.append(
-                    TranslationIssue(
-                        IssueType.BAD_VARIABLE,
-                        message.id,
-                        message.lineno,
-                        f"Missing: {', '.join(sorted(missing_vars))}",
-                    )
-                )
-
-            if extra_vars:
-                issues.append(
-                    TranslationIssue(
-                        IssueType.BAD_VARIABLE,
-                        message.id,
-                        message.lineno,
-                        f"Extra: {', '.join(sorted(extra_vars))}",
-                    )
-                )
-
-            # 4. Check syntax (stray %)
-            valid, error_msg = self.validate_format_string(message.string)
-            if not valid:
-                issues.append(
-                    TranslationIssue(
-                        IssueType.SYNTAX_ERROR, message.id, message.lineno, error_msg
-                    )
-                )
-
-            issues.extend(self.check_heuristics(message, lang))
+            issues.extend(
+                self.check_pair(message.id, message.string, lang, message.lineno)
+            )
 
         return issues
 
-    def check_heuristics(self, message, lang: Optional[str]) -> List[TranslationIssue]:
+    def check_pair(
+        self, msgid: str, msgstr: str, lang: Optional[str] = None, lineno: int = 0
+    ) -> List[TranslationIssue]:
+        """Check one translated (msgid, msgstr) pair: variables, syntax, heuristics."""
+        issues = []
+
+        # 3. Check variables
+        orig_vars = self.find_variables(msgid)
+        trans_vars = self.find_variables(msgstr)
+
+        missing_vars = orig_vars - trans_vars
+        extra_vars = trans_vars - orig_vars
+
+        if missing_vars:
+            issues.append(
+                TranslationIssue(
+                    IssueType.BAD_VARIABLE,
+                    msgid,
+                    lineno,
+                    f"Missing: {', '.join(sorted(missing_vars))}",
+                )
+            )
+
+        if extra_vars:
+            issues.append(
+                TranslationIssue(
+                    IssueType.BAD_VARIABLE,
+                    msgid,
+                    lineno,
+                    f"Extra: {', '.join(sorted(extra_vars))}",
+                )
+            )
+
+        # 4. Check syntax (stray %)
+        valid, error_msg = self.validate_format_string(msgstr)
+        if not valid:
+            issues.append(
+                TranslationIssue(IssueType.SYNTAX_ERROR, msgid, lineno, error_msg)
+            )
+
+        issues.extend(self.check_heuristics(msgid, msgstr, lang, lineno))
+        return issues
+
+    def check_heuristics(
+        self, msgid, msgstr, lang: Optional[str], lineno: int = 0
+    ) -> List[TranslationIssue]:
         """Run the report-only heuristics on one translated message."""
-        msgid, msgstr = message.id, message.string
         if not isinstance(msgid, str) or not isinstance(msgstr, str):
             return []  # plural forms are not handled anywhere in this tool yet
         found = [
@@ -152,7 +162,7 @@ class CatalogChecker:
             (IssueType.PREAMBLE, heuristics.preamble(msgid, msgstr)),
         ]
         return [
-            TranslationIssue(issue_type, msgid, message.lineno, details)
+            TranslationIssue(issue_type, msgid, lineno, details)
             for issue_type, details in found
             if details
         ]
