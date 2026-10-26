@@ -54,7 +54,12 @@ Run this when translatable strings have changed.
 1. `make i18n-update`: re-extracts the strings and updates every catalog. Changed strings arrive as new, empty entries (no fuzzy matching); the old translation is kept as an obsolete `#~` entry.
 2. `make i18n-check MARK_FUZZY=1`: marks entries the checks flag as `fuzzy`, so that step 4 retranslates them. Step 4 **discards the text** of those entries. This step can report FAILED if there are critical errors, even though the marking was saved; carry on.
 3. Download the default model, once (Apple silicon only; other models work via `llm` plugins): `./.venv/bin/llm mlx download-model mlx-community/aya-expanse-8b-4bit`
-4. `make i18n-autotranslate`: translates every empty or `fuzzy` entry with an LLM (via the `llm` package). Use `MODEL=<model id>` to choose another model; remote models need API keys (e.g., `./.venv/bin/llm keys set gemini`). `RPM=<n>` limits requests per minute (default: unlimited); use it with remote models that rate-limit. `TEMPERATURE=<x>` sets the sampling temperature (default 0.2, if the model supports it). URLs, code spans and `%(variables)s` are masked before the model sees them; each result is run through the `i18n-check` checks and retried up to twice if it fails, and entries still failing are left empty and listed at the end.
+4. `make i18n-autotranslate`: translates every empty or `fuzzy` entry with an LLM (via the `llm` package).
+   * `MODEL=<model id>` chooses another model; remote models need API keys (e.g., `./.venv/bin/llm keys set gemini`).
+   * `RPM=<n>` limits requests per minute (default: unlimited); use it with remote models that rate-limit.
+   * `TEMPERATURE=<x>` sets the sampling temperature (default 0.2) if the model supports it.
+   * Variables, code spans and URLs are hidden from the model. Each result is checked as in `i18n-check` and retried twice if it fails.
+   * Entries that still fail on variables or syntax are left empty; entries that only trip the advisory checks are kept as `fuzzy`. Both are listed at the end.
 5. `make i18n-check`: there must be no critical errors. Read any remaining flags and fix them by hand in the `.po` files.
 6. Optional: `make i18n-review MODEL=<model id> LOCALE=fr SINCE=origin/main` (see [Reviewing translations](#reviewing-translations)).
 7. `make i18n-compile`: builds the `.mo` files used at runtime.

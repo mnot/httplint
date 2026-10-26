@@ -16,6 +16,7 @@ from tools.i18n.autotranslate import (
     PROMPT_START,
     build_parser,
     protect,
+    Result,
     restore,
     supports_option,
     token_error,
@@ -134,6 +135,14 @@ class ProtectTest(unittest.TestCase):
         masked, spans = protect("a `broken and `%(v)s` b")
         self.assertEqual(restore(masked, spans), "a `broken and `%(v)s` b")
 
+    def test_blank_line_ends_a_code_span_search(self) -> None:
+        # an unclosed backtick must not pair with one in a later paragraph
+        text = "Odd `tick here.\n\nNext paragraph with `code` here."
+        self.assertEqual(protect(text)[1], ["`code`"])
+
+    def test_restore_ignores_unknown_tokens(self) -> None:
+        self.assertEqual(restore("a @@5@@ b", ["x"]), "a @@5@@ b")
+
     def test_nothing_to_protect_gives_the_old_prompt(self) -> None:
         masked, spans = protect("Plain text.")
         self.assertEqual((masked, spans), ("Plain text.", []))
@@ -185,8 +194,8 @@ class TranslateTest(unittest.TestCase):
         rules: Optional[List[autotranslate.Rule]] = None,
     ) -> Tuple[Optional[str], int, str, FakeModel]:
         model = FakeModel(reply)
-        result, retries, error = translate(ask_for(model), "fr", msgid or self.MSGID, rules)
-        return result, retries, error, model
+        self.res = translate(ask_for(model), "fr", msgid or self.MSGID, rules)
+        return self.res.text, self.res.retries, self.res.error, model
 
     def test_good_translation_passes_through(self) -> None:
         result, retries, _, model = self.run_translate(faithful)
@@ -272,6 +281,50 @@ class TranslateTest(unittest.TestCase):
         self.assertEqual(result, "\n  FR: " + msgid.strip() + "\n\n")
         self.assertEqual(autotranslate.match_whitespace("a\n", " b "), "b\n")
 
+    def test_invented_token_without_spans_is_rejected(self) -> None:
+        result = translate(lambda p: "Texte @@1@@", "fr", "Plain text.")
+        self.assertIsNone(result.text)
+        self.assertIn("invented", result.error)
+
+    def test_literal_token_in_msgid(self) -> None:
+        msgid = "A literal @@1@@ here and `x` in the text."
+        result, _, _, model = self.run_translate(faithful, msgid)
+        self.assertEqual(result, "FR: " + msgid)
+        self.assertIn("@@@1@@@", model.calls[0][0])
+
+    def test_error_in_prompt_is_truncated(self) -> None:
+        def noisy(msgid: str, msgstr: str, lang: Optional[str]) -> List[str]:
+            return ["LINK_MISMATCH extra: " + "u" * 3000]
+
+        _, _, error, model = self.run_translate(faithful, rules=[noisy])
+        self.assertLessEqual(len(error), autotranslate.MAX_ERROR)
+        self.assertNotIn("u" * 250, model.calls[1][0])
+        self.assertIn("rejected: LINK_MISMATCH extra: uuu", model.calls[1][0])
+
+    def test_advisory_failure_keeps_the_last_candidate_as_fuzzy(self) -> None:
+        def advisory(msgid: str, msgstr: str, lang: Optional[str]) -> List[str]:
+            return ["SUSPICIOUS_LENGTH length ratio 0.10"]
+
+        self.run_translate(faithful, rules=[advisory])
+        self.assertEqual(
+            self.res, Result("FR: " + self.MSGID, 2, "SUSPICIOUS_LENGTH length ratio 0.10", True)
+        )
+
+    def test_variable_and_syntax_failures_are_blanked(self) -> None:
+        for kind in ("BAD_VARIABLE Missing: %(x)s", "SYNTAX_ERROR Stray '%'"):
+            self.run_translate(faithful, rules=[lambda i, o, lang, k=kind: [k]])
+            self.assertEqual(self.res, Result(None, 2, kind, False))
+
+    def test_i18n_check_rule_uses_the_language(self) -> None:
+        msgid = "A message that is long enough for the length check to apply."
+        rule = autotranslate.i18n_check_rule
+        # ratio 0.3 is fine for ja, too short for the default range
+        self.assertEqual(rule(msgid, "x" * 18, "ja"), [])
+        self.assertTrue(rule(msgid, "x" * 18, "fr"))
+        # ratio 1.8 is fine for the default range, too long for ja
+        self.assertTrue(rule(msgid, "x" * 105, "ja"))
+        self.assertEqual(rule(msgid, "x" * 105, "fr"), [])
+
     def test_empty_reply_is_retried(self) -> None:
         replies = iter(["", None])
 
@@ -328,7 +381,25 @@ class FileTest(unittest.TestCase):
         self.assertEqual(bad.string, "")
         self.assertNotIn("fuzzy", bad.flags)
         self.assertIn("1 entries left empty", output)
+        self.assertIn("missing", output)  # the last error is listed with the msgid
         self.assertIn("Bad `Link` message that never works", output)
+
+    def test_advisory_failure_is_kept_as_fuzzy_and_listed(self) -> None:
+        catalog = load_catalog(self.path)
+        catalog.add("A plain message that is long enough to measure.", "")
+        save_catalog(self.path, catalog)
+
+        def reply(prompt: str) -> str:
+            return "Court." if "plain message" in prompt else faithful(prompt)
+
+        output = self.run_file(FakeModel(reply))
+        entry = {m.id: m for m in load_catalog(self.path)}[
+            "A plain message that is long enough to measure."
+        ]
+        self.assertEqual(entry.string, "Court.")
+        self.assertIn("fuzzy", entry.flags)
+        self.assertIn("1 entries kept as fuzzy", output)
+        self.assertIn("SUSPICIOUS_LENGTH", output)
 
     def test_temperature_passed_when_supported(self) -> None:
         model = FakeModel(faithful)
