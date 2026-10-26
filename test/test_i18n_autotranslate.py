@@ -639,7 +639,9 @@ class DropAddedBackticksTest(unittest.TestCase):
     def test_msgid_with_backticks_is_untouched(self) -> None:
         msgid = "The `Content-Type` header isn't valid, and Vary is long enough."
         for mode in PROTECT_MODES:
-            reply = masked_reply(msgid, "L'en-tête `Content-Type` est invalide, et `Vary` aussi.", mode)
+            reply = masked_reply(
+                msgid, "L'en-tête `Content-Type` est invalide, et `Vary` aussi.", mode
+            )
             model = FakeModel(lambda p: reply)
             result = translate(ask_for(model), "fr", msgid, mode=mode)
             if mode == PROTECT_ALL:  # `all` masks the span; the added one is rejected
@@ -927,9 +929,7 @@ class NamesModeTest(unittest.TestCase):
 
     def test_field_name_rule_still_guards_the_text(self) -> None:
         # with the name visible (links mode) a reply that loses it is a hard failure
-        result = translate(
-            lambda p: "Faux.", "fr", "Content-Length is wrong.", mode=PROTECT_LINKS
-        )
+        result = translate(lambda p: "Faux.", "fr", "Content-Length is wrong.", mode=PROTECT_LINKS)
         self.assertIsNone(result.text)
         self.assertIn("FIELD_NAME_CHANGED", result.error)
 
@@ -967,16 +967,35 @@ class RepairPlaceholdersTest(unittest.TestCase):
 
     def test_renamed_placeholders_are_put_back(self) -> None:
         for msgid, text, want in self.CASES:
-            self.assertEqual(repair_placeholders(msgid, text), want, msgid)
+            fixed, names = repair_placeholders(msgid, text)
+            self.assertEqual(fixed, want, msgid)
+            self.assertEqual(len(names), len(set(names)))
+            self.assertTrue(names)
+
+    def test_names_restored_are_returned(self) -> None:
+        msgid, text, _ = self.CASES[4]
+        self.assertEqual(repair_placeholders(msgid, text)[1], ["value", "param"])
+
+    def test_mapping_is_by_order_of_appearance_not_sorted_order(self) -> None:
+        self.assertEqual(
+            repair_placeholders("%(a)s then %(b)s", "%(y)s dann %(x)s"),
+            ("%(a)s dann %(b)s", ["a", "b"]),
+        )
+        self.assertEqual(
+            repair_placeholders("%(b)s then %(a)s", "%(x)s dann %(y)s"),
+            ("%(b)s dann %(a)s", ["b", "a"]),
+        )
 
     def test_format_character_comes_from_the_msgid(self) -> None:
-        self.assertEqual(repair_placeholders("Age %(age)d.", "年齢 %(年齢)s。"), "年齢 %(age)d。")
+        self.assertEqual(
+            repair_placeholders("Age %(age)d.", "年齢 %(年齢)s。")[0], "年齢 %(age)d。"
+        )
 
     def test_valid_text_is_untouched(self) -> None:
         for msgid, _, want in self.CASES:
-            self.assertEqual(repair_placeholders(msgid, want), want)
-        self.assertEqual(repair_placeholders("No placeholders.", "Aucun."), "Aucun.")
-        self.assertEqual(repair_placeholders("%(a)s %(b)s", "%(b)s %(a)s"), "%(b)s %(a)s")
+            self.assertEqual(repair_placeholders(msgid, want), (want, []))
+        self.assertEqual(repair_placeholders("No placeholders.", "Aucun."), ("Aucun.", []))
+        self.assertEqual(repair_placeholders("%(a)s %(b)s", "%(b)s %(a)s"), ("%(b)s %(a)s", []))
 
     def test_ambiguous_or_mismatched_counts_are_not_repaired(self) -> None:
         for msgid, text in (
@@ -986,7 +1005,7 @@ class RepairPlaceholdersTest(unittest.TestCase):
             ("Plain.", "A %(x)s."),  # nothing is missing
             ("A %(a)s.", "A."),  # nothing is unknown
         ):
-            self.assertEqual(repair_placeholders(msgid, text), text, text)
+            self.assertEqual(repair_placeholders(msgid, text), (text, []), text)
 
     def test_repair_is_dropped_unless_the_placeholders_match_exactly(self) -> None:
         for msgid, text in (
@@ -994,12 +1013,14 @@ class RepairPlaceholdersTest(unittest.TestCase):
             ("%(a)s", "%(b)s %(b)s"),
             ("%(a)s %(c)s", "%(b)s %(c)s %(c)s"),
         ):
-            self.assertEqual(repair_placeholders(msgid, text), text, text)
+            self.assertEqual(repair_placeholders(msgid, text), (text, []), text)
 
     def test_percent_percent_is_never_touched(self) -> None:
-        self.assertEqual(repair_placeholders("50%% of %(x)s", "50%% の %(数)s"), "50%% の %(x)s")
+        self.assertEqual(
+            repair_placeholders("50%% of %(x)s", "50%% の %(数)s"), ("50%% の %(x)s", ["x"])
+        )
         text = "%%(数)s 100%%"
-        self.assertEqual(repair_placeholders("%(x)s 100%%", text), text)
+        self.assertEqual(repair_placeholders("%(x)s 100%%", text), (text, []))
 
     def test_repaired_entry_costs_one_call_and_is_clean(self) -> None:
         msgid = "The `%(field_name)s` field is not valid here, as it is long enough."
@@ -1009,11 +1030,56 @@ class RepairPlaceholdersTest(unittest.TestCase):
             self.assertEqual(result, Result(msgid), mode)
             self.assertEqual(len(model.calls), 1, mode)
 
-    def test_two_renamed_placeholders_in_one_call(self) -> None:
-        msgid = "The value `%(value)s` is not defined for the `%(param)s` parameter."
+    VALUE_PARAM = "The value `%(value)s` is not defined for the `%(param)s` parameter."
+
+    def test_several_renames_are_fuzzy_after_the_retries(self) -> None:
         model = FakeModel(
-            lambda p: text_of(p).replace("%(value)s", "%(値)s").replace("%(param)s", "%(パラメータ)s")
+            lambda p: text_of(p)
+            .replace("%(value)s", "%(値)s")
+            .replace("%(param)s", "%(パラメータ)s")
         )
+        result = translate(ask_for(model), "ja", self.VALUE_PARAM)
+        self.assertEqual(len(model.calls), RETRIES + 1)
+        self.assertTrue(result.fuzzy)
+        self.assertEqual(result.text, self.VALUE_PARAM)
+        self.assertIn("PLACEHOLDERS_RENAMED", result.error)
+        self.assertIn("keep %(value)s, %(param)s exactly as written", model.calls[1][0])
+
+    def test_swapped_order_is_not_accepted_silently(self) -> None:
+        reply = "`%(パラメータ)s` パラメータには `%(値)s` は定義されていません。"
+        model = FakeModel(lambda p: reply)
+        result = translate(ask_for(model), "ja", self.VALUE_PARAM)
+        self.assertEqual(len(model.calls), RETRIES + 1)
+        self.assertTrue(result.fuzzy)  # mapped by position: wrong, but flagged for review
+        self.assertEqual(
+            result.text, "`%(value)s` パラメータには `%(param)s` は定義されていません。"
+        )
+
+    def test_a_retry_that_keeps_the_names_is_clean(self) -> None:
+        replies = iter(["`%(パラメータ)s` と `%(値)s`。", None])
+
+        def reply(prompt: str) -> str:
+            first = next(replies)
+            return first if first is not None else faithful(prompt)
+
+        model = FakeModel(reply)
+        result = translate(ask_for(model), "fr", self.VALUE_PARAM)
+        self.assertEqual(result, Result("FR: " + self.VALUE_PARAM, 1))
+
+    def test_three_renames_are_fuzzy(self) -> None:
+        msgid = "Use %(a)s, %(b)s and %(c)s together, which is long enough."
+        model = FakeModel(
+            lambda p: text_of(p)
+            .replace("%(a)s", "%(x)s")
+            .replace("%(b)s", "%(y)s")
+            .replace("%(c)s", "%(z)s")
+        )
+        result = translate(ask_for(model), "fr", msgid)
+        self.assertEqual((result.text, result.fuzzy, len(model.calls)), (msgid, True, 3))
+
+    def test_one_rename_stays_clean_in_one_call(self) -> None:
+        msgid = "The `%(field_name)s` and `%(param)s` fields are not valid, long enough."
+        model = FakeModel(lambda p: text_of(p).replace("%(field_name)s", "%(フィールド名)s"))
         result = translate(ask_for(model), "ja", msgid)
         self.assertEqual(result, Result(msgid))
         self.assertEqual(len(model.calls), 1)

@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from typing import Any, Callable, List, Optional, Tuple
 
 from .check import CatalogChecker
-from .rules import OPAQUE_RE, collapse_cjk_breaks, glossary_hint, name_pattern, names_in
+from .rules import MAX_LISTED, OPAQUE_RE, collapse_cjk_breaks, glossary_hint, name_pattern, names_in
 from .utils import load_catalog, save_catalog, find_po_files, get_lang_from_path
 
 DEFAULT_MODEL = "mlx-community/aya-expanse-8b-4bit"
@@ -160,27 +160,40 @@ def placeholders(text: str) -> List[Tuple[str, str]]:
     return [(m["name"], m["fmt"]) for m in PLACEHOLDER_RE.finditer(text) if m["name"]]
 
 
-def repair_placeholders(msgid: str, text: str) -> str:
+def repair_placeholders(msgid: str, text: str) -> Tuple[str, List[str]]:
     """
     Undo placeholders the model renamed (%(field_name)s -> %(フィールド名)s), in code spans
     too. Only when as many distinct names are unknown as are missing; the n-th unknown name
     (by first appearance) becomes the n-th missing one, with msgid's format. The repair is
     dropped unless the placeholders then equal msgid's exactly. %% is never touched.
+    Returns the text and the names restored; with several, the mapping is only a guess
+    from the order (the language may reorder them).
     """
     want, got = placeholders(msgid), placeholders(text)
     unknown = list(dict.fromkeys(n for n, _ in got if n not in {w for w, _ in want}))
     missing = list(dict.fromkeys(n for n, _ in want if n not in {g for g, _ in got}))
     if not unknown or len(unknown) != len(missing):
-        return text
+        return text, []
     rename = dict(zip(unknown, missing))
-    fmt = {name: f for name, f in reversed(want)}
+    fmt = dict(reversed(want))
 
     def put(match: "re.Match[str]") -> str:
         name = match["name"]
         return f"%({rename[name]}){fmt[rename[name]]}" if name in rename else match.group(0)
 
     fixed = PLACEHOLDER_RE.sub(put, text)
-    return fixed if Counter(placeholders(fixed)) == Counter(want) else text
+    if Counter(placeholders(fixed)) != Counter(want):
+        return text, []
+    return fixed, missing
+
+
+def renamed_problem(names: List[str]) -> str:
+    """The advisory problem for several renamed placeholders (see repair_placeholders)."""
+    listed = ", ".join(f"%({n})s" for n in names[:MAX_LISTED])
+    return (
+        f"PLACEHOLDERS_RENAMED placeholders were renamed and mapped by position; "
+        f"keep {listed} exactly as written"
+    )
 
 
 def shorten(text: str) -> str:
@@ -343,10 +356,13 @@ def translate(
         error = token_error(masked, raw, len(spans), mark, mode == PROTECT_ALL) or ""
         if error:
             continue
-        text = match_whitespace(msgid, repair_placeholders(msgid, restore(raw, spans, mark)), lang)
+        repaired, renamed = repair_placeholders(msgid, restore(raw, spans, mark))
+        text = match_whitespace(msgid, repaired, lang)
         problems = [
             p for rule in (RULES if rules is None else rules) for p in rule(msgid, text, lang)
         ]
+        if len(renamed) > 1:  # one rename is unambiguous; several are mapped by order only
+            problems.append(renamed_problem(renamed))
         if not problems:
             return Result(text, attempt)
         hard = [p for p in problems if p.startswith(HARD_PREFIXES)]
