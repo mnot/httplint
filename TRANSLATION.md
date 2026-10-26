@@ -60,7 +60,7 @@ Run this when translatable strings have changed.
    * `TEMPERATURE=<x>` sets the sampling temperature (default 0.2) if the model supports it.
    * `PROTECT=all` hides variables, code spans and URLs from the model; the default, `links`, hides only URLs and link targets, and checks that code spans and variables come back unchanged (`all` made some models drop the tokens, in 5% of Japanese entries).
    * Each result is checked as in `i18n-check` and retried twice if it fails.
-   * Entries that still fail on variables, code spans or syntax are left empty; entries that only trip the advisory checks are kept as `fuzzy`. Both are listed at the end.
+   * Entries that still fail on variables, code spans, field names or syntax are left empty; entries that only trip the advisory checks are kept as `fuzzy`. Both are listed at the end.
 5. `make i18n-check`: there must be no critical errors. Read any remaining flags and fix them by hand in the `.po` files.
 6. Optional: `make i18n-review MODEL=<model id> LOCALE=fr SINCE=origin/main` (see [Reviewing translations](#reviewing-translations)).
 7. `make i18n-compile`: builds the `.mo` files used at runtime.
@@ -83,6 +83,13 @@ Machine translations need checking, and most maintainers cannot read every langu
 * `DUPLICATED_TEXT`: sentences or placeholders repeat more than in the English (exact repeats only).
 * `SUSPICIOUS_LENGTH`: the translation is much shorter or longer than the English.
 * `PREAMBLE`: the translation starts or ends with model chatter, a code fence or a refusal, or contains `<think>` tags.
+* `FIELD_NAME_CHANGED`, `GLOSSARY`, `GLOSSARY_LOW`, `STRENGTH`, `LEFTOVER_ENGLISH`, `PUNCTUATION`, `STRUCTURE`: language rules (field and coding names kept as written, preferred terms, must/should strength, a leading "The", final punctuation, paragraphs and line breaks).
+
+About the language rules:
+
+* `i18n-autotranslate` applies them too. A changed field name is retried and then left empty; the others only leave the entry `fuzzy`.
+* `MARK_FUZZY=1` does not mark entries flagged only by `GLOSSARY_LOW` (low-confidence terms).
+* Edit the per-language terms in `tools/i18n/glossary.py`.
 
 An untranslated string identical to the English is not flagged. A flag means "look at this", not "this is wrong".
 

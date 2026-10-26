@@ -192,7 +192,7 @@ class TokenErrorTest(unittest.TestCase):
 
 class TranslateTest(unittest.TestCase):
     MSGID = (
-        "The `Content-Type` header says `%(declared_charset)s`; "
+        "The `Content-Type` field says `%(declared_charset)s`; "
         "see [its definition](%(ref_uri)s) or https://example.org/x."
     )
 
@@ -329,11 +329,11 @@ class TranslateTest(unittest.TestCase):
         msgid = "A message that is long enough for the length check to apply."
         rule = autotranslate.i18n_check_rule
         # ratio 0.3 is fine for ja, too short for the default range
-        self.assertEqual(rule(msgid, "x" * 18, "ja"), [])
+        self.assertEqual(rule(msgid, "x" * 17 + "。", "ja"), [])
         self.assertTrue(rule(msgid, "x" * 18, "fr"))
         # ratio 1.8 is fine for the default range, too long for ja
         self.assertTrue(rule(msgid, "x" * 105, "ja"))
-        self.assertEqual(rule(msgid, "x" * 105, "fr"), [])
+        self.assertEqual(rule(msgid, "x" * 104 + ".", "fr"), [])
 
     def test_empty_reply_is_retried(self) -> None:
         replies = iter(["", None])
@@ -390,7 +390,7 @@ class LinksModeTest(unittest.TestCase):
         self.assertIn("Copy text in backticks and %(name)s placeholders exactly", prompt)
         self.assertEqual(
             text_of(prompt),
-            "The `Content-Type` header says `%(declared_charset)s`; "
+            "The `Content-Type` field says `%(declared_charset)s`; "
             "see [its definition]@@1@@ or @@2@@.",
         )
         for secret in ("ref_uri", "example.org"):
@@ -411,7 +411,7 @@ class LinksModeTest(unittest.TestCase):
         self.assertEqual(result, Result("FR: " + self.MSGID, 1))
         self.assertNotIn("rejected", model.calls[0][0])
         self.assertIn(
-            "rejected: CODE_SPAN_CHANGED keep `Content-Type` exactly, including the backticks.",
+            "rejected: CODE_SPAN_CHANGED keep `Content-Type` exactly, including the backticks;",
             model.calls[1][0],
         )
 
@@ -496,8 +496,10 @@ class LinksModeTest(unittest.TestCase):
 
     def test_odd_backtick_count_in_msgid_gives_no_verdict(self) -> None:
         msgid = "Use `Content-Encoding` and `gzip, and `br` here, long enough."
-        result, model = self.run_translate(lambda p: "`br` ... `Content-Encoding` ... `gzip", msgid)
-        self.assertEqual(result.text, "`br` ... `Content-Encoding` ... `gzip")
+        result, model = self.run_translate(
+            lambda p: "`br` ... `Content-Encoding` ... `gzip.", msgid
+        )
+        self.assertEqual(result.text, "`br` ... `Content-Encoding` ... `gzip.")
         self.assertEqual(len(model.calls), 1)
         self.assertEqual(code_span_rule(msgid, "anything", "ja"), [])
 
