@@ -1,6 +1,20 @@
 import ast
-from typing import Iterator, Tuple, List
+from typing import Any, Iterator, Tuple, List
 from babel.messages.extract import extract_python
+
+
+def keyword_names(value: Any) -> List[str]:
+    """
+    Normalise a Babel 'keywords' option to a list of function names.
+
+    Babel < 2.18 hands the per-section option from babel.cfg over as the raw
+    string ("L_ translate"); 2.18 and later pass a dict of parsed keywords.
+    """
+    if not value:
+        return []
+    if isinstance(value, str):
+        return value.split()
+    return list(value)  # dict keys, list, tuple, set
 
 
 def extract_notes(
@@ -53,11 +67,9 @@ def extract_notes(
     fileobj.seek(0)
 
     # Merge keywords from options
-    extra_keywords = options.get("keywords", [])
-    if isinstance(extra_keywords, str):
-        extra_keywords = extra_keywords.split()
+    extra_keywords = keyword_names(options.get("keywords"))
 
-    all_keywords = list(keywords) + extra_keywords
+    all_keywords = list(dict.fromkeys(list(keywords) + extra_keywords))
 
     # We need to pass a container that supports 'in' to extract_python.
     # A list is fine.
