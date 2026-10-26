@@ -51,6 +51,12 @@ _PARAMETER_VALUE_RE = re.compile(rfc9110.parameter_value, re.VERBOSE)
 _WHITESPACE_RE = re.compile(r"\s*")
 
 
+def _skip_whitespace(instr: str, pos: int) -> int:
+    "Where the whitespace starting at ``pos`` ends (``pos`` itself if there is none)."
+    match = _WHITESPACE_RE.match(instr, pos)
+    return match.end() if match else pos
+
+
 def _param_spans(instr: str, delim: str, bws: bool = False) -> List[Tuple[int, int]]:
     "Where split_params finds its parameters in ``instr``, as (start, end)."
     size = len(instr)
@@ -62,14 +68,14 @@ def _param_spans(instr: str, delim: str, bws: bool = False) -> List[Tuple[int, i
             pos += 1
             continue
         name_end = name.end()
-        equals = _WHITESPACE_RE.match(instr, name_end).end() if bws else name_end  # type: ignore[union-attr]
+        equals = _skip_whitespace(instr, name_end) if bws else name_end
         if equals < size and instr[equals] == "=":
             value_start = equals + 1
             if bws:
-                value_start = _WHITESPACE_RE.match(instr, value_start).end()  # type: ignore[union-attr]
+                value_start = _skip_whitespace(instr, value_start)
             value = _PARAMETER_VALUE_RE.match(instr, value_start)
             if value:
-                after = _WHITESPACE_RE.match(instr, value.end()).end()  # type: ignore[union-attr]
+                after = _skip_whitespace(instr, value.end())
                 if after == size or instr.startswith(delim, after):
                     spans.append((pos, value.end()))
                     pos = value.end()
