@@ -1,5 +1,6 @@
 import io
 import unittest
+from itertools import product
 from typing import Any, List, Optional, Tuple
 
 from tools.i18n.extractors import extract_notes, keyword_names
@@ -21,15 +22,21 @@ SHAPES = {
     "tuple": ("L_", "translate"),
 }
 
+# The global keywords Babel passes positionally: 2.17 passes only the defaults,
+# 2.18 has already merged in the per-section ones.
+POSITIONAL = {
+    "babel_2_17": ["_"],
+    "babel_2_18": ["_", "L_", "translate"],
+}
+
 Result = List[Tuple[int, Optional[str], Any, List[str]]]
 
 
-def run_extractor(keywords_option: Any) -> Result:
-    # Babel passes the global keywords (here, "_") positionally.
+def run_extractor(keywords_option: Any, positional: List[str]) -> Result:
     return list(
         extract_notes(
             io.BytesIO(SOURCE),
-            ["_"],
+            positional,
             [],
             {"keywords": keywords_option},
         )
@@ -48,12 +55,12 @@ class TestExtractorKeywords(unittest.TestCase):
                 self.assertEqual(keyword_names(empty), [])
 
     def test_extra_keywords_extracted(self) -> None:
-        for name, shape in SHAPES.items():
-            with self.subTest(shape=name):
+        for (name, shape), (pname, positional) in product(SHAPES.items(), POSITIONAL.items()):
+            with self.subTest(shape=name, positional=pname):
                 self.assertEqual(
                     [
                         (lineno, funcname, messages)
-                        for lineno, funcname, messages, _ in run_extractor(shape)
+                        for lineno, funcname, messages, _ in run_extractor(shape, positional)
                     ],
                     [
                         (2, None, "with local keyword"),
@@ -63,10 +70,10 @@ class TestExtractorKeywords(unittest.TestCase):
                 )
 
     def test_shapes_agree(self) -> None:
-        expected = run_extractor(SHAPES["str"])
-        for name, shape in SHAPES.items():
-            with self.subTest(shape=name):
-                self.assertEqual(run_extractor(shape), expected)
+        expected = run_extractor(SHAPES["str"], POSITIONAL["babel_2_17"])
+        for (name, shape), (pname, positional) in product(SHAPES.items(), POSITIONAL.items()):
+            with self.subTest(shape=name, positional=pname):
+                self.assertEqual(run_extractor(shape, positional), expected)
 
     def test_no_keywords_option(self) -> None:
         results = list(extract_notes(io.BytesIO(SOURCE), ["_"], [], {}))

@@ -14,7 +14,7 @@ def keyword_names(value: Any) -> List[str]:
         return []
     if isinstance(value, str):
         return value.split()
-    return list(value)  # dict keys, list, tuple, set
+    return list(value)  # dict keys, list or tuple
 
 
 def extract_notes(
@@ -69,7 +69,7 @@ def extract_notes(
     # Merge keywords from options
     extra_keywords = keyword_names(options.get("keywords"))
 
-    all_keywords = list(dict.fromkeys(list(keywords) + extra_keywords))
+    all_keywords = list(keywords) + extra_keywords
 
     # We need to pass a container that supports 'in' to extract_python.
     # A list is fine.
@@ -78,5 +78,10 @@ def extract_notes(
         fileobj, all_keywords, comment_tags, options
     ):
         if funcname in extra_keywords:
+            # Names listed in babel.cfg lose any argument-position spec that
+            # Babel 2.18 carries in the dict values. L_ and translate take the
+            # default (1,), so that is harmless today; a cfg entry such as
+            # 'ngettext:1,2' must be registered through Babel's own keyword
+            # mechanism instead.
             funcname = None
         yield (lineno, funcname, messages, comments)
