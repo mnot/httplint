@@ -14,7 +14,7 @@
 #
 # Other targets:
 # - make i18n-check      - Verify translation health (missing strings, variable mismatches)
-# - make i18n-clear-fuzzy - Blank any entries already marked fuzzy, so autotranslate redoes them
+# - make i18n-clear-fuzzy - Blank entries already marked fuzzy (discards their text)
 # - make i18n-init LOCALE=xx - Initialize a new translation catalog for a new language
 #
 

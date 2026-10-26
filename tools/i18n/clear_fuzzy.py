@@ -3,16 +3,18 @@
 import argparse
 import sys
 
-from .utils import load_catalog, save_catalog, find_po_files, get_lang_from_path
+from babel.messages import Catalog
+
+from .utils import find_po_files, get_lang_from_path, load_catalog, save_catalog
 
 
-def clear_fuzzy(catalog) -> int:
+def clear_fuzzy(catalog: Catalog) -> int:
     """
     Reset every fuzzy entry in the catalog to an empty, untranslated one.
 
-    Blanks the translation (every plural form, if there are several), drops the
-    'fuzzy' flag and the previous msgid, so that autotranslate treats the entry as
-    missing. Returns the number of entries cleared.
+    Blanks the translation (every plural form, if there are several) and drops the
+    'fuzzy' flag and the previous msgid. This discards the translation text.
+    Returns the number of entries cleared.
     """
     count = 0
     for message in catalog:
@@ -25,6 +27,11 @@ def clear_fuzzy(catalog) -> int:
         message.flags.discard("fuzzy")
         message.previous_id = ()
         message.previous_context = None
+        # read_po does not parse '#|' previous-msgid lines; it keeps them as
+        # user comments that start with '|'.
+        message.user_comments = [
+            c for c in message.user_comments if not c.startswith("|")
+        ]
         count += 1
     return count
 
@@ -38,9 +45,9 @@ def clear_fuzzy_file(po_path: str) -> int:
     return count
 
 
-def main():
+def main() -> None:
     parser = argparse.ArgumentParser(
-        description="Blank fuzzy translations so that autotranslate redoes them"
+        description="Blank fuzzy translations, discarding their text"
     )
     parser.add_argument(
         "--locale_dir", default="httplint/translations", help="Path to locale directory"
@@ -56,7 +63,8 @@ def main():
     for po_file in po_files:
         lang = get_lang_from_path(po_file)
         count = clear_fuzzy_file(po_file)
-        print(f"{lang}: cleared {count} fuzzy entries")
+        noun = "entry" if count == 1 else "entries"
+        print(f"{lang}: cleared {count} fuzzy {noun}")
 
 
 if __name__ == "__main__":

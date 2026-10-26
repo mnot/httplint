@@ -10,7 +10,7 @@ from tools.i18n.clear_fuzzy import clear_fuzzy, clear_fuzzy_file
 def build_catalog() -> Catalog:
     catalog = Catalog(locale="fr", fuzzy=False)
     catalog.add("new text", "ancien texte", flags=["fuzzy"], previous_id="old text")
-    catalog.add("kept", "gardé")
+    catalog.add("kept", "gardé", user_comments=["note on kept"])
     catalog.add("empty")
     catalog.add(
         ("one thing", "many things"),
@@ -61,8 +61,11 @@ class TestClearFuzzy(unittest.TestCase):
             with open(po_path, encoding="utf-8") as f:
                 text = f.read()
             self.assertNotIn("fuzzy", text)
+            # read_po keeps '#|' lines as user comments, and write_po emits '# |'.
+            self.assertNotIn("# | msgid", text)
             self.assertNotIn("#|", text)
             self.assertIn("gardé", text)
+            self.assertIn("# note on kept", text)
 
             # Nothing left to clear: the file is not rewritten.
             before = os.stat(po_path).st_mtime_ns
