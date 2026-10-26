@@ -393,6 +393,17 @@ class MarkFuzzyTest(PoFixture):
         self.assertIn("fr: marked 2 entries fuzzy", out)
         self.assertIn("TOKEN_CHANGED", out)
 
+    def test_low_confidence_glossary_is_reported_but_not_marked(self) -> None:
+        catalog = Catalog(locale="ja")
+        catalog.add("The response is fine.", "レスポンスは問題ありません。")
+        catalog.add("A response is sent.", "応答が送信されます。")  # only a LOW entry
+        catalog.add("A directive is sent.", "指示が送信されます。")  # a regular entry
+        issues = CatalogChecker().check_catalog(catalog, "ja")
+        self.assertEqual(sorted(i.issue_type.name for i in issues), ["GLOSSARY", "GLOSSARY_LOW"])
+        self.assertEqual(check.mark_fuzzy(catalog, issues), 1)
+        self.assertNotIn("fuzzy", catalog.get("A response is sent.").flags)
+        self.assertIn("fuzzy", catalog.get("A directive is sent.").flags)
+
     def test_translations_not_changed(self) -> None:
         before = {str(m.id): m.string for m in load_catalog(self.po_path) if m.id}
         self.run_check("--mark-fuzzy")

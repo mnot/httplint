@@ -6,7 +6,7 @@ from typing import List, Optional
 
 from babel.messages.pofile import read_po
 
-from tools.i18n import rules
+from tools.i18n import glossary as glossary_data, rules
 from tools.i18n.autotranslate import (
     HARD_PREFIXES,
     PROMPT_END,
@@ -69,6 +69,16 @@ class FieldNameTest(unittest.TestCase):
         self.assertEqual(rules.names_in("The report-to parameter is bad."), [])
         self.assertEqual(rules.names_in("The report-to header is bad."), ["report-to"])
 
+    def test_every_coding_name_is_protected(self) -> None:
+        self.assertEqual(
+            set(rules.CODING_NAMES), {"gzip", "deflate", "brotli", "zstd", "dcb", "dcz"}
+        )
+        for name in rules.CODING_NAMES:
+            with self.subTest(name=name):
+                self.assertEqual(rules.names_in(f"Use {name} here."), [name])
+                self.assertIsNotNone(rules.field_name_changed(f"Use {name} here.", "ここ。"))
+                self.assertIsNone(rules.field_name_changed(f"Use {name} here.", f"{name} を使う。"))
+
     def test_coding_names(self) -> None:
         self.assertEqual(
             rules.names_in("Compressed using Deflate or gzip; GZip-compressed."),
@@ -126,7 +136,7 @@ class FieldNameTest(unittest.TestCase):
 
 class GlossaryTest(unittest.TestCase):
     def check(self, lang: str, msgid: str, msgstr: str) -> Optional[str]:
-        return rules.glossary(msgid, msgstr, lang)
+        return rules.glossary(msgid, msgstr, lang) or rules.glossary_low(msgid, msgstr, lang)
 
     def test_ja_avoid_and_ok(self) -> None:
         self.assertIn(
@@ -183,6 +193,40 @@ class GlossaryTest(unittest.TestCase):
     def test_unknown_language_and_no_trigger(self) -> None:
         self.assertIsNone(self.check("de", "The header.", "Der header."))
         self.assertIsNone(self.check("ja", "Nothing.", "指示"))
+
+    def test_ja_coding_does_not_flag_other_words_with_code(self) -> None:
+        msgid = "Unknown coding."
+        for ok in (
+            "不明なエンコード",
+            "不明なエラーコード",
+            "不明なステータスコード",
+            "不明なコーディング",
+        ):
+            self.assertIsNone(self.check("ja", msgid, ok), ok)
+        self.assertIsNotNone(self.check("ja", msgid, "不明なコード"))
+
+    def test_untranslated_string_is_not_flagged(self) -> None:
+        msgid = "The Deprecation header has an invalid type."
+        for lang in ("fr", "ja"):
+            self.assertIsNone(self.check(lang, msgid, msgid))
+            self.assertIsNone(self.check(lang, msgid, msgid + "\n"))
+        self.assertIsNone(rules.strength("A MUST.", "A MUST.", "es"))
+
+    def test_zh_terms_are_simplified_only(self) -> None:
+        for lang in ("zh", "zh_CN", "zh-CN", "zh_Hans"):
+            self.assertIsNotNone(self.check(lang, "The header.", "头部"), lang)
+        for lang in ("zh_TW", "zh-Hant", "zh_HK", "zh_Hant_TW"):
+            self.assertIsNone(self.check(lang, "The header.", "头部"), lang)
+            self.assertEqual(rules.glossary_hint(lang, "The header."), "")
+            self.assertIsNone(rules.strength("It should be set.", "必须设置。", lang))
+
+    def test_low_entries_are_reported_separately(self) -> None:
+        self.assertIsNone(rules.glossary("The response.", "応答です", "ja"))
+        self.assertIsNotNone(rules.glossary_low("The response.", "応答です", "ja"))
+        self.assertIsNotNone(rules.glossary("A directive.", "指示", "ja"))
+        self.assertIsNone(rules.glossary_low("A directive.", "指示", "ja"))
+        lows = [e.term for lang in glossary_data.GLOSSARY.values() for e in lang if e.low]
+        self.assertIn("response", lows)
 
     def test_message_names_the_preferred_term(self) -> None:
         self.assertEqual(
@@ -252,6 +296,38 @@ class StrengthTest(unittest.TestCase):
         for lang, msgid, msgstr in cases:
             with self.subTest(lang=lang, msgstr=msgstr):
                 self.assertIsNone(rules.strength(msgid, msgstr, lang))
+
+    def test_more_must_and_should_forms(self) -> None:
+        should = [
+            ("zh", "It must be an integer.", "值应为整数。"),
+            ("zh", "It must be an integer.", "值应是整数。"),
+            ("ja", "It should be set.", "設定しなければいけません。"),
+            ("es", "It should be set.", "Tiene que definirse."),
+            ("es", "It should be set.", "Deberá definirse."),
+            ("fr", "It should be set.", "Il faut le définir."),
+            ("zh", "It should be set.", "须设置。"),
+            ("zh", "It should not be set.", "不得设置。"),
+        ]
+        for lang, msgid, msgstr in should:
+            with self.subTest(msgstr=msgstr):
+                self.assertIsNotNone(rules.strength(msgid, msgstr, lang))
+        for lang, msgid, msgstr in [
+            ("zh", "It must be set.", "须设置。"),
+            ("zh", "It should be set.", "应为整数。"),
+            ("ja", "It must be set.", "設定しなければいけません。"),
+            ("es", "It must be set.", "Tiene que definirse."),
+            ("es", "It must be set.", "Deberá definirse."),
+            ("fr", "It must be set.", "Il faut le définir."),
+            ("fr", "It should be set.", "Il faudrait le définir."),
+        ]:
+            with self.subTest(msgstr=msgstr):
+                self.assertIsNone(rules.strength(msgid, msgstr, lang))
+
+    def test_zh_ying_inside_other_words_is_not_a_should(self) -> None:
+        for word in ("响应", "对应", "适应", "应用", "相应"):
+            self.assertIsNotNone(rules.strength("It should be set.", f"{word}必须。", "zh"))
+        self.assertIsNone(rules.strength("It must be set.", "必须设置响应。", "zh"))
+        self.assertIsNone(rules.strength("It must be set.", "响应需要设置应用。", "zh"))
 
     def test_debe_is_not_a_prefix_of_deberia(self) -> None:
         self.assertIsNone(rules.strength("It should be set.", "Debería definirse.", "es"))
@@ -326,6 +402,11 @@ class StructureTest(unittest.TestCase):
             "例:\n```\ncode\n```\nです。",
             "例:\n\n    code\n日本語。",
             "latin text\nmore latin",
+            "### 見出し\nテキスト",
+            "[1]: https://example.com/x\nテキスト",
+            "- 項目一\n  続き\n- 項目二",
+            "1. 項目一\n続きです。",
+            "| 表 | 行 |\nテキスト",
         ]
         for text in keep:
             with self.subTest(text=text):

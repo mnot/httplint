@@ -496,7 +496,9 @@ class LinksModeTest(unittest.TestCase):
 
     def test_odd_backtick_count_in_msgid_gives_no_verdict(self) -> None:
         msgid = "Use `Content-Encoding` and `gzip, and `br` here, long enough."
-        result, model = self.run_translate(lambda p: "`br` ... `Content-Encoding` ... `gzip.", msgid)
+        result, model = self.run_translate(
+            lambda p: "`br` ... `Content-Encoding` ... `gzip.", msgid
+        )
         self.assertEqual(result.text, "`br` ... `Content-Encoding` ... `gzip.")
         self.assertEqual(len(model.calls), 1)
         self.assertEqual(code_span_rule(msgid, "anything", "ja"), [])

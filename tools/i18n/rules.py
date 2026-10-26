@@ -118,26 +118,44 @@ def field_name_changed(msgid: str, msgstr: str) -> Optional[str]:
 ## GLOSSARY
 
 
-def _entries(lang: Optional[str]) -> Tuple[Entry, ...]:
-    return GLOSSARY.get(_lang_base(lang), ())
+SIMPLIFIED_ZH = ("zh", "zh_cn", "zh_sg", "zh_hans", "zh_hans_cn")
 
 
-def _applies(entry: Entry, msgid: str) -> bool:
-    return bool(re.search(entry.when, prose(msgid), re.IGNORECASE | re.DOTALL))
+def locale_key(lang: Optional[str]) -> str:
+    """The language the terms and words are for ('' for none): zh is Simplified Chinese only."""
+    base = _lang_base(lang)
+    if base == "zh" and (lang or "").lower().replace("-", "_") not in SIMPLIFIED_ZH:
+        return ""
+    return base
+
+
+def untranslated(msgid: str, msgstr: str) -> bool:
+    """msgstr is the English left as it was (not flagged by the language rules)."""
+    return msgstr.strip() == msgid.strip()
+
+
+def _applies(entry: Entry, english: str) -> bool:
+    return bool(re.search(entry.when, english, re.IGNORECASE | re.DOTALL))
 
 
 def glossary_hint(lang: Optional[str], msgid: str) -> str:
     """A prompt sentence for the glossary entries that apply to msgid ('' if none)."""
-    terms = [f"'{e.term}' as '{e.prefer}'" for e in _entries(lang) if _applies(e, msgid)]
+    english = prose(msgid)
+    terms = [
+        f"'{e.term}' as '{e.prefer}'"
+        for e in GLOSSARY.get(locale_key(lang), ())
+        if _applies(e, english)
+    ]
     return f" Terminology: translate {'; '.join(terms)}." if terms else ""
 
 
-def glossary(msgid: str, msgstr: str, lang: Optional[str]) -> Optional[str]:
-    """msgstr uses a term the glossary says to avoid for a term in msgid."""
-    text = prose(msgstr)
+def _glossary(msgid: str, msgstr: str, lang: Optional[str], low: bool) -> Optional[str]:
+    if untranslated(msgid, msgstr):
+        return None
+    english, text = prose(msgid), prose(msgstr)
     problems = []
-    for entry in _entries(lang):
-        if not _applies(entry, msgid):
+    for entry in GLOSSARY.get(locale_key(lang), ()):
+        if entry.low != low or not _applies(entry, english):
             continue
         for pattern in entry.avoid:
             hit = re.search(pattern, text, re.IGNORECASE)
@@ -145,6 +163,16 @@ def glossary(msgid: str, msgstr: str, lang: Optional[str]) -> Optional[str]:
                 problems.append(f"use '{entry.prefer}' for '{entry.term}', not '{hit.group(0)}'")
                 break
     return "; ".join(problems[:MAX_LISTED]) or None
+
+
+def glossary(msgid: str, msgstr: str, lang: Optional[str]) -> Optional[str]:
+    """msgstr uses a term the glossary says to avoid for a term in msgid."""
+    return _glossary(msgid, msgstr, lang, low=False)
+
+
+def glossary_low(msgid: str, msgstr: str, lang: Optional[str]) -> Optional[str]:
+    """As glossary(), for the low-confidence entries (reported, never marked fuzzy)."""
+    return _glossary(msgid, msgstr, lang, low=True)
 
 
 ## STRENGTH
@@ -163,8 +191,8 @@ def strength(msgid: str, msgstr: str, lang: Optional[str]) -> Optional[str]:
     with both words, or a msgstr with neither, gets no verdict. An English RFC 2119
     keyword left in msgstr is flagged too.
     """
-    words = STRENGTH.get(_lang_base(lang))
-    if words is None:
+    words = STRENGTH.get(locale_key(lang))
+    if words is None or untranslated(msgid, msgstr):
         return None
     text, english = prose(msgstr), prose(msgid)
     leftover = KEYWORD_RE.search(text)
@@ -208,13 +236,15 @@ CJK_CHAR = "\u3000-\u303f\u3040-\u30ff\u3400-\u9fff\uf900-\ufaff\uff00-\uffef"
 CJK_BREAK_RE = re.compile(rf"(?<=[^\s{CJK_CHAR}])\n(?=[{CJK_CHAR}])|(?<=[{CJK_CHAR}])\n(?=\S)")
 INDENT_RE = re.compile(r"^ {4}\S", re.MULTILINE)
 LIST_START_RE = re.compile(r"[-*+>#|]|\d+[.)]|```")
+# A line that is not a paragraph line: list item, heading, table row, link reference definition.
+BLOCK_LINE_RE = re.compile(r"\s*(?:[-*+]\s|\d+[.)]\s|#{1,6}\s|\||\[[^\]]+\]:\s)")
 
 
 def collapse_cjk_breaks(text: str, lang: Optional[str]) -> str:
     """
     Join the lines of a ja/zh paragraph that the model wrapped like the English (Markdown
-    shows the break as a space). Text with a code block, table or a list item as the next
-    line is left alone.
+    shows the break as a space). Text with a code block is left alone, as are lines that
+    start or follow a list item, heading, table row or link reference definition.
     """
     if _lang_base(lang) not in ("ja", "zh") or "```" in text or INDENT_RE.search(text):
         return text
@@ -222,7 +252,7 @@ def collapse_cjk_breaks(text: str, lang: Optional[str]) -> str:
     def join(match: "re.Match[str]") -> str:
         rest = text[match.end() :]
         before = text[: match.start()].rsplit("\n", 1)[-1]
-        if LIST_START_RE.match(rest) or before.lstrip().startswith("|") or not before.strip():
+        if LIST_START_RE.match(rest) or BLOCK_LINE_RE.match(before) or not before.strip():
             return match.group(0)
         return ""
 

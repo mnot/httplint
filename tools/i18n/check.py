@@ -24,10 +24,14 @@ class IssueType(Enum):
     # Language rules (see rules.py and glossary.py); also used by autotranslate.
     FIELD_NAME_CHANGED = auto()
     GLOSSARY = auto()
+    GLOSSARY_LOW = auto()  # low-confidence terms: reported, but not marked fuzzy
     STRENGTH = auto()
     LEFTOVER_ENGLISH = auto()
     PUNCTUATION = auto()
     STRUCTURE = auto()
+
+# Reported, but they don't get an entry marked fuzzy.
+NOT_MARKED = (IssueType.MISSING, IssueType.FUZZY, IssueType.GLOSSARY_LOW)
 
 # Only these make `main()` exit non-zero.
 CRITICAL_ISSUES = (IssueType.BAD_VARIABLE, IssueType.SYNTAX_ERROR)
@@ -169,6 +173,7 @@ class CatalogChecker:
             (IssueType.PREAMBLE, heuristics.preamble(msgid, msgstr)),
             (IssueType.FIELD_NAME_CHANGED, rules.field_name_changed(msgid, msgstr)),
             (IssueType.GLOSSARY, rules.glossary(msgid, msgstr, lang)),
+            (IssueType.GLOSSARY_LOW, rules.glossary_low(msgid, msgstr, lang)),
             (IssueType.STRENGTH, rules.strength(msgid, msgstr, lang)),
             (IssueType.LEFTOVER_ENGLISH, rules.leftover_english(msgid, msgstr, lang)),
             (IssueType.PUNCTUATION, rules.punctuation(msgid, msgstr, lang)),
@@ -182,13 +187,14 @@ class CatalogChecker:
 
 def mark_fuzzy(catalog, issues: List[TranslationIssue]) -> int:
     """
-    Set the fuzzy flag on translated entries that have any issue other than MISSING
-    or FUZZY, so 'make i18n-clear-fuzzy' can blank them. Returns the number marked.
+    Set the fuzzy flag on translated entries that have any issue other than MISSING,
+    FUZZY or GLOSSARY_LOW, so 'make i18n-clear-fuzzy' can blank them. Returns the number
+    marked.
     """
     flagged = {
         i.message_id
         for i in issues
-        if i.issue_type not in (IssueType.MISSING, IssueType.FUZZY)
+        if i.issue_type not in NOT_MARKED
     }
     count = 0
     for message in catalog:
