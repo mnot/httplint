@@ -225,6 +225,14 @@ def match_whitespace(msgid: str, msgstr: str, lang: Optional[str] = None) -> str
     return lead + collapse_cjk_breaks(msgstr.strip(), lang) + trail
 
 
+def drop_added_backticks(msgid: str, msgstr: str) -> str:
+    """
+    A msgid without backticks is plain text (notes name header fields bare), so any
+    backtick in msgstr was added by the model; remove it and keep the text inside.
+    """
+    return msgstr if "`" in msgid else msgstr.replace("`", "")
+
+
 @dataclass
 class Result:
     text: Optional[str]  # None: nothing usable
@@ -255,8 +263,11 @@ def translate(
     advisory = False
     for attempt in range(RETRIES + 1):
         candidate, advisory = None, False
-        raw = ask(
-            build_prompt(lang, masked, bool(spans), error or None, mark, visible, percent, hint)
+        raw = drop_added_backticks(
+            msgid,
+            ask(
+                build_prompt(lang, masked, bool(spans), error or None, mark, visible, percent, hint)
+            ),
         ).strip()
         if not raw:
             error = "the translation was empty"

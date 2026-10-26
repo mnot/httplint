@@ -18,8 +18,11 @@ from tools.i18n.autotranslate import (
     PROMPT_START,
     PROTECT_ALL,
     PROTECT_LINKS,
+    PROTECT_MODES,
+    RETRIES,
     build_parser,
     code_span_rule,
+    drop_added_backticks,
     protect,
     Result,
     restore,
@@ -503,13 +506,14 @@ class LinksModeTest(unittest.TestCase):
         self.assertEqual(len(model.calls), 1)
         self.assertEqual(code_span_rule(msgid, "anything", "ja"), [])
 
-    def test_added_backticks_are_advisory(self) -> None:
-        msgid = "The Expect header is missing from the request, which is long enough."
-        result, model = self.run_translate(lambda p: "L'en-tête `Expect` est absent.", msgid)
+    def test_added_span_in_msgid_with_backticks_is_advisory(self) -> None:
+        msgid = "The `Expect` header is missing, and the Vary header too, which is long."
+        reply = "L'en-tête `Expect` est absent, et `Vary` aussi."
+        result, model = self.run_translate(lambda p: reply, msgid)
         self.assertEqual(len(model.calls), 3)
         self.assertTrue(result.fuzzy)
-        self.assertEqual(result.text, "L'en-tête `Expect` est absent.")
-        self.assertIn("you added `Expect`", result.error)
+        self.assertEqual(result.text, reply)
+        self.assertIn("you added `Vary`", result.error)
 
     def test_odd_characters_in_spans(self) -> None:
         msgid = (
@@ -534,6 +538,84 @@ class LinksModeTest(unittest.TestCase):
         msgid = "\n Some `code` here, long enough.\n"
         result, _ = self.run_translate(lambda p: "FR: " + text_of(p).strip(), msgid)
         self.assertEqual(result.text, "\n FR: Some `code` here, long enough.\n")
+
+
+class DropAddedBackticksTest(unittest.TestCase):
+    """A msgid without backticks is plain text: backticks in the reply are removed."""
+
+    CASES = [
+        ("Access-Control-Max-Age must be an integer.", "`Access-Control-Max-Age` doit être un entier."),
+        ("Vary: * effectively makes this response uncacheable.", "`Vary: *` rend cette réponse non cachable."),
+        ("The Accept-Language header isn't valid.", "L'en-tête `Accept-Language` n'est pas valide."),
+    ]
+
+    def run_translate(
+        self, msgid: str, reply: str, mode: str
+    ) -> Tuple[Result, FakeModel]:
+        model = FakeModel(lambda p: reply)
+        return translate(ask_for(model), "fr", msgid, mode=mode), model
+
+    def test_backticks_around_names_are_stripped_without_a_retry(self) -> None:
+        for mode in PROTECT_MODES:
+            for msgid, reply in self.CASES:
+                result, model = self.run_translate(msgid, reply, mode)
+                self.assertEqual(result.text, reply.replace("`", ""), (mode, msgid))
+                self.assertFalse(result.fuzzy)
+                self.assertEqual(result.retries, 0)
+                self.assertEqual(len(model.calls), 1, (mode, msgid))
+
+    def test_odd_count_and_fences_are_stripped(self) -> None:
+        msgid = "The Accept-Language header isn't valid."
+        for mode in PROTECT_MODES:
+            for reply in (
+                "L'en-tête `Accept-Language n'est pas valide.",
+                "```\nL'en-tête Accept-Language n'est pas valide.\n```",
+            ):
+                result, model = self.run_translate(msgid, reply, mode)
+                self.assertNotIn("`", result.text or "`")
+                self.assertIn("Accept-Language", result.text or "")
+                self.assertEqual(len(model.calls), 1)
+
+    def test_only_backticks_is_an_empty_reply(self) -> None:
+        result, model = self.run_translate("The Accept-Language header isn't valid.", "``", PROTECT_LINKS)
+        self.assertIsNone(result.text)
+        self.assertEqual(len(model.calls), RETRIES + 1)
+
+    def test_other_quote_characters_are_untouched(self) -> None:
+        reply = "L\u2019en-t\u00eate \uff40Accept-Language\uff40 \u2018n\u2019est\u2019 pas valide."
+        result, _ = self.run_translate("The Accept-Language header isn't valid.", reply, PROTECT_LINKS)
+        self.assertEqual(result.text, reply)
+
+    def test_msgid_with_backticks_is_untouched(self) -> None:
+        msgid = "The `Content-Type` header isn't valid, and Vary is long enough."
+        for mode in PROTECT_MODES:
+            model = FakeModel(lambda p: "L'en-tête `Content-Type` est invalide, et `Vary` aussi.")
+            result = translate(ask_for(model), "fr", msgid, mode=mode)
+            if mode == PROTECT_ALL:  # `all` masks the span; the added one is rejected
+                self.assertIsNone(result.text)
+            else:
+                self.assertTrue(result.fuzzy)
+                self.assertEqual(result.text, "L'en-tête `Content-Type` est invalide, et `Vary` aussi.")
+            self.assertEqual(len(model.calls), RETRIES + 1)
+            self.assertIn("added", result.error.lower())
+
+    def test_function(self) -> None:
+        self.assertEqual(drop_added_backticks("a b", "`a` ``b`"), "a b")
+        self.assertEqual(drop_added_backticks("a `b`", "`a` b"), "`a` b")
+
+
+class PluralTest(unittest.TestCase):
+    def test_plural_reply_is_not_changed(self) -> None:
+        catalog = Catalog(locale="fr")
+        catalog.add(("One header.", "Many headers."), ("", ""), flags=["fuzzy"])
+        model = FakeModel(lambda p: "Un `en-tête`.")
+        saved: List[Any] = []
+        with mock.patch.object(autotranslate, "load_catalog", lambda path: catalog), mock.patch.object(
+            autotranslate, "save_catalog", lambda path, cat: saved.append(cat)
+        ), contextlib.redirect_stdout(io.StringIO()):
+            autotranslate.autotranslate_file("x.po", "fr", "fake", 0, model=model)
+        self.assertEqual(len(model.calls), 1)
+        self.assertEqual([m.string for m in saved[0] if m.id], ["Un `en-tête`."])
 
 
 class CodeSpanRuleTest(unittest.TestCase):
