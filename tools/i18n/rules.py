@@ -235,7 +235,7 @@ def punctuation(msgid: str, msgstr: str, lang: Optional[str]) -> Optional[str]:
 
 def backticks_added(msgid: str, msgstr: str) -> Optional[str]:
     """msgstr has backticks but msgid has none (plain text: they would show literally)."""
-    if "`" in msgid or "`" not in msgstr or untranslated(msgid, msgstr):
+    if "`" in msgid or "`" not in msgstr:
         return None
     return "msgid has no backticks, but the translation does"
 

@@ -544,14 +544,21 @@ class DropAddedBackticksTest(unittest.TestCase):
     """A msgid without backticks is plain text: backticks in the reply are removed."""
 
     CASES = [
-        ("Access-Control-Max-Age must be an integer.", "`Access-Control-Max-Age` doit être un entier."),
-        ("Vary: * effectively makes this response uncacheable.", "`Vary: *` rend cette réponse non cachable."),
-        ("The Accept-Language header isn't valid.", "L'en-tête `Accept-Language` n'est pas valide."),
+        (
+            "Access-Control-Max-Age must be an integer.",
+            "`Access-Control-Max-Age` doit être un entier.",
+        ),
+        (
+            "Vary: * effectively makes this response uncacheable.",
+            "`Vary: *` rend cette réponse non cachable.",
+        ),
+        (
+            "The Accept-Language header isn't valid.",
+            "L'en-tête `Accept-Language` n'est pas valide.",
+        ),
     ]
 
-    def run_translate(
-        self, msgid: str, reply: str, mode: str
-    ) -> Tuple[Result, FakeModel]:
+    def run_translate(self, msgid: str, reply: str, mode: str) -> Tuple[Result, FakeModel]:
         model = FakeModel(lambda p: reply)
         return translate(ask_for(model), "fr", msgid, mode=mode), model
 
@@ -564,26 +571,54 @@ class DropAddedBackticksTest(unittest.TestCase):
                 self.assertEqual(result.retries, 0)
                 self.assertEqual(len(model.calls), 1, (mode, msgid))
 
-    def test_odd_count_and_fences_are_stripped(self) -> None:
+    def test_odd_count_is_stripped(self) -> None:
         msgid = "The Accept-Language header isn't valid."
         for mode in PROTECT_MODES:
+            result, model = self.run_translate(
+                msgid, "L'en-tête `Accept-Language n'est pas valide.", mode
+            )
+            self.assertEqual(result.text, "L'en-tête Accept-Language n'est pas valide.")
+            self.assertEqual(len(model.calls), 1)
+
+    def test_fence_lines_are_dropped_with_their_info_string(self) -> None:
+        msgid = "The Accept-Language header isn't valid."
+        body = "L'en-tête Accept-Language n'est pas valide."
+        for mode in PROTECT_MODES:
             for reply in (
-                "L'en-tête `Accept-Language n'est pas valide.",
-                "```\nL'en-tête Accept-Language n'est pas valide.\n```",
+                f"```\n{body}\n```",
+                f"```text\n{body}\n```",
+                f"```markdown\n{body}\n```\n",
+                f"  ``` md \n{body}\n  ```  ",
+                f"```text\n{body}",  # a fence only at the start
+                f"{body}\n```",  # and only at the end
             ):
                 result, model = self.run_translate(msgid, reply, mode)
-                self.assertNotIn("`", result.text or "`")
-                self.assertIn("Accept-Language", result.text or "")
+                self.assertEqual(result.text, body, (mode, reply))
                 self.assertEqual(len(model.calls), 1)
 
+    def test_inline_triple_backticks_are_not_a_fence_line(self) -> None:
+        self.assertEqual(
+            drop_added_backticks("Vary is bad.", "```x``` est mauvais."), "x est mauvais."
+        )
+        self.assertEqual(
+            drop_added_backticks("Vary is bad.", "text\n```x``` est mauvais."),
+            "text\nx est mauvais.",
+        )
+
     def test_only_backticks_is_an_empty_reply(self) -> None:
-        result, model = self.run_translate("The Accept-Language header isn't valid.", "``", PROTECT_LINKS)
-        self.assertIsNone(result.text)
-        self.assertEqual(len(model.calls), RETRIES + 1)
+        for reply in ("``", "```"):
+            result, model = self.run_translate(
+                "The Accept-Language header isn't valid.", reply, PROTECT_LINKS
+            )
+            self.assertIsNone(result.text)
+            self.assertEqual(result.error, "the translation was empty")
+            self.assertEqual(len(model.calls), RETRIES + 1)
 
     def test_other_quote_characters_are_untouched(self) -> None:
         reply = "L\u2019en-t\u00eate \uff40Accept-Language\uff40 \u2018n\u2019est\u2019 pas valide."
-        result, _ = self.run_translate("The Accept-Language header isn't valid.", reply, PROTECT_LINKS)
+        result, _ = self.run_translate(
+            "The Accept-Language header isn't valid.", reply, PROTECT_LINKS
+        )
         self.assertEqual(result.text, reply)
 
     def test_msgid_with_backticks_is_untouched(self) -> None:
@@ -595,7 +630,9 @@ class DropAddedBackticksTest(unittest.TestCase):
                 self.assertIsNone(result.text)
             else:
                 self.assertTrue(result.fuzzy)
-                self.assertEqual(result.text, "L'en-tête `Content-Type` est invalide, et `Vary` aussi.")
+                self.assertEqual(
+                    result.text, "L'en-tête `Content-Type` est invalide, et `Vary` aussi."
+                )
             self.assertEqual(len(model.calls), RETRIES + 1)
             self.assertIn("added", result.error.lower())
 
@@ -610,9 +647,11 @@ class PluralTest(unittest.TestCase):
         catalog.add(("One header.", "Many headers."), ("", ""), flags=["fuzzy"])
         model = FakeModel(lambda p: "Un `en-tête`.")
         saved: List[Any] = []
-        with mock.patch.object(autotranslate, "load_catalog", lambda path: catalog), mock.patch.object(
-            autotranslate, "save_catalog", lambda path, cat: saved.append(cat)
-        ), contextlib.redirect_stdout(io.StringIO()):
+        with (
+            mock.patch.object(autotranslate, "load_catalog", lambda path: catalog),
+            mock.patch.object(autotranslate, "save_catalog", lambda path, cat: saved.append(cat)),
+            contextlib.redirect_stdout(io.StringIO()),
+        ):
             autotranslate.autotranslate_file("x.po", "fr", "fake", 0, model=model)
         self.assertEqual(len(model.calls), 1)
         self.assertEqual([m.string for m in saved[0] if m.id], ["Un `en-tête`."])
