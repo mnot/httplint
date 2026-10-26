@@ -91,8 +91,6 @@ Use an LLM (via the `llm` package) to automatically translate missing strings. Y
 ```bash
 make i18n-autotranslate MODEL=gemini-1.5-flash-latest RPM=60
 ```
-The default local model replaced `aya-23-8B` after a small benchmark (15 strings each for `fr`, `es`, `ja` and `zh`): `aya-expanse-8b` needed the same memory and time, scored higher with a blind judge in all four languages, and damaged fewer placeholders, backticks and links. Small local models still sometimes change header names, placeholders and links, so run `make i18n-check` after translating, and consider the optional `make i18n-review` (see "Reviewing translations" below). The default model must be downloaded once: `./.venv/bin/llm mlx download-model mlx-community/aya-expanse-8b-4bit`.
-
 *Note: To use remote models you must have the `llm` package configured with valid API keys (e.g., `./.venv/bin/llm keys set gemini`).*
 
 ### 4. Compile
