@@ -110,11 +110,13 @@ Machine translations need checking, and most maintainers cannot read every langu
 `make i18n-check` (part of `make test`) fails only on `BAD_VARIABLE` and `SYNTAX_ERROR`. It also reports, without failing:
 
 * `MISSING`, `FUZZY`: no translation, or marked fuzzy.
-* `LINK_MISMATCH`: the URLs and Markdown link targets in the translation differ from the English.
+* `LINK_MISMATCH`: the URLs and Markdown link targets in the translation differ from the English, or the number of well-formed `[text](target)` links does (a space before the `(`, an unclosed link, or lost brackets around a URL that is still there).
 * `TOKEN_CHANGED`: a backtick-quoted header name, token or value in the English (a single token such as `Cache-Control` or `bytes`, a `Name: value` line, or the code of a status like `404 (Not Found)`) does not appear verbatim in the translation. Spans containing placeholders, bare punctuation and prose are ignored, so some changes will be missed.
-* `DUPLICATED_TEXT`: a sentence repeats within the translation but not the English, or a placeholder occurs more often than in the English.
+* `DUPLICATED_TEXT`: more sentences repeat within the translation than within the English, or a placeholder occurs more often than in the English. Only exact repeats are found; a paraphrased restatement is not (the model review can catch those).
 * `SUSPICIOUS_LENGTH`: the translation is much shorter or longer than the English (ratio outside 0.5-2.2, or 0.2-1.4 for `ja` and 0.12-1.2 for `zh`; strings under 30 characters are skipped).
-* `PREAMBLE`: the translation starts with model chatter such as "Here is the translation" or contains `<think>` tags.
+* `PREAMBLE`: the translation starts with model chatter ("Here is the translation", "Certainly", "As an AI", a refusal, in the supported languages) or a code fence, ends with commentary ("(Note: ...)", "Let me know if..."), or contains `<think>` tags.
+
+There is no check for a translation that is identical to the English (an untranslated string).
 
 A flag means "look at this", not "this is wrong".
 
@@ -128,22 +130,23 @@ A flag means "look at this", not "this is wrong".
 ./.venv/bin/llm keys set anthropic
 ./.venv/bin/llm models                      # find the model id
 make i18n-review MODEL=<model id> LOCALE=fr SINCE=origin/main
-
-# A local MLX model also works, with no key and no cost
-make i18n-review MODEL=mlx-community/aya-23-8B-4bit LOCALE=fr LIMIT=20
 ```
+
+A local MLX model should also work through `llm-mlx` (installed by `make venv-i18n`) once its model has been downloaded, with no key and no cost per call. That path has not been tested with this tool.
 
 Options (as `make` variables):
 
 * `LOCALE`: a locale such as `fr`, or `all` (the default).
 * `SINCE=REF`: only review entries whose translation is new or changed compared with the catalog at git ref `REF`, which is what you want after retranslating.
 * `LIMIT=N`: review at most N entries per locale.
-* `YES=1`: required if more than 50 entries would be reviewed.
+* `YES=1`: required if more than 50 model calls could be made. The count is the worst case, entries x (1 + `BACKTRANSLATE`) x 2, because a reply that is not valid JSON is retried once. `DRY_RUN=1` shows it.
 * `BACKTRANSLATE=1`: first translate each translation back to English in a separate call, without showing the original, then compare meanings. It doubles the number of calls.
-* `MARK_FUZZY=1`: set the `fuzzy` flag on entries judged "major", so that `make i18n-compile` skips them (English is shown instead) and `make i18n-check` lists them. Off by default.
+* `MARK_FUZZY=1`: set the `fuzzy` flag on entries judged "major". It means "queued for retranslation or manual fix": `make i18n-compile` skips them (English is shown instead) and `make i18n-check` lists them. Off by default. Be aware that `make i18n-autotranslate` and `make i18n-clear-fuzzy` DISCARD the msgstr of fuzzy entries, and the reviewer's suggestion with it, because suggestions live only in the report file. Copy any suggestion you want before running either.
 * `DRY_RUN=1`: list what would be reviewed and how many model calls it would take; calls nothing, and needs no `MODEL`.
 
-The report is written to `i18n-review-<locale>.md` in the current directory (git-ignored), with major problems first: each entry shows the English, the current translation, the problems found and a suggested replacement. The review never changes a translation; apply any suggestion by hand in the `.po` file.
+The report is written to `i18n-review-<locale>.md` in the current directory (git-ignored), with major problems first: each entry shows the English, the current translation, the problems found and a suggested replacement. It is rewritten after every entry, so Ctrl-C (or a run aborted by repeated model errors) keeps a partial report. The review never changes a translation; apply any suggestion by hand in the `.po` file.
+
+The strings are sent to the model inside delimited blocks marked as data, with a random delimiter, so that text that looks like instructions is judged rather than obeyed. That reduces the risk but a model can still be fooled, which is another reason to keep `MARK_FUZZY` off unless you will read the report.
 
 Cost and privacy: every reviewed string, and its translation, is sent to the model's provider. Check that this is acceptable, and use `DRY_RUN=1`, `SINCE` and `LIMIT` to keep the number of calls down. Models make mistakes in both directions, so treat the verdicts as a second opinion, not a gate; a native speaker is still the best reviewer.
 

@@ -32,18 +32,33 @@ def _link_targets(text: str) -> Set[str]:
     return {t.rstrip(".,;:!?") for t in found}
 
 
+# A well-formed inline link: [text](target), no space between ']' and '('.
+MD_LINK_RE = re.compile(r"\[[^\]]*\]\(\s*<?(?:%\([^)]*\)s|[^)\s>])+[^)]*\)")
+SPACED_LINK_RE = re.compile(r"\]\s+\(")
+
+
 def link_mismatch(msgid: str, msgstr: str) -> Optional[str]:
-    """The URLs and Markdown link targets in msgstr should equal those in msgid."""
+    """
+    The links in msgstr should match those in msgid.
+
+    Compares (1) the set of URLs and Markdown link targets, and (2) the number of
+    well-formed `[text](target)` links, so that a link that kept its URL but lost its
+    brackets, closing parenthesis, or got a space before the `(` is caught too.
+    """
+    problems = []
     want = _link_targets(msgid)
     got = _link_targets(msgstr)
-    if want == got:
-        return None
-    parts = []
     if want - got:
-        parts.append(f"missing: {', '.join(sorted(want - got))}")
+        problems.append(f"missing: {', '.join(sorted(want - got))}")
     if got - want:
-        parts.append(f"extra: {', '.join(sorted(got - want))}")
-    return "; ".join(parts)
+        problems.append(f"extra: {', '.join(sorted(got - want))}")
+    if SPACED_LINK_RE.search(msgstr) and not SPACED_LINK_RE.search(msgid):
+        problems.append("space between ']' and '(' breaks a Markdown link")
+    want_links = len(MD_LINK_RE.findall(msgid))
+    got_links = len(MD_LINK_RE.findall(msgstr))
+    if want_links != got_links:
+        problems.append(f"{got_links} well-formed Markdown links, msgid has {want_links}")
+    return "; ".join(problems) or None
 
 
 ## TOKEN_CHANGED
@@ -129,15 +144,18 @@ def duplicated_text(msgid: str, msgstr: str) -> Optional[str]:
     """
     msgstr repeats text that msgid does not.
 
-    Two signals: (1) a sentence or line (at least 12 letters, CJK characters counting
-    double; placeholders and punctuation ignored) occurs more than once in msgstr while msgid repeats no
-    sentence; (2) a placeholder occurs more times in msgstr than in msgid.
+    Two signals:
+    1. msgstr has more distinct repeated sentences than msgid. A sentence is a segment
+       of at least 12 letters (a CJK character counts as two), compared ignoring
+       placeholders, case and punctuation. Only exact repeats count: a paraphrased
+       restatement (seen in zh) is not detected.
+    2. A placeholder occurs more times in msgstr than in msgid. It needs the
+       placeholder to be in msgid at least once.
     """
     problems = []
-    if not _repeated_segments(msgid):
-        again = sorted(_repeated_segments(msgstr))
-        if again:
-            problems.append("repeated sentence: " + "; ".join(again[:2]))
+    again = sorted(_repeated_segments(msgstr))
+    if len(again) > len(_repeated_segments(msgid)):
+        problems.append("repeated sentence: " + "; ".join(again[:2]))
     want = Counter(PLACEHOLDER_RE.findall(msgid))
     got = Counter(PLACEHOLDER_RE.findall(msgstr))
     extra = sorted(name for name, n in got.items() if n > want.get(name, 0) > 0)
@@ -176,22 +194,42 @@ PREAMBLE_RE = re.compile(
     r"""^\s*(?:
         here(?:\s+is|'s)\b | sure\b | certainly\b | of\scourse\b | okay\b |
         translat(?:ion|ed)\b\s*(?:text|result|version)?\s*[:：] |
-        the\s+translation\b |
-        voici\b | traduction\s*[:：] | bien\s+s[uû]r\b |
+        the\s+translation\b | as\s+an\s+ai\b | i\s+(?:cannot|can't|can\snot)\b |
+        i'm\s+(?:sorry|unable)\b | i\s+am\s+(?:sorry|unable)\b |
+        voici\b | traduction\s*[:：] | bien\s+s[uû]r\b | certainement\b |
+        en\s+tant\s+qu'ia\b | je\s+suis\s+d[ée]sol[ée]\b | d[ée]sol[ée]\b |
+        je\s+ne\s+peux\s+pas\b |
         aqu[ií]\s+(?:est[aá]|tiene)\b | traducci[oó]n\s*[:：] | claro\b |
+        por\s+supuesto\b | como\s+ia\b | lo\s+siento\b | no\s+puedo\b |
         以下は | 以下是 | 翻訳\s*[:：] | 翻译\s*[:：] | 译文\s*[:：] | 好的 | 当然 |
+        もちろん | 申し訳 | 抱歉 | 对不起 | 作为(?:一个)?\s*ai |
         ```
     )""",
+    re.IGNORECASE | re.VERBOSE,
+)
+# Chatter after the translation: "(Note: ...)", "Let me know if ...", "I hope this helps".
+TRAILER_RE = re.compile(
+    r"""(?:^|\n)\s*\(?(?:note|nota|remarque)\s*:
+        | let\s+me\s+know\b | hope\s+this\s+helps
+        | n'hésitez\s+pas | j'espère\s+que\s+cela
+        | espero\s+que\s+(?:esto|te)
+        | 如果您需要 | 希望这对 | ご不明な点 | 何かあれば""",
     re.IGNORECASE | re.VERBOSE,
 )
 THINK_RE = re.compile(r"</?think(?:ing)?>", re.IGNORECASE)
 
 
 def preamble(msgid: str, msgstr: str) -> Optional[str]:
-    """msgstr opens with model chatter, a code fence, or contains <think> tags."""
+    """
+    msgstr opens with model chatter (a greeting, an acknowledgement, a refusal), a
+    code fence, or ends with commentary; or it contains <think> tags. Patterns that
+    also match msgid are ignored, so a string that genuinely begins "Note:" is fine.
+    """
     if THINK_RE.search(msgstr) and not THINK_RE.search(msgid):
         return "contains <think> tags"
-    match = PREAMBLE_RE.match(msgstr)
-    if match and not PREAMBLE_RE.match(msgid):
+    if PREAMBLE_RE.match(msgstr) and not PREAMBLE_RE.match(msgid):
         return f"starts with chatter: {msgstr.strip()[:40]!r}"
+    trailer = TRAILER_RE.search(msgstr)
+    if trailer and not TRAILER_RE.search(msgid) and "note" not in msgid.casefold():
+        return f"commentary after the translation: {trailer.group(0).strip()!r}"
     return None

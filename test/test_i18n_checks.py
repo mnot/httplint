@@ -40,6 +40,58 @@ class LinkMismatchTest(unittest.TestCase):
             heuristics.link_mismatch("See https://example.com/a.", "Voir https://example.com/a,")
         )
 
+    MSGID = "See [RFC 9111](https://example.com/rfc9111) for details."
+
+    def test_space_before_parenthesis(self) -> None:
+        # the target is still a real URL, so the set of targets alone looks fine
+        details = heuristics.link_mismatch(
+            self.MSGID, "Voir [RFC 9111] (https://example.com/rfc9111) pour plus."
+        )
+        self.assertIn("space between", details or "")
+
+    def test_unclosed_link(self) -> None:
+        details = heuristics.link_mismatch(
+            self.MSGID, "Voir [RFC 9111](https://example.com/rfc9111 pour plus."
+        )
+        self.assertIn("0 well-formed", details or "")
+
+    def test_lost_brackets(self) -> None:
+        details = heuristics.link_mismatch(
+            self.MSGID, "Voir RFC 9111 (https://example.com/rfc9111) pour plus."
+        )
+        self.assertIn("0 well-formed", details or "")
+
+    def test_lost_closing_bracket(self) -> None:
+        details = heuristics.link_mismatch(
+            self.MSGID, "Voir [RFC 9111(https://example.com/rfc9111) pour plus."
+        )
+        self.assertIsNotNone(details)
+
+    def test_extra_target_alone_is_flagged(self) -> None:
+        details = heuristics.link_mismatch(
+            self.MSGID,
+            "Voir [RFC 9111](https://example.com/rfc9111) et https://example.com/other.",
+        )
+        self.assertIn("extra: https://example.com/other", details or "")
+        self.assertNotIn("missing", details or "")
+
+    def test_extra_link_alone_is_flagged(self) -> None:
+        details = heuristics.link_mismatch(
+            self.MSGID,
+            "Voir [RFC 9111](https://example.com/rfc9111) et [autre](https://example.com/rfc9111).",
+        )
+        self.assertIn("2 well-formed", details or "")
+
+    def test_well_formed_link_text_may_wrap_lines(self) -> None:
+        msgid = "See [Cross-Origin\nOpener Policy](https://example.com/coop),\nplease."
+        msgstr = "Voir [Politique d'ouverture\nCross-Origin](https://example.com/coop)."
+        self.assertIsNone(heuristics.link_mismatch(msgid, msgstr))
+
+    def test_space_already_in_msgid_is_not_blamed_on_translation(self) -> None:
+        msgid = "A `[x] (y)` example and [link](https://example.com/a)."
+        msgstr = "Un exemple `[x] (y)` et [lien](https://example.com/a)."
+        self.assertIsNone(heuristics.link_mismatch(msgid, msgstr))
+
 
 class TokenChangedTest(unittest.TestCase):
     def test_token_kept(self) -> None:
@@ -136,6 +188,19 @@ class DuplicatedTextTest(unittest.TestCase):
     def test_short_repeats_ignored(self) -> None:
         self.assertIsNone(heuristics.duplicated_text("Yes. No.", "Oui. Oui."))
 
+    def test_second_repeated_sentence_is_flagged_even_if_msgid_repeats_one(self) -> None:
+        msgid = "Check the value twice. Check the value twice. Then continue."
+        msgstr = (
+            "Vérifiez la valeur deux fois. Vérifiez la valeur deux fois. "
+            "Ensuite continuez ici. Ensuite continuez ici."
+        )
+        self.assertIn("repeated sentence", heuristics.duplicated_text(msgid, msgstr) or "")
+
+    def test_same_repeats_as_msgid_are_fine(self) -> None:
+        msgid = "Check the value twice. Check the value twice. Then continue."
+        msgstr = "Vérifiez la valeur deux fois. Vérifiez la valeur deux fois. Continuez."
+        self.assertIsNone(heuristics.duplicated_text(msgid, msgstr))
+
 
 class SuspiciousLengthTest(unittest.TestCase):
     MSGID = "The response is missing a Content-Type header field."  # 52 characters
@@ -164,6 +229,12 @@ class SuspiciousLengthTest(unittest.TestCase):
     def test_short_msgid_skipped(self) -> None:
         self.assertIsNone(heuristics.suspicious_length("Bad value.", "x" * 100, "fr"))
 
+    def test_zh_lower_bound(self) -> None:
+        # 52 characters in: 6 or 4 out is below the 0.12 bound (0.115, 0.077), 8 is above
+        self.assertIsNotNone(heuristics.suspicious_length(self.MSGID, "无效头字段。", "zh"))
+        self.assertIsNotNone(heuristics.suspicious_length(self.MSGID, "无效头。", "zh"))
+        self.assertIsNone(heuristics.suspicious_length(self.MSGID, "缺少头字段信息。", "zh"))
+
 
 class PreambleTest(unittest.TestCase):
     def test_chatter(self) -> None:
@@ -191,6 +262,32 @@ class PreambleTest(unittest.TestCase):
     def test_msgid_with_same_start_is_fine(self) -> None:
         self.assertIsNone(
             heuristics.preamble("Here is how it works.", "Here is how it works, in French.")
+        )
+
+    def test_more_chatter(self) -> None:
+        for msgstr in (
+            "Certainly! L'en-tête est invalide.",
+            "Certainement ! L'en-tête est invalide.",
+            "Sure, here you go. L'en-tête est invalide.",
+            "As an AI language model, I cannot translate this.",
+            "I'm sorry, but I can't help with that.",
+            "Je suis désolé, mais je ne peux pas traduire cela.",
+            "Lo siento, no puedo traducir esto.",
+            "申し訳ありませんが、翻訳できません。",
+            "抱歉，我无法翻译这个。",
+            "L'en-tête est invalide.\n\n(Note: j'ai conservé les noms d'en-têtes.)",
+            "L'en-tête est invalide.\nLet me know if you need anything else!",
+            "El encabezado no es válido.\nEspero que esto te ayude.",
+        ):
+            with self.subTest(msgstr=msgstr):
+                self.assertIsNotNone(heuristics.preamble("The header is invalid.", msgstr))
+
+    def test_note_in_msgid_is_not_chatter(self) -> None:
+        self.assertIsNone(
+            heuristics.preamble(
+                "The header is invalid.\nNote: this is common.",
+                "L'en-tête est invalide.\nRemarque : c'est courant.",
+            )
         )
 
 
