@@ -7,7 +7,7 @@ from typing import List, Optional, Set, Tuple, Dict
 from dataclasses import dataclass
 from enum import Enum, auto
 
-from . import heuristics
+from . import heuristics, rules
 from .utils import load_catalog, find_po_files, get_lang_from_path, save_catalog
 
 class IssueType(Enum):
@@ -21,6 +21,13 @@ class IssueType(Enum):
     DUPLICATED_TEXT = auto()
     SUSPICIOUS_LENGTH = auto()
     PREAMBLE = auto()
+    # Language rules (see rules.py and glossary.py); also used by autotranslate.
+    FIELD_NAME_CHANGED = auto()
+    GLOSSARY = auto()
+    STRENGTH = auto()
+    LEFTOVER_ENGLISH = auto()
+    PUNCTUATION = auto()
+    STRUCTURE = auto()
 
 # Only these make `main()` exit non-zero.
 CRITICAL_ISSUES = (IssueType.BAD_VARIABLE, IssueType.SYNTAX_ERROR)
@@ -160,6 +167,12 @@ class CatalogChecker:
                 heuristics.suspicious_length(msgid, msgstr, lang),
             ),
             (IssueType.PREAMBLE, heuristics.preamble(msgid, msgstr)),
+            (IssueType.FIELD_NAME_CHANGED, rules.field_name_changed(msgid, msgstr)),
+            (IssueType.GLOSSARY, rules.glossary(msgid, msgstr, lang)),
+            (IssueType.STRENGTH, rules.strength(msgid, msgstr, lang)),
+            (IssueType.LEFTOVER_ENGLISH, rules.leftover_english(msgid, msgstr, lang)),
+            (IssueType.PUNCTUATION, rules.punctuation(msgid, msgstr, lang)),
+            (IssueType.STRUCTURE, rules.structure(msgid, msgstr, lang)),
         ]
         return [
             TranslationIssue(issue_type, msgid, lineno, details)

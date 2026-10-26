@@ -1,0 +1,245 @@
+"""
+Language rules on a (msgid, msgstr) pair, shared by i18n-check (report-only) and
+autotranslate (retries). Like heuristics.py, each function returns a problem
+description or None. The terminology data is in glossary.py.
+"""
+
+import functools
+import importlib
+import inspect
+import pkgutil
+import re
+from typing import List, Optional, Tuple
+
+from .glossary import GLOSSARY, STRENGTH, Entry
+from .heuristics import _lang_base
+
+MAX_LISTED = 3  # problems named in one message
+
+CODE_RE = re.compile(r"(`+)(?:(?!\n[ \t]*\n).)+?\1(?!`)", re.DOTALL)
+# What isn't prose: placeholders, Markdown link targets, bare URLs.
+OPAQUE_RE = re.compile(
+    r"""%\([^)]*\)[-\#0\ +]*[\d.]*[a-zA-Z]|%%
+    | (?<=\])\((?:[^()\s]|\([^()\s]*\))+\)
+    | https?://[^\s<>"'`)\]]+""",
+    re.VERBOSE,
+)
+
+
+def prose(text: str, code: bool = True) -> str:
+    """text without placeholders and links, and (code=True) without code spans."""
+    text = OPAQUE_RE.sub(" ", text)
+    return CODE_RE.sub(" ", text) if code else text
+
+
+## FIELD_NAME_CHANGED
+
+# Content-coding names the model transliterates (ブロトリ, デフラグ圧縮). 'compress' and
+# 'identity' are ordinary words; they are only protected inside backticks.
+CODING_NAMES = ("gzip", "deflate", "brotli", "zstd", "dcb", "dcz")
+
+
+@functools.lru_cache(maxsize=1)
+def field_names() -> Tuple[str, ...]:
+    """The canonical field names of the parsers, longest first."""
+    from httplint.field import HttpField  # pylint: disable=import-outside-toplevel
+    import httplint.field.parsers as parsers  # pylint: disable=import-outside-toplevel
+
+    names = set()
+    for info in pkgutil.iter_modules(parsers.__path__):
+        module = importlib.import_module(f"{parsers.__name__}.{info.name}")
+        for _, cls in inspect.getmembers(module, inspect.isclass):
+            name = cls.__dict__.get("canonical_name")
+            if issubclass(cls, HttpField) and cls.__module__ == module.__name__ and name:
+                names.add(name)
+    return tuple(sorted(names, key=lambda n: (-len(n), n)))
+
+
+@functools.lru_cache(maxsize=1)
+def _name_regexes() -> Tuple["re.Pattern[str]", "re.Pattern[str]"]:
+    """(hyphenated names, single-word names), as regexes with the name in group 1."""
+    hyphenated = [re.escape(n) for n in field_names() if "-" in n]
+    single = [re.escape(n) for n in field_names() if "-" not in n]
+    edge = r"(?<![\w-])(%s)(?![\w-])"
+    codings = r"(?<![\w-])(%s)(?!\w)" % "|".join(CODING_NAMES)
+    return (
+        re.compile(edge % "|".join(hyphenated) + "|" + codings, re.IGNORECASE),
+        # a capitalised word is a field name only when called a header or field
+        re.compile((edge % "|".join(single)) + r"`?\s+(?:headers?|fields?)\b"),
+    )
+
+
+LABEL_RE = re.compile(r"`?\s+(?:headers?|fields?)\b")
+
+
+def names_in(msgid: str) -> List[str]:
+    """
+    Field names in msgid, as spelled there, in order of appearance. An all-lowercase
+    spelling ('report-to parameter', 'brotli compression') counts only when it is
+    followed by 'header' or 'field' (content-coding names are always names).
+    """
+    hyphenated, single = _name_regexes()
+    text = prose(msgid, code=False)
+    found = sorted(
+        (m.start(m.lastindex or 0), m.group(m.lastindex or 0))
+        for rx in (hyphenated, single)
+        for m in rx.finditer(text)
+        if m.group(m.lastindex or 0).lower() in CODING_NAMES
+        or m.group(m.lastindex or 0) != m.group(m.lastindex or 0).lower()
+        or LABEL_RE.match(text, m.end())
+    )
+    names: List[str] = []
+    for _, name in found:
+        if name not in names:
+            names.append(name)
+    return names
+
+
+def has_name(name: str, msgstr: str) -> bool:
+    """name is in msgstr as a whole token, in any case (not a prefix of a longer name)."""
+    after = (
+        r"(?![A-Za-z0-9_])" if name.lower() in CODING_NAMES else r"(?![A-Za-z0-9_]|-[A-Za-z0-9])"
+    )
+    return bool(re.search(rf"(?<![A-Za-z0-9_-]){re.escape(name)}{after}", msgstr, re.IGNORECASE))
+
+
+def field_name_changed(msgid: str, msgstr: str) -> Optional[str]:
+    """Every field name in msgid, with or without backticks, is in msgstr as spelled."""
+    missing = [n for n in names_in(msgid) if not has_name(n, msgstr)]
+    if not missing:
+        return None
+    return "; ".join(
+        f"keep the {'coding' if n.lower() in CODING_NAMES else 'field'} name `{n}` "
+        "exactly as written"
+        for n in missing[:MAX_LISTED]
+    )
+
+
+## GLOSSARY
+
+
+def _entries(lang: Optional[str]) -> Tuple[Entry, ...]:
+    return GLOSSARY.get(_lang_base(lang), ())
+
+
+def _applies(entry: Entry, msgid: str) -> bool:
+    return bool(re.search(entry.when, prose(msgid), re.IGNORECASE | re.DOTALL))
+
+
+def glossary_hint(lang: Optional[str], msgid: str) -> str:
+    """A prompt sentence for the glossary entries that apply to msgid ('' if none)."""
+    terms = [f"'{e.term}' as '{e.prefer}'" for e in _entries(lang) if _applies(e, msgid)]
+    return f" Terminology: translate {'; '.join(terms)}." if terms else ""
+
+
+def glossary(msgid: str, msgstr: str, lang: Optional[str]) -> Optional[str]:
+    """msgstr uses a term the glossary says to avoid for a term in msgid."""
+    text = prose(msgstr)
+    problems = []
+    for entry in _entries(lang):
+        if not _applies(entry, msgid):
+            continue
+        for pattern in entry.avoid:
+            hit = re.search(pattern, text, re.IGNORECASE)
+            if hit:
+                problems.append(f"use '{entry.prefer}' for '{entry.term}', not '{hit.group(0)}'")
+                break
+    return "; ".join(problems[:MAX_LISTED]) or None
+
+
+## STRENGTH
+
+KEYWORD_RE = re.compile(r"\b(MUST|SHOULD)\b")  # in a translation: the English keyword
+
+
+def _has(patterns: Tuple[str, ...], text: str) -> bool:
+    return any(re.search(p, text, re.IGNORECASE) for p in patterns)
+
+
+def strength(msgid: str, msgstr: str, lang: Optional[str]) -> Optional[str]:
+    """
+    'should' in msgid must not become a must-word in msgstr (unless a should-word is
+    there too), nor 'must' a should-word alone. Only clear cases are flagged: a msgid
+    with both words, or a msgstr with neither, gets no verdict. An English RFC 2119
+    keyword left in msgstr is flagged too.
+    """
+    words = STRENGTH.get(_lang_base(lang))
+    if words is None:
+        return None
+    text, english = prose(msgstr), prose(msgid)
+    leftover = KEYWORD_RE.search(text)
+    if leftover:
+        return f"RFC 2119 keyword '{leftover.group(0)}' left in English"
+    should = re.search(r"\bshould\b", english, re.IGNORECASE)
+    must = re.search(r"\bmust\b", english, re.IGNORECASE)
+    musty, shouldy = _has(words[0], text), _has(words[1], text)
+    if should and not must and musty and not shouldy:
+        return "msgid says 'should' but the translation says 'must'"
+    if must and not should and shouldy and not musty:
+        return "msgid says 'must' but the translation says 'should'"
+    return None
+
+
+## LEFTOVER_ENGLISH, PUNCTUATION
+
+SENTENCE_END_RE = re.compile(r"[.。!！?？:：…][\s\"'”’»)）」』\]]*$")
+
+
+def leftover_english(msgid: str, msgstr: str, lang: Optional[str]) -> Optional[str]:
+    """msgstr starts with the English article 'The' (a string left as is is not flagged)."""
+    base = _lang_base(lang)
+    if base in ("", "en") or not msgstr.startswith("The ") or msgstr.strip() == msgid.strip():
+        return None
+    return "starts with the English word 'The'"
+
+
+def punctuation(msgid: str, msgstr: str, lang: Optional[str]) -> Optional[str]:
+    """A msgid that ends a sentence with . ! or ? has a msgstr that ends with a sentence mark."""
+    if _lang_base(lang) in ("", "en") or msgid.rstrip()[-1:] not in (".", "!", "?"):
+        return None
+    if SENTENCE_END_RE.search(msgstr.rstrip()):
+        return None
+    return f"msgid ends with '{msgid.rstrip()[-1]}' but the translation does not end a sentence"
+
+
+## STRUCTURE
+
+CJK_CHAR = "\u3000-\u303f\u3040-\u30ff\u3400-\u9fff\uf900-\ufaff\uff00-\uffef"
+CJK_BREAK_RE = re.compile(rf"(?<=[^\s{CJK_CHAR}])\n(?=[{CJK_CHAR}])|(?<=[{CJK_CHAR}])\n(?=\S)")
+INDENT_RE = re.compile(r"^ {4}\S", re.MULTILINE)
+LIST_START_RE = re.compile(r"[-*+>#|]|\d+[.)]|```")
+
+
+def collapse_cjk_breaks(text: str, lang: Optional[str]) -> str:
+    """
+    Join the lines of a ja/zh paragraph that the model wrapped like the English (Markdown
+    shows the break as a space). Text with a code block, table or a list item as the next
+    line is left alone.
+    """
+    if _lang_base(lang) not in ("ja", "zh") or "```" in text or INDENT_RE.search(text):
+        return text
+
+    def join(match: "re.Match[str]") -> str:
+        rest = text[match.end() :]
+        before = text[: match.start()].rsplit("\n", 1)[-1]
+        if LIST_START_RE.match(rest) or before.lstrip().startswith("|") or not before.strip():
+            return match.group(0)
+        return ""
+
+    return CJK_BREAK_RE.sub(join, text)
+
+
+def paragraphs(text: str) -> int:
+    return len([p for p in re.split(r"\n[ \t]*\n", text) if p.strip()])
+
+
+def structure(msgid: str, msgstr: str, lang: Optional[str]) -> Optional[str]:
+    """Paragraph count and indented code blocks match msgid; no hard breaks in CJK text."""
+    problems = []
+    if paragraphs(msgid) != paragraphs(msgstr):
+        problems.append(f"{paragraphs(msgstr)} paragraphs, msgid has {paragraphs(msgid)}")
+    if INDENT_RE.search(msgid) and not INDENT_RE.search(msgstr):
+        problems.append("lost the 4-space indentation of a code block")
+    if collapse_cjk_breaks(msgstr, lang) != msgstr:
+        problems.append("single line break inside a paragraph")
+    return "; ".join(problems) or None

@@ -84,6 +84,10 @@ Machine translations need checking, and most maintainers cannot read every langu
 * `SUSPICIOUS_LENGTH`: the translation is much shorter or longer than the English.
 * `PREAMBLE`: the translation starts or ends with model chatter, a code fence or a refusal, or contains `<think>` tags.
 
+* `FIELD_NAME_CHANGED`, `GLOSSARY`, `STRENGTH`, `LEFTOVER_ENGLISH`, `PUNCTUATION`, `STRUCTURE`: language rules (field and coding names kept as written, preferred terms, must/should strength, a leading "The", final punctuation, paragraphs and line breaks).
+`i18n-autotranslate` applies the same rules: a changed field name is retried and then left empty; the others only leave the entry `fuzzy`.
+Edit the per-language preferred terms in `tools/i18n/glossary.py`.
+
 An untranslated string identical to the English is not flagged. A flag means "look at this", not "this is wrong".
 
 ### Model review

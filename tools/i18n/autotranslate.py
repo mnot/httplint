@@ -7,6 +7,7 @@ from dataclasses import dataclass
 from typing import Any, Callable, List, Optional, Tuple
 
 from .check import CatalogChecker
+from .rules import collapse_cjk_breaks, glossary_hint
 from .utils import load_catalog, save_catalog, find_po_files, get_lang_from_path
 
 DEFAULT_MODEL = "mlx-community/aya-expanse-8b-4bit"
@@ -26,8 +27,8 @@ DEFAULT_PROTECT = PROTECT_LINKS
 # If the msgid already contains the delimiter, a longer one (@@@, ...) is used.
 MARK = "@@"
 MAX_ERROR = 200
-# others are advisory heuristics
-HARD_PREFIXES = ("BAD_VARIABLE", "SYNTAX_ERROR", "CODE_SPAN_CHANGED")
+# others are advisory heuristics (GLOSSARY, STRENGTH, ...): kept as fuzzy after the retries
+HARD_PREFIXES = ("BAD_VARIABLE", "SYNTAX_ERROR", "CODE_SPAN_CHANGED", "FIELD_NAME_CHANGED")
 MAX_SPAN = 120  # longer spans are cut when named in an error
 
 
@@ -145,12 +146,14 @@ def build_prompt(
     mark: str = MARK,
     visible: bool = False,
     percent: bool = False,
+    hint: str = "",
 ) -> str:
     start = PROMPT_START.format(lang=lang)
     if tokens:
         start += TOKEN_SENTENCE.format(token=f"{mark}1{mark}")
     if visible:
         start += VISIBLE_SENTENCE_PERCENT if percent else VISIBLE_SENTENCE
+    start += hint
     if error:
         start += f" Your previous translation was rejected: {shorten(error)}."
     return start + PROMPT_END.format(text=masked)
@@ -215,11 +218,11 @@ def code_span_rule(msgid: str, msgstr: str, lang: Optional[str]) -> List[str]:
 RULES: List[Rule] = [code_span_rule, i18n_check_rule]
 
 
-def match_whitespace(msgid: str, msgstr: str) -> str:
-    """Give msgstr the leading and trailing whitespace of msgid."""
+def match_whitespace(msgid: str, msgstr: str, lang: Optional[str] = None) -> str:
+    """Give msgstr the leading and trailing whitespace of msgid; unwrap ja/zh lines."""
     lead = msgid[: len(msgid) - len(msgid.lstrip())]
     trail = msgid[len(msgid.rstrip()) :]
-    return lead + msgstr.strip() + trail
+    return lead + collapse_cjk_breaks(msgstr.strip(), lang) + trail
 
 
 @dataclass
@@ -246,13 +249,14 @@ def translate(
     masked, spans = protect(msgid, mark, mode)
     visible = mode == PROTECT_LINKS and bool(VISIBLE_RE.search(masked))
     percent = visible and "%%" in masked
+    hint = glossary_hint(lang, msgid)
     error = ""
     candidate: Optional[str] = None
     advisory = False
     for attempt in range(RETRIES + 1):
         candidate, advisory = None, False
         raw = ask(
-            build_prompt(lang, masked, bool(spans), error or None, mark, visible, percent)
+            build_prompt(lang, masked, bool(spans), error or None, mark, visible, percent, hint)
         ).strip()
         if not raw:
             error = "the translation was empty"
@@ -260,7 +264,7 @@ def translate(
         error = token_error(masked, raw, len(spans), mark, mode == PROTECT_ALL) or ""
         if error:
             continue
-        text = match_whitespace(msgid, restore(raw, spans, mark))
+        text = match_whitespace(msgid, restore(raw, spans, mark), lang)
         problems = [
             p for rule in (RULES if rules is None else rules) for p in rule(msgid, text, lang)
         ]

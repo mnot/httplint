@@ -315,7 +315,10 @@ class CatalogReportingTest(unittest.TestCase):
     def test_flags_reported(self) -> None:
         issues = CatalogChecker().check_catalog(self.catalog(), "fr")
         kinds = {i.issue_type for i in issues}
-        self.assertEqual(kinds, {IssueType.TOKEN_CHANGED, IssueType.SUSPICIOUS_LENGTH})
+        self.assertEqual(
+            kinds,
+            {IssueType.TOKEN_CHANGED, IssueType.SUSPICIOUS_LENGTH, IssueType.FIELD_NAME_CHANGED},
+        )
 
     def test_not_critical(self) -> None:
         for issue_type in (
