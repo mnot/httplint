@@ -67,6 +67,14 @@ Update the `.po` files for all locales to include the new strings from the templ
 make i18n-update
 ```
 
+This does not do fuzzy matching: a string whose text changed shows up as a new, empty entry rather than as the old translation flagged `fuzzy`, so nothing stale ends up in the catalogs.
+
+If a catalog already has `fuzzy` entries (from an earlier update), blank them so that step 3 retranslates them:
+
+```bash
+make i18n-clear-fuzzy
+```
+
 ### 3. Translate
 
 You have two options for translation:
