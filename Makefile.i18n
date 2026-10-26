@@ -13,7 +13,8 @@
 # Shortcut: 'make translations' runs i18n-update followed by i18n-compile.
 #
 # Other targets:
-# - make i18n-check      - Verify translation health (missing strings, variable mismatches)
+# - make i18n-check      - Verify translation health (missing strings, variable mismatches);
+#                          MARK_FUZZY=1 also marks entries with issues fuzzy
 # - make i18n-clear-fuzzy - Blank entries already marked fuzzy (discards their text)
 # - make i18n-init LOCALE=xx - Initialize a new translation catalog for a new language
 #
@@ -54,7 +55,7 @@ translations: i18n-update i18n-compile
 
 .PHONY: i18n-check
 i18n-check: venv-i18n
-	PYTHONPATH=. $(VENV)/python -m tools.i18n.check
+	PYTHONPATH=. $(VENV)/python -m tools.i18n.check $(if $(MARK_FUZZY),--mark-fuzzy)
 
 .PHONY: i18n-init
 i18n-init: venv-i18n
