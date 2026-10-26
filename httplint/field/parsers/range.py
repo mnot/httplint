@@ -1,8 +1,10 @@
+import itertools
 import re
 import unittest
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, NoReturn, Optional, Tuple, Type
 
+from httplint.field import BAD_SYNTAX, BAD_SYNTAX_DETAILED
 from httplint.field.common import RE_FLAGS
 from httplint.field.delta_seconds import parse_digits
 from httplint.field.section import FIELD_VALUE_ENCODING
@@ -33,9 +35,6 @@ The `Range` header field on a GET request modifies the method semantics to reque
 parts of the representation that are specified."""
     reference = f"{rfc9110.SPEC_URL}#field.range"
     syntax = rfc9110.Range
-    # parse() reports syntax problems itself, and always rejects the value after RANGE_BAD_SYNTAX,
-    # so that one defect gives one note.
-    report_syntax = False
     category = categories.RANGE
     deprecated = False
 
@@ -116,6 +115,8 @@ parts of the representation that are specified."""
         return result
 
     def _bad_syntax(self, add_note: AddNoteMethodType, problem: str) -> NoReturn:
+        # The value is rejected after RANGE_BAD_SYNTAX, so it doesn't need the generic note too.
+        self.suppress_syntax_note()
         add_note(RANGE_BAD_SYNTAX, ref_uri=self.reference, problem=problem)
         raise ValueError
 
@@ -311,3 +312,44 @@ class RangeNoteWordingTest(unittest.TestCase):
 
     def test_empty_spec(self) -> None:
         self.assertIn("empty range specifier", self.problem("bytes=0-1,"))
+
+
+class RangeSyntaxHookTest(unittest.TestCase):
+    """
+    Guard on the note count for every short string: a value parse() rejects gets exactly
+    RANGE_BAD_SYNTAX, with no generic BAD_SYNTAX on top; a value it accepts gets no syntax note,
+    so the syntax regex must not reject anything parse() accepts. (parse() may still reject a
+    value that matches the regex, such as "bytes=a-b".)
+    """
+
+    ALPHABET = ["=", "-", ",", " ", "\t", "0", "a", "\xa0", "\x0b", "bytes"]
+
+    def check(self, value: str) -> None:
+        notes: List[Type[Note]] = []
+
+        def add_note(note: Type[Note], category: Any = None, **vrs: Any) -> Note:
+            notes.append(note)
+            return note("test", **vrs)
+
+        handler = range("Range", FakeRequestLinter())
+        handler.handle_input(value, add_note, 0)
+        handler.finish(add_note)
+        # RANGE_INVALID is noted as soon as a range is seen, even if a later one is rejected
+        notes = [n for n in notes if n is not RANGE_INVALID]
+        if handler.value is None:
+            self.assertEqual(notes, [RANGE_BAD_SYNTAX], repr(value))
+        else:
+            self.assertNotIn(BAD_SYNTAX, notes, repr(value))
+            self.assertNotIn(BAD_SYNTAX_DETAILED, notes, repr(value))
+            self.assertNotIn(RANGE_BAD_SYNTAX, notes, repr(value))
+
+    def test_short_strings(self) -> None:
+        for size in (0, 1, 2, 3):
+            for chars in itertools.product(self.ALPHABET, repeat=size):
+                self.check("".join(chars))
+        for prefix in ("bytes=", "bytes= ", "pages=", "x="):
+            for size in (0, 1, 2, 3):  # not range(): the `range` class shadows it here
+                for chars in itertools.product(self.ALPHABET[1:-1], repeat=size):
+                    self.check(prefix + "".join(chars))
+            for chars in itertools.product(self.ALPHABET[1:6], repeat=4):
+                self.check(prefix + "".join(chars))
