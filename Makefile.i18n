@@ -43,7 +43,7 @@ i18n-clear-fuzzy: venv-i18n
 
 .PHONY: i18n-autotranslate
 i18n-autotranslate: venv-i18n
-	$(VENV)/python -m tools.i18n.autotranslate --locale_dir $(PROJECT)/translations --model $(or $(MODEL), 'mlx-community/aya-23-8B-4bit') #--rpm $(or $(RPM),10)
+	$(VENV)/python -m tools.i18n.autotranslate --locale_dir $(PROJECT)/translations --model $(or $(MODEL), 'mlx-community/aya-expanse-8b-4bit') #--rpm $(or $(RPM),10)
 
 .PHONY: i18n-compile
 i18n-compile: venv-i18n

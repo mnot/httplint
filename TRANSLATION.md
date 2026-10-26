@@ -86,7 +86,7 @@ You have two options for translation:
 Edit the `.po` files (e.g., `httplint/translations/fr/LC_MESSAGES/messages.po`) to add missing translations or correct existing ones.
 
 **Option B: Auto-Translation**
-Use an LLM (via the `llm` package) to automatically translate missing strings. You can specify the model using the `MODEL` variable (default: `mlx-community/aya-23-8B-4bit`) and the rate limit using `RPM` (default: unlimited; this is for remote models).
+Use an LLM (via the `llm` package) to automatically translate missing strings. You can specify the model using the `MODEL` variable (default: `mlx-community/aya-expanse-8b-4bit`) and the rate limit using `RPM` (default: unlimited; this is for remote models).
 
 ```bash
 make i18n-autotranslate MODEL=gemini-1.5-flash-latest RPM=60
