@@ -28,6 +28,7 @@ MARK = "@@"
 MAX_ERROR = 200
 # others are advisory heuristics
 HARD_PREFIXES = ("BAD_VARIABLE", "SYNTAX_ERROR", "CODE_SPAN_CHANGED")
+MAX_SPAN = 120  # longer spans are cut when named in an error
 
 
 def token_re(mark: str) -> "re.Pattern[str]":
@@ -43,10 +44,9 @@ def pick_mark(msgid: str) -> str:
 
 CODE_PATTERN = r"(?P<code>(?P<ticks>`+)(?:(?!\n[ \t]*\n).)+?(?P=ticks)(?!`))"  # may span lines
 CODE_RE = re.compile(CODE_PATTERN, re.DOTALL)
-VISIBLE_RE = re.compile(CODE_PATTERN + r"|%\(", re.DOTALL)  # what links mode leaves in view
+VISIBLE_RE = re.compile(CODE_PATTERN + r"|%\(|%%", re.DOTALL)  # what links mode leaves in view
 PROTECTED_RE = re.compile(
-    CODE_PATTERN
-    + r"""
+    CODE_PATTERN + r"""
     | (?<=\])(?P<target>\((?:[^()\s]|\([^()\s]*\))+\))             # [text]<(target)>
     | (?P<url>https?://(?:%\([^)]*\)[a-z]|[^\s<>"'`)\]])+)         # bare URL
     | (?P<var>%\([^)]+\)[-\#0\ +]*[\d.]*[diouxXeEfFgGcrsa]|%%)     # %(name)s, %%
@@ -68,10 +68,13 @@ TOKEN_SENTENCE = (
     "once, in the same place."
 )
 VISIBLE_SENTENCE = " Copy text in backticks and %(name)s placeholders exactly, unchanged."
+VISIBLE_SENTENCE_PERCENT = (
+    " Copy text in backticks, %(name)s placeholders and %% exactly, unchanged."
+)
 PROMPT_END = " Here is the text to translate:\n\n{text}"
 
 
-def protect(text: str, mark: str = MARK, mode: str = PROTECT_ALL) -> Tuple[str, List[str]]:
+def protect(text: str, mark: str = MARK, mode: str = DEFAULT_PROTECT) -> Tuple[str, List[str]]:
     """
     Replace protected spans with tokens; return the new text and the spans. In links
     mode, only URLs and Markdown link targets are replaced.
@@ -124,7 +127,13 @@ def restore(translation: str, spans: List[str], mark: str = MARK) -> str:
 
 def shorten(text: str) -> str:
     """One line of at most MAX_ERROR characters (errors can echo model output)."""
-    text = " ".join(text.split())
+    parts, pos = [], 0
+    for match in CODE_RE.finditer(text):  # code spans are named verbatim in errors
+        parts.append(re.sub(r"\s+", " ", text[pos : match.start()]))
+        parts.append(match.group(0))
+        pos = match.end()
+    parts.append(re.sub(r"\s+", " ", text[pos:]))
+    text = "".join(parts).strip()
     return text if len(text) <= MAX_ERROR else text[: MAX_ERROR - 3] + "..."
 
 
@@ -135,12 +144,13 @@ def build_prompt(
     error: Optional[str],
     mark: str = MARK,
     visible: bool = False,
+    percent: bool = False,
 ) -> str:
     start = PROMPT_START.format(lang=lang)
     if tokens:
         start += TOKEN_SENTENCE.format(token=f"{mark}1{mark}")
     if visible:
-        start += VISIBLE_SENTENCE
+        start += VISIBLE_SENTENCE_PERCENT if percent else VISIBLE_SENTENCE
     if error:
         start += f" Your previous translation was rejected: {shorten(error)}."
     return start + PROMPT_END.format(text=masked)
@@ -160,21 +170,43 @@ def i18n_check_rule(msgid: str, msgstr: str, lang: Optional[str]) -> List[str]:
     ]
 
 
+def named(span: str) -> str:
+    """A span for an error message; a very long one is cut, keeping its backticks."""
+    if len(span) <= MAX_SPAN:
+        return span
+    ticks = span[: len(span) - len(span.lstrip("`"))]
+    return span[: MAX_SPAN - len(ticks) - 3] + "..." + ticks
+
+
+def text_kept(span: str, msgstr: str) -> bool:
+    """The text inside span is in msgstr, as a whole word, outside any code span."""
+    inner = span.strip("`").strip()
+    if not inner:
+        return False
+    before = r"(?<![A-Za-z0-9])" if inner[0].isalnum() else ""
+    after = r"(?![A-Za-z0-9])" if inner[-1].isalnum() else ""
+    return bool(re.search(before + re.escape(inner) + after, CODE_RE.sub(" ", msgstr)))
+
+
 def code_span_rule(msgid: str, msgstr: str, lang: Optional[str]) -> List[str]:
     """
     Every backtick span of msgid must be in msgstr, byte for byte (multisets; order is
-    free). Missing spans are a hard failure; added ones are advisory. Placeholders are
-    checked by BAD_VARIABLE in i18n_check_rule.
+    free). A span whose text changed or went missing is a hard failure (CODE_SPAN_CHANGED);
+    one that kept its text but lost its backticks, or an added span, is advisory.
+    Placeholders are checked by BAD_VARIABLE in i18n_check_rule. An odd number of
+    backticks in msgid means the spans can't be paired reliably, so there is no verdict.
     """
+    if msgid.count("`") % 2:
+        return []
     want = Counter(m.group(0) for m in CODE_RE.finditer(msgid))
     got = Counter(m.group(0) for m in CODE_RE.finditer(msgstr))
-    errors = [
-        f"CODE_SPAN_CHANGED you changed {span}: copy backtick text exactly"
-        for span in list(want - got)[:3]
-    ]
-    if not errors and got - want:
+    errors = []
+    for span in list(want - got)[:3]:
+        kind = "CODE_SPAN_BACKTICKS" if text_kept(span, msgstr) else "CODE_SPAN_CHANGED"
+        errors.append(f"{kind} keep {named(span)} exactly, including the backticks")
+    if not errors:
         errors = [
-            f"CODE_SPAN_ADDED you added {span}: don't add backticks"
+            f"CODE_SPAN_ADDED you added {named(span)}: don't add backticks"
             for span in list(got - want)[:3]
         ]
     return errors
@@ -213,12 +245,15 @@ def translate(
     mark = pick_mark(msgid)
     masked, spans = protect(msgid, mark, mode)
     visible = mode == PROTECT_LINKS and bool(VISIBLE_RE.search(masked))
+    percent = visible and "%%" in masked
     error = ""
     candidate: Optional[str] = None
     advisory = False
     for attempt in range(RETRIES + 1):
         candidate, advisory = None, False
-        raw = ask(build_prompt(lang, masked, bool(spans), error or None, mark, visible)).strip()
+        raw = ask(
+            build_prompt(lang, masked, bool(spans), error or None, mark, visible, percent)
+        ).strip()
         if not raw:
             error = "the translation was empty"
             continue
