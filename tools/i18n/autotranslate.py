@@ -225,6 +225,25 @@ def match_whitespace(msgid: str, msgstr: str, lang: Optional[str] = None) -> str
     return lead + collapse_cjk_breaks(msgstr.strip(), lang) + trail
 
 
+FENCE_LINE_RE = re.compile(r"`{3,}[ \t]*[\w+-]*")  # a code fence line, with an info string
+
+
+def drop_added_backticks(msgid: str, msgstr: str) -> str:
+    """
+    A msgid without backticks is plain text (notes name header fields bare), so any
+    backtick in msgstr was added by the model; remove it and keep the text inside. A
+    leading or trailing code fence line goes first, with its info string ('```text').
+    """
+    if "`" in msgid:
+        return msgstr
+    lines = msgstr.strip().split("\n")
+    if FENCE_LINE_RE.fullmatch(lines[0].strip()):
+        lines = lines[1:]
+    if lines and FENCE_LINE_RE.fullmatch(lines[-1].strip()):
+        lines = lines[:-1]
+    return "\n".join(lines).replace("`", "")
+
+
 @dataclass
 class Result:
     text: Optional[str]  # None: nothing usable
@@ -255,8 +274,11 @@ def translate(
     advisory = False
     for attempt in range(RETRIES + 1):
         candidate, advisory = None, False
-        raw = ask(
-            build_prompt(lang, masked, bool(spans), error or None, mark, visible, percent, hint)
+        raw = drop_added_backticks(
+            msgid,
+            ask(
+                build_prompt(lang, masked, bool(spans), error or None, mark, visible, percent, hint)
+            ),
         ).strip()
         if not raw:
             error = "the translation was empty"

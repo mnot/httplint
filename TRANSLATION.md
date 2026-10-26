@@ -83,7 +83,7 @@ Machine translations need checking, and most maintainers cannot read every langu
 * `DUPLICATED_TEXT`: sentences or placeholders repeat more than in the English (exact repeats only).
 * `SUSPICIOUS_LENGTH`: the translation is much shorter or longer than the English.
 * `PREAMBLE`: the translation starts or ends with model chatter, a code fence or a refusal, or contains `<think>` tags.
-* `FIELD_NAME_CHANGED`, `GLOSSARY`, `GLOSSARY_LOW`, `STRENGTH`, `LEFTOVER_ENGLISH`, `PUNCTUATION`, `STRUCTURE`: language rules (field and coding names kept as written, preferred terms, must/should strength, a leading "The", final punctuation, paragraphs and line breaks).
+* `FIELD_NAME_CHANGED`, `GLOSSARY`, `GLOSSARY_LOW`, `STRENGTH`, `LEFTOVER_ENGLISH`, `PUNCTUATION`, `BACKTICKS_ADDED`, `STRUCTURE`: language rules (field and coding names kept as written, preferred terms, must/should strength, a leading "The", final punctuation, backticks in a translation of a string that has none, paragraphs and line breaks).
 
 About the language rules:
 
