@@ -60,7 +60,7 @@ information."""
 class ENTITY_TAG_LIST_STAR(Note):
     category = categories.VALIDATION
     level = levels.WARN
-    _summary = "The %(field_name)s field mixes `*` with entity tags."
+    _summary = "The %(field_name)s field mixes '*' with entity tags."
     _text = """\
 The `*` in the `%(field_name)s` field matches any current representation, so it is only valid
 on its own: the field's value is either `*` or a list of entity tags

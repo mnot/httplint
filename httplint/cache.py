@@ -324,7 +324,7 @@ proxies, cannot store it."""
 class STORE_PRIVATE_PUBLIC_CONFLICT(Note):
     category = categories.CACHING
     level = levels.BAD
-    _summary = "This response contains both the `public` and `private` Cache-Control directives."
+    _summary = "This response contains both the public and private Cache-Control directives."
     _text = """\
 `Cache-Control: public` and `Cache-Control: private` conflict; they should not occur on the same message.
 
