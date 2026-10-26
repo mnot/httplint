@@ -128,11 +128,11 @@ There is no check for a translation that is identical to the English (an untrans
 
 A flag means "look at this", not "this is wrong".
 
-To have flagged entries retranslated, `make i18n-clear-flagged` blanks them (and any fuzzy entries), discarding their text. `make i18n-check MARK_FUZZY=1` only marks them fuzzy. A release pass:
+`MARK_FUZZY=1` marks flagged entries fuzzy, so `make i18n-autotranslate` retranslates them, discarding their text:
 
 ```bash
 make i18n-update
-make i18n-clear-flagged
+make i18n-check MARK_FUZZY=1
 make i18n-autotranslate
 make i18n-check
 ```

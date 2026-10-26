@@ -10,7 +10,7 @@ from unittest import mock
 from babel.messages.catalog import Catalog
 
 from tools.i18n import heuristics
-from tools.i18n import check, clear_flagged
+from tools.i18n import check
 from tools.i18n.check import CRITICAL_ISSUES, CatalogChecker, IssueType
 from tools.i18n.utils import load_catalog, save_catalog
 
@@ -355,9 +355,7 @@ class PoFixture(unittest.TestCase):
         catalog.add(self.BAD_VAR, "Trouvé des éléments.", locations=[("x.py", 2)])
         catalog.add("Fine string.", "Chaîne correcte.", locations=[("x.py", 3)])
         catalog.add("Missing string, `Sunset` is here too.", "", locations=[("x.py", 4)])
-        catalog.add(
-            self.FUZZY, "La requête a expiré.", flags=["fuzzy"], locations=[("x.py", 5)]
-        )
+        catalog.add(self.FUZZY, "La requête a expiré.", flags=["fuzzy"], locations=[("x.py", 5)])
         save_catalog(self.po_path, catalog)
 
     def run_check(self, *args: str) -> "tuple[int, str]":
@@ -441,47 +439,6 @@ class MarkFuzzyTest(PoFixture):
         code, out = self.run_check("--mark-fuzzy")
         self.assertEqual(code, 0)
         self.assertIn("marked 1 entry fuzzy", out)
-
-
-class ClearFlaggedTest(PoFixture):
-    """The combined entry point blanks flagged and fuzzy entries, nothing else."""
-
-    def run_clear(self) -> str:
-        out = io.StringIO()
-        argv = ["clear_flagged.py", "--locale_dir", self.locale_dir]
-        with mock.patch("sys.argv", argv), contextlib.redirect_stdout(out):
-            clear_flagged.main()
-        return out.getvalue()
-
-    def strings(self) -> "dict[str, str]":
-        return {str(m.id): str(m.string) for m in load_catalog(self.po_path) if m.id}
-
-    def test_blanks_flagged_and_fuzzy_only(self) -> None:
-        before = self.strings()
-        out = self.run_clear()
-        after = self.strings()
-        self.assertIn("fr: flagged 2, cleared 3", out)
-        for msgid in (self.FLAGGED, self.BAD_VAR, self.FUZZY):
-            self.assertEqual(after[msgid], "")
-        self.assertEqual(after["Fine string."], before["Fine string."])
-        self.assertNotIn("fuzzy", self.flags()[self.FLAGGED])
-
-    def test_clean_catalog_byte_identical(self) -> None:
-        catalog = Catalog(locale="fr")
-        catalog.add("Fine string.", "Chaîne correcte.", locations=[("x.py", 3)])
-        save_catalog(self.po_path, catalog)
-        before = self.read_bytes()
-        out = self.run_clear()
-        self.assertIn("flagged 0, cleared 0", out)
-        self.assertEqual(self.read_bytes(), before)
-
-    def test_idempotent_and_clean_after(self) -> None:
-        self.run_clear()
-        saved = self.read_bytes()
-        self.assertIn("flagged 0, cleared 0", self.run_clear())
-        self.assertEqual(self.read_bytes(), saved)
-        kinds = {i.issue_type for i in CatalogChecker().check_catalog(load_catalog(self.po_path), "fr")}
-        self.assertEqual(kinds, {IssueType.MISSING})
 
 
 if __name__ == "__main__":

@@ -16,7 +16,6 @@
 # - make i18n-check      - Verify translation health (missing strings, variable mismatches);
 #                          MARK_FUZZY=1 also marks entries with issues fuzzy
 # - make i18n-clear-fuzzy - Blank entries already marked fuzzy (discards their text)
-# - make i18n-clear-flagged - Blank entries flagged by i18n-check, and fuzzy ones (discards their text)
 # - make i18n-init LOCALE=xx - Initialize a new translation catalog for a new language
 #
 
@@ -42,10 +41,6 @@ i18n-update: i18n-extract venv-i18n
 .PHONY: i18n-clear-fuzzy
 i18n-clear-fuzzy: venv-i18n
 	PYTHONPATH=. $(VENV)/python -m tools.i18n.clear_fuzzy --locale_dir $(PROJECT)/translations
-
-.PHONY: i18n-clear-flagged
-i18n-clear-flagged: venv-i18n
-	PYTHONPATH=. $(VENV)/python -m tools.i18n.clear_flagged --locale_dir $(PROJECT)/translations
 
 .PHONY: i18n-autotranslate
 i18n-autotranslate: venv-i18n
