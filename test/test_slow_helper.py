@@ -151,8 +151,28 @@ class MismatchesTest(unittest.TestCase):
             with bad.case("outer"):
                 with bad.case("inner"):
                     raise RuntimeError("deep")
-        self.assertIn("input 'inner'", str(caught.exception))
+        message = str(caught.exception)
+        self.assertIn("input 'inner'", message)
+        self.assertNotIn("input 'outer'", message)  # not wrapped a second time
+        self.assertIs(type(caught.exception.__cause__), RuntimeError)
         self.assertEqual(bad.failed, 0)
+
+    def test_assertion_error_subclasses_are_collected(self) -> None:
+        class OddFailure(AssertionError):
+            pass
+
+        bad = Mismatches()
+        with bad.case("odd"):
+            raise OddFailure("odd one")
+        self.assertEqual((bad.cases, bad.failed), (1, 1))
+        self.assertIn("odd one", self.report(bad))
+
+    def test_failing_line_has_a_relative_path(self) -> None:
+        bad = Mismatches()
+        with bad.case(1):
+            self.assertTrue(False)
+        where = bad.kept[0][1]
+        self.assertTrue(where.startswith(os.path.relpath(__file__) + ":"), where)
 
     def test_skips_and_interrupts_pass_through(self) -> None:
         bad = Mismatches()

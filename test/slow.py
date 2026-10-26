@@ -37,15 +37,26 @@ class CaseCrashed(Exception):
     "The body of a Mismatches.case() raised something other than an AssertionError."
 
 
+def _display_path(filename: str) -> str:
+    "The path relative to the current directory, or just the file name if there isn't one."
+    try:
+        return os.path.relpath(filename)
+    except ValueError:  # e.g. another drive on Windows
+        return os.path.basename(filename)
+
+
 def _failing_line(tb: Optional[TracebackType]) -> str:
-    "The file:line and source of the innermost frame that isn't inside unittest."
+    """
+    The file:line and source of the innermost frame that isn't inside unittest. For a statement
+    that spans several lines, only its first line is shown.
+    """
     frames = [
         frame for frame in traceback.extract_tb(tb) if not frame.filename.startswith(_UNITTEST_DIR)
     ]
     if not frames:
         return "?"
     frame = frames[-1]
-    return f"{os.path.basename(frame.filename)}:{frame.lineno}: {frame.line}"
+    return f"{_display_path(frame.filename)}:{frame.lineno}: {frame.line}"
 
 
 class _Case:
@@ -66,6 +77,7 @@ class _Case:
         exc: Optional[BaseException],
         tb: Optional[TracebackType],
     ) -> bool:
+        __tracebackhide__ = True  # pytest: don't print this frame in a CaseCrashed report
         if exc_type is None or exc is None:
             return False
         if issubclass(exc_type, AssertionError):
@@ -124,5 +136,6 @@ class Mismatches:
         return "\n".join(lines)
 
     def assert_none(self, test: unittest.TestCase) -> None:
+        __tracebackhide__ = True  # pytest: point at the test's own call, not at this helper
         if self.failed:
             test.fail(self.report())
