@@ -6,16 +6,16 @@
 # Recommended Workflow for updating translations:
 # 1. make i18n-update    - Re-extract strings into messages.pot and update the PO files; a
 #                          changed string becomes a new, empty entry (no fuzzy matching)
-# 2. make i18n-check MARK_FUZZY=1 - Mark entries with issues fuzzy, so step 3 retranslates them
+# 2. make i18n-check MARK_FUZZY=1 - Mark entries with issues fuzzy, so step 3 retranslates
+#                          them (may exit non-zero on critical errors; marking is still saved)
 # 3. make i18n-autotranslate - Use LLM to translate missing and fuzzy strings
-# 4. make i18n-check     - Verify the result
+# 4. make i18n-check     - Verify the result (missing strings, variable mismatches)
 # 5. make i18n-compile   - Compile PO files into MO binary files for runtime
 #
 # Shortcut: 'make translations' runs i18n-update followed by i18n-compile.
 #
 # Other targets:
 # - make i18n-extract    - Extract source strings into messages.pot only
-# - make i18n-check      - Verify translation health (missing strings, variable mismatches)
 # - make i18n-clear-fuzzy - Blank entries already marked fuzzy (discards their text)
 # - make i18n-review     - Advisory LLM review of translations (see below)
 # - make i18n-init LOCALE=xx - Initialize a new translation catalog for a new language
@@ -46,7 +46,7 @@ i18n-clear-fuzzy: venv-i18n
 
 .PHONY: i18n-autotranslate
 i18n-autotranslate: venv-i18n
-	$(VENV)/python -m tools.i18n.autotranslate --locale_dir $(PROJECT)/translations --model $(or $(MODEL), 'mlx-community/aya-expanse-8b-4bit') $(if $(RPM),--rpm $(RPM))
+	$(VENV)/python -m tools.i18n.autotranslate --locale_dir $(PROJECT)/translations $(if $(MODEL),--model $(MODEL)) $(if $(RPM),--rpm $(RPM))
 
 .PHONY: i18n-compile
 i18n-compile: venv-i18n

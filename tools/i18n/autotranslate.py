@@ -90,7 +90,7 @@ def main():
         "--rpm",
         type=int,
         default=0,
-        help="Requests per minute (default: 0, unlimited)",
+        help="Requests per minute (default: 0; 0 or less: unlimited)",
     )
 
     args = parser.parse_args()
