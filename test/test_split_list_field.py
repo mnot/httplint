@@ -9,6 +9,7 @@ import time
 import unittest
 
 from httplint.field.utils import _QDTEXT, _QUOTED_PAIR_CHAR, split_list_field
+from test.slow import Mismatches, size
 
 # Generous: linear inputs take well under a second; the quadratic ones took minutes.
 TIME_LIMIT = 5.0
@@ -292,15 +293,19 @@ class SplitListFieldDifferentialTest(unittest.TestCase):
     ALPHABET = 'a()\\", '
 
     def test_exhaustive(self):
-        for length in range(8):
+        bad = Mismatches()
+        for length in range(size(7, 8)):
             for chars in itertools.product(self.ALPHABET, repeat=length):
                 value = "".join(chars)
                 for comments in (False, True):
-                    self.assertEqual(
-                        split_list_field(value, comments=comments),
-                        reference_split(value, comments),
-                        (value, comments),
-                    )
+                    with bad.case((value, comments)):
+                        self.assertEqual(
+                            split_list_field(value, comments=comments),
+                            reference_split(value, comments),
+                            (value, comments),
+                        )
+        bad.assert_none(self)
+        self.assertGreater(bad.cases, size(100_000, 1_000_000))
 
 
 if __name__ == "__main__":

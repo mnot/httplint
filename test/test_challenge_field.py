@@ -10,6 +10,7 @@ import unittest
 
 from httplint.field.challenge_field import parse_challenges
 from httplint.field.tests import FakeRequestLinter, FakeResponseLinter
+from test.slow import Mismatches, size
 
 # Generous: linear inputs take well under a second.
 TIME_LIMIT = 5.0
@@ -379,13 +380,15 @@ class ChallengeGrammarTest(unittest.TestCase):
                 self.assertIn(param_value, found.get(name, []), repr(text))
 
     def test_matches_grammar(self):
-        checked = 0
-        for alphabet, max_length in (('a= ,"\t', 6), ('a= ,"\t\\/-', 6)):
+        bad = Mismatches()
+        for alphabet, max_length in (('a= ,"\t', 6), ('a= ,"\t\\/-', size(5, 6))):
             for length in range(0, max_length + 1):
                 for chars in itertools.product(alphabet, repeat=length):
-                    checked += 1
-                    self.check("".join(chars))
-        self.assertGreater(checked, 500_000)
+                    text = "".join(chars)
+                    with bad.case(text):
+                        self.check(text)
+        bad.assert_none(self)
+        self.assertGreater(bad.cases, size(50_000, 500_000))
 
     def test_matches_grammar_longer_samples(self):
         pieces = ["Basic", " ", "realm", "=", '"x, y"', ",", " , ", "abc==", "a\\b", '"', "\t"]
