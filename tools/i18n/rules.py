@@ -230,6 +230,16 @@ def punctuation(msgid: str, msgstr: str, lang: Optional[str]) -> Optional[str]:
     return f"msgid ends with '{msgid.rstrip()[-1]}' but the translation does not end a sentence"
 
 
+## BACKTICKS_ADDED
+
+
+def backticks_added(msgid: str, msgstr: str) -> Optional[str]:
+    """msgstr has backticks but msgid has none (plain text: they would show literally)."""
+    if "`" in msgid or "`" not in msgstr or untranslated(msgid, msgstr):
+        return None
+    return "msgid has no backticks, but the translation does"
+
+
 ## STRUCTURE
 
 CJK_CHAR = "\u3000-\u303f\u3040-\u30ff\u3400-\u9fff\uf900-\ufaff\uff00-\uffef"

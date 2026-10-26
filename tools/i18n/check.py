@@ -28,6 +28,7 @@ class IssueType(Enum):
     STRENGTH = auto()
     LEFTOVER_ENGLISH = auto()
     PUNCTUATION = auto()
+    BACKTICKS_ADDED = auto()
     STRUCTURE = auto()
 
 # Reported, but they don't get an entry marked fuzzy.
@@ -177,6 +178,7 @@ class CatalogChecker:
             (IssueType.STRENGTH, rules.strength(msgid, msgstr, lang)),
             (IssueType.LEFTOVER_ENGLISH, rules.leftover_english(msgid, msgstr, lang)),
             (IssueType.PUNCTUATION, rules.punctuation(msgid, msgstr, lang)),
+            (IssueType.BACKTICKS_ADDED, rules.backticks_added(msgid, msgstr)),
             (IssueType.STRUCTURE, rules.structure(msgid, msgstr, lang)),
         ]
         return [

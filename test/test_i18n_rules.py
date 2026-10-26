@@ -368,6 +368,20 @@ class StyleRuleTest(unittest.TestCase):
         self.assertIsNone(rules.punctuation("It is bad", "Il est mauvais", "fr"))  # msgid has none
         self.assertIsNone(rules.punctuation("It is bad.", "Il est mauvais", None))
 
+    def test_backticks_added(self) -> None:
+        plain = "The Accept-Language header isn't valid."
+        self.assertIsNotNone(rules.backticks_added(plain, "L'en-tête `Accept-Language` est invalide."))
+        self.assertIsNotNone(rules.backticks_added(plain, "L'en-tête `Accept-Language est invalide."))
+        self.assertIsNone(rules.backticks_added(plain, "L'en-tête Accept-Language est invalide."))
+        self.assertIsNone(rules.backticks_added(plain, "\uff40\u2018\u2019"))  # other quotes
+        self.assertIsNone(rules.backticks_added("The `Vary` header.", "L'en-tête `Vary`."))
+        self.assertIsNone(rules.backticks_added("The `Vary` header.", "L'en-tête Vary."))
+        self.assertIsNone(rules.backticks_added("a b", "a b"))  # identical to msgid
+
+    def test_backticks_added_is_reported_and_not_critical(self) -> None:
+        issues = CatalogChecker().check_pair("Vary is bad.", "`Vary` est mauvais.", "fr")
+        self.assertEqual([i.issue_type for i in issues], [IssueType.BACKTICKS_ADDED])
+
 
 class StructureTest(unittest.TestCase):
     def test_paragraphs(self) -> None:

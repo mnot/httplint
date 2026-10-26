@@ -404,6 +404,19 @@ class MarkFuzzyTest(PoFixture):
         self.assertNotIn("fuzzy", catalog.get("A response is sent.").flags)
         self.assertIn("fuzzy", catalog.get("A directive is sent.").flags)
 
+    def test_added_backticks_are_marked_and_not_critical(self) -> None:
+        catalog = load_catalog(self.po_path)
+        for message in list(catalog):
+            if message.id in (self.FLAGGED, self.BAD_VAR):
+                del catalog[message.id]
+        catalog.add("Vary is bad, and long enough.", "`Vary` est mauvais.")
+        save_catalog(self.po_path, catalog)
+        code, out = self.run_check("--mark-fuzzy")
+        self.assertEqual(code, 0)  # report-only: the exit code is unchanged
+        self.assertIn("BACKTICKS_ADDED", out)
+        self.assertIn("fuzzy", self.flags()["Vary is bad, and long enough."])
+        self.assertNotIn("fuzzy", self.flags()["Fine string."])
+
     def test_translations_not_changed(self) -> None:
         before = {str(m.id): m.string for m in load_catalog(self.po_path) if m.id}
         self.run_check("--mark-fuzzy")
