@@ -58,8 +58,8 @@ Run this when translatable strings have changed.
    * `MODEL=<model id>` chooses another model; remote models need API keys (e.g., `./.venv/bin/llm keys set gemini`).
    * `RPM=<n>` limits requests per minute (default: unlimited); use it with remote models that rate-limit.
    * `TEMPERATURE=<x>` sets the sampling temperature (default 0.2) if the model supports it.
-   * `PROTECT=all` hides variables, code spans and URLs from the model; the default, `links`, hides only URLs and link targets, and checks that code spans and variables come back unchanged (`all` made some models drop the tokens, in 5% of Japanese entries).
-   * Each result is checked as in `i18n-check` and retried twice if it fails.
+   * `PROTECT=<mode>` chooses what the model cannot see. The default, `names`, hides URLs, link targets, and the field and coding names (`Content-Length`, `gzip`) that models otherwise translate; code spans and variables stay visible and are checked afterwards. `links` hides only URLs and link targets; `all` also hides code spans and variables (some models dropped tokens, in 5% of Japanese entries).
+   * Each result is checked as in `i18n-check` and retried twice if it fails. A single variable the model renamed (`%(field_name)s` translated) is put back first; several renamed ones are mapped by position and kept as `fuzzy` for review.
    * Entries that still fail on variables, code spans, field names or syntax are left empty; entries that only trip the advisory checks are kept as `fuzzy`. Both are listed at the end.
 5. `make i18n-check`: there must be no critical errors. Read any remaining flags and fix them by hand in the `.po` files.
 6. Optional: `make i18n-review MODEL=<model id> LOCALE=fr SINCE=origin/main` (see [Reviewing translations](#reviewing-translations)).
