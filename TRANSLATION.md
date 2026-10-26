@@ -7,12 +7,7 @@ This document outlines the process for adding and updating translations in `http
 
 - [Guidelines for Translators](#guidelines-for-translators)
 - [Guidelines for Code](#guidelines-for-code)
-- [Workflow](#workflow)
-  - [1. Extract Messages](#1-extract-messages)
-  - [2. Update PO Files](#2-update-po-files)
-  - [3. Translate](#3-translate)
-  - [4. Compile](#4-compile)
-  - [5. Verify](#5-verify)
+- [Release checklist](#release-checklist)
 - [Reviewing translations](#reviewing-translations)
   - [Offline checks](#offline-checks)
   - [Model review](#model-review)
@@ -22,7 +17,7 @@ This document outlines the process for adding and updating translations in `http
 
 ## Guidelines for Translators
 
-Suggestions and corrections for the translations in `redbot/translations` are welcome as GitHub Pull Requests. A few guidelines for doing so:
+Suggestions and corrections for the translations in `httplint/translations` are welcome as GitHub Pull Requests. A few guidelines for doing so:
 
 * Assume a technical audience, but prioritise clarity, accuracy, and brevity. Do not assume deep domain-specific knowledge about HTTP.
 * Keep "%(foo)s" style variable in your content.
@@ -52,94 +47,42 @@ Code that contains user-facing strings should follow these guidelines:
 *   **Direct Translation**: You can also use `translate()` directly for strings that don't need to be defined at module level (but `L_` is preferred for clarity).
 
 
-## Workflow
+## Release checklist
 
-### 1. Extract Messages
+Run this when translatable strings have changed.
 
-When code changes, new translatable strings might be added. This will update the `.po` files in `httplint/translations` with any new strings from `httplint/translations/messages.pot`.
+1. `make i18n-update`: re-extracts the strings and updates every catalog. Changed strings arrive as new, empty entries (no fuzzy matching).
+2. `make i18n-check MARK_FUZZY=1`: marks entries the checks flag as `fuzzy`, so the next step retranslates them. This **discards their current text**.
+3. Download the default model, once: `./.venv/bin/llm mlx download-model mlx-community/aya-expanse-8b-4bit`
+4. `make i18n-autotranslate`: translates every empty or `fuzzy` entry with an LLM (via the `llm` package). Use `MODEL=<model id>` to choose another model; remote models need API keys (e.g., `./.venv/bin/llm keys set gemini`).
+5. `make i18n-check`: there must be no critical errors. Read any remaining flags and fix them by hand in the `.po` files.
+6. Optional: `make i18n-review MODEL=<model id> LOCALE=fr SINCE=origin/main` (see [Reviewing translations](#reviewing-translations)).
+7. `make i18n-compile`: builds the `.mo` files used at runtime.
+8. Spot-check: `./.venv/bin/httplint --locale fr <url>`
+9. Commit the result as its own PR.
 
-```bash
-make i18n-extract
-```
-
-### 2. Update PO Files
-
-Update the `.po` files for all locales to include the new strings from the template:
-
-```bash
-make i18n-update
-```
-
-This does not do fuzzy matching: a string whose text changed shows up as a new, empty entry rather than as a guessed translation flagged `fuzzy`, and the old translation moves to an obsolete `#~` entry. The trade-off is that even a trivial rewording of a string now needs a full retranslation.
-
-If a catalog already has `fuzzy` entries (from an earlier update), `make i18n-clear-fuzzy` blanks them and removes the flag, so they are translated like any other missing string (by hand, in Option A below). This **discards the text** of those fuzzy translations; `make i18n-autotranslate` already retranslates fuzzy entries, so Option B does not need it:
-
-```bash
-make i18n-clear-fuzzy
-```
-
-### 3. Translate
-
-You have two options for translation:
-
-**Option A: Manual Translation**
-Edit the `.po` files (e.g., `httplint/translations/fr/LC_MESSAGES/messages.po`) to add missing translations or correct existing ones.
-
-**Option B: Auto-Translation**
-Use an LLM (via the `llm` package) to automatically translate missing strings. You can specify the model using the `MODEL` variable (default: `mlx-community/aya-expanse-8b-4bit`) and the rate limit using `RPM` (default: unlimited; this is for remote models).
-
-```bash
-make i18n-autotranslate MODEL=gemini-1.5-flash-latest RPM=60
-```
-*Note: To use remote models you must have the `llm` package configured with valid API keys (e.g., `./.venv/bin/llm keys set gemini`).*
-
-### 4. Compile
-
-Compile the `.po` files into binary `.mo` files for use at runtime:
-
-```bash
-make i18n-compile
-```
-
-### 5. Verify
-
-Run `httplint` with the target locale to verify the translations:
-
-```bash
-./.venv/bin/httplint --locale fr <url>
-```
+To translate by hand instead of step 4, edit the `.po` files (e.g., `httplint/translations/fr/LC_MESSAGES/messages.po`). `make i18n-clear-fuzzy` blanks entries already marked `fuzzy` and **discards their text**, for translating them by hand.
 
 ## Reviewing translations
 
-Machine translations need checking, and most maintainers cannot read every language. There are two layers: free offline checks, and an optional model review. Both are advisory.
+Machine translations need checking, and most maintainers cannot read every language. Both layers below are advisory.
 
 ### Offline checks
 
 `make i18n-check` (part of `make test`) fails only on `BAD_VARIABLE` and `SYNTAX_ERROR`. It also reports, without failing:
 
 * `MISSING`, `FUZZY`: no translation, or marked fuzzy.
-* `LINK_MISMATCH`: the URLs and Markdown link targets in the translation differ from the English, or the number of well-formed `[text](target)` links does (a space before the `(`, an unclosed link, or lost brackets around a URL that is still there).
-* `TOKEN_CHANGED`: a backtick-quoted header name, token or value in the English (a single token such as `Cache-Control` or `bytes`, a `Name: value` line, or the code of a status like `404 (Not Found)`) does not appear verbatim in the translation. Spans containing placeholders, bare punctuation and prose are ignored, so some changes will be missed.
-* `DUPLICATED_TEXT`: more sentences repeat within the translation than within the English, or a placeholder occurs more often than in the English. Only exact repeats are found; a paraphrased restatement is not (the model review can catch those).
-* `SUSPICIOUS_LENGTH`: the translation is much shorter or longer than the English (ratio outside 0.5-2.2, or 0.2-1.4 for `ja` and 0.12-1.2 for `zh`; strings under 30 characters are skipped).
-* `PREAMBLE`: the translation starts with model chatter ("Here is the translation", "Certainly", "As an AI", a refusal, in the supported languages) or a code fence, ends with commentary ("(Note: ...)", "Let me know if..."), or contains `<think>` tags.
+* `LINK_MISMATCH`: URLs, Markdown link targets or the number of well-formed `[text](target)` links differ from the English.
+* `TOKEN_CHANGED`: a backtick-quoted header name, token or value in the English does not appear verbatim in the translation.
+* `DUPLICATED_TEXT`: sentences or placeholders repeat more than in the English (exact repeats only).
+* `SUSPICIOUS_LENGTH`: the translation is much shorter or longer than the English.
+* `PREAMBLE`: the translation starts or ends with model chatter, a code fence or a refusal, or contains `<think>` tags.
 
-There is no check for a translation that is identical to the English (an untranslated string).
-
-A flag means "look at this", not "this is wrong".
-
-`MARK_FUZZY=1` marks flagged entries fuzzy, so `make i18n-autotranslate` retranslates them, discarding their text:
-
-```bash
-make i18n-update
-make i18n-check MARK_FUZZY=1
-make i18n-autotranslate
-make i18n-check
-```
+An untranslated string identical to the English is not flagged. A flag means "look at this", not "this is wrong".
 
 ### Model review
 
-`make i18n-review` asks a language model to judge each translation (meaning, technical register, header names and acronyms left in English, Markdown and placeholders preserved). It is not part of `make test`, and it needs a model you choose; there is no default.
+`make i18n-review` asks a language model to judge each translation. It is not part of `make test`, and there is no default model.
 
 ```bash
 # Claude (needs an API key; this costs money)
@@ -149,29 +92,28 @@ make i18n-check
 make i18n-review MODEL=<model id> LOCALE=fr SINCE=origin/main
 ```
 
-A local MLX model should also work through `llm-mlx` (installed by `make venv-i18n`) once its model has been downloaded, with no key and no cost per call. That path has not been tested with this tool.
+A local MLX model should also work through `llm-mlx` (installed by `make venv-i18n`), with no key and no per-call cost; this has not been tested.
 
 Options (as `make` variables):
 
 * `LOCALE`: a locale such as `fr`, or `all` (the default).
-* `SINCE=REF`: only review entries whose translation is new or changed compared with the catalog at git ref `REF`, which is what you want after retranslating.
+* `SINCE=REF`: only review entries whose translation is new or changed since git ref `REF`.
 * `LIMIT=N`: review at most N entries per locale.
-* `YES=1`: required if more than 50 model calls could be made. The count is the worst case, entries x (1 + `BACKTRANSLATE`) x 2, because a reply that is not valid JSON is retried once. `DRY_RUN=1` shows it.
-* `BACKTRANSLATE=1`: first translate each translation back to English in a separate call, without showing the original, then compare meanings. It doubles the number of calls.
-* `MARK_FUZZY=1`: set the `fuzzy` flag on entries judged "major". It means "queued for retranslation or manual fix": `make i18n-compile` skips them (English is shown instead) and `make i18n-check` lists them. Off by default. Be aware that `make i18n-autotranslate` and `make i18n-clear-fuzzy` DISCARD the msgstr of fuzzy entries, and the reviewer's suggestion with it, because suggestions live only in the report file. Copy any suggestion you want before running either.
-* `DRY_RUN=1`: list what would be reviewed and how many model calls it would take; calls nothing, and needs no `MODEL`.
+* `YES=1`: required if more than 50 model calls could be made (worst case: entries x (1 + `BACKTRANSLATE`) x 2, because an invalid reply is retried once).
+* `BACKTRANSLATE=1`: translate each translation back to English first, then compare meanings. Doubles the calls.
+* `MARK_FUZZY=1`: mark entries judged "major" as `fuzzy`, so `make i18n-compile` skips them. `make i18n-autotranslate` and `make i18n-clear-fuzzy` **discard the msgstr** of fuzzy entries, and with it the reviewer's suggestion (suggestions live only in the report), so copy what you want first. Leave this off unless you will read the report.
+* `DRY_RUN=1`: show what would be reviewed and the number of calls; needs no `MODEL`.
 
-The report is written to `i18n-review-<locale>.md` in the current directory (git-ignored), with major problems first: each entry shows the English, the current translation, the problems found and a suggested replacement. It is rewritten after every entry, so Ctrl-C (or a run aborted by repeated model errors) keeps a partial report. The review never changes a translation; apply any suggestion by hand in the `.po` file.
+The report is `i18n-review-<locale>.md` in the current directory (git-ignored), major problems first, and is rewritten after every entry. The review never changes a translation; apply suggestions by hand in the `.po` file.
 
-The strings are sent to the model inside delimited blocks marked as data, with a random delimiter, so that text that looks like instructions is judged rather than obeyed. That reduces the risk but a model can still be fooled, which is another reason to keep `MARK_FUZZY` off unless you will read the report.
-
-Cost and privacy: every reviewed string, and its translation, is sent to the model's provider. Check that this is acceptable, and use `DRY_RUN=1`, `SINCE` and `LIMIT` to keep the number of calls down. Models make mistakes in both directions, so treat the verdicts as a second opinion, not a gate; a native speaker is still the best reviewer.
+Every reviewed string and its translation is sent to the model's provider, so check that this is acceptable and use `DRY_RUN`, `SINCE` and `LIMIT` to limit calls. Treat the verdicts as a second opinion, not a gate.
 
 ## Adding a New Language
 
-To add a new language (e.g., Spanish `es`):
+To add a new language (e.g., German `de`):
 
 ```bash
-make init_locale LOCALE=es
+make i18n-init LOCALE=de
 ```
-Then follow steps 2-5 above.
+
+Then follow steps 3-9 of the [release checklist](#release-checklist).
