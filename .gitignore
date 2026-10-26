@@ -14,4 +14,5 @@ __pycache__
 /Makefile.local
 
 # === pyproject-tmpl: start "extras" ===
+/i18n-review-*.md
 # === pyproject-tmpl: end "extras" ===

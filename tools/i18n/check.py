@@ -3,10 +3,11 @@
 import argparse
 import sys
 import re
-from typing import List, Set, Tuple, Dict
+from typing import List, Optional, Set, Tuple, Dict
 from dataclasses import dataclass
 from enum import Enum, auto
 
+from . import heuristics
 from .utils import load_catalog, find_po_files, get_lang_from_path
 
 class IssueType(Enum):
@@ -14,6 +15,15 @@ class IssueType(Enum):
     FUZZY = auto()
     BAD_VARIABLE = auto()
     SYNTAX_ERROR = auto()
+    # Report-only heuristics (see heuristics.py); they never fail the build.
+    LINK_MISMATCH = auto()
+    TOKEN_CHANGED = auto()
+    DUPLICATED_TEXT = auto()
+    SUSPICIOUS_LENGTH = auto()
+    PREAMBLE = auto()
+
+# Only these make `main()` exit non-zero.
+CRITICAL_ISSUES = (IssueType.BAD_VARIABLE, IssueType.SYNTAX_ERROR)
 
 @dataclass
 class TranslationIssue:
@@ -61,7 +71,12 @@ class CatalogChecker:
 
     def check_file(self, po_path: str) -> List[TranslationIssue]:
         """Check a single PO file for various issues."""
-        catalog = load_catalog(po_path)
+        return self.check_catalog(load_catalog(po_path), get_lang_from_path(po_path))
+
+    def check_catalog(
+        self, catalog, lang: Optional[str] = None
+    ) -> List[TranslationIssue]:
+        """Check a loaded catalog for various issues."""
         issues = []
 
         for message in catalog:
@@ -117,7 +132,30 @@ class CatalogChecker:
                     )
                 )
 
+            issues.extend(self.check_heuristics(message, lang))
+
         return issues
+
+    def check_heuristics(self, message, lang: Optional[str]) -> List[TranslationIssue]:
+        """Run the report-only heuristics on one translated message."""
+        msgid, msgstr = message.id, message.string
+        if not isinstance(msgid, str) or not isinstance(msgstr, str):
+            return []  # plural forms are not handled anywhere in this tool yet
+        found = [
+            (IssueType.LINK_MISMATCH, heuristics.link_mismatch(msgid, msgstr)),
+            (IssueType.TOKEN_CHANGED, heuristics.token_changed(msgid, msgstr)),
+            (IssueType.DUPLICATED_TEXT, heuristics.duplicated_text(msgid, msgstr)),
+            (
+                IssueType.SUSPICIOUS_LENGTH,
+                heuristics.suspicious_length(msgid, msgstr, lang),
+            ),
+            (IssueType.PREAMBLE, heuristics.preamble(msgid, msgstr)),
+        ]
+        return [
+            TranslationIssue(issue_type, msgid, message.lineno, details)
+            for issue_type, details in found
+            if details
+        ]
 
 class Reporter:
     """Handles formatted output for translation issues."""
@@ -134,7 +172,7 @@ class Reporter:
             label = issue.issue_type.name
             preview = issue.message_id[:40].replace("\n", " ")
             detail = f" - {issue.details}" if issue.details else ""
-            print(f"  {label:<12} {preview}... (line {issue.lineno}){detail}")
+            print(f"  {label:<18} {preview}... (line {issue.lineno}){detail}")
 
         summary_parts = []
         for it in IssueType:
@@ -170,14 +208,9 @@ def main():
         issues = checker.check_file(po_file)
         reporter.report_file(lang, po_file, issues)
 
-        # Count critical errors (anything that's not just fuzzy or missing)
-        # Actually, missing might be critical too depending on requirements,
-        # but the original script only exited 1 for bad variables/syntax.
-        critical = [
-            i
-            for i in issues
-            if i.issue_type in [IssueType.BAD_VARIABLE, IssueType.SYNTAX_ERROR]
-        ]
+        # Missing, fuzzy and the heuristic reports are advisory; the original script
+        # only exited 1 for bad variables/syntax.
+        critical = [i for i in issues if i.issue_type in CRITICAL_ISSUES]
         total_critical_errors += len(critical)
 
     if total_critical_errors > 0:
