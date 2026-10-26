@@ -54,3 +54,15 @@ i18n-check: venv-i18n
 i18n-init: venv-i18n
 	@if [ -z "$(LOCALE)" ]; then echo "Usage: make init_locale LOCALE=xx"; exit 1; fi
 	$(VENV)/pybabel init -i $(PROJECT)/translations/messages.pot -d $(PROJECT)/translations -l $(LOCALE)
+
+# Optional, advisory LLM review of translations (not part of 'make test'; may cost money).
+# make i18n-review MODEL=<llm model id> [LOCALE=fr] [SINCE=<git ref>] [LIMIT=n] [YES=1]
+#                  [BACKTRANSLATE=1] [MARK_FUZZY=1] [DRY_RUN=1]
+# See "Reviewing translations" in TRANSLATION.md. It never edits msgstr.
+.PHONY: i18n-review
+i18n-review: venv-i18n
+	@if [ -z "$(MODEL)" ] && [ -z "$(DRY_RUN)" ]; then \
+		echo "Usage: make i18n-review MODEL=<llm model id> [LOCALE=fr] [SINCE=<git ref>] [LIMIT=n] [YES=1] [BACKTRANSLATE=1] [MARK_FUZZY=1] [DRY_RUN=1]"; \
+		exit 1; \
+	fi
+	PYTHONPATH=. $(VENV)/python -m tools.i18n.review --locale_dir $(PROJECT)/translations --locale $(or $(LOCALE),all) $(if $(MODEL),--model $(MODEL)) $(if $(SINCE),--since $(SINCE)) $(if $(LIMIT),--limit $(LIMIT)) $(if $(YES),--yes) $(if $(BACKTRANSLATE),--backtranslate) $(if $(MARK_FUZZY),--mark-fuzzy) $(if $(DRY_RUN),--dry-run)
