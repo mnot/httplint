@@ -21,7 +21,6 @@ from tools.i18n.autotranslate import (
     token_error,
     translate,
 )
-from tools.i18n.check import CatalogChecker
 from tools.i18n.utils import load_catalog, save_catalog
 
 TEXT_MARK = "Here is the text to translate:\n\n"
@@ -180,12 +179,13 @@ class TranslateTest(unittest.TestCase):
     )
 
     def run_translate(
-        self, reply: Callable[[str], str], msgid: Optional[str] = None
+        self,
+        reply: Callable[[str], str],
+        msgid: Optional[str] = None,
+        rules: Optional[List[autotranslate.Rule]] = None,
     ) -> Tuple[Optional[str], int, str, FakeModel]:
         model = FakeModel(reply)
-        result, retries, error = translate(
-            ask_for(model), "fr", msgid or self.MSGID, CatalogChecker()
-        )
+        result, retries, error = translate(ask_for(model), "fr", msgid or self.MSGID, rules)
         return result, retries, error, model
 
     def test_good_translation_passes_through(self) -> None:
@@ -250,6 +250,27 @@ class TranslateTest(unittest.TestCase):
         self.assertEqual(retries, 2)
         self.assertEqual(len(model.calls), 3)
         self.assertIn("missing", error)
+
+    def test_custom_rule_error_reaches_the_prompt(self) -> None:
+        def no_prefix(msgid: str, msgstr: str, lang: Optional[str]) -> List[str]:
+            return ["do not start with FR"] if msgstr.startswith("FR") else []
+
+        replies = iter(["FR: @@1@@ @@2@@ @@3@@ @@4@@", None])
+
+        def reply(prompt: str) -> str:
+            first = next(replies)
+            return first if first is not None else "Voir " + text_of(prompt)
+
+        _, retries, _, model = self.run_translate(reply, rules=[no_prefix])
+        self.assertEqual(retries, 1)
+        self.assertIn("rejected: do not start with FR.", model.calls[1][0])
+
+    def test_whitespace_copied_from_msgid(self) -> None:
+        msgid = "\n  Some `code` text here, long enough to pass.\n\n"
+        # the model drops the whitespace, as the maintainer's run showed
+        result, _, _, _ = self.run_translate(lambda p: "FR: " + text_of(p).strip(), msgid)
+        self.assertEqual(result, "\n  FR: " + msgid.strip() + "\n\n")
+        self.assertEqual(autotranslate.match_whitespace("a\n", " b "), "b\n")
 
     def test_empty_reply_is_retried(self) -> None:
         replies = iter(["", None])

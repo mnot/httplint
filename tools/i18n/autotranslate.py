@@ -90,18 +90,40 @@ def build_prompt(lang: str, masked: str, tokens: bool, error: Optional[str]) -> 
     return start + PROMPT_END.format(text=masked)
 
 
-def describe(issues: List[Any]) -> str:
-    """One line for the prompt from the i18n-check issues."""
-    return "; ".join(f"{i.issue_type.name} {i.details}".strip().replace("\n", " ") for i in issues)
+# A rule takes (msgid, msgstr, lang) and returns short error strings, which go into
+# the retry prompt. The retry loop doesn't depend on which rules exist.
+Rule = Callable[[str, str, Optional[str]], List[str]]
+_CHECKER = CatalogChecker()
+
+
+def i18n_check_rule(msgid: str, msgstr: str, lang: Optional[str]) -> List[str]:
+    """The `make i18n-check` checks: variables, syntax, links, tokens, length, ..."""
+    return [
+        f"{i.issue_type.name} {i.details}".strip().replace("\n", " ")
+        for i in _CHECKER.check_pair(msgid, msgstr, lang)
+    ]
+
+
+RULES: List[Rule] = [i18n_check_rule]
+
+
+def match_whitespace(msgid: str, msgstr: str) -> str:
+    """Give msgstr the leading and trailing whitespace of msgid."""
+    lead = msgid[: len(msgid) - len(msgid.lstrip())]
+    trail = msgid[len(msgid.rstrip()) :]
+    return lead + msgstr.strip() + trail
 
 
 def translate(
-    ask: Callable[[str], str], lang: str, msgid: str, checker: CatalogChecker
+    ask: Callable[[str], str],
+    lang: str,
+    msgid: str,
+    rules: Optional[List[Rule]] = None,
 ) -> Tuple[Optional[str], int, str]:
     """
-    Translate msgid with protected spans masked, validating the result as i18n-check
-    would and retrying up to RETRIES times. Returns (translation or None, retries
-    used, last error).
+    Translate msgid with protected spans masked, validating the result with the rules
+    and retrying up to RETRIES times. Returns (translation or None, retries used,
+    last error).
     """
     masked, spans = protect(msgid)
     error: Optional[str] = None
@@ -112,11 +134,15 @@ def translate(
             continue
         error = token_error(masked, raw, len(spans)) if spans else None
         if error is None:
-            candidate = restore(raw, spans)
-            issues = checker.check_pair(msgid, candidate, lang)
-            if not issues:
+            candidate = match_whitespace(msgid, restore(raw, spans))
+            problems = [
+                p
+                for rule in (RULES if rules is None else rules)
+                for p in rule(msgid, candidate, lang)
+            ]
+            if not problems:
                 return candidate, attempt, ""
-            error = describe(issues)
+            error = "; ".join(problems)
     return None, RETRIES, error or ""
 
 
@@ -136,7 +162,6 @@ def autotranslate_file(po_file, lang, model_id, rpm, temperature=DEFAULT_TEMPERA
         options["temperature"] = temperature
     else:
         print(f"{model_id} has no temperature option; using its default.")
-    checker = CatalogChecker()
 
     def ask(prompt: str) -> str:
         return model.prompt(prompt, **options).text()
@@ -158,7 +183,7 @@ def autotranslate_file(po_file, lang, model_id, rpm, temperature=DEFAULT_TEMPERA
                 time.sleep(sleep_time)
 
             if isinstance(message.id, str):
-                translation, _, _ = translate(ask, lang, message.id, checker)
+                translation, _, _ = translate(ask, lang, message.id)
             else:  # plural entries: unchanged, no masking or validation
                 translation = ask(build_prompt(lang, str(message.id), False, None))
                 translation = translation.strip() or None
