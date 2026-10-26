@@ -58,8 +58,9 @@ Run this when translatable strings have changed.
    * `MODEL=<model id>` chooses another model; remote models need API keys (e.g., `./.venv/bin/llm keys set gemini`).
    * `RPM=<n>` limits requests per minute (default: unlimited); use it with remote models that rate-limit.
    * `TEMPERATURE=<x>` sets the sampling temperature (default 0.2) if the model supports it.
-   * Variables, code spans and URLs are hidden from the model. Each result is checked as in `i18n-check` and retried twice if it fails.
-   * Entries that still fail on variables or syntax are left empty; entries that only trip the advisory checks are kept as `fuzzy`. Both are listed at the end.
+   * `PROTECT=all` hides variables, code spans and URLs from the model; the default, `links`, hides only URLs and link targets, and checks that code spans and variables come back unchanged (`all` made some models drop the tokens, in 5% of Japanese entries).
+   * Each result is checked as in `i18n-check` and retried twice if it fails.
+   * Entries that still fail on variables, code spans or syntax are left empty; entries that only trip the advisory checks are kept as `fuzzy`. Both are listed at the end.
 5. `make i18n-check`: there must be no critical errors. Read any remaining flags and fix them by hand in the `.po` files.
 6. Optional: `make i18n-review MODEL=<model id> LOCALE=fr SINCE=origin/main` (see [Reviewing translations](#reviewing-translations)).
 7. `make i18n-compile`: builds the `.mo` files used at runtime.

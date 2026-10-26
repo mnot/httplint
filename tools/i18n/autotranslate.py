@@ -2,6 +2,7 @@ import argparse
 import re
 import sys
 import time
+from collections import Counter
 from dataclasses import dataclass
 from typing import Any, Callable, List, Optional, Tuple
 
@@ -12,12 +13,22 @@ DEFAULT_MODEL = "mlx-community/aya-expanse-8b-4bit"
 DEFAULT_TEMPERATURE = 0.2
 RETRIES = 2
 
+# --protect modes. "links": only URLs and Markdown link targets are masked; code spans
+# and placeholders stay visible and are checked after translation. "all": everything is
+# masked. "all" dropped tokens (header names, noun-phrase variables) in 5% of ja entries.
+PROTECT_LINKS = "links"
+PROTECT_ALL = "all"
+PROTECT_MODES = (PROTECT_LINKS, PROTECT_ALL)
+DEFAULT_PROTECT = PROTECT_LINKS
+
 # Spans the model must not touch are swapped for opaque tokens (@@1@@, @@2@@, ...) and
 # put back afterwards. ASCII, no Markdown meaning, and not a word the model translates.
 # If the msgid already contains the delimiter, a longer one (@@@, ...) is used.
 MARK = "@@"
 MAX_ERROR = 200
-HARD_PREFIXES = ("BAD_VARIABLE", "SYNTAX_ERROR")  # others are advisory heuristics
+# others are advisory heuristics
+HARD_PREFIXES = ("BAD_VARIABLE", "SYNTAX_ERROR", "CODE_SPAN_CHANGED")
+MAX_SPAN = 120  # longer spans are cut when named in an error
 
 
 def token_re(mark: str) -> "re.Pattern[str]":
@@ -31,9 +42,11 @@ def pick_mark(msgid: str) -> str:
     return mark
 
 
+CODE_PATTERN = r"(?P<code>(?P<ticks>`+)(?:(?!\n[ \t]*\n).)+?(?P=ticks)(?!`))"  # may span lines
+CODE_RE = re.compile(CODE_PATTERN, re.DOTALL)
+VISIBLE_RE = re.compile(CODE_PATTERN + r"|%\(|%%", re.DOTALL)  # what links mode leaves in view
 PROTECTED_RE = re.compile(
-    r"""
-      (?P<code>(?P<ticks>`+)(?:(?!\n[ \t]*\n).)+?(?P=ticks)(?!`))  # `code`, may span lines
+    CODE_PATTERN + r"""
     | (?<=\])(?P<target>\((?:[^()\s]|\([^()\s]*\))+\))             # [text]<(target)>
     | (?P<url>https?://(?:%\([^)]*\)[a-z]|[^\s<>"'`)\]])+)         # bare URL
     | (?P<var>%\([^)]+\)[-\#0\ +]*[\d.]*[diouxXeEfFgGcrsa]|%%)     # %(name)s, %%
@@ -54,15 +67,24 @@ TOKEN_SENTENCE = (
     " Tokens like {token} stand for protected text: copy each one exactly, "
     "once, in the same place."
 )
+VISIBLE_SENTENCE = " Copy text in backticks and %(name)s placeholders exactly, unchanged."
+VISIBLE_SENTENCE_PERCENT = (
+    " Copy text in backticks, %(name)s placeholders and %% exactly, unchanged."
+)
 PROMPT_END = " Here is the text to translate:\n\n{text}"
 
 
-def protect(text: str, mark: str = MARK) -> Tuple[str, List[str]]:
-    """Replace protected spans with tokens; return the new text and the spans."""
+def protect(text: str, mark: str = MARK, mode: str = DEFAULT_PROTECT) -> Tuple[str, List[str]]:
+    """
+    Replace protected spans with tokens; return the new text and the spans. In links
+    mode, only URLs and Markdown link targets are replaced.
+    """
     spans: List[str] = []
 
     def mask(match: "re.Match[str]") -> str:
         span = match.group(0)
+        if mode == PROTECT_LINKS and match.lastgroup in ("code", "var"):
+            return span
         tail = ""
         if match.lastgroup == "url":
             stripped = span.rstrip(URL_TRAILING)
@@ -73,7 +95,9 @@ def protect(text: str, mark: str = MARK) -> Tuple[str, List[str]]:
     return PROTECTED_RE.sub(mask, text), spans
 
 
-def token_error(masked: str, translation: str, count: int, mark: str = MARK) -> Optional[str]:
+def token_error(
+    masked: str, translation: str, count: int, mark: str = MARK, ticks: bool = True
+) -> Optional[str]:
     """Why the translation can't be un-masked (None if it can)."""
     found = [int(n) for n in token_re(mark).findall(translation)]
     missing = [n for n in range(1, count + 1) if n not in found]
@@ -86,7 +110,7 @@ def token_error(masked: str, translation: str, count: int, mark: str = MARK) -> 
         problems.append("repeated " + ", ".join(f"{mark}{n}{mark}" for n in repeated))
     if extra:
         problems.append("invented " + ", ".join(f"{mark}{n}{mark}" for n in extra))
-    if translation.count("`") != masked.count("`"):
+    if ticks and translation.count("`") != masked.count("`"):  # links mode: code_span_rule
         problems.append("added backticks")
     if not problems:
         return None
@@ -103,7 +127,13 @@ def restore(translation: str, spans: List[str], mark: str = MARK) -> str:
 
 def shorten(text: str) -> str:
     """One line of at most MAX_ERROR characters (errors can echo model output)."""
-    text = " ".join(text.split())
+    parts, pos = [], 0
+    for match in CODE_RE.finditer(text):  # code spans are named verbatim in errors
+        parts.append(re.sub(r"\s+", " ", text[pos : match.start()]))
+        parts.append(match.group(0))
+        pos = match.end()
+    parts.append(re.sub(r"\s+", " ", text[pos:]))
+    text = "".join(parts).strip()
     return text if len(text) <= MAX_ERROR else text[: MAX_ERROR - 3] + "..."
 
 
@@ -113,10 +143,14 @@ def build_prompt(
     tokens: bool,
     error: Optional[str],
     mark: str = MARK,
+    visible: bool = False,
+    percent: bool = False,
 ) -> str:
     start = PROMPT_START.format(lang=lang)
     if tokens:
         start += TOKEN_SENTENCE.format(token=f"{mark}1{mark}")
+    if visible:
+        start += VISIBLE_SENTENCE_PERCENT if percent else VISIBLE_SENTENCE
     if error:
         start += f" Your previous translation was rejected: {shorten(error)}."
     return start + PROMPT_END.format(text=masked)
@@ -136,7 +170,49 @@ def i18n_check_rule(msgid: str, msgstr: str, lang: Optional[str]) -> List[str]:
     ]
 
 
-RULES: List[Rule] = [i18n_check_rule]
+def named(span: str) -> str:
+    """A span for an error message; a very long one is cut, keeping its backticks."""
+    if len(span) <= MAX_SPAN:
+        return span
+    ticks = span[: len(span) - len(span.lstrip("`"))]
+    return span[: MAX_SPAN - len(ticks) - 3] + "..." + ticks
+
+
+def text_kept(span: str, msgstr: str) -> bool:
+    """The text inside span is in msgstr, as a whole word, outside any code span."""
+    inner = span.strip("`").strip()
+    if not inner:
+        return False
+    before = r"(?<![A-Za-z0-9])" if inner[0].isalnum() else ""
+    after = r"(?![A-Za-z0-9])" if inner[-1].isalnum() else ""
+    return bool(re.search(before + re.escape(inner) + after, CODE_RE.sub(" ", msgstr)))
+
+
+def code_span_rule(msgid: str, msgstr: str, lang: Optional[str]) -> List[str]:
+    """
+    Every backtick span of msgid must be in msgstr, byte for byte (multisets; order is
+    free). A span whose text changed or went missing is a hard failure (CODE_SPAN_CHANGED);
+    one that kept its text but lost its backticks, or an added span, is advisory.
+    Placeholders are checked by BAD_VARIABLE in i18n_check_rule. An odd number of
+    backticks in msgid means the spans can't be paired reliably, so there is no verdict.
+    """
+    if msgid.count("`") % 2:
+        return []
+    want = Counter(m.group(0) for m in CODE_RE.finditer(msgid))
+    got = Counter(m.group(0) for m in CODE_RE.finditer(msgstr))
+    errors = []
+    for span in list(want - got)[:3]:
+        kind = "CODE_SPAN_BACKTICKS" if text_kept(span, msgstr) else "CODE_SPAN_CHANGED"
+        errors.append(f"{kind} keep {named(span)} exactly, including the backticks")
+    if not errors:
+        errors = [
+            f"CODE_SPAN_ADDED you added {named(span)}: don't add backticks"
+            for span in list(got - want)[:3]
+        ]
+    return errors
+
+
+RULES: List[Rule] = [code_span_rule, i18n_check_rule]
 
 
 def match_whitespace(msgid: str, msgstr: str) -> str:
@@ -159,24 +235,29 @@ def translate(
     lang: str,
     msgid: str,
     rules: Optional[List[Rule]] = None,
+    mode: str = DEFAULT_PROTECT,
 ) -> Result:
     """
-    Translate msgid with protected spans masked, validating the result with the rules
-    and retrying up to RETRIES times. If the last attempt fails only advisory rules,
+    Translate msgid with protected spans masked (see PROTECT_*), validating the result with
+    the rules and retrying up to RETRIES times. If the last attempt fails only advisory rules,
     its text is returned with fuzzy set; any other failure returns no text.
     """
     mark = pick_mark(msgid)
-    masked, spans = protect(msgid, mark)
+    masked, spans = protect(msgid, mark, mode)
+    visible = mode == PROTECT_LINKS and bool(VISIBLE_RE.search(masked))
+    percent = visible and "%%" in masked
     error = ""
     candidate: Optional[str] = None
     advisory = False
     for attempt in range(RETRIES + 1):
         candidate, advisory = None, False
-        raw = ask(build_prompt(lang, masked, bool(spans), error or None, mark)).strip()
+        raw = ask(
+            build_prompt(lang, masked, bool(spans), error or None, mark, visible, percent)
+        ).strip()
         if not raw:
             error = "the translation was empty"
             continue
-        error = token_error(masked, raw, len(spans), mark) or ""
+        error = token_error(masked, raw, len(spans), mark, mode == PROTECT_ALL) or ""
         if error:
             continue
         text = match_whitespace(msgid, restore(raw, spans, mark))
@@ -185,9 +266,10 @@ def translate(
         ]
         if not problems:
             return Result(text, attempt)
-        error = shorten("; ".join(problems))
+        hard = [p for p in problems if p.startswith(HARD_PREFIXES)]
+        error = shorten("; ".join(hard or problems))  # advisory noise would crowd out the cause
         candidate = text
-        advisory = not any(p.startswith(HARD_PREFIXES) for p in problems)
+        advisory = not hard
     if candidate is not None and advisory:
         return Result(candidate, RETRIES, error, fuzzy=True)
     return Result(None, RETRIES, shorten(error))
@@ -198,7 +280,15 @@ def supports_option(model: Any, name: str) -> bool:
     return name in getattr(options, "model_fields", {})
 
 
-def autotranslate_file(po_file, lang, model_id, rpm, temperature=DEFAULT_TEMPERATURE, model=None):
+def autotranslate_file(
+    po_file,
+    lang,
+    model_id,
+    rpm,
+    temperature=DEFAULT_TEMPERATURE,
+    model=None,
+    protect_mode=DEFAULT_PROTECT,
+):
     catalog = load_catalog(po_file)
     if model is None:
         import llm  # pylint: disable=import-outside-toplevel
@@ -220,7 +310,10 @@ def autotranslate_file(po_file, lang, model_id, rpm, temperature=DEFAULT_TEMPERA
     kept_fuzzy: List[Tuple[Any, str]] = []
     errors = []
 
-    print(f"Found {len(to_translate)} messages to translate using {model_id}.")
+    print(
+        f"Found {len(to_translate)} messages to translate using {model_id} "
+        f"(--protect {protect_mode})."
+    )
 
     exception_count = 0
     sleep_time = 60.0 / rpm if rpm > 0 else 0
@@ -231,7 +324,7 @@ def autotranslate_file(po_file, lang, model_id, rpm, temperature=DEFAULT_TEMPERA
                 time.sleep(sleep_time)
 
             if isinstance(message.id, str):
-                result = translate(ask, lang, message.id)
+                result = translate(ask, lang, message.id, mode=protect_mode)
             else:  # plural entries: unchanged, no masking or validation
                 reply = ask(build_prompt(lang, str(message.id), False, None)).strip()
                 result = Result(reply or None)
@@ -278,7 +371,7 @@ def autotranslate_file(po_file, lang, model_id, rpm, temperature=DEFAULT_TEMPERA
     print(f"\nAuto-translated {count} messages.")
 
     for entries, what in (
-        (left_empty, "left empty (no valid translation)"),
+        (left_empty, f"left empty (no valid translation; --protect {protect_mode})"),
         (kept_fuzzy, "kept as fuzzy for review (failed advisory checks)"),
     ):
         if entries:
@@ -317,6 +410,14 @@ def build_parser() -> argparse.ArgumentParser:
         default=DEFAULT_TEMPERATURE,
         help="Sampling temperature, if the model supports it (default: %(default)s)",
     )
+    parser.add_argument(
+        "--protect",
+        choices=PROTECT_MODES,
+        default=DEFAULT_PROTECT,
+        help="Text hidden from the model: 'links' (URLs and link targets only; code spans "
+        "and placeholders are verified afterwards) or 'all' (everything; it dropped tokens "
+        "in 5%% of ja entries) (default: %(default)s)",
+    )
     return parser
 
 
@@ -334,12 +435,21 @@ def main():
                 print(f"Could not determine language for {po_file}, skipping.")
                 continue
             print(f"Processing {lang} ({po_file})...")
-            autotranslate_file(po_file, lang, args.model, args.rpm, args.temperature)
+            autotranslate_file(
+                po_file, lang, args.model, args.rpm, args.temperature, protect_mode=args.protect
+            )
     elif args.po_file:
         if not args.lang:
             print("Error: --lang is required for single file autotranslate")
             sys.exit(1)
-        autotranslate_file(args.po_file, args.lang, args.model, args.rpm, args.temperature)
+        autotranslate_file(
+            args.po_file,
+            args.lang,
+            args.model,
+            args.rpm,
+            args.temperature,
+            protect_mode=args.protect,
+        )
     else:
         print("Error: Either --po_file or --locale_dir must be specified.")
         sys.exit(1)
