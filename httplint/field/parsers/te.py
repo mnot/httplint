@@ -49,7 +49,7 @@ class TEQuotedSemicolonTest(FieldTest[AnyMessageLinterProtocol]):
     expected_notes: NoteClassListType = [BAD_SYNTAX]
 
 
-class TEBeforeSemicolonTest(FieldTest[AnyMessageLinterProtocol]):
+class TENoWhitespaceBeforeSemicolonTest(FieldTest[AnyMessageLinterProtocol]):
     "Guard: no whitespace before ';'."
 
     name = "TE"
@@ -66,6 +66,8 @@ class TESpaceBeforeSemicolonTest(FieldTest[AnyMessageLinterProtocol]):
 
 
 class TETabBeforeSemicolonTest(FieldTest[AnyMessageLinterProtocol]):
+    "A tab (OWS) is allowed before ';' and isn't part of the coding."
+
     name = "TE"
     inputs = [b"gzip\t;q=0.5"]
     expected_out = [("gzip", {"q": "0.5"})]

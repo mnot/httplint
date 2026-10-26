@@ -163,7 +163,10 @@ class ServerTimingNoWhitespaceBeforeSemicolonTest(FieldTest[ResponseLinterProtoc
 
 
 class ServerTimingSpaceBeforeSemicolonTest(FieldTest[ResponseLinterProtocol]):
-    "Guard: Server-Timing strips the metric name itself, so this passes without OWS handling."
+    """
+    Guard: this passes even if split_params_off() does not strip; server_timing.parse strips the
+    metric name itself.
+    """
 
     name = "Server-Timing"
     inputs = [b"db ;dur=53"]

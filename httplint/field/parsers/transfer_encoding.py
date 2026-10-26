@@ -208,6 +208,11 @@ class TransferEncodingSpaceBeforeSemicolonTest(FieldTest[AnyMessageLinterProtoco
 
 
 class TransferEncodingTabBeforeSemicolonTest(FieldTest[AnyMessageLinterProtocol]):
+    """
+    A tab (OWS) is allowed before ';' and isn't part of the coding, so `chunked` is still
+    `chunked` (not an unwanted 'chunked\\t').
+    """
+
     name = "Transfer-Encoding"
     inputs = [b"chunked\t;x=1"]
     expected_out = [("chunked", {"x": "1"})]
