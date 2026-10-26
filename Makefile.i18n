@@ -27,7 +27,6 @@ $(VENV)/$(MARKER)-i18n: $(VENV)/$(MARKER)
 
 # --ignore-dirs replaces Babel's default (dot and underscore directories), so
 # repeat those, or .claude/worktrees and other tool directories get scanned.
-#
 .PHONY: i18n-extract
 i18n-extract: venv-i18n
 	PYTHONPATH=. $(VENV)/pybabel extract --omit-header --ignore-dirs=".* _* build dist" -F tools/i18n/babel.cfg -o $(PROJECT)/translations/messages.pot $(PROJECT)
