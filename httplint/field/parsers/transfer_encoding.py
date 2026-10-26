@@ -184,3 +184,52 @@ class TransferEncodingQuotedSemicolonTest(FieldTest[AnyMessageLinterProtocol]):
     inputs = [b'"a;b"']
     expected_out = [('"a', {})]
     expected_notes: NoteClassListType = [BAD_SYNTAX, TRANSFER_CODING_UNWANTED]
+
+
+class TransferEncodingNoWhitespaceBeforeSemicolonTest(FieldTest[AnyMessageLinterProtocol]):
+    "Guard: no whitespace before ';'."
+
+    name = "Transfer-Encoding"
+    inputs = [b"chunked;x=1"]
+    expected_out = [("chunked", {"x": "1"})]
+    expected_notes: NoteClassListType = [TRANSFER_CODING_PARAM]
+
+
+class TransferEncodingSpaceBeforeSemicolonTest(FieldTest[AnyMessageLinterProtocol]):
+    """
+    OWS is allowed before ';' and isn't part of the coding, so `chunked` is still `chunked`
+    (not an unwanted 'chunked ').
+    """
+
+    name = "Transfer-Encoding"
+    inputs = [b"chunked ;x=1"]
+    expected_out = [("chunked", {"x": "1"})]
+    expected_notes: NoteClassListType = [TRANSFER_CODING_PARAM]
+
+
+class TransferEncodingTabBeforeSemicolonTest(FieldTest[AnyMessageLinterProtocol]):
+    """
+    A tab (OWS) is allowed before ';' and isn't part of the coding, so `chunked` is still
+    `chunked` (not an unwanted 'chunked\\t').
+    """
+
+    name = "Transfer-Encoding"
+    inputs = [b"chunked\t;x=1"]
+    expected_out = [("chunked", {"x": "1"})]
+    expected_notes: NoteClassListType = [TRANSFER_CODING_PARAM]
+
+
+class TransferEncodingWantedSpaceBeforeSemicolonTest(FieldTest[AnyMessageLinterProtocol]):
+    """
+    End to end with TE: a request `TE: foo ;q=0.5` asks for `foo`, so the response's
+    `Transfer-Encoding: foo` isn't unwanted.
+    """
+
+    name = "Transfer-Encoding"
+    inputs = [b"foo"]
+    expected_out = [("foo", {})]
+
+    def set_response_context(self, message: ResponseLinterProtocol) -> None:
+        request = FakeRequestLinter()
+        request.headers.process([(b"te", b"foo ;q=0.5")])
+        message.request = request

@@ -151,3 +151,33 @@ class ServerTimingQuotedSemicolonTest(FieldTest[ResponseLinterProtocol]):
         SERVER_TIMING_MISSING_DUR,
         SERVER_TIMING_MISSING_DESC,
     ]
+
+
+class ServerTimingNoWhitespaceBeforeSemicolonTest(FieldTest[ResponseLinterProtocol]):
+    "Guard: no whitespace before ';'."
+
+    name = "Server-Timing"
+    inputs = [b"db;dur=53"]
+    expected_out = [("db", {"dur": "53"})]
+    expected_notes: NoteClassListType = [SERVER_TIMING_MISSING_DESC]
+
+
+class ServerTimingSpaceBeforeSemicolonTest(FieldTest[ResponseLinterProtocol]):
+    """
+    Guard: this passes even if split_params_off() does not strip; server_timing.parse strips the
+    metric name itself.
+    """
+
+    name = "Server-Timing"
+    inputs = [b"db ;dur=53"]
+    expected_out = [("db", {"dur": "53"})]
+    expected_notes: NoteClassListType = [SERVER_TIMING_MISSING_DESC]
+
+
+class ServerTimingTabBeforeSemicolonTest(FieldTest[ResponseLinterProtocol]):
+    "Guard: see ServerTimingSpaceBeforeSemicolonTest."
+
+    name = "Server-Timing"
+    inputs = [b"db\t;dur=53"]
+    expected_out = [("db", {"dur": "53"})]
+    expected_notes: NoteClassListType = [SERVER_TIMING_MISSING_DESC]

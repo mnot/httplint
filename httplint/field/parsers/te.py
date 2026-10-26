@@ -47,3 +47,27 @@ class TEQuotedSemicolonTest(FieldTest[AnyMessageLinterProtocol]):
     inputs = [b'"a;b"']
     expected_out = [('"a', {})]
     expected_notes: NoteClassListType = [BAD_SYNTAX]
+
+
+class TENoWhitespaceBeforeSemicolonTest(FieldTest[AnyMessageLinterProtocol]):
+    "Guard: no whitespace before ';'."
+
+    name = "TE"
+    inputs = [b"gzip;q=0.5"]
+    expected_out = [("gzip", {"q": "0.5"})]
+
+
+class TESpaceBeforeSemicolonTest(FieldTest[AnyMessageLinterProtocol]):
+    "OWS is allowed before ';' and isn't part of the coding."
+
+    name = "TE"
+    inputs = [b"gzip ;q=0.5"]
+    expected_out = [("gzip", {"q": "0.5"})]
+
+
+class TETabBeforeSemicolonTest(FieldTest[AnyMessageLinterProtocol]):
+    "A tab (OWS) is allowed before ';' and isn't part of the coding."
+
+    name = "TE"
+    inputs = [b"gzip\t;q=0.5"]
+    expected_out = [("gzip", {"q": "0.5"})]
