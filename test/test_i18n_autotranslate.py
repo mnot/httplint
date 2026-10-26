@@ -6,15 +6,20 @@ import os
 import tempfile
 import unittest
 from typing import Any, Callable, Dict, List, Optional, Tuple
+from unittest import mock
 
 from babel.messages.catalog import Catalog
 
 from tools.i18n import autotranslate
 from tools.i18n.autotranslate import (
+    DEFAULT_PROTECT,
     DEFAULT_TEMPERATURE,
     PROMPT_END,
     PROMPT_START,
+    PROTECT_ALL,
+    PROTECT_LINKS,
     build_parser,
+    code_span_rule,
     protect,
     Result,
     restore,
@@ -192,9 +197,10 @@ class TranslateTest(unittest.TestCase):
         reply: Callable[[str], str],
         msgid: Optional[str] = None,
         rules: Optional[List[autotranslate.Rule]] = None,
+        mode: str = PROTECT_ALL,
     ) -> Tuple[Optional[str], int, str, FakeModel]:
         model = FakeModel(reply)
-        self.res = translate(ask_for(model), "fr", msgid or self.MSGID, rules)
+        self.res = translate(ask_for(model), "fr", msgid or self.MSGID, rules, mode)
         return self.res.text, self.res.retries, self.res.error, model
 
     def test_good_translation_passes_through(self) -> None:
@@ -282,7 +288,7 @@ class TranslateTest(unittest.TestCase):
         self.assertEqual(autotranslate.match_whitespace("a\n", " b "), "b\n")
 
     def test_invented_token_without_spans_is_rejected(self) -> None:
-        result = translate(lambda p: "Texte @@1@@", "fr", "Plain text.")
+        result = translate(lambda p: "Texte @@1@@", "fr", "Plain text.", mode=PROTECT_ALL)
         self.assertIsNone(result.text)
         self.assertIn("invented", result.error)
 
@@ -337,6 +343,156 @@ class TranslateTest(unittest.TestCase):
         self.assertIsNotNone(result)
 
 
+class LinksModeTest(unittest.TestCase):
+    """--protect links: only URLs and link targets are masked; spans are verified."""
+
+    MSGID = TranslateTest.MSGID  # `Content-Type`, `%(declared_charset)s`, a target, a URL
+
+    def run_translate(
+        self, reply: Callable[[str], str], msgid: Optional[str] = None
+    ) -> Tuple[Result, FakeModel]:
+        model = FakeModel(reply)
+        return translate(ask_for(model), "fr", msgid or self.MSGID), model
+
+    def test_default_mode_is_links(self) -> None:
+        self.assertEqual(DEFAULT_PROTECT, PROTECT_LINKS)
+        self.assertEqual(build_parser().parse_args([]).protect, "links")
+        self.assertEqual(build_parser().parse_args(["--protect", "all"]).protect, "all")
+        self.assertEqual(build_parser().parse_args(["--protect", "links"]).protect, "links")
+        with contextlib.redirect_stderr(io.StringIO()), self.assertRaises(SystemExit):
+            build_parser().parse_args(["--protect", "none"])
+
+    def test_main_passes_the_mode_on(self) -> None:
+        for argv, want in ((["--protect", "all"], "all"), ([], "links")):
+            calls: List[Tuple[Tuple[Any, ...], Dict[str, Any]]] = []
+            args = ["autotranslate", "--po_file", "x.po", "--lang", "fr", *argv]
+            with mock.patch.object(
+                autotranslate, "autotranslate_file", lambda *a, **k: calls.append((a, k))
+            ), mock.patch("sys.argv", args):
+                autotranslate.main()
+            self.assertEqual(calls[0][1]["protect_mode"], want)
+
+    def test_echo_passes_and_links_are_restored(self) -> None:
+        result, model = self.run_translate(faithful)
+        self.assertEqual(result, Result("FR: " + self.MSGID))
+        self.assertEqual(len(model.calls), 1)
+
+    def test_prompt_shows_spans_and_masks_only_links(self) -> None:
+        _, model = self.run_translate(faithful)
+        prompt = model.calls[0][0]
+        self.assertIn("Copy text in backticks and %(name)s placeholders exactly", prompt)
+        self.assertEqual(
+            text_of(prompt),
+            "The `Content-Type` header says `%(declared_charset)s`; "
+            "see [its definition]@@1@@ or @@2@@.",
+        )
+        for secret in ("ref_uri", "example.org"):
+            self.assertNotIn(secret, prompt)
+
+    def test_no_visible_sentence_without_visible_spans(self) -> None:
+        _, model = self.run_translate(faithful, "See https://example.org/x for more.")
+        self.assertNotIn("backticks", model.calls[0][0])
+        self.assertIn("copy each one exactly", model.calls[0][0])
+        _, model = self.run_translate(faithful, "Nothing special here at all.")
+        self.assertEqual(model.calls[0][0], OLD_PROMPT + "Nothing special here at all.")
+
+    def test_translated_span_is_retried_with_the_exact_span(self) -> None:
+        replies = iter(
+            [lambda p: "FR: " + text_of(p).replace("`Content-Type`", "`Tipo`"), faithful]
+        )
+        result, model = self.run_translate(lambda p: next(replies)(p))
+        self.assertEqual(result, Result("FR: " + self.MSGID, 1))
+        self.assertNotIn("rejected", model.calls[0][0])
+        self.assertIn(
+            "rejected: CODE_SPAN_CHANGED you changed `Content-Type`: copy backtick text exactly.",
+            model.calls[1][0],
+        )
+
+    def test_dropped_span_fails_hard_after_retries(self) -> None:
+        result, model = self.run_translate(lambda p: text_of(p).replace("`Content-Type` ", ""))
+        self.assertIsNone(result.text)
+        self.assertFalse(result.fuzzy)
+        self.assertEqual(len(model.calls), 3)
+        self.assertIn("you changed `Content-Type`: copy backtick text exactly", result.error)
+        self.assertNotIn("TOKEN_CHANGED", result.error)  # only the hard cause is reported
+        self.assertIn("you changed `Content-Type`", model.calls[1][0])
+
+    def test_renamed_placeholder_fails_hard(self) -> None:
+        result, model = self.run_translate(
+            lambda p: text_of(p).replace("%(declared_charset)s", "%(charset)s")
+        )
+        self.assertIsNone(result.text)
+        self.assertEqual(len(model.calls), 3)
+        self.assertIn("BAD_VARIABLE", result.error)
+        self.assertIn("%(declared_charset)s", model.calls[1][0])
+
+    def test_renamed_placeholder_outside_a_span_fails_hard(self) -> None:
+        result, _ = self.run_translate(
+            lambda p: text_of(p).replace("%(x)s", "%(y)s"), "Value %(x)s is not valid here."
+        )
+        self.assertIsNone(result.text)
+        self.assertIn("BAD_VARIABLE", result.error)
+
+    def test_reordered_spans_are_fine(self) -> None:
+        msgid = "Use `a` before `b`, not `c`."
+        result, _ = self.run_translate(lambda p: "`c` ... `b` ... `a`", msgid)
+        self.assertEqual(result.text, "`c` ... `b` ... `a`")
+
+    def test_spans_are_compared_as_a_multiset(self) -> None:
+        result, _ = self.run_translate(lambda p: "Utilisez `a`.", "Use `a` and `a` again.")
+        self.assertIsNone(result.text)
+        self.assertIn("you changed `a`", result.error)
+
+    def test_added_backticks_are_advisory(self) -> None:
+        msgid = "The Expect header is missing from the request, which is long enough."
+        result, model = self.run_translate(lambda p: "L'en-tête `Expect` est absent.", msgid)
+        self.assertEqual(len(model.calls), 3)
+        self.assertTrue(result.fuzzy)
+        self.assertEqual(result.text, "L'en-tête `Expect` est absent.")
+        self.assertIn("you added `Expect`", result.error)
+
+    def test_odd_characters_in_spans(self) -> None:
+        msgid = (
+            "Use `a@@b` or `x@@1@@y`, `100%% {x}`, `日本 語`, ``a ` b``, "
+            "and `multi\nline` with [t](https://e.org/x)."
+        )
+        result, model = self.run_translate(faithful, msgid)
+        self.assertEqual(result.text, "FR: " + msgid)
+        self.assertEqual(len(model.calls), 1)
+        self.assertEqual(text_of(model.calls[0][0]), msgid.replace("(https://e.org/x)", "@@@1@@@"))
+
+    def test_links_around_and_inside_code_spans(self) -> None:
+        masked, spans = protect("[`Link`](https://e.org/x), `https://e.org/y`", mode=PROTECT_LINKS)
+        self.assertEqual(masked, "[`Link`]@@1@@, `https://e.org/y`")
+        self.assertEqual(spans, ["(https://e.org/x)"])
+
+    def test_protect_all_still_masks_everything(self) -> None:
+        masked, _ = protect("A `b` %(c)s [d](https://e.org) 50%%", mode=PROTECT_ALL)
+        self.assertEqual(masked, "A @@1@@ @@2@@ [d]@@3@@ 50@@4@@")
+
+    def test_whitespace_is_copied_from_msgid(self) -> None:
+        msgid = "\n Some `code` here, long enough.\n"
+        result, _ = self.run_translate(lambda p: "FR: " + text_of(p).strip(), msgid)
+        self.assertEqual(result.text, "\n FR: Some `code` here, long enough.\n")
+
+
+class CodeSpanRuleTest(unittest.TestCase):
+    def test_ok_and_reordered(self) -> None:
+        self.assertEqual(code_span_rule("`a` `b`", "`b` x `a`", "ja"), [])
+        self.assertEqual(code_span_rule("none", "none", "ja"), [])
+
+    def test_missing_and_changed_are_hard(self) -> None:
+        errors = code_span_rule("`NEL` and `Link`", "「NEL」 and `Link`", "ja")
+        self.assertEqual(
+            errors, ["CODE_SPAN_CHANGED you changed `NEL`: copy backtick text exactly"]
+        )
+
+    def test_added_is_not_hard(self) -> None:
+        errors = code_span_rule("none", "`x`", "ja")
+        self.assertTrue(errors[0].startswith("CODE_SPAN_ADDED"))
+        self.assertFalse(errors[0].startswith(autotranslate.HARD_PREFIXES))
+
+
 class TemperatureTest(unittest.TestCase):
     def test_supports_option(self) -> None:
         self.assertTrue(supports_option(FakeModel(faithful), "temperature"))
@@ -381,7 +537,7 @@ class FileTest(unittest.TestCase):
         self.assertEqual(bad.string, "")
         self.assertNotIn("fuzzy", bad.flags)
         self.assertIn("1 entries left empty", output)
-        self.assertIn("missing", output)  # the last error is listed with the msgid
+        self.assertIn("CODE_SPAN_CHANGED", output)  # the last error is listed with the msgid
         self.assertIn("Bad `Link` message that never works", output)
 
     def test_advisory_failure_is_kept_as_fuzzy_and_listed(self) -> None:
@@ -400,6 +556,19 @@ class FileTest(unittest.TestCase):
         self.assertIn("fuzzy", entry.flags)
         self.assertIn("1 entries kept as fuzzy", output)
         self.assertIn("SUSPICIOUS_LENGTH", output)
+
+    def test_protect_mode_is_passed_and_reported(self) -> None:
+        for mode, visible in ((PROTECT_LINKS, True), (PROTECT_ALL, False)):
+            self.setUp()  # a fresh catalog: the first pass fills it
+            model = FakeModel(faithful)
+            output = self.run_file(model, protect_mode=mode)
+            self.assertIn(f"--protect {mode}", output)
+            self.assertEqual("`Content-Type`" in model.calls[0][0], visible, mode)
+
+    def test_left_empty_in_links_mode_says_so(self) -> None:
+        output = self.run_file(FakeModel(lambda p: text_of(p).replace("`Link` ", "")))
+        self.assertIn("1 entries left empty (no valid translation; --protect links)", output)
+        self.assertIn("you changed `Link`", output)
 
     def test_temperature_passed_when_supported(self) -> None:
         model = FakeModel(faithful)
