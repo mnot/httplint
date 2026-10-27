@@ -20,18 +20,18 @@ msgstr ""
 
 #: httplint/cache.py:282
 msgid "This response doesn't have a Date header."
-msgstr "这个响应没有 Date 头。"
+msgstr "这个响应没有 Date 标头。"
 
 #: httplint/cache.py:283
 msgid ""
 "Although HTTP allows a server not to send a `Date` header in responses if"
 " it doesn't have a local\n"
 "clock, this can make calculation of a stored response's age inexact."
-msgstr "虽然HTTP允许服务器在没有本地时钟的情况下不发送`Date`头在响应中，但这可能会使存储响应年龄的计算不准确。"
+msgstr "虽然 HTTP 允许服务器在没有本地时钟的情况下不在响应中发送 `Date` 标头，但这可能会使已存储响应的年龄计算不准确。"
 
 #: httplint/cache.py:291
 msgid "This response has an Expires or Last-Modified header, but no Date."
-msgstr "这个响应有一个过期或 Last-Modified 标头，但没有日期。"
+msgstr "这个响应有 Expires 或 Last-Modified 标头，但没有 Date 标头。"
 
 #: httplint/cache.py:292
 msgid ""
@@ -41,13 +41,13 @@ msgid ""
 "clock drift, transit times\n"
 "between nodes as well as caching could skew their application."
 msgstr ""
-"因为 `Expires` 和 `Last-Modified` 头都是基于日期的，因此需要在 `Date` "
-"中发送消息生成时间，以便它们有用；否则，时钟漂移、节点之间传输时间以及缓存可能会扭曲它们的应用。"
+"由于 `Expires` 和 `Last-Modified` 标头都基于日期，因此需要在 `Date` "
+"中发送消息的生成时间，它们才有用；否则，时钟漂移、节点之间的传输时间以及缓存都可能使它们的应用产生偏差。"
 
 #: httplint/cache.py:301
 #, python-format
 msgid "Responses to the %(method)s method can't be stored by caches."
-msgstr "响应的%(method)s方法不能被缓存存储。"
+msgstr "对 %(method)s 方法的响应不能被缓存存储。"
 
 #: httplint/cache.py:309
 msgid "This response can't be stored by caches."
@@ -57,7 +57,7 @@ msgstr "这个响应不能被缓存存储。"
 msgid ""
 "The `Cache-Control: no-store` directive indicates that this response "
 "can't be stored by a cache."
-msgstr "该指令 `Cache-Control: no-store` 表示此响应不能被缓存存储。"
+msgstr "`Cache-Control: no-store` 指令表示此响应不能被缓存存储。"
 
 #: httplint/cache.py:317
 msgid "This response allows only private caches to store it."
@@ -78,7 +78,7 @@ msgstr ""
 msgid ""
 "This response contains both the `public` and `private` Cache-Control "
 "directives."
-msgstr "这个响应包含 `public` 和 `private` 的 Cache-Control 指令。"
+msgstr "这个响应同时包含 `public` 和 `private` Cache-Control 指令。"
 
 #: httplint/cache.py:328
 msgid ""
@@ -130,7 +130,7 @@ msgstr ""
 
 #: httplint/cache.py:360
 msgid "Cache-Control: public is probably not necessary."
-msgstr "Cache-Control：公共的可能不必要。"
+msgstr "Cache-Control: public 可能没有必要。"
 
 #: httplint/cache.py:361
 msgid ""
@@ -160,7 +160,7 @@ msgid ""
 "A cache can store this response; it may or may not be able to use it to "
 "satisfy a particular\n"
 "request."
-msgstr "一个缓存可以存储这个响应；它可能能够或无法使用它来满足一个特定的请求。"
+msgstr "缓存可以存储这个响应；但不一定能用它来满足某个特定的请求。"
 
 #: httplint/cache.py:384
 msgid "This response allows only shared caches to store it."
@@ -179,11 +179,11 @@ msgid ""
 "\n"
 "Note that a cache extension might override this behaviour."
 msgstr ""
-"一个共享缓存可以存储这个响应；它可能或可能无法用它来满足一个特定请求。\n"
+"共享缓存可以存储此响应；但它不一定能用它来满足某个特定请求。\n"
 "\n"
-"私有缓存无法存储它，因为没有明确的有效性信息（如 Cache-Control: max-age），并且状态码不是通过启发式方式可缓存的。\n"
+"私有缓存无法存储它，因为没有明确的新鲜度信息（如 Cache-Control: max-age），并且该状态码不属于可启发式缓存的类型。\n"
 "\n"
-"请注意，一个缓存扩展可能覆盖这种行为。"
+"请注意，缓存扩展可能会覆盖此行为。"
 
 #: httplint/cache.py:399
 msgid "This response cannot be stored by caches."
@@ -220,8 +220,8 @@ msgid ""
 "validated (either with an\n"
 "`If-None-Match` or `If-Modified-Since` conditional) for that request."
 msgstr ""
-"该指令 `Cache-Control: no-cache` 意味着缓存可以存储此响应，但除非其已被验证（无论是使用 `If-None-Match`"
-" 或 `If-Modified-Since` 条件），否则缓存不能使用它来满足请求。"
+"该 `Cache-Control: no-cache` 指令意味着，缓存虽然可以存储此响应，但除非已针对该请求对其进行了验证（使用 `If-"
+"None-Match` 或 `If-Modified-Since` 条件请求），否则不能用它来满足请求。"
 
 #: httplint/cache.py:422
 msgid ""
@@ -241,16 +241,16 @@ msgid ""
 "effectively can't be used by a\n"
 "cache. `Cache-Control: no-store` is more appropriate."
 msgstr ""
-"该指令 `Cache-Control: no-cache` 表示，虽然缓存可以存储此响应，但除非该请求已验证（使用 `If-None-Match`"
-" 或 `If-Modified-Since` 条件），否则它们不能使用它来满足请求。\n"
+"该 `Cache-Control: no-cache` 指令意味着，缓存虽然可以存储此响应，但除非已针对该请求对其进行了验证（使用 `If-"
+"None-Match` 或 `If-Modified-Since` 条件请求），否则不能用它来满足请求。\n"
 "\n"
-"此响应没有 `Last-Modified` 或 `ETag` 头，因此实际上无法被缓存使用。 `Cache-Control: no-store` "
+"此响应没有 `Last-Modified` 或 `ETag` 标头，因此实际上无法被缓存使用。`Cache-Control: no-store` "
 "更合适。"
 
 #: httplint/cache.py:436
 #, python-format
 msgid "This response has already been cached for %(age)s."
-msgstr "这个响应已经为 %(age)s 缓存。"
+msgstr "这个响应已被缓存 %(age)s。"
 
 #: httplint/cache.py:437
 msgid ""
@@ -267,7 +267,7 @@ msgstr ""
 #: httplint/cache.py:446
 #, python-format
 msgid "This response is fresh for %(freshness_left)s."
-msgstr "这个响应是针对 %(freshness_left)s 的。"
+msgstr "这个响应在 %(freshness_left)s 内保持新鲜。"
 
 #: httplint/cache.py:447
 #, python-format
@@ -276,8 +276,8 @@ msgid ""
 "is less than its freshness\n"
 "lifetime (in this case, %(freshness_lifetime)s)."
 msgstr ""
-"一个响应可以在其年龄（这里为 %(current_age)s）小于其保鲜期（在本例中为 "
-"%(freshness_lifetime)s）时被视为新鲜的。"
+"当响应的年龄（此处为 %(current_age)s）小于其新鲜度生命周期（本例中为 "
+"%(freshness_lifetime)s）时，可认为该响应是新鲜的。"
 
 #: httplint/cache.py:455
 #, python-format
@@ -285,8 +285,8 @@ msgid ""
 "This response is %(private_status)s for %(fresh_left)s (%(shared_status)s"
 " for %(share_left)s in shared caches)."
 msgstr ""
-"此响应为 %(private_status)s，%(fresh_left)s 过期。（共享缓存中为 "
-"%(shared_status)s，%(share_left)s 过期。）"
+"此响应在 %(fresh_left)s 内为 %(private_status)s（在共享缓存中，在 %(share_left)s 内为 "
+"%(shared_status)s）。"
 
 #: httplint/cache.py:459
 #, python-format
@@ -302,11 +302,11 @@ msgid ""
 "Shared caches can consider it fresh for %(share_lifetime)s (until "
 "%(share_left)s from now)."
 msgstr ""
-"这个响应对于私人缓存（例如浏览器）和共享缓存（例如代理）有不同的有效期。\n"
+"此响应对私有缓存（例如浏览器）和共享缓存（例如代理）具有不同的新鲜度生命周期。\n"
 "\n"
-"私人缓存可以将其视为新鲜的 %(fresh_lifetime)s 时间（从现在起 %(fresh_left)s 时间）。\n"
+"私有缓存可以认为它在 %(fresh_lifetime)s 内是新鲜的（从现在起 %(fresh_left)s 内）。\n"
 "\n"
-"共享缓存可以将其视为新鲜的 %(share_lifetime)s 时间（从现在起 %(share_left)s 时间）。"
+"共享缓存可以认为它在 %(share_lifetime)s 内是新鲜的（从现在起 %(share_left)s 内）。"
 
 #: httplint/cache.py:472
 msgid "This response is stale."
@@ -331,14 +331,15 @@ msgid ""
 "* Some caches are configured to ignore the response's freshness "
 "directives."
 msgstr ""
-"一个HTTP响应过时时，其年龄（这里为%(current_age)s）等于或超过其新鲜度生命周期（在本例中为%(freshness_lifetime)s）。"
+"HTTP 响应在其年龄（此处为 %(current_age)s）等于或超过其新鲜度生命周期（此例中为 "
+"%(freshness_lifetime)s）时即为过期。\n"
 "\n"
+"缓存提供过期响应有几种原因：\n"
 "\n"
-"缓存提供过时响应的原因有几个：\n"
+"* HTTP 允许在特殊情况下使用过期响应来满足请求；例如，在与源服务器失去联系时。这需要满足若干要求。\n"
+"* 诸如 `stale-if-error` 和 `stale-while-revalidate` 之类的响应指令明确允许在特定情况下使用过期响应。"
 "\n"
-"* HTTP允许在特殊情况下使用过时响应来满足请求；例如，当它们与源服务器失去联系时。这受一系列要求的约束。\n"
-"* 响应指令如`stale-if-error`和`stale-while-revalidate`明确允许在特定情况下使用过时响应。\n"
-"* 一些缓存配置为忽略响应的新鲜度指令。"
+"* 有些缓存被配置为忽略响应的新鲜度指令。"
 
 #: httplint/cache.py:489
 msgid "This response allows caches to assign their own freshness lifetimes to it."
@@ -360,16 +361,16 @@ msgid ""
 "cached for longer or shorter\n"
 "than you'd like."
 msgstr ""
-"当响应没有明确的最新信息（如 `Cache-Control: max-age` 指令或 `Expires` "
-"头），缓存可以根据启发式估计其新鲜度（前提是状态码允许）。\n"
+"当响应没有明确的新鲜度信息（如 `Cache-Control: max-age` 指令或 `Expires` "
+"标头）时，缓存可以使用启发式方法估算其新鲜程度（前提是状态码允许）。\n"
 "\n"
-"缓存通常使用 `Last-Modified` 头来这样做。例如，如果响应上次修改一周前，缓存可能会认为它新鲜一天的时间。\n"
+"缓存通常使用 `Last-Modified` 标头来这样做。例如，如果响应上次修改是在一周前，缓存可能会认为它在一天内是新鲜的。\n"
 "\n"
-"考虑添加 `Cache-Control: max-age` 头；否则，它可能被缓存的时间比你希望的长或短。"
+"可以考虑添加 `Cache-Control: max-age` 标头；否则，它被缓存的时间可能比您期望的更长或更短。"
 
 #: httplint/cache.py:505
 msgid "This response cannot be considered fresh by caches."
-msgstr "这个响应不能被缓存视为最新。"
+msgstr "这个响应不能被缓存视为新鲜。"
 
 #: httplint/cache.py:506
 msgid ""
@@ -389,18 +390,18 @@ msgid ""
 "is not generally useful to do\n"
 "so."
 msgstr ""
-"这个响应没有明确的最新信息（如 ` Cache-Control: max-age` 指令或 `Expires` "
-"头），并且这个状态码不允许缓存计算自己的。\n"
+"此响应没有明确的新鲜度信息（如 ` Cache-Control: max-age` 指令或 `Expires` "
+"标头），并且该状态码不允许缓存自行计算。\n"
 "\n"
-"此外，它的状态码也不允许缓存为其分配自己的最新生命周期。\n"
+"此外，其状态码也不允许缓存为它指定自己的新鲜度生命周期。\n"
 "\n"
-"因此，虽然缓存可能被允许存储它，但它们通常不能使用它，除非它可以作为过时的服务。\n"
+"因此，缓存虽然可能被允许存储它，但通常无法使用它，除非可以将其作为过期响应提供。\n"
 "\n"
-"结果，许多缓存将不会存储响应，因为这样做一般没有用处。"
+"结果，许多缓存根本不会存储该响应，因为这样做通常没有用处。"
 
 #: httplint/cache.py:522
 msgid "In exceptional circumstances, caches can serve this response stale."
-msgstr "在特殊情况下，缓存可以提供过期的响应。"
+msgstr "在特殊情况下，缓存可以在此响应过期后继续提供它。"
 
 #: httplint/cache.py:523
 msgid ""
@@ -413,13 +414,13 @@ msgid ""
 "This behaviour can be prevented by using the `Cache-Control: must-"
 "revalidate` response directive."
 msgstr ""
-"HTTP允许在某些情况下提供过时的响应；例如，如果源服务器无法联系，即使响应没有明确的最新信息，也可以使用过时的响应。\n"
+"在某些情况下，HTTP 允许提供过期响应；例如，如果无法联系到源服务器，即使响应没有明确的新鲜度信息，也可以使用过期响应。\n"
 "\n"
-"这种行为可以通过使用`Cache-Control: must-revalidate`响应指令来防止。"
+"可以通过使用 `Cache-Control: must-revalidate` 响应指令来阻止这种行为。"
 
 #: httplint/cache.py:534
 msgid "If an error occurs, caches can serve this response stale."
-msgstr "如果出现错误，缓存可以提供这个响应（过期）。"
+msgstr "如果发生错误，缓存可以在此响应过期后继续提供它。"
 
 #: httplint/cache.py:535
 msgid ""
@@ -432,7 +433,8 @@ msgid ""
 "See [RFC 5861](https://www.rfc-editor.org/rfc/rfc5861) for more "
 "information."
 msgstr ""
-"该 `stale-if-error` 缓存指令允许缓存在遇到错误（例如 500 内部服务器错误或网络超时）时返回过期响应，同时尝试重新验证。\n"
+"该 `stale-if-error` 缓存指令允许缓存在尝试对过期响应重新验证的过程中遇到错误（例如 500 Internal Server "
+"Error 或网络超时）时，返回该过期响应。\n"
 "\n"
 "有关更多信息，请参阅 [RFC 5861](https://www.rfc-editor.org/rfc/rfc5861)。"
 
@@ -440,7 +442,7 @@ msgstr ""
 msgid ""
 "This response can be served stale from a cache while it is being "
 "revalidated."
-msgstr "这个响应可以在重新验证期间从缓存中提供，使其变慢。"
+msgstr "这个响应在重新验证期间，可以在过期状态下从缓存中提供。"
 
 #: httplint/cache.py:547
 msgid ""
@@ -451,7 +453,7 @@ msgid ""
 "See [RFC 5861](https://www.rfc-editor.org/rfc/rfc5861) for more "
 "information."
 msgstr ""
-"该 `stale-while-revalidate` 缓存指令允许缓存在后台进行重新验证请求的同时提供过时的响应。\n"
+"该 `stale-while-revalidate` 缓存指令允许缓存在后台进行重新验证请求的同时提供过期响应。\n"
 "\n"
 "有关更多信息，请参阅 [RFC 5861](https://www.rfc-editor.org/rfc/rfc5861)。"
 
@@ -476,7 +478,7 @@ msgstr ""
 
 #: httplint/cache.py:569
 msgid "This response cannot be served by a cache now that it is stale."
-msgstr "这个响应无法由缓存现在提供，因为它已过期。"
+msgstr "这个响应现已过期，不能再由缓存提供。"
 
 #: httplint/cache.py:581
 msgid "This response cannot be served by a shared cache once it becomes stale."
@@ -506,7 +508,7 @@ msgstr ""
 
 #: httplint/cache.py:595
 msgid "This response cannot be served by a shared cache now that it is stale."
-msgstr "这个响应无法由共享缓存提供，因为它已经过时。"
+msgstr "这个响应现已过期，不能再由共享缓存提供。"
 
 #: httplint/cache.py:609
 msgid "Cache-Control: max-age and Expires are both present."
@@ -520,14 +522,14 @@ msgid ""
 "`max-age` takes precedence over `Expires`, so `Expires` is redundant and "
 "can be removed."
 msgstr ""
-"该指令 `Cache-Control: max-age` 和 `Expires` 头都存在。\n"
+"`Cache-Control: max-age` 指令和 `Expires` 标头都存在。\n"
 "\n"
-"`max-age` 具有优先级于 `Expires`，因此 `Expires` 是多余的，可以删除。"
+"`max-age` 优先于 `Expires`，因此 `Expires` 是多余的，可以删除。"
 
 #: httplint/charset.py:432
 #, python-format
 msgid "Recipients won't decode the content as %(declared_charset)s."
-msgstr "收件人不会解码内容为 %(declared_charset)s。"
+msgstr "接收方不会将内容按 %(declared_charset)s 解码。"
 
 #: httplint/charset.py:433
 #, python-format
@@ -548,14 +550,14 @@ msgid ""
 "\n"
 "Declare the encoding the content really uses; for UTF-8, that's `utf-8`."
 msgstr ""
-"该 `Content-Type` 头表示字符编码为 `%(declared_charset)s`，但内容包含字节 "
-"(%(bad_bytes)s)，而该名称的标准编码没有定义这些字节，或者定义成其他东西。\n"
+"该 `Content-Type` 标头声明字符编码为 "
+"`%(declared_charset)s`，但内容中包含该名称的标准编码未定义或定义为其他含义的字节（%(bad_bytes)s）。\n"
 "\n"
-"浏览器遵循 [编码标准](https://encoding.spec.whatwg.org/#names-and-labels)，将 "
-"`%(declared_charset)s` 解码为 `%(encoding)s`，因此它们会显示这些字节的内容：标点符号和符号（如花括号和 "
-"`€`），或者作为 mojibake 的 UTF-8 文本。严格遵循标签的接收者会将它们视为错误或控制字符。\n"
+"浏览器遵循[编码标准](https://encoding.spec.whatwg.org/#names-and-labels)，该标准将 "
+"`%(declared_charset)s` 解码为 `%(encoding)s`，因此它们会为这些字节显示某些内容：标点和符号（如弯引号和 "
+"`€`），或者显示为乱码（mojibake）的 UTF-8 文本。严格遵循该标签的接收方会将它们视为错误或控制字符。\n"
 "\n"
-"声明内容实际使用的编码；对于 UTF-8，是 `utf-8`。"
+"请声明内容实际使用的编码；对于 UTF-8，即 `utf-8`。"
 
 #: httplint/charset.py:449
 msgid "The declared character encoding doesn't match the content."
@@ -625,11 +627,11 @@ msgid ""
 "httplint limits decompressed content to 100MB to avoid resource "
 "exhaustion. This message\n"
 "exceeded that limit and was not fully decoded."
-msgstr "http检查器将解压内容限制为100MB，以避免资源耗尽。此消息超出了该限制，并且没有完全解码。"
+msgstr "httplint 将解压后的内容限制为 100MB，以避免资源耗尽。此消息超出了该限制，未被完全解码。"
 
 #: httplint/content_encoding.py:364
 msgid "This message was compressed, but the GZIP header wasn't valid."
-msgstr "这个消息被压缩了，但 GZIP 头无效。"
+msgstr "这个消息被压缩了，但 GZIP 标头无效。"
 
 #: httplint/content_encoding.py:366
 #, python-format
@@ -637,7 +639,7 @@ msgid ""
 "GZip-compressed responses have a header that contains metadata. Here, "
 "that header wasn't valid;\n"
 "the error encountered was \"`%(gzip_error)s`\"."
-msgstr ""
+msgstr "GZip 压缩的响应带有一个包含元数据的标头。此处该标头无效；遇到的错误是“`%(gzip_error)s`”。"
 
 #: httplint/content_encoding.py:374
 msgid "This message was compressed using GZip, but the data was corrupt."
@@ -657,9 +659,9 @@ msgid ""
 "\n"
 "    %(chunk_sample)s\n"
 msgstr ""
-"使用GZip压缩的响应使用zlib压缩算法减少传输的字节数。然而，该响应无法解压缩；遇到的错误为“`%(zlib_error)s`”。\n"
+"GZip 压缩的响应使用 zlib 压缩来减少传输中的字节数。然而，此响应无法解压缩；遇到的错误是“`%(zlib_error)s`”。\n"
 "\n"
-"在这一之前成功解压缩了%(ok_zlib_len)s字节；错误的片段以十六进制形式开头：\n"
+"在此之前已成功解压缩 %(ok_zlib_len)s 字节；出错的数据块以如下十六进制内容开头：\n"
 "\n"
 "    %(chunk_sample)s\n"
 
@@ -681,10 +683,9 @@ msgid ""
 "\n"
 "    %(chunk_sample)s\n"
 msgstr ""
-"使用 zlib 压缩的 Deflate 响应通过减少传输的字节数来减少电缆上的数据传输量。然而，此响应无法解压缩；遇到的错误是\n"
-"\"`%(zlib_error)s`\"。\n"
+"Deflate 压缩的响应使用 zlib 压缩来减少传输中的字节数。然而，此响应无法解压缩；遇到的错误是“`%(zlib_error)s`”。\n"
 "\n"
-"在这一之前成功解压缩了 %(ok_deflate_len)s 字节；错误的片段以十六进制形式开头：\n"
+"在此之前已成功解压缩 %(ok_deflate_len)s 字节；出错的数据块以如下十六进制内容开头：\n"
 "\n"
 "    %(chunk_sample)s\n"
 
@@ -706,10 +707,10 @@ msgid ""
 "\n"
 "    %(chunk_sample)s\n"
 msgstr ""
-"使用 Brotli 压缩的响应利用 Brotli 压缩来减少在线传输的字节数。然而，这个响应无法解压缩；遇到的错误是\n"
-"\"`%(brotli_error)s`\"。\n"
+"Brotli 压缩的响应使用 Brotli "
+"压缩来减少传输中的字节数。然而，此响应无法解压缩；遇到的错误是“`%(brotli_error)s`”。\n"
 "\n"
-"在这一之前成功解压缩了 %(ok_brotli_len)s 字节；错误块以十六进制形式开头：\n"
+"在此之前已成功解压缩 %(ok_brotli_len)s 字节；出错的数据块以如下十六进制内容开头：\n"
 "\n"
 "    %(chunk_sample)s\n"
 
@@ -723,11 +724,11 @@ msgid ""
 "The `Content-Type` header declares the content as `%(declared_type)s`, "
 "but it looks like\n"
 "`%(sniffed_type)s`."
-msgstr "该 `Content-Type` 头声明内容为 `%(declared_type)s`，但看起来是 `%(sniffed_type)s`。"
+msgstr "`Content-Type` 标头声明内容为 `%(declared_type)s`，但看起来是 `%(sniffed_type)s`。"
 
 #: httplint/message.py:443
 msgid "The Content-Length header is correct."
-msgstr ""
+msgstr "Content-Length 标头是正确的。"
 
 #: httplint/message.py:444
 msgid ""
@@ -738,7 +739,7 @@ msgstr "`Content-Length` 用于分隔 HTTP 消息；即标记一个消息的结�
 
 #: httplint/message.py:452
 msgid "The Content-Length header is incorrect."
-msgstr "标头 Content-Length 不正确。"
+msgstr "Content-Length 标头不正确。"
 
 #: httplint/message.py:453
 #, python-format
@@ -851,15 +852,15 @@ msgstr "这不是一个有效的状态码；它需要是一个ASCII整数。"
 
 #: httplint/message.py:531
 msgid "The status phrase contains non-ASCII characters."
-msgstr "状态语句包含非ASCII字符。"
+msgstr "状态短语包含非 ASCII 字符。"
 
 #: httplint/message.py:532
 msgid "The status phrase can only contain ASCII characters."
-msgstr "状态句仅能包含ASCII字符。"
+msgstr "状态短语只能包含 ASCII 字符。"
 
 #: httplint/message.py:539
 msgid "The User-Agent header is missing."
-msgstr "缺少 \"User-Agent\" 标头。"
+msgstr "缺少 User-Agent 标头。"
 
 #: httplint/message.py:540
 msgid ""
@@ -869,7 +870,7 @@ msgid ""
 "editor.org/rfc/rfc9110.html#section-10.1.5)\n"
 "for details."
 msgstr ""
-"客户端应发送一个 `User-Agent` 头字段。\n"
+"客户端应发送 `User-Agent` 标头字段。\n"
 "\n"
 "详见 [RFC 9110 第10.1.5节](https://www.rfc-"
 "editor.org/rfc/rfc9110.html#section-10.1.5)。"
@@ -938,14 +939,14 @@ msgstr "部分内容"
 
 #: httplint/status.py:346
 msgid "304 (Not Modified) responses need to have a Date header."
-msgstr "304（未修改）响应需要具有 Date 头。"
+msgstr "304（未修改）响应需要有 Date 标头。"
 
 #: httplint/status.py:347
 msgid ""
 "HTTP requires `304 (Not Modified)` responses to have a `Date` header in "
 "all but the most unusual\n"
 "circumstances."
-msgstr "HTTP 要求 `304 (Not Modified)` 响应在所有不寻常的情况下都必须有一个 `Date` 头。"
+msgstr "除非在极少数特殊情况下，HTTP 要求 `304 (Not Modified)` 响应必须有 `Date` 标头。"
 
 #: httplint/status.py:355
 msgid "This 304 (Not Modified) response contains headers that should not be sent."
@@ -964,12 +965,12 @@ msgid ""
 "editor.org/rfc/rfc9110.html#section-15.4.5) for\n"
 "more information."
 msgstr ""
-"这些头是表示元数据，除非它们用于指导缓存更新，否则不应在 304 响应中发送：\n"
+"这些标头是表示元数据，除非用于指导缓存更新，否则不应在 304 响应中发送：\n"
 "\n"
 "%(headers)s\n"
 "\n"
 "请参阅 [RFC 9110 第 15.4.5 节](https://www.rfc-"
-"editor.org/rfc/rfc9110.html#section-15.4.5) 了解更多信息。"
+"editor.org/rfc/rfc9110.html#section-15.4.5)了解更多信息。"
 
 #: httplint/status.py:369
 msgid "A 100 (Continue) response was sent when it wasn't asked for."
@@ -1022,7 +1023,7 @@ msgstr ""
 
 #: httplint/status.py:398
 msgid "A new resource was created in response to a safe request."
-msgstr "在安全请求响应下创建了一个新资源。"
+msgstr "针对安全请求创建了一个新资源。"
 
 #: httplint/status.py:399
 #, python-format
@@ -1065,7 +1066,7 @@ msgstr ""
 
 #: httplint/status.py:424
 msgid "This response is partial, but doesn't have a Content-Range header."
-msgstr "这个响应是部分性的，但缺少 Content-Range 头。"
+msgstr "这个响应是部分响应，但没有 Content-Range 标头。"
 
 #: httplint/status.py:425
 msgid ""
@@ -1077,14 +1078,14 @@ msgid ""
 "what part of the full response it carries. This response does not have "
 "one."
 msgstr ""
-"该 `206 (Partial Response)` 状态码表示响应内容仅部分。\n"
+"该 `206 (Partial Response)` 状态码表示响应内容只是部分内容。\n"
 "\n"
-"然而，为了使响应部分，它需要带有 `Content-Range` 头来指示它承载了完整响应的哪一部分。此响应没有一个。"
+"然而，响应要成为部分响应，需要带有 `Content-Range` 标头来指明它承载的是完整响应的哪一部分。此响应没有该标头。"
 
 #: httplint/status.py:435
 #, python-format
 msgid "A successful response to CONNECT can't have a %(field_name)s header."
-msgstr "在连接成功响应中，不能有 %(field_name)s 头。"
+msgstr "对 CONNECT 的成功响应不能包含 %(field_name)s 标头。"
 
 #: httplint/status.py:436
 msgid ""
@@ -1097,9 +1098,8 @@ msgid ""
 "See [RFC 9110 Section 9.3.6](https://www.rfc-"
 "editor.org/rfc/rfc9110.html#section-9.3.6)."
 msgstr ""
-"一个对 `CONNECT` 请求的 `2xx` 响应将连接切换到一个隧道，因此 标头 "
-"部分之后跟着的是隧道数据，而不是消息内容。服务器不得在这样的响应中发送 `Content-Length` 或 `Transfer-"
-"Encoding`，客户端会忽略它们。\n"
+"对 `CONNECT` 请求的 `2xx` 响应会将连接切换为隧道，因此紧跟标头之后的内容是隧道数据，而不是消息内容。服务器不得在此类响应中发送 "
+"`Content-Length` 或 `Transfer-Encoding`，客户端会忽略它们。\n"
 "\n"
 "参见 [RFC 9110 第 9.3.6 节](https://www.rfc-"
 "editor.org/rfc/rfc9110.html#section-9.3.6)。"
@@ -1117,13 +1117,13 @@ msgid ""
 "request did not\n"
 "include one."
 msgstr ""
-"该 `206 (Partial Response)` 状态码表示响应内容仅部分可用。\n"
+"`206 (Partial Response)` 状态码表示响应内容只是一部分。\n"
 "\n"
-"然而，客户端需要使用 `Range` 头请求才能获取，而请求中并未包含该头。"
+"但是，客户端需要通过 `Range` 标头来请求，而该请求并未包含此标头。"
 
 #: httplint/status.py:458
 msgid "Redirects need to have a Location header."
-msgstr "重定向需要有一个 Location 头。"
+msgstr "重定向需要有 Location 标头。"
 
 #: httplint/status.py:459
 #, python-format
@@ -1131,24 +1131,24 @@ msgid ""
 "The %(status)s status code redirects users to another URI. The `Location`"
 " header is used to\n"
 "convey this URI, but a valid one isn't present in this response."
-msgstr "该 %(status)s 状态码将用户重定向到另一个 URI。 `Location` 头用于传递此 URI，但本响应中没有一个有效的 URI。"
+msgstr "%(status)s 状态码将用户重定向到另一个 URI。`Location` 标头用于传递此 URI，但本响应中没有有效的 URI。"
 
 #: httplint/status.py:467
 #, python-format
 msgid "The %(status)s status code is deprecated."
-msgstr "该 %(status)s 状态码已过时。"
+msgstr "%(status)s 状态码已弃用。"
 
 #: httplint/status.py:468
 msgid ""
 "When a status code is deprecated, it should not be used, because its "
 "meaning is not well-defined\n"
 "enough to ensure interoperability."
-msgstr "当一个状态码被标记为过时时，不应使用它，因为它的含义没有定义得足够清晰，以确保互操作性。"
+msgstr "当状态码已弃用时，不应使用它，因为它的含义定义得不够明确，无法确保互操作性。"
 
 #: httplint/status.py:476
 #, python-format
 msgid "The %(status)s status code is reserved."
-msgstr "保留的 %(status)s 状态码。"
+msgstr "%(status)s 状态码为保留状态码。"
 
 #: httplint/status.py:477
 msgid ""
@@ -1170,8 +1170,8 @@ msgid ""
 "`400` for a client-side\n"
 "problem, or `500` for a server-side problem."
 msgstr ""
-"非标准状态码没有明确定义和互操作性。而不是定义自己的状态码，你应该重用更通用的一个；例如，@`400`@ 用于客户端问题，或 @`500`@ "
-"用于服务器端问题。"
+"非标准状态码没有明确的定义，也缺乏互操作性。您应该复用更通用的状态码之一，而不是自行定义状态码；例如，客户端问题使用 `400`，服务器端问题使用"
+" `500`。"
 
 #: httplint/status.py:495
 msgid "The server didn't understand the request."
@@ -1191,12 +1191,12 @@ msgid ""
 "The `405 (Method Not Allowed)` status code indicates that the HTTP method"
 " is\n"
 "known by the origin server but not supported by the target resource."
-msgstr "状态码 `405 (Method Not Allowed)` 表示 HTTP 方法被源服务器认识，但目标资源不支持。"
+msgstr "`405 (Method Not Allowed)` 状态码表示源服务器识别该 HTTP 方法，但目标资源不支持它。"
 
 #: httplint/status.py:520
 #, python-format
 msgid "%(method)s is not allowed, but the resource lists it in Allow."
-msgstr "%(method)s 不被允许，但资源列表在Allow中包含它。"
+msgstr "%(method)s 不被允许，但资源在 Allow 中列出了它。"
 
 #: httplint/status.py:521
 msgid ""
@@ -1208,9 +1208,9 @@ msgid ""
 "method used,\n"
 "indicating that it is allowed."
 msgstr ""
-"该 `405 (Method Not Allowed)` 状态码表示 HTTP 方法被源服务器认识，但目标资源不支持。\n"
+"该 `405 (Method Not Allowed)` 状态码表示源服务器已知该 HTTP 方法，但目标资源不支持。\n"
 "\n"
-"然而，响应中列出的 `Allow` 头字段包含使用的方法，表示允许。"
+"然而，响应中列出的 `Allow` 标头字段包含了所使用的方法，表明该方法是被允许的。"
 
 #: httplint/status.py:532
 msgid "The resource could not be found."
@@ -1222,7 +1222,7 @@ msgstr "服务器无法找到给定URI的任何资源。"
 
 #: httplint/status.py:540
 msgid "The resource cannot produce a response that is acceptable to the client."
-msgstr "该资源无法产生可接受的客户端响应。"
+msgstr "该资源无法生成客户端可接受的响应。"
 
 #: httplint/status.py:541
 msgid ""
@@ -1232,8 +1232,8 @@ msgid ""
 "negotiation header fields, such\n"
 "as `Accept`, `Accept-Charset`, `Accept-Encoding`, or `Accept-Language`.\n"
 msgstr ""
-"该 `406 (Not Acceptable)` 状态码表示资源无法产生与请求的积极谈判头字段定义的可接受值列表相匹配的响应，例如 `Accept"
-"`、`Accept-Charset`、`Accept-Encoding` 或 `Accept-Language`。\n"
+"该 `406 (Not Acceptable)` 状态码表示资源无法生成与请求的主动协商标头字段（例如 `Accept`、`Accept-"
+"Charset`、`Accept-Encoding` 或 `Accept-Language`）所定义的可接受值列表相匹配的响应。\n"
 
 #: httplint/status.py:551
 msgid "The 406 (Not Acceptable) status code appears to be misused."
@@ -1250,9 +1250,9 @@ msgid ""
 "(such as `Accept`,\n"
 "`Accept-Charset`, `Accept-Encoding`, or `Accept-Language`)."
 msgstr ""
-"该 `406 (Not Acceptable)` 状态码表示请求无法产生与请求的积极谈判头字段定义的可接受值列表匹配的响应。\n"
+"该 `406 (Not Acceptable)` 状态码表示请求无法产生与请求的主动协商标头字段所定义的可接受值列表相匹配的响应。\n"
 "\n"
-"然而，该请求没有包含任何积极谈判头字段（如 `Accept`、`Accept-Charset`、`Accept-Encoding` 或 "
+"然而，此请求没有包含任何主动协商标头（如 `Accept`、`Accept-Charset`、`Accept-Encoding` 或 "
 "`Accept-Language`）。"
 
 #: httplint/status.py:563
@@ -1261,7 +1261,7 @@ msgstr "请求与资源状态冲突。"
 
 #: httplint/status.py:571
 msgid "The resource is gone."
-msgstr "资源已消失。"
+msgstr "资源已不存在。"
 
 #: httplint/status.py:572
 msgid ""
@@ -1293,11 +1293,11 @@ msgstr "该 %(status)s 状态码表示服务器无法或不愿意接受如此长
 
 #: httplint/status.py:595
 msgid "The resource doesn't support this media type in requests."
-msgstr "该资源不支持此媒体类型请求。"
+msgstr "该资源不支持请求中的这种媒体类型。"
 
 #: httplint/status.py:603
 msgid "The server returned 418 (I'm a Teapot), an easter egg defined in RFC 2324."
-msgstr "服务器返回了 418 (我是一个茶壶)，这是一个在 RFC 2324 中定义的复活蛋。"
+msgstr "服务器返回了 418（我是一个茶壶），这是 RFC 2324 中定义的一个彩蛋。"
 
 #: httplint/status.py:604
 msgid ""
@@ -1319,7 +1319,7 @@ msgstr ""
 
 #: httplint/status.py:617
 msgid "There was a general server error."
-msgstr "出现了一个一般服务器错误。"
+msgstr "服务器出现了一般性错误。"
 
 #: httplint/status.py:625
 msgid "The server doesn't implement the request method."
@@ -1343,7 +1343,7 @@ msgstr "请求的HTTP版本不受支持。"
 
 #: httplint/status.py:665
 msgid "The request precondition failed."
-msgstr "请求的预条件失败。"
+msgstr "请求的先决条件失败。"
 
 #: httplint/status.py:666
 msgid ""
@@ -1352,11 +1352,13 @@ msgid ""
 "request header fields (typically, those starting with `If-`)evaluated to "
 "false when tested \n"
 "on the server."
-msgstr "`412 (Precondition Failed)` 状态码表示请求标头字段（通常以 `If-` 开头的）之一或多个条件在服务器上被评估为假。"
+msgstr ""
+"该 `412 (Precondition Failed)` 状态码表示，请求标头字段（通常是以 `If-` "
+"开头的字段）中给出的一个或多个条件在服务器上测试时结果为假。"
 
 #: httplint/status.py:675
 msgid "The request expectation failed."
-msgstr "请求预期失败。"
+msgstr "请求的期望未能满足。"
 
 #: httplint/status.py:676
 msgid ""
@@ -1364,7 +1366,7 @@ msgid ""
 " given in the request's\n"
 "`Expect` header field could not be met by at least one of the inbound "
 "servers."
-msgstr "该 `417 (Expectation Failed)` 状态码表示请求的 `Expect` 头字段指定的期望无法由至少一个入站服务器满足。"
+msgstr "`417 (Expectation Failed)` 状态码表示请求的 `Expect` 标头字段中给出的期望，至少有一个入站服务器无法满足。"
 
 #: httplint/status.py:684
 msgid "The request didn't have any preconditions."
@@ -1380,10 +1382,14 @@ msgid ""
 "`If-Match`, `If-None-Match`,\n"
 "`If-Modified-Since`, `If-Unmodified-Since`, or `If-Range`)."
 msgstr ""
+"该 `412 (Precondition Failed)` 状态码表示，请求标头字段中给出的一个或多个条件在服务器上测试时结果为假。\n"
+"\n"
+"然而，此请求不包含任何条件标头（例如 `If-Match`、`If-None-Match`、`If-Modified-Since`、`If-"
+"Unmodified-Since` 或 `If-Range`）。"
 
 #: httplint/status.py:696
 msgid "The request didn't have a Range header."
-msgstr "请求没有 Range 头。"
+msgstr "请求没有 Range 标头。"
 
 #: httplint/status.py:697
 msgid ""
@@ -1394,9 +1400,9 @@ msgid ""
 "\n"
 "However, this request didn't contain a `Range` header."
 msgstr ""
-"该 `416 (Range Not Satisfiable)` 状态码表明请求的 `Range` 头字段中的范围与所选资源的当前范围重叠。\n"
+"该 `416 (Range Not Satisfiable)` 状态码表明请求的 `Range` 标头字段中的范围集合与所选资源的当前范围重叠。\n"
 "\n"
-"然而，该请求没有包含一个 `Range` 头。"
+"然而，该请求没有包含 `Range` 标头。"
 
 #: httplint/status.py:707
 msgid "A 416 response to a byte-range request should have a Content-Range header."
@@ -1412,14 +1418,14 @@ msgid ""
 "\n"
 "This response didn't include a `Content-Range` header."
 msgstr ""
-"当服务器对字节范围请求生成一个 `416 (Range Not Satisfiable)` 响应时，它应该在未满足的形式中发送一个 "
-"`Content-Range` 标头字段 (`bytes */<length>`)，提供所选表示形式当前的长度。\n"
+"当服务器针对字节范围请求生成 `416 (Range Not Satisfiable)` 响应时，应该发送采用未满足形式（`bytes "
+"*/<length>`）的 `Content-Range` 标头字段，给出所选表示形式的当前长度。\n"
 "\n"
-"这个响应没有包含一个 `Content-Range` 标头。"
+"此响应没有包含 `Content-Range` 标头。"
 
 #: httplint/status.py:719
 msgid "The request didn't have an Expect header."
-msgstr "请求没有 Expect 头。"
+msgstr "请求没有 Expect 标头。"
 
 #: httplint/status.py:720
 msgid ""
@@ -1430,9 +1436,9 @@ msgid ""
 "\n"
 "However, this request didn't contain an `Expect` header."
 msgstr ""
-"该 `417 (Expectation Failed)` 状态码表示请求的 `Expect` 头字段指定的期望无法由至少一个入站服务器满足。\n"
+"该 `417 (Expectation Failed)` 状态码表示请求的 `Expect` 标头字段中给出的期望无法被至少一个入站服务器满足。\n"
 "\n"
-"然而，该请求没有包含一个 `Expect` 头。"
+"然而，该请求没有包含 `Expect` 标头。"
 
 #: httplint/status.py:730
 msgid "The server couldn't meet the 100-continue expectation."
@@ -1449,9 +1455,9 @@ msgid ""
 "intermediary) couldn't\n"
 "satisfy it."
 msgstr ""
-"该 `417 (Expectation Failed)` 状态码表示请求的 `Expect` 头字段指定的期望无法由至少一个入站服务器满足。\n"
+"该 `417 (Expectation Failed)` 状态码表示请求的 `Expect` 标头字段中给出的期望无法被至少一个入站服务器满足。\n"
 "\n"
-"在这种情况下，客户端请求了 `100-continue`，但服务器（或中继器）无法满足它。"
+"在这种情况下，客户端请求了 `100-continue`，但服务器（或中间节点）无法满足它。"
 
 #: httplint/status.py:742
 msgid "The server sent early hints."
@@ -1462,7 +1468,7 @@ msgid ""
 "The `103 (Early Hints)` status code allows the server to send some "
 "headers before the final response,\n"
 "typically to help the client start fetching resources earlier."
-msgstr "`103 (Early Hints)` 状态码允许服务器在最终响应之前发送一些标头，通常帮助客户端尽早开始获取资源。"
+msgstr "`103 (Early Hints)` 状态码允许服务器在最终响应之前发送一些标头，通常用于帮助客户端更早开始获取资源。"
 
 #: httplint/status.py:751
 msgid "The server supports upload resumption."
@@ -1518,7 +1524,7 @@ msgstr "该 `425 (Too Early)` 状态码表示服务器不愿意冒险处理可�
 
 #: httplint/status.py:787
 msgid "The origin server requires the request to be conditional."
-msgstr "原始服务器要求请求是条件的。"
+msgstr "源服务器要求请求为条件请求。"
 
 #: httplint/status.py:788
 msgid ""
@@ -1549,7 +1555,7 @@ msgid ""
 "The `431 (Request Header Fields Too Large)` status code indicates that "
 "the server is unwilling to\n"
 "process the request because its header fields are too large."
-msgstr "状态码 `431 (Request Header Fields Too Large)` 表示服务器不愿意处理请求，因为其头字段过大。"
+msgstr "`431 (Request Header Fields Too Large)` 状态码表示服务器不愿意处理该请求，因为其标头字段过大。"
 
 #: httplint/status.py:814
 msgid "The resource is unavailable for legal reasons."
@@ -1575,7 +1581,7 @@ msgid ""
 "encountered an infinite loop while processing a request with \"Depth: "
 "infinity\"."
 msgstr ""
-"代码 `508 (Loop Detected)` 表示服务器终止了一个操作，因为它在处理一个带有 \"Depth: infinity\" "
+"该 `508 (Loop Detected)` 状态码表示服务器终止了一个操作，因为它在处理带有 \"Depth: infinity\" "
 "的请求时遇到了无限循环。"
 
 #: httplint/status.py:832
@@ -1591,11 +1597,11 @@ msgstr "该 `511 (Network Authentication Required)` 状态码表示客户端需�
 
 #: httplint/util.py:249
 msgid "ahead"
-msgstr "即将"
+msgstr "超前"
 
 #: httplint/util.py:251
 msgid "behind"
-msgstr "在后面"
+msgstr "落后"
 
 #: httplint/field/__init__.py:276
 #, python-format
@@ -1631,10 +1637,11 @@ msgid ""
 "fixing it will\n"
 "improve interoperability.\n"
 msgstr ""
-"该字段的值使用 [增强 BNF](https://www.rfc-editor.org/rfc/rfc5234.html) "
-"指定了语法，但它不符合该语法。有关更多信息，请参阅 [该字段的 ABNF](%(ref_uri)s)。\n"
+"该字段的值使用[增强 BNF](https://www.rfc-"
+"editor.org/rfc/rfc5234.html)指定了语法，但不符合该语法。更多信息请参阅[该字段的 "
+"ABNF](%(ref_uri)s)。\n"
 "\n"
-"这个错误可能或可能不会阻止接收方解析该字段；修复它将提高互操作性。\n"
+"这个错误不一定会阻止接收方解析该字段；修复它将提高互操作性。\n"
 
 #: httplint/field/__init__.py:319
 #, python-format
@@ -1647,7 +1654,7 @@ msgid ""
 "The `%(field_name)s` field only has meaning in requests. Sending it a "
 "response\n"
 "doesn't do anything. REDbot (and most recipients) will ignore it."
-msgstr "该 `%(field_name)s` 字段仅在请求中具有意义。将其发送给响应不会产生任何作用。REDbot（以及大多数接收者）将忽略它。"
+msgstr "该 `%(field_name)s` 字段仅在请求中有意义。在响应中发送它不会产生任何作用。REDbot（以及大多数接收方）会忽略它。"
 
 #: httplint/field/__init__.py:328
 #, python-format
@@ -1665,7 +1672,7 @@ msgstr "该 `%(field_name)s` 字段仅在响应中具有意义。在请求中发
 #: httplint/field/__init__.py:337
 #, python-format
 msgid "The %(field_name)s header is deprecated."
-msgstr "该 %(field_name)s 头已过时。"
+msgstr "%(field_name)s 标头已弃用。"
 
 #: httplint/field/__init__.py:338
 #, python-format
@@ -1676,14 +1683,14 @@ msgid ""
 "\n"
 "See [the deprecation notice](%(deprecation_ref)s) for more information."
 msgstr ""
-"这个字段不再推荐使用，因为存在互操作性问题和/或缺乏使用。这个字段应该被删除。\n"
+"这个字段不再推荐使用，因为存在互操作性问题和/或缺乏使用。这个字段可能应该被删除。\n"
 "\n"
-"有关更多信息，请参阅 [弃用通知](%(deprecation_ref)s)。"
+"更多信息请参阅[弃用通知](%(deprecation_ref)s)。"
 
 #: httplint/field/codings.py:48
 #, python-format
 msgid "The '%(coding)s' content-coding is a deprecated alias for '%(standard)s'."
-msgstr "该%(coding)s内容编码是一个过时的别名，用于替代%(standard)s。"
+msgstr "'%(coding)s' 内容编码是 '%(standard)s' 的已弃用别名。"
 
 #: httplint/field/codings.py:49
 #, python-format
@@ -1699,9 +1706,8 @@ msgid ""
 "recipients are likely to\n"
 "handle it; however, senders should use `%(standard)s`."
 msgstr ""
-"The\n"
 "[IANA HTTP 内容编码注册表](https://www.iana.org/assignments/http-parameters"
-"/http-parameters.xhtml#content-coding)将 `%(coding)s` 标记为过时，作为 "
+"/http-parameters.xhtml#content-coding)将 `%(coding)s` 列为已弃用，是 "
 "`%(standard)s` 的别名。\n"
 "\n"
 "[RFC 9110](https://www.rfc-"
@@ -1720,9 +1726,7 @@ msgid ""
 "decimal point (for example, `0.5`). A sign, an exponent, quotes, or a "
 "missing leading digit\n"
 "aren't allowed."
-msgstr ""
-"该 `q` 参数必须是一个在 0 到 1 之间的十进制数字，小数点后最多允许 3 "
-"位数字（例如，`0.5`）。不允许使用符号、指数、引号或缺失的引数。"
+msgstr "`q` 参数必须是 0 到 1 之间的十进制数，小数点后最多 3 位（例如 `0.5`）。不允许使用符号、指数、引号，也不允许缺少前导数字。"
 
 #: httplint/field/cors.py:139
 msgid "This is a CORS preflight request."
@@ -1743,7 +1747,7 @@ msgstr ""
 #: httplint/field/cors.py:150
 #, python-format
 msgid "The %(field_name)s header requires the OPTIONS method."
-msgstr "该 %(field_name)s 头要求使用 OPTIONS 方法。"
+msgstr "%(field_name)s 标头要求使用 OPTIONS 方法。"
 
 #: httplint/field/cors.py:151
 #, python-format
@@ -1755,14 +1759,14 @@ msgid ""
 "A preflight request uses the `OPTIONS` method; this request uses "
 "`%(method)s`."
 msgstr ""
-"在跨源资源共享（CORS）预检请求中，仅使用`%(field_name)s`标头。\n"
+"`%(field_name)s` 标头仅用于跨源资源共享（CORS）预检请求。\n"
 "\n"
-"预检请求使用`OPTIONS`方法；此请求使用`%(method)s`。"
+"预检请求使用 `OPTIONS` 方法；此请求使用 `%(method)s`。"
 
 #: httplint/field/cors.py:161
 #, python-format
 msgid "The %(field_name)s header requires the Origin header."
-msgstr "该 %(field_name)s 头需要 Origin 头。"
+msgstr "%(field_name)s 标头需要 Origin 标头。"
 
 #: httplint/field/cors.py:162
 #, python-format
@@ -1773,7 +1777,7 @@ msgid ""
 "\n"
 "A preflight request requires the `Origin` header to be present."
 msgstr ""
-"在跨源资源共享（CORS）预检请求中，仅使用 `%(field_name)s` 标头。\n"
+"`%(field_name)s` 标头仅用于跨源资源共享（CORS）预检请求。\n"
 "\n"
 "预检请求需要包含 `Origin` 标头。"
 
@@ -1782,7 +1786,7 @@ msgstr ""
 msgid ""
 "The %(field_name)s header requires the Access-Control-Request-Method "
 "header."
-msgstr "该 %(field_name)s 头需要 Access-Control-Request-Method 头。"
+msgstr "%(field_name)s 标头需要 Access-Control-Request-Method 标头。"
 
 #: httplint/field/cors.py:173
 #, python-format
@@ -1794,9 +1798,9 @@ msgid ""
 "A preflight request requires the `Access-Control-Request-Method` header "
 "to be present."
 msgstr ""
-"该 `%(field_name)s` 头仅用于跨源资源共享 (CORS) 预飞请求。\n"
+"`%(field_name)s` 标头仅用于跨源资源共享（CORS）预检请求。\n"
 "\n"
-"预飞请求需要 `Access-Control-Request-Method` 头出现。"
+"预检请求需要包含 `Access-Control-Request-Method` 标头。"
 
 #: httplint/field/cors.py:183
 msgid "This is a CORS preflight response."
@@ -1816,7 +1820,7 @@ msgstr ""
 
 #: httplint/field/cors.py:194
 msgid "CORS headers are only allowed in preflight responses."
-msgstr "跨源资源共享（CORS）头仅在预飞响应中允许。"
+msgstr "CORS 标头仅允许出现在预检响应中。"
 
 #: httplint/field/cors.py:195
 #, python-format
@@ -1862,7 +1866,7 @@ msgid ""
 "The `Access-Control-Allow-Credentials` header must be set to `true` if "
 "present. If you don't want\n"
 "to allow credentials, omit the header."
-msgstr "如果存在，`Access-Control-Allow-Credentials` 头必须设置为 `true`。如果你不想允许凭证，则省略该头。"
+msgstr "如果存在，`Access-Control-Allow-Credentials` 标头必须设置为 `true`。如果您不想允许凭证，请省略该标头。"
 
 #: httplint/field/cors.py:228
 msgid "The Access-Control-Allow-Origin header allows the requesting origin."
@@ -1877,7 +1881,7 @@ msgid ""
 "This means that the browser will let the requesting site access the "
 "response."
 msgstr ""
-"该 `Access-Control-Allow-Origin` 头匹配请求中的 `Origin` 头 (`%(origin)s`)。\n"
+"`Access-Control-Allow-Origin` 标头与请求中的 `Origin` 标头 (`%(origin)s`) 匹配。\n"
 "\n"
 "这意味着浏览器将允许请求网站访问响应。"
 
@@ -1897,8 +1901,8 @@ msgid ""
 "This means that the browser will **not** let the requesting site access "
 "the response."
 msgstr ""
-"该 `Access-Control-Allow-Origin` 头（`%(acao_value)s`）与请求（`%(origin)s`）中的 "
-"`Origin` 头不匹配。\n"
+"该 `Access-Control-Allow-Origin` 标头（`%(acao_value)s`）与请求中的 `Origin` "
+"标头（`%(origin)s`）不匹配。\n"
 "\n"
 "这意味着浏览器将 **不**允许请求站点访问响应。"
 
@@ -1911,7 +1915,7 @@ msgid ""
 "The `Access-Control-Allow-Origin` header is set to `null`; this means "
 "that no origin can access\n"
 "the response."
-msgstr "该 `Access-Control-Allow-Origin` 头设置为 `null`；这意味着没有源可以访问响应。"
+msgstr "`Access-Control-Allow-Origin` 标头设置为 `null`；这意味着没有源可以访问响应。"
 
 #: httplint/field/cors.py:258
 msgid "The Access-Control-Allow-Origin header allows any origin."
@@ -1942,11 +1946,10 @@ msgid ""
 "#name-etag) for more\n"
 "information."
 msgstr ""
-"一个实体标签在它开始时包含 `W/` 时是弱的，并且这个前缀是区分大小写的：小写 `w/` "
-"不是弱指示符。因此，接收方可以将整个值视为无效标签，或者作为以 `w/` 开头的强标签。\n"
+"以 `W/` 开头的实体标签是弱标签，且该前缀区分大小写：小写的 `w/` 不是弱标签的标记。因此，接收方可以将整个值视为无效标签，或者视为恰好以"
+" `w/` 开头的强标签。\n"
 "\n"
-"有关更多信息，请参阅 [HTTP 规范](https://www.rfc-editor.org/rfc/rfc9110.html#name-"
-"etag)。"
+"更多信息请参阅 [HTTP 规范](https://www.rfc-editor.org/rfc/rfc9110.html#name-etag)。"
 
 #: httplint/field/entity_tag.py:63
 #, python-format
@@ -1968,17 +1971,17 @@ msgid ""
 "either `*` or the\n"
 "entity tags."
 msgstr ""
-"在 `%(field_name)s` 字段中的 `*` 匹配任何当前表示形式，因此它仅在单独使用时有效：该字段的值要么是 "
-"`*`，要么是一个实体标签列表([RFC 9110, 第13.1.1节](https://www.rfc-"
-"editor.org/rfc/rfc9110.html#name-if-match) 和[第13.1.2节](https://www.rfc-"
-"editor.org/rfc/rfc9110.html#name-if-none-match))。\n"
+"`%(field_name)s` 字段中的 `*` 匹配任何当前表示形式，因此它只在单独使用时有效：该字段的值要么是 "
+"`*`，要么是实体标签列表（[RFC 9110，第 13.1.1 节](https://www.rfc-"
+"editor.org/rfc/rfc9110.html#name-if-match)和[第 13.1.2 节](https://www.rfc-"
+"editor.org/rfc/rfc9110.html#name-if-none-match)）。\n"
 "\n"
-"接收方可能以不同的方式处理包含两者中的列表；发送 `*` 或实体标签。"
+"接收方对同时包含两者的列表可能有不同的处理方式；请只发送 `*` 或实体标签其中之一。"
 
 #: httplint/field/http_date.py:65
 #, python-format
 msgid "The %(field_name)s header's value isn't a valid date."
-msgstr "该 %(field_name)s 头字段值不是一个有效的日期。"
+msgstr "%(field_name)s 标头的值不是有效的日期。"
 
 #: httplint/field/http_date.py:66
 msgid ""
@@ -1993,16 +1996,16 @@ msgid ""
 "#name-date-time-formats) for more\n"
 "information."
 msgstr ""
-"HTTP日期具有特定的语法，发送无效日期可能会导致一系列问题，尤其是在缓存方面。常见问题包括发送“5月1日”而不是“01月May”（月份是一个固定宽度字段），以及发送非GMT时区的日期。"
+"HTTP 日期有特定的语法，发送无效的日期可能会导致一系列问题，尤其是在缓存方面。常见的问题包括发送“1 May”而不是“01 "
+"May”（月份是固定宽度的字段），以及发送 GMT 以外时区的日期。\n"
 "\n"
-"\n"
-"请参阅[HTTP规范](https://www.rfc-editor.org/rfc/rfc9110.html#name-date-time-"
-"formats)获取更多信息。"
+"更多信息请参阅 [HTTP 规范](https://www.rfc-editor.org/rfc/rfc9110.html#name-date-"
+"time-formats)。"
 
 #: httplint/field/http_date.py:78
 #, python-format
 msgid "The %(field_name)s header's value uses an obsolete format."
-msgstr "该 %(field_name)s 头值使用的是过时的格式。"
+msgstr "%(field_name)s 标头的值使用了已过时的格式。"
 
 #: httplint/field/http_date.py:79
 msgid ""
@@ -2018,7 +2021,7 @@ msgstr ""
 #: httplint/field/json_field.py:78
 #, python-format
 msgid "The %(field_name)s header value isn't valid JSON."
-msgstr "该 %(field_name)s 头值不是有效的 JSON。"
+msgstr "%(field_name)s 标头的值不是有效的 JSON。"
 
 #: httplint/field/json_field.py:79
 #, python-format
@@ -2053,6 +2056,11 @@ msgid ""
 "likely to accept\n"
 "this; however, a media type named this way can't be registered with IANA."
 msgstr ""
+"[RFC6838](https://www.rfc-editor.org/rfc/rfc6838.html#section-4.2) "
+"要求媒体类型中的类型名和子类型名以字母或数字开头，并且只能使用字母、数字以及字符 `!`、`#`、`$`、`&`、`-`、`^`、`_`、`.` "
+"和 `+`。`%(value)s` 使用了其他字符。\n"
+"\n"
+"HTTP 自身的媒体类型语法更为宽松，因此接收方很可能会接受它；但是，以这种方式命名的媒体类型无法在 IANA 注册。"
 
 #: httplint/field/media_type.py:157
 #, python-format
@@ -2071,11 +2079,15 @@ msgid ""
 "run into\n"
 "implementation limits."
 msgstr ""
+"[RFC6838](https://www.rfc-editor.org/rfc/rfc6838.html#section-4.2) "
+"将媒体类型中的类型名和子类型名各限制在 127 个字符以内；`%(value)s` 超过了这一长度。\n"
+"\n"
+"该规范还建议将它们保持在 64 个字符以内，因为更长的名称会遇到实现上的限制。"
 
 #: httplint/field/params.py:208
 #, python-format
 msgid "The '%(param)s' parameter repeats in the %(field_name)s header."
-msgstr "该参数 %(param)s 在 %(field_name)s 头中重复出现。"
+msgstr "%(param)s 参数在 %(field_name)s 标头中重复出现。"
 
 #: httplint/field/params.py:209
 #, python-format
@@ -2090,15 +2102,16 @@ msgid ""
 "header-field)\n"
 "specification -- and that is the one used here."
 msgstr ""
-"在 `%(field_name)s` 字段中的参数不应重复；实现可能处理它们不同。当规范指出时，它是第一个实例计数——例如，[RFC "
-"8288](https://www.rfc-editor.org/rfc/rfc8288.html#section-3.3) 对于 "
-"`Link`，以及 [服务器时间](https://w3c.github.io/server-timing/#the-server-timing-"
-"header-field) 规范——并且这是此处使用的那个。"
+"`%(field_name)s` 字段中的参数不应重复；不同的实现对它们的处理可能不同。如果规范有规定，则以第一个实例为准——例如针对 "
+"`Link` 的 [RFC 8288](https://www.rfc-"
+"editor.org/rfc/rfc8288.html#section-3.3)，以及 [Server "
+"Timing](https://w3c.github.io/server-timing/#the-server-timing-header-"
+"field) 规范——此处使用的就是该实例。"
 
 #: httplint/field/params.py:220
 #, python-format
 msgid "The '%(param)s' parameter on the %(field_name)s header is single-quoted."
-msgstr "在 %(field_name)s 头中，'%(param)s' 参数用单引号括起来。"
+msgstr "在 %(field_name)s 标头中，'%(param)s' 参数用单引号括起来。"
 
 #: httplint/field/params.py:221
 #, python-format
@@ -2137,7 +2150,7 @@ msgstr ""
 "参数名以'*'结尾的参数保留用于非ASCII文本，如[RFC8187](https://www.rfc-"
 "editor.org/rfc/rfc8187#section-4)所述。\n"
 "\n"
-"`%(param)s`参数在`%(field_name)s`字段中不允许这样；您应该使用%(param)s，不带末尾的\"*\"（也不带相关的编码）。"
+"`%(param)s`参数在`%(field_name)s`字段中不允许使用这种形式；您应该使用%(param)s，不带末尾的\"*\"（也不带相关的编码）。"
 
 #: httplint/field/params.py:244
 #, python-format
@@ -2270,7 +2283,9 @@ msgid ""
 "such messages, or to\n"
 "remove the whitespace before processing the field. The whitespace has "
 "been ignored here."
-msgstr "HTTP字段名称不能包含空格；特别是，字段名和冒号之间不允许有空格。接收方需要拒绝此类消息，或者在处理字段之前删除空格。此处已忽略空格。"
+msgstr ""
+"HTTP "
+"字段名称不能被空白字符包围；特别是，字段名称和冒号之间不允许有空白字符。接收方必须拒绝此类消息，或者在处理该字段之前删除这些空白字符。此处已忽略这些空白字符。"
 
 #: httplint/field/section.py:149
 #, python-format
@@ -2295,7 +2310,7 @@ msgstr ""
 #: httplint/field/singleton_field.py:47
 #, python-format
 msgid "Only one %(field_name)s field is allowed in a message."
-msgstr "仅允许消息中一个 %(field_name)s 字段。"
+msgstr "一条消息中只允许有一个 %(field_name)s 字段。"
 
 #: httplint/field/singleton_field.py:48
 msgid ""
@@ -2304,7 +2319,7 @@ msgid ""
 "needs to choose the one to use, which can lead to interoperability "
 "problems, since different\n"
 "implementations may make different choices."
-msgstr "这个字段设计仅在消息中出现一次。如果它出现多次，接收方需要选择使用哪一个，这可能导致互操作性问题，因为不同的实现可能会做出不同的选择。"
+msgstr "此字段被设计为在一条消息中只出现一次。当它出现多次时，接收方需要选择使用其中哪一个，这可能导致互操作性问题，因为不同的实现可能做出不同的选择。"
 
 #: httplint/field/structured_field.py:86
 #, python-format
@@ -2345,7 +2360,7 @@ msgstr ""
 #: httplint/field/token_policy_field.py:77
 #, python-format
 msgid "The report-to parameter in %(field_name)s isn't a String%(report_only)s."
-msgstr "报告到参数在%(field_name)s中不是字符串%(report_only)s。"
+msgstr "%(field_name)s 中的 report-to 参数不是字符串%(report_only)s。"
 
 #: httplint/field/token_policy_field.py:78
 #, python-format
@@ -2356,14 +2371,13 @@ msgid ""
 " parameter when it is a\n"
 "Token (`report-to=endpoint`) or any other type."
 msgstr ""
-"在 `%(field_name)s` 头名中，`report-to` 参数指定了一个报告端点，必须是 `report-"
-"to=\"endpoint\"` 类型（例如，字符串）。浏览器可能忽略参数，如果它是一个 `report-"
-"to=endpoint`（标记）或其他类型。"
+"`%(field_name)s` 标头中的 `report-to` 参数指定一个报告端点，必须是字符串（例如 `report-"
+"to=\"endpoint\"`）。如果它是令牌（`report-to=endpoint`）或其他任何类型，浏览器可能会忽略该参数。"
 
 #: httplint/field/unnecessary.py:45
 #, python-format
 msgid "The %(header_name)s header can probably be removed."
-msgstr "该 %(header_name)s 头可能可以删除。"
+msgstr "%(header_name)s 标头可能可以删除。"
 
 #: httplint/field/unnecessary.py:46
 #, python-format
@@ -2407,11 +2421,13 @@ msgid ""
 "HTTP exposes the user's information to network observers. Because of "
 "this, browsers will ignore the\n"
 "header."
-msgstr "该 `Accept-CH` 头字段仅应用于安全的（HTTPS）响应。在普通 HTTP 上使用它会将用户信息暴露给网络观察者。因此，浏览器会忽略该头。"
+msgstr ""
+"该 `Accept-CH` 标头字段应该只用于安全的（HTTPS）响应。在普通 HTTP "
+"上使用它会将用户的信息暴露给网络观察者。因此，浏览器会忽略该标头。"
 
 #: httplint/field/parsers/accept_ch.py:80
 msgid "Accept-CH lists fields that are missing from Vary."
-msgstr "Accept-CH 列出缺失于 Vary 的字段。"
+msgstr "Accept-CH 列出了 Vary 中缺少的字段。"
 
 #: httplint/field/parsers/accept_ch.py:81
 #, python-format
@@ -2430,7 +2446,7 @@ msgstr ""
 
 #: httplint/field/parsers/accept_ch.py:92
 msgid "The Accept-CH header isn't a List of Tokens."
-msgstr "该“Accept-CH”标头不是一个令牌列表。"
+msgstr "Accept-CH 标头不是令牌列表。"
 
 #: httplint/field/parsers/accept_ch.py:93
 #, python-format
@@ -2449,7 +2465,7 @@ msgstr ""
 
 #: httplint/field/parsers/accept_language.py:75
 msgid "The Accept-Language header isn't valid."
-msgstr "\"Accept-Language 标头无效。\""
+msgstr "Accept-Language 标头无效。"
 
 #: httplint/field/parsers/accept_language.py:76
 #, python-format
@@ -2461,10 +2477,10 @@ msgstr "该字段的值不符合其指定的语法；请参阅 [其定义](%(ref
 
 #: httplint/field/parsers/accept_patch.py:33
 msgid "The Accept-Patch header contains a value that is not a media type."
-msgstr "标头 Accept-Patch 包含一个不是媒体类型的值。"
+msgstr "Accept-Patch 标头包含一个不是媒体类型的值。"
 
 #: httplint/field/parsers/accept_patch.py:34
-#, fuzzy, python-format
+#, python-format
 msgid ""
 "`%(value)s` is not a valid media type. `Accept-Patch` is a list of media "
 "types\n"
@@ -2472,13 +2488,12 @@ msgid ""
 "[its\n"
 "definition](%(ref_uri)s) for more information.%(position)s"
 msgstr ""
-"`%(value)s` 不是一个有效的媒体类型。`Accept-Patch` 是一个 PATCH 请求中接受的媒体类型列表（例如 "
-"`application/json-patch+json`）； 请参阅 [其定义](%(ref_uri)s) "
-"了解更多信息。%(position)s"
+"`%(value)s` 不是有效的媒体类型。`Accept-Patch` 是 PATCH 请求中可接受的媒体类型列表（例如 "
+"`application/json-patch+json`）；更多信息请参阅[其定义](%(ref_uri)s)。%(position)s"
 
 #: httplint/field/parsers/accept_post.py:36
 msgid "The Accept-Post header contains a value that is not a media type."
-msgstr "标头 Accept-Post 包含一个不是媒体类型的值。"
+msgstr "Accept-Post 标头包含一个不是媒体类型的值。"
 
 #: httplint/field/parsers/accept_post.py:37
 #, python-format
@@ -2494,7 +2509,7 @@ msgstr ""
 
 #: httplint/field/parsers/accept_query.py:58
 msgid "The Accept-Query header contains a value that isn't a media range."
-msgstr "请求标头（Accept-Query）包含一个不是媒体范围的值。"
+msgstr "Accept-Query 标头包含一个不是媒体范围的值。"
 
 #: httplint/field/parsers/accept_query.py:59
 #, python-format
@@ -2505,12 +2520,12 @@ msgid ""
 "`%(value)s` is\n"
 "neither, so it will be ignored."
 msgstr ""
-"`Accept-Query` 是一个结构化字段，其成员为令牌或字符串，每个成员指定一个在 QUERY "
-"请求内容中可接受的媒体范围。`%(value)s` 不是其中之一，因此将被忽略。"
+"`Accept-Query` 是一个列表类型的结构化字段，其成员为令牌或字符串，每个成员指定一个在 QUERY "
+"请求内容中可接受的媒体范围。`%(value)s` 两者都不是，因此将被忽略。"
 
 #: httplint/field/parsers/accept_query.py:68
 msgid "The Accept-Query header contains a value that is not a media range."
-msgstr "请求标头“Accept-Query”包含一个不是媒体范围的值。"
+msgstr "Accept-Query 标头包含一个不是媒体范围的值。"
 
 #: httplint/field/parsers/accept_query.py:69
 #, python-format
@@ -2526,7 +2541,7 @@ msgstr ""
 
 #: httplint/field/parsers/accept_ranges.py:32
 msgid "This response advertises support for non-standard range-units."
-msgstr "这个响应宣传了对非标准范围单位的支持。"
+msgstr "这个响应通告了对非标准范围单位的支持。"
 
 #: httplint/field/parsers/accept_ranges.py:33
 msgid ""
@@ -2537,8 +2552,8 @@ msgid ""
 "Clients who don't know about the non-standard range-unit will not be able"
 " to use it."
 msgstr ""
-"`Accept-Ranges` 响应标头告诉客户端资源未来请求愿意处理的 `range-unit`。HTTP 仅定义了两个：`bytes` 和 "
-"`none`。\n"
+"`Accept-Ranges` 响应标头告诉客户端，资源愿意在未来的请求中处理哪些 `range-unit`。HTTP "
+"仅定义了两个：`bytes` 和 `none`。\n"
 "\n"
 "不了解非标准 range-unit 的客户端将无法使用它。"
 
@@ -2566,7 +2581,7 @@ msgstr "该 `Access-Control-Max-Age` 标头指示预检响应可以缓存的秒�
 
 #: httplint/field/parsers/age.py:44
 msgid "The Age header's value should be an integer."
-msgstr "Age 标头的数据应该是一个整数。"
+msgstr "Age 标头的值应该是整数。"
 
 #: httplint/field/parsers/age.py:45
 msgid ""
@@ -2574,7 +2589,7 @@ msgid ""
 " been cached\n"
 "since it was generated. The value given was not an integer, so it is not "
 "a valid age."
-msgstr "该 `Age` 头表示响应的年龄；即自生成以来已缓存的时间长度。给出的值不是整数，因此不是有效的年龄。"
+msgstr "`Age` 标头表示响应的年龄；即自生成以来已缓存的时间长度。给出的值不是整数，因此不是有效的年龄。"
 
 #: httplint/field/parsers/age.py:53
 msgid "The Age headers' value must be a positive integer."
@@ -2586,7 +2601,7 @@ msgid ""
 " been cached\n"
 "since it was generated. The value given was negative, so it is not a "
 "valid age."
-msgstr "该`Age`头表示响应的年龄；即自生成以来已缓存的时间长度。给定的值为负数，因此不是一个有效的年龄。"
+msgstr "`Age` 标头表示响应的年龄；即自生成以来已缓存的时间长度。给定的值为负数，因此不是有效的年龄。"
 
 #: httplint/field/parsers/age.py:62
 msgid "The Age header's value is very large."
@@ -2601,14 +2616,14 @@ msgstr "该 `Age` 标头值大于 2,147,483,648。一些实现可能使用该值
 
 #: httplint/field/parsers/alt_svc.py:51
 msgid "The Alt-Svc 'clear' token cannot be used with other values."
-msgstr "该 Alt-Svc 'clear' 标记不能与其他值一起使用。"
+msgstr "Alt-Svc 的 'clear' 令牌不能与其他值一起使用。"
 
 #: httplint/field/parsers/alt_svc.py:52
 msgid ""
 "The `Alt-Svc` header field value \"clear\" is used to invalidate previous"
 " alternative services.\n"
 "It cannot be combined with other alternative service advertisements."
-msgstr "该 `Alt-Svc` 标头字段值 \"clear\" 用于无效以前的替代服务。它不能与其他替代服务广告组合使用。"
+msgstr "`Alt-Svc` 标头字段值 \"clear\" 用于使先前的替代服务失效。它不能与其他替代服务通告组合使用。"
 
 #: httplint/field/parsers/available_dictionary.py:45
 msgid ""
@@ -2630,12 +2645,12 @@ msgid ""
 "supports, by adding them to\n"
 "`Accept-Encoding`."
 msgstr ""
-"该 `Available-Dictionary` 头存在，但 `Accept-Encoding` 没有列出 `dcb` 或 `dcz` "
-"作为可接受的编码：它会忽略它们，或者给它们分配 `q` 值为 0。（一个 `*` 不会被计数。）因此，服务器无法使用字典来压缩响应。\n"
+"存在 `Available-Dictionary` 标头，但 `Accept-Encoding` 没有将 `dcb` 或 `dcz` "
+"列为可接受：它要么未列出它们，要么给它们的 `q` 值为 0。（`*` 不计在内。）因此，服务器无法使用该字典来压缩响应。\n"
 "\n"
 "[RFC 9842 第 6.1 节](https://www.rfc-"
-"editor.org/rfc/rfc9842.html#section-6.1) 描述了一种客户端如何通过将其添加到 `Accept-"
-"Encoding` 中来宣传其支持的有字典内容编码。"
+"editor.org/rfc/rfc9842.html#section-6.1)描述了客户端如何通过将其所支持的、感知字典的内容编码添加到 "
+"`Accept-Encoding` 中来加以通告。"
 
 #: httplint/field/parsers/available_dictionary.py:62
 msgid "The Available-Dictionary header has an invalid type."
@@ -2646,7 +2661,7 @@ msgstr "该 Available-Dictionary 标头类型无效。"
 msgid ""
 "The `Available-Dictionary` header value must be a Byte Sequence. Found "
 "`%(got)s`."
-msgstr "该 `Available-Dictionary` 头值必须是字节序列。找到 `%(got)s`。"
+msgstr "`Available-Dictionary` 标头的值必须是字节序列。找到 `%(got)s`。"
 
 #: httplint/field/parsers/cache_control.py:251
 #, python-format
@@ -2700,9 +2715,9 @@ msgid ""
 "it were not quoted, but\n"
 "some implementations may not recognise the quoted form."
 msgstr ""
-"缓存指令 `%(directive)s` 的值是一个数字，因此发送方不得将其生成为引号括起来的字符串。[RFC 9111](https://www"
+"缓存指令 `%(directive)s` 的值是数字，因此发送方不得将其生成为带引号的字符串。[RFC 9111](https://www"
 ".rfc-editor.org/rfc/rfc9111.html#section-5.2) "
-"规定，接收方应接受两种形式，因此通常将其解释为未引号格式，但某些实现可能不识别引号格式。"
+"规定，接收方应当两种形式都接受，因此这里已将其解释为不带引号的形式，但某些实现可能无法识别带引号的形式。"
 
 #: httplint/field/parsers/cache_control.py:289
 #, python-format
@@ -2789,12 +2804,12 @@ msgid ""
 "%(other_message)s\n"
 "messages; is has no defined meaning in a %(message_type)s."
 msgstr ""
-"该 `%(directive)s` 缓存指令仅定义在 %(other_message)s 消息中出现；它在 %(message_type)s "
-"中没有定义的意义。"
+"`%(directive)s` 缓存指令仅定义为出现在 %(other_message)s 消息中；它在 %(message_type)s "
+"中没有定义的含义。"
 
 #: httplint/field/parsers/cache_control.py:341
 msgid "Only one of the pre-check and post-check cache directives is present."
-msgstr "只有一个预检查和后检查缓存指令存在。"
+msgstr "pre-check 和 post-check 缓存指令中只出现了一个。"
 
 #: httplint/field/parsers/cache_control.py:344
 msgid ""
@@ -2806,14 +2821,14 @@ msgid ""
 "Explorer will ignore the\n"
 "directive, since it requires both to be present.\n"
 msgstr ""
-"微软互联网探索器实现了两个扩展，`Cache-Control` `pre-check` 和 `post-"
-"check`，以提供对其缓存存储响应的方式有更多的控制。\n"
+"Microsoft Internet Explorer 实现了两个 `Cache-Control` 扩展：`pre-check` 和 `post-"
+"check`，以便更好地控制其缓存存储响应的方式。\n"
 "\n"
-"本响应仅使用其中一条指令；因此，互联网探索器将忽略该指令，因为它需要同时存在。\n"
+"此响应只使用了其中一个指令；因此，Internet Explorer 会忽略该指令，因为它要求两者同时存在。\n"
 
 #: httplint/field/parsers/cache_control.py:356
 msgid "The pre-check and post-check cache directives are both '0'."
-msgstr "预检查和后检查缓存指令均是'0'。"
+msgstr "pre-check 和 post-check 缓存指令的值均为 '0'。"
 
 #: httplint/field/parsers/cache_control.py:359
 msgid ""
@@ -2829,16 +2844,16 @@ msgid ""
 "bandwidth),\n"
 "and may trigger bugs in some beta versions of IE."
 msgstr ""
-"微软互联网探索器实现了两个扩展，`Cache-Control` `pre-check` 和 `post-"
-"check`，以提供对其缓存存储响应的方式有更多的控制。\n"
+"Microsoft Internet Explorer 实现了两个 `Cache-Control` 扩展：`pre-check` 和 `post-"
+"check`，以便更好地控制其缓存存储响应的方式。\n"
 "\n"
-"此响应为两者都给出“0”的值；因此，互联网探索器将忽略该指令，因为它要求两者都存在。\n"
+"此响应将两者的值都设为“0”；因此，Internet Explorer 会忽略该指令，因为它要求两者同时存在。\n"
 "\n"
-"换句话说，将它们设置为零**没有效果**（除了浪费带宽），并且可能在IE的一些测试版本中触发错误。"
+"换句话说，将它们设为零**没有任何效果**（除了浪费带宽），并且可能在 IE 的某些测试版本中触发错误。"
 
 #: httplint/field/parsers/cache_control.py:373
 msgid "The post-check cache directive's value is larger than pre-check's."
-msgstr "后检查缓存指令的值大于前检查的。"
+msgstr "post-check 缓存指令的值大于 pre-check 的值。"
 
 #: httplint/field/parsers/cache_control.py:376
 msgid ""
@@ -2851,15 +2866,15 @@ msgid ""
 "Explorer will treat `post-check` as if its value is the same as `pre-"
 "check`'s."
 msgstr ""
-"微软互联网探索器实现了两个扩展，`Cache-Control`、`pre-check`和`post-"
-"check`，以提供对其缓存存储响应的方式进行更多控制。\n"
+"Microsoft Internet Explorer 实现了两个 `Cache-Control` 扩展：`pre-check` 和 `post-"
+"check`，以便更好地控制其缓存存储响应的方式。\n"
 "\n"
-"此响应将`post-check`的值分配得比`pre-check`高；这意味着互联网探索器将处理`post-check`，仿佛其值与`pre-"
-"check`相同。"
+"此响应给 `post-check` 指定的值比 `pre-check` 更高；这意味着 Internet Explorer 会将 `post-"
+"check` 视为其值与 `pre-check` 的值相同。"
 
 #: httplint/field/parsers/cache_control.py:387
 msgid "The post-check cache directive's value is '0'."
-msgstr "后检查缓存指令的值为 '0'。"
+msgstr "post-check 缓存指令的值为 '0'。"
 
 #: httplint/field/parsers/cache_control.py:390
 msgid ""
@@ -2873,15 +2888,15 @@ msgid ""
 "**doubling the load on the\n"
 "server**."
 msgstr ""
-"微软互联网探索器实现了两个扩展，`Cache-Control` `pre-check` 和 `post-"
-"check`，以提供对其缓存存储响应的方式有更多控制。\n"
+"Microsoft Internet Explorer 实现了两个 `Cache-Control` 扩展：`pre-check` 和 `post-"
+"check`，以便更好地控制其缓存存储响应的方式。\n"
 "\n"
-"此响应将 `post-check` 赋值为 \"0\"，这意味着当内容进入浏览器缓存时，互联网探索器将立即重新加载内容，有效地 "
-"**将服务器负载增加一倍**。"
+"此响应给 `post-check` 指定的值为“0”，这意味着一旦内容进入浏览器缓存，Internet Explorer "
+"就会立即重新加载该内容，实际上会**使服务器的负载增加一倍**。"
 
 #: httplint/field/parsers/cache_control.py:402
 msgid "This response may be refreshed in the background by Internet Explorer."
-msgstr "这个响应可能在后台由Internet Explorer刷新。"
+msgstr "Internet Explorer 可能会在后台刷新此响应。"
 
 #: httplint/field/parsers/cache_control.py:405
 #, python-format
@@ -2901,13 +2916,13 @@ msgid ""
 "Note that these directives do not have any effect on other clients or "
 "caches."
 msgstr ""
-"微软互联网探索器实现了两个扩展，`Cache-Control` `pre-check` 和 `post-"
-"check`，以提供对其缓存存储响应的方式有更多的控制。\n"
+"Microsoft Internet Explorer 实现了两个 `Cache-Control` 扩展：`pre-check` 和 `post-"
+"check`，以便更好地控制其缓存存储响应的方式。\n"
 "\n"
-"一旦它被缓存超过 %(post_check)s 秒，一个新的请求将导致缓存的响应被服务，同时它在后台被刷新。然而，如果它被缓存超过 "
-"%(pre_check)s 秒，浏览器将在显示给用户之前下载一个新鲜的响应。\n"
+"一旦它被缓存超过 %(post_check)s 秒，新的请求将导致先提供缓存的响应，同时在后台刷新它。然而，如果它被缓存超过 "
+"%(pre_check)s 秒，浏览器会先下载新鲜的响应，再将其显示给用户。\n"
 "\n"
-"请注意，这些指令对其他客户端或缓存没有影响。"
+"请注意，这些指令对其他客户端或缓存没有任何影响。"
 
 #: httplint/field/parsers/cache_group_invalidation.py:49
 #: httplint/field/parsers/cache_groups.py:42
@@ -2918,12 +2933,12 @@ msgstr "缓存组需要是字符串。"
 #: httplint/field/parsers/cache_groups.py:43
 #, python-format
 msgid "The `%(field_name)s` header values must be Strings. Found `%(got)s`."
-msgstr "该 `%(field_name)s` 头值必须为字符串。找到 `%(got)s`。"
+msgstr "`%(field_name)s` 标头的值必须是字符串。找到 `%(got)s`。"
 
 #: httplint/field/parsers/cache_group_invalidation.py:57
 #, python-format
 msgid "The Cache-Group-Invalidation header is ignored for %(method)s requests."
-msgstr "该 Cache-Group-Invalidation 标头对 %(method)s 请求被忽略。"
+msgstr "对于 %(method)s 请求，Cache-Group-Invalidation 标头会被忽略。"
 
 #: httplint/field/parsers/cache_group_invalidation.py:58
 #, python-format
@@ -2932,8 +2947,8 @@ msgid ""
 "methods (like POST, PUT, DELETE).\n"
 "It will be ignored for `%(method)s` requests."
 msgstr ""
-"该 `Cache-Group-Invalidation` 标头仅处理不安全方法（如 POST、PUT、DELETE）的请求。它将忽略 "
-"`%(method)s` 请求。"
+"`Cache-Group-Invalidation` 标头仅对不安全方法（如 POST、PUT、DELETE）的请求进行处理。对于 "
+"`%(method)s` 请求，它将被忽略。"
 
 #: httplint/field/parsers/cache_status.py:108
 msgid "Detailed information about caching is available."
@@ -2947,7 +2962,7 @@ msgid ""
 "\n"
 "%(status)s\n"
 msgstr ""
-"该 `Cache-Status` 头字段指示缓存如何处理了响应。\n"
+"`Cache-Status` 标头字段指示缓存如何处理了响应。\n"
 "\n"
 "%(status)s\n"
 
@@ -2984,7 +2999,7 @@ msgstr "该参数 `%(param)s` 未被 Cache-Status 规范定义。\n"
 #: httplint/field/parsers/cache_status.py:138
 #, python-format
 msgid "The Cache-Status header has an unknown value for '%(param)s'."
-msgstr "缓存状态头字段（Cache-Status）具有未知的值为'%(param)s'。"
+msgstr "Cache-Status 标头中 '%(param)s' 的值未知。"
 
 #: httplint/field/parsers/cache_status.py:139
 #: httplint/field/parsers/proxy_status.py:156
@@ -3004,7 +3019,7 @@ msgstr "这个指令的值必须是 %(expected_type)s。"
 
 #: httplint/field/parsers/cdn_cache_control.py:84
 msgid "This response targets cache directives to Content Delivery Networks."
-msgstr "此响应针对缓存指令，指向内容交付网络。"
+msgstr "此响应包含针对内容分发网络的缓存指令。"
 
 #: httplint/field/parsers/cdn_cache_control.py:85
 msgid ""
@@ -3014,8 +3029,8 @@ msgid ""
 "Control` header field (which\n"
 "applies to all caches)."
 msgstr ""
-"该 `CDN-Cache-Control` 头字段允许您指定针对内容交付网络 (CDN) 缓存的缓存指令，与 `Cache-Control` "
-"头字段（适用于所有缓存）分开。"
+"`CDN-Cache-Control` 标头字段允许您指定针对内容分发网络（CDN）缓存的缓存指令，与 `Cache-Control` "
+"标头字段（适用于所有缓存）分开。"
 
 #: httplint/field/parsers/clear_site_data.py:62
 msgid "This response clears browser-side data for this origin."
@@ -3052,17 +3067,17 @@ msgstr ""
 
 #: httplint/field/parsers/clear_site_data.py:83
 msgid "The Clear-Site-Data header has an empty value."
-msgstr "Clear-Site-Data 头字段的值为空。"
+msgstr "Clear-Site-Data 标头的值为空。"
 
 #: httplint/field/parsers/clear_site_data.py:84
 msgid ""
 "The `Clear-Site-Data` header value is empty. It should contain at least "
 "one directive."
-msgstr "该 `Clear-Site-Data` 头值为空。它应该至少包含一个指令。"
+msgstr "该 `Clear-Site-Data` 标头的值为空。它应该至少包含一个指令。"
 
 #: httplint/field/parsers/clear_site_data.py:91
 msgid "Clear-Site-Data contains unquoted values."
-msgstr "Clear-Site-Data 包含未引用的值。"
+msgstr "Clear-Site-Data 包含未加引号的值。"
 
 #: httplint/field/parsers/clear_site_data.py:92
 #, python-format
@@ -3072,9 +3087,9 @@ msgid ""
 "\n"
 "The following values were found unquoted: `%(values)s`."
 msgstr ""
-"在 `Clear-Site-Data` 头中，值必须用引号括起来；未引用的值将被忽略。\n"
+"`Clear-Site-Data` 标头中的值必须加引号；未加引号的值将被忽略。\n"
 "\n"
-"以下未引用的值被找到：`%(values)s`。"
+"发现以下未加引号的值：`%(values)s`。"
 
 #: httplint/field/parsers/content_disposition.py:47
 #, python-format
@@ -3091,7 +3106,7 @@ msgid ""
 "`attachment`."
 msgstr ""
 "该 `Content-Disposition` 标头有两个广为人知的值；`inline` 和 "
-"`attachment`。`%(disposition)s` 未被识别，大多数实现将默认将其处理为 `attachment`。"
+"`attachment`。`%(disposition)s` 未被识别，大多数实现会默认按 `attachment` 处理。"
 
 #: httplint/field/parsers/content_disposition.py:57
 msgid "The Content-Disposition header doesn't have a 'filename' parameter."
@@ -3108,17 +3123,17 @@ msgid ""
 "carry an internationalised filename, so that browsers can fall back to an"
 " ASCII-only filename."
 msgstr ""
-"带有 `Content-Disposition` 头，处置为 `attachment`，暗示了一个文件名，供客户端在本地保存文件时使用。\n"
+"处置方式为 `attachment` 的 `Content-Disposition` 标头会建议一个文件名，供客户端在本地保存文件时使用。\n"
 "\n"
-"它应该总是包含一个 `filename` 参数，即使 `filename*` 参数用于携带国际化文件名，以便浏览器可以退回仅使用 ASCII "
-"文件名。"
+"它应该始终包含 `filename` 参数，即使已使用 `filename*` 参数来携带国际化文件名，这样浏览器才能回退到仅含 ASCII "
+"的文件名。"
 
 #: httplint/field/parsers/content_disposition.py:69
 #, python-format
 msgid ""
 "The 'filename' parameter on the Content-Disposition header contains a "
 "'%%' character."
-msgstr "在“Content-Disposition”头中的“filename”参数包含一个‘%%’字符。"
+msgstr "Content-Disposition 标头中的 'filename' 参数包含一个 '%%' 字符。"
 
 #: httplint/field/parsers/content_disposition.py:72
 #, python-format
@@ -3139,17 +3154,17 @@ msgid ""
 "`filename` parameter. Use the\n"
 "correct encoding in the `filename*` parameter instead."
 msgstr ""
-"该 `Content-Disposition` 头提示了一个文件名，供客户端在使用 `filename` 参数本地保存文件时使用。\n"
+"`Content-Disposition` 标头通过 `filename` 参数为客户端建议一个在本地保存文件时使用的文件名。\n"
 "\n"
-"[RFC6266](https://www.rfc-editor.org/rfc/rfc6266) "
-"规定了如何在这一参数中携带非ASCII字符。然而，历史上（但并非所有）浏览器也解码了 %% 编码的字符在 `filename` "
-"参数中，这意味着它们会根据你使用的浏览器得到不同的处理。\n"
+"[RFC6266](https://www.rfc-editor.org/rfc/rfc6266) 规定了如何在该参数中携带非 ASCII "
+"字符。然而，历史上有些（但并非所有）浏览器还会解码 `filename` 参数中经 %% "
+"编码的字符，这意味着它们会因您使用的浏览器不同而得到不同的处理。\n"
 "\n"
-"因此，在 `filename` 参数中使用百分号字符并不能实现互操作性。请在 `filename*` 参数中使用正确的编码。"
+"因此，在 `filename` 参数中使用百分号字符无法实现互操作。请改为在 `filename*` 参数中使用正确的编码。"
 
 #: httplint/field/parsers/content_disposition.py:88
 msgid "The filename in the Content-Disposition header contains a path character."
-msgstr "在 Content-Disposition 标头中的文件名包含一个路径字符。"
+msgstr "Content-Disposition 标头中的文件名包含路径字符。"
 
 #: httplint/field/parsers/content_disposition.py:89
 msgid ""
@@ -3168,14 +3183,14 @@ msgid ""
 "\n"
 "You should remove these characters."
 msgstr ""
-"该 `Content-Disposition` 头提示客户端在本地保存文件时使用文件名，使用 `filename` 和 `filename*` "
-"参数。\n"
+"该 `Content-Disposition` 标头通过 `filename` 和 `filename*` "
+"参数，为客户端建议一个在本地保存文件时使用的文件名。\n"
 "\n"
-"这些参数之一包含路径字符（\"\\\" 或 \"/\"），用于在常见操作系统中导航目录。\n"
+"这些参数之一包含路径字符（\"\\\" 或 \"/\"），在常见操作系统中用于在目录之间切换。\n"
 "\n"
-"由于这可能被用于附加浏览器的主操作系统（例如，保存文件到系统目录），浏览器通常会忽略这些参数，或者删除路径信息。\n"
+"由于这可能被用来攻击浏览器所在的宿主操作系统（例如，将文件保存到系统目录），浏览器通常会忽略这些参数，或者删除路径信息。\n"
 "\n"
-"你应该删除这些字符。"
+"您应该删除这些字符。"
 
 #: httplint/field/parsers/content_encoding.py:69
 msgid ""
@@ -3252,7 +3267,7 @@ msgstr "Content-Length 应该是一个整数。"
 
 #: httplint/field/parsers/content_length.py:47
 msgid "The `Content-Length` header should be an integer, but it was not."
-msgstr "该 `Content-Length` 头应为整数，但它不是。"
+msgstr "该 `Content-Length` 标头应为整数，但它不是。"
 
 #: httplint/field/parsers/content_length.py:54
 msgid "Content-Length and Transfer-Encoding should not be present together."
@@ -3267,9 +3282,9 @@ msgid ""
 "This is because `Transfer-Encoding` overrides `Content-Length`."
 msgstr ""
 "RFC 9110 第 8.6 节：\n"
-"> 发送方必须不在包含 Transfer-Encoding 标头字段的任何消息中发送 Content-Length 标头字段。\n"
+"> 发送方不得在包含 Transfer-Encoding 标头字段的任何消息中发送 Content-Length 标头字段。\n"
 "\n"
-"这是因为 `Transfer-Encoding` 覆盖了 `Content-Length`。"
+"这是因为 `Transfer-Encoding` 会覆盖 `Content-Length`。"
 
 #: httplint/field/parsers/content_length.py:65
 msgid "The Content-Length header is very large."
@@ -3280,11 +3295,11 @@ msgid ""
 "The `Content-Length` header's value is greater than 2^63-1. Some "
 "implementations may not be able to\n"
 "handle values this large."
-msgstr "该 `Content-Length` 头值大于 2^63-1。某些实现可能无法处理如此大的值。"
+msgstr "该 `Content-Length` 标头的值大于 2^63-1。某些实现可能无法处理如此大的值。"
 
 #: httplint/field/parsers/content_range.py:175
 msgid "This response shouldn't have a Content-Range header."
-msgstr "这个响应不应该包含 Content-Range 头。"
+msgstr "这个响应不应该包含 Content-Range 标头。"
 
 #: httplint/field/parsers/content_range.py:176
 msgid ""
@@ -3302,7 +3317,7 @@ msgstr ""
 
 #: httplint/field/parsers/content_range.py:187
 msgid "The Content-Range header is missing a unit (e.g., 'bytes')."
-msgstr "内容范围（Content-Range）头缺失了一个单位（例如，'bytes'）。"
+msgstr "Content-Range 标头缺少单位（例如 'bytes'）。"
 
 #: httplint/field/parsers/content_range.py:188
 msgid ""
@@ -3314,7 +3329,7 @@ msgid ""
 "\n"
 "    Content-Range: bytes 1-100/200\n"
 msgstr ""
-"该 `Content-Range` 头缺失了起始范围单位；它应该几乎总是 `bytes`。\n"
+"该 `Content-Range` 标头在开头缺少范围单位；该单位几乎总应是 `bytes`。\n"
 "\n"
 "例如：\n"
 "\n"
@@ -3322,17 +3337,17 @@ msgstr ""
 
 #: httplint/field/parsers/content_range.py:201
 msgid "The Content-Range header invalidly uses wildcards."
-msgstr "内容范围（Content-Range）头使用非法通配符。"
+msgstr "Content-Range 标头错误地使用了通配符。"
 
 #: httplint/field/parsers/content_range.py:202
 msgid ""
 "The `Content-Range` header cannot use a wildcard (`*`) for both the range"
 " and the complete length.\n"
-msgstr "该 `Content-Range` 头不能同时使用范围和完整长度通配符 (`*`)。\n"
+msgstr "`Content-Range` 标头不能对范围和完整长度同时使用通配符 (`*`)。\n"
 
 #: httplint/field/parsers/content_range.py:210
 msgid "The Content-Range header is missing a slash separator."
-msgstr "内容范围（Content-Range）头缺失斜杠分隔符。"
+msgstr "Content-Range 标头缺少斜杠分隔符。"
 
 #: httplint/field/parsers/content_range.py:211
 msgid ""
@@ -3343,22 +3358,22 @@ msgid ""
 "\n"
 "    Content-Range: bytes 1-100/200\n"
 msgstr ""
-"该 `Content-Range` 标头缺少一个斜杠 (`/`) 来分隔范围和完整长度。\n"
+"该 `Content-Range` 标头缺少用于分隔范围和完整长度的斜杠 (`/`)。\n"
 "\n"
 "例如：\n"
 "\n"
-"    Content-Range: 字节 1-100/200\n"
+"    Content-Range: bytes 1-100/200\n"
 
 #: httplint/field/parsers/content_range.py:223
 msgid "The Content-Range header is missing a hyphen."
-msgstr "内容范围（Content-Range）头缺失一个连字符。"
+msgstr "Content-Range 标头缺少连字符。"
 
 #: httplint/field/parsers/content_range.py:224
 #, python-format
 msgid ""
 "The range specifier `%(value)s` is missing a hyphen separating the start "
 "and end positions."
-msgstr "缺少分隔起始和结束位置的减号，范围指定器 `%(value)s`。"
+msgstr "范围说明符 `%(value)s` 缺少用于分隔起始位置和结束位置的连字符。"
 
 #: httplint/field/parsers/content_range.py:231
 msgid "The Content-Range header contains a non-integer value."
@@ -3371,7 +3386,7 @@ msgstr "值 `%(value)s` 不是一个有效的整数。"
 
 #: httplint/field/parsers/content_range.py:239
 msgid "The Content-Range header contains an integer with too many digits."
-msgstr "该 Content-Range 标头包含一个数字过多位数。"
+msgstr "该 Content-Range 标头包含位数过多的整数。"
 
 #: httplint/field/parsers/content_range.py:240
 #, python-format
@@ -3379,7 +3394,7 @@ msgid ""
 "The value `%(value)s` has more than %(max_digits)s digits, which is more "
 "than recipients can be\n"
 "expected to handle."
-msgstr "值 `%(value)s` 包含超过 %(max_digits)s 位数字，这超出了收件人处理的能力。"
+msgstr "值 `%(value)s` 的位数超过 %(max_digits)s 位，超出了接收方可合理预期处理的范围。"
 
 #: httplint/field/parsers/content_range.py:248
 msgid "The Content-Range header is invalid."
@@ -3391,7 +3406,7 @@ msgid ""
 "first position must be less\n"
 "than or equal to the last position, and the last position must be less "
 "than the complete length."
-msgstr "由 `Content-Range` 头表示的值无效。第一个位置必须小于或等于最后一个位置，而最后一个位置必须小于完整长度。"
+msgstr "`Content-Range` 标头所表示的值无效。第一个位置必须小于或等于最后一个位置，而最后一个位置必须小于完整长度。"
 
 #: httplint/field/parsers/content_range.py:257
 msgid ""
@@ -3410,14 +3425,14 @@ msgid ""
 "this header is\n"
 "incorrect."
 msgstr ""
-"该 `Content-Range` 头使用 `*/<length>` 语法，保留用于 (请求范围不可满足) `416` "
-"响应的，以指示资源的实际长度。\n"
+"该 `Content-Range` 标头使用 `*/<length>` 语法，该语法保留给 "
+"`416`（请求的范围无法满足）响应，用于指示资源的实际长度。\n"
 "\n"
-"`206` 响应状态码表示成功的范围响应，因此该头是错误的。"
+"`206` 响应状态码表示范围请求成功，因此该标头是错误的。"
 
 #: httplint/field/parsers/content_range.py:271
 msgid "A 416 response should use the unsatisfied-range form of Content-Range."
-msgstr "一个 416 响应应使用不满足范围的形式的 Content-Range。"
+msgstr "416 响应应使用 Content-Range 的未满足范围形式。"
 
 #: httplint/field/parsers/content_range.py:272
 msgid ""
@@ -3431,11 +3446,11 @@ msgid ""
 "(Partial Content) response is described, so clients may not know why "
 "their range failed."
 msgstr ""
-"当一个 `416`（范围不可满足）响应包含一个 `Content-Range` 头时，它应该使用 `bytes */<length>` "
-"形式，这告诉客户端当前表示的长度。\n"
+"当 `416`（范围无法满足）响应包含 `Content-Range` 标头时，它应该使用 `bytes */<length>` "
+"形式，该形式会告知客户端表示形式当前的长度。\n"
 "\n"
-"这个响应使用了一个被满足的范围（如 `bytes 1-100/200`），这描述了 "
-"`206`（部分内容）响应，所以客户端可能不知道为什么他们的范围失败了。"
+"此响应使用了已被满足的范围（如 `bytes 1-100/200`），而这是 "
+"`206`（部分内容）响应的描述方式，所以客户端可能不知道为什么它们请求的范围失败了。"
 
 #: httplint/field/parsers/content_range.py:283
 msgid "The Content-Range header indicates an unknown total length."
@@ -3446,7 +3461,7 @@ msgid ""
 "The `Content-Range` header uses `*` for the instance length, indicating "
 "that the total length of\n"
 "the resource is unknown."
-msgstr "该 `Content-Range` 头使用 `*` 表示实例长度，表明资源的总长度未知。"
+msgstr "该 `Content-Range` 标头使用 `*` 表示实例长度，表明资源的总长度未知。"
 
 #: httplint/field/parsers/content_security_policy.py:202
 #, python-format
@@ -3466,7 +3481,7 @@ msgstr ""
 
 #: httplint/field/parsers/content_security_policy.py:211
 msgid "Inline scripts are allowed."
-msgstr "允许嵌入式脚本。"
+msgstr "允许内联脚本。"
 
 #: httplint/field/parsers/content_security_policy.py:212
 #, python-format
@@ -3492,7 +3507,7 @@ msgstr ""
 
 #: httplint/field/parsers/content_security_policy.py:226
 msgid "Unsafe script evaluation is allowed."
-msgstr "允许不安全的脚本评估。"
+msgstr "允许不安全的脚本求值。"
 
 #: httplint/field/parsers/content_security_policy.py:227
 #, python-format
@@ -3507,7 +3522,8 @@ msgid ""
 "\n"
 "%(directives_list)s"
 msgstr ""
-"该 `'unsafe-eval'` [内容安全策略](https://www.w3.org/TR/CSP3/) 指令允许使用字符串转码机制如 "
+"该 `'unsafe-eval'` "
+"[内容安全策略](https://www.w3.org/TR/CSP3/)指令允许使用将字符串转换为代码的机制，如 "
 "`eval()`，这可能使攻击者更容易执行恶意代码。\n"
 "\n"
 "它在以下指令中发现：\n"
@@ -3516,7 +3532,7 @@ msgstr ""
 
 #: httplint/field/parsers/content_security_policy.py:240
 msgid "Loading from insecure HTTP sources is allowed."
-msgstr "允许从不安全的 HTTP 源加载。"
+msgstr "允许从不安全的 HTTP 来源加载。"
 
 #: httplint/field/parsers/content_security_policy.py:241
 #, python-format
@@ -3549,15 +3565,15 @@ msgid ""
 "\n"
 "%(directives_list)s"
 msgstr ""
-"指令只能在 `%(field_name)s` 头中出现一次；后续出现将被忽略。\n"
+"指令只能在 `%(field_name)s` 标头中出现一次；后续出现的将被忽略。\n"
 "\n"
-"以下指令被重复了：\n"
+"以下指令重复出现：\n"
 "\n"
 "%(directives_list)s"
 
 #: httplint/field/parsers/content_security_policy.py:265
 msgid "The deprecated report-uri directive is used."
-msgstr "使用过时的 report-uri 指令。"
+msgstr "使用了已弃用的 report-uri 指令。"
 
 #: httplint/field/parsers/content_security_policy.py:266
 msgid ""
@@ -3568,12 +3584,12 @@ msgid ""
 "for backward\n"
 "compatibility."
 msgstr ""
-"该 `report-uri` [内容安全策略](https://www.w3.org/TR/CSP3/) 指令已过时，以 `report-to` "
-"取代。建议使用 `report-to` 报告违规行为，尽管 `report-uri` 可能仍因向后兼容性而得到支持。"
+"该 `report-uri` [内容安全策略](https://www.w3.org/TR/CSP3/)指令已弃用，改用 `report-"
+"to`。建议使用 `report-to` 报告违规行为，不过为了向后兼容，`report-uri` 可能仍受支持。"
 
 #: httplint/field/parsers/content_security_policy.py:276
 msgid "All sources are allowed in one or more directives."
-msgstr "所有源在一个或多个指令中都是允许的。"
+msgstr "一个或多个指令允许所有来源。"
 
 #: httplint/field/parsers/content_security_policy.py:277
 #, python-format
@@ -3599,7 +3615,7 @@ msgstr ""
 msgid ""
 "The report-to name '%(endpoint)s' doesn't match a Reporting-Endpoints "
 "entry."
-msgstr "报告到名称 '%(endpoint)s' 不匹配 Reporting-Endpoints 条目。"
+msgstr "report-to 名称 '%(endpoint)s' 没有匹配的 Reporting-Endpoints 条目。"
 
 #: httplint/field/parsers/content_security_policy.py:291
 #, python-format
@@ -3622,7 +3638,7 @@ msgstr ""
 #: httplint/field/parsers/content_type.py:55
 #, python-format
 msgid "The '%(charset)s' character encoding isn't one that recipients recognise."
-msgstr "该字符编码 '%(charset)s' 不是收件人识别的编码。"
+msgstr "接收方无法识别字符编码 '%(charset)s'。"
 
 #: httplint/field/parsers/content_type.py:56
 #, python-format
@@ -3641,17 +3657,17 @@ msgid ""
 "unlikely to interoperate.\n"
 "Consider `utf-8`."
 msgstr ""
-"在 `%(field_name)s` 字段的 `charset` 参数为 `%(charset)s`，这不是 "
-"[编码标准](https://encoding.spec.whatwg.org/#names-and-labels) "
-"中的标签。遵循该标准的浏览器和其他接收方会忽略该参数，并猜测编码或使用默认值。\n"
+"`%(field_name)s` 字段上的 `charset` 参数为 "
+"`%(charset)s`，它不是[编码标准](https://encoding.spec.whatwg.org/#names-and-"
+"labels)中的标签。遵循该标准的浏览器和其他接收方会忽略该参数，并猜测编码或使用默认值。\n"
 "\n"
-"它可能仍然是一个有效的名称；[IANA 注册表](https://www.iana.org/assignments/character-sets)"
-" 包含浏览器不支持的编码如 `UTF-7` 和 `UTF-32`。无论如何，这种情况不太可能实现互操作性。考虑使用 `utf-8`。"
+"它仍有可能是有效的名称；[IANA 注册表](https://www.iana.org/assignments/character-"
+"sets)中包含 `UTF-7` 和 `UTF-32` 等浏览器不支持的编码。无论哪种情况，它都不太可能实现互操作。请考虑使用 `utf-8`。"
 
 #: httplint/field/parsers/content_type.py:70
 #, python-format
 msgid "The '%(charset)s' character encoding is blocked by browsers."
-msgstr "浏览器阻止了%(charset)s的字符编码。"
+msgstr "浏览器会阻止字符编码 '%(charset)s'。"
 
 #: httplint/field/parsers/content_type.py:71
 #, python-format
@@ -3690,11 +3706,17 @@ msgid ""
 "that rely on the registry\n"
 "might not. Use a registered name; for UTF-8, that's `utf-8`."
 msgstr ""
+"[RFC 9110](https://www.rfc-editor.org/rfc/rfc9110.html#name-charset) "
+"指出，字符集名称应当在 [IANA 注册表](https://www.iana.org/assignments/character-"
+"sets)中注册。`%(charset)s` 不在其中。\n"
+"\n"
+"浏览器能识别它，并将其视为 `%(encoding)s`，但依赖注册表的接收方可能无法识别。请使用已注册的名称；对于 UTF-8，即 "
+"`utf-8`。"
 
 #: httplint/field/parsers/cross_origin_embedder_policy.py:18
 #, python-format
 msgid "This response requires resources to have a CORP header%(report_only)s."
-msgstr "这个响应需要资源具有一个CORP头%(report_only)s。"
+msgstr "此响应要求资源具有 CORP 标头%(report_only)s。"
 
 #: httplint/field/parsers/cross_origin_embedder_policy.py:19
 #, python-format
@@ -3707,17 +3729,16 @@ msgid ""
 "`Cross-Origin-Resource-Policy` header, in supporting "
 "browsers.%(report_only_text)s"
 msgstr ""
-"`require-corp`\n"
-"[跨源嵌入策略](https://fetch.spec.whatwg.org/#cross-origin-embedder-policy-"
-"header)要求所有跨源资源必须通过一个`Cross-Origin-Resource-Policy` "
-"标头明确授予加载权限，在支持浏览器中。%(report_only_text)s"
+"`require-corp` [跨源嵌入策略](https://fetch.spec.whatwg.org/#cross-origin-"
+"embedder-policy-header)要求在支持的浏览器中，所有跨源资源都必须通过 `Cross-Origin-Resource-"
+"Policy` 标头明确授予被加载的权限。%(report_only_text)s"
 
 #: httplint/field/parsers/cross_origin_embedder_policy.py:29
 #, python-format
 msgid ""
 "This response loads cross-origin resources without "
 "credentials%(report_only)s."
-msgstr "此响应加载跨源资源，无需凭证%(report_only)s。"
+msgstr "此响应在不带凭据的情况下加载跨源资源%(report_only)s。"
 
 #: httplint/field/parsers/cross_origin_embedder_policy.py:30
 #, python-format
@@ -3731,6 +3752,9 @@ msgid ""
 "certificates,\n"
 "etc.).%(report_only_text)s"
 msgstr ""
+"`credentialless` [跨源嵌入策略](https://fetch.spec.whatwg.org/#cross-origin-"
+"embedder-policy-header) "
+"允许在支持的浏览器中无需明确许可即可加载跨源资源，但对这些资源的请求不会包含凭据（Cookie、客户端证书等）。%(report_only_text)s"
 
 #: httplint/field/parsers/cross_origin_embedder_policy.py:41
 #, python-format
@@ -3750,9 +3774,8 @@ msgid ""
 "\n"
 "This does not provide cross-origin isolation.%(report_only_text)s"
 msgstr ""
-"`unsafe-none`\n"
-"[跨源嵌入策略](https://fetch.spec.whatwg.org/#cross-origin-embedder-policy-"
-"header)是默认行为，允许在支持浏览器中跨源资源在不显式授权的情况下加载。\n"
+"`unsafe-none` [跨源嵌入策略](https://fetch.spec.whatwg.org/#cross-origin-"
+"embedder-policy-header)是默认行为，在支持的浏览器中允许在没有明确许可的情况下加载跨源资源。\n"
 "\n"
 "这并不提供跨源隔离。%(report_only_text)s"
 
@@ -3769,7 +3792,7 @@ msgid ""
 "`credentialless`, or\n"
 "`unsafe-none`.\n"
 msgstr ""
-"该 `%(field_name)s` 头必须是 `require-corp`、`credentialless` 或 `unsafe-none` "
+"该 `%(field_name)s` 标头必须是 `require-corp`、`credentialless` 或 `unsafe-none` "
 "之一。\n"
 
 #: httplint/field/parsers/cross_origin_embedder_policy.py:66
@@ -3778,7 +3801,7 @@ msgstr ""
 msgid ""
 "The report-to name '%(endpoint)s' doesn't match a Reporting-Endpoints "
 "entry%(report_only)s."
-msgstr "报告到名称 '%(endpoint)s' 不匹配一个 Reporting-Endpoints 条目 '%(report_only)s'。"
+msgstr "report-to 名称 '%(endpoint)s' 没有匹配的 Reporting-Endpoints 条目%(report_only)s。"
 
 #: httplint/field/parsers/cross_origin_embedder_policy.py:70
 msgid ""
@@ -3801,7 +3824,7 @@ msgstr ""
 
 #: httplint/field/parsers/cross_origin_embedder_policy_report_only.py:22
 msgid "This response has both enforcing and report-only COEP headers."
-msgstr "这个响应包含既用于强制执行又用于报告的 COEP 标头。"
+msgstr "此响应同时包含强制执行型和仅报告型的 COEP 标头。"
 
 #: httplint/field/parsers/cross_origin_embedder_policy_report_only.py:23
 msgid ""
@@ -3829,6 +3852,9 @@ msgid ""
 "\n"
 "with cross-origin documents in supporting browsers.%(report_only_text)s"
 msgstr ""
+"`same-origin` "
+"[跨源打开策略](https://html.spec.whatwg.org/multipage/origin.html#coop) "
+"会隔离浏览上下文，在支持的浏览器中阻止它与跨源文档共享窗口对象。%(report_only_text)s"
 
 #: httplint/field/parsers/cross_origin_opener_policy.py:29
 #, python-format
@@ -3847,6 +3873,9 @@ msgid ""
 "with popups that it opens, or that opened it, in supporting "
 "browsers.%(report_only_text)s"
 msgstr ""
+"`same-origin-allow-popups` "
+"[跨源打开策略](https://html.spec.whatwg.org/multipage/origin.html#coop) "
+"会隔离浏览上下文，但在支持的浏览器中，仍会保持它与其所打开的弹出窗口（或打开它的窗口）之间的关系。%(report_only_text)s"
 
 #: httplint/field/parsers/cross_origin_opener_policy.py:40
 #, python-format
@@ -3869,11 +3898,11 @@ msgid ""
 "boundary between\n"
 "those same-origin documents.%(report_only_text)s"
 msgstr ""
-"`noopener-allow-popups`\n"
-"[跨源开口策略](https://html.spec.whatwg.org/multipage/origin.html#coop)在支持浏览器中，迫使文档进入一个新的顶级浏览上下文，断开与打开它的文档的任何开口关系。"
+"`noopener-allow-popups` "
+"[跨源开启者策略](https://html.spec.whatwg.org/multipage/origin.html#coop)在支持的浏览器中会强制文档进入新的顶级浏览上下文，切断它与打开它的文档之间的任何开启者关系。"
 "\n"
 "\n"
-"正如HTML规范所注，这不会在那些同源文档之间创建一个稳健的安全边界。%(report_only_text)s"
+"正如 HTML 规范所指出的，这不会在这些同源文档之间建立稳固的安全边界。%(report_only_text)s"
 
 #: httplint/field/parsers/cross_origin_opener_policy.py:54
 #, python-format
@@ -3927,7 +3956,7 @@ msgstr ""
 
 #: httplint/field/parsers/cross_origin_opener_policy_report_only.py:23
 msgid "This response has both enforcing and report-only COOP headers."
-msgstr "这个响应包含具有强制性和仅报告功能的 COOP 标头。"
+msgstr "此响应同时包含强制执行型和仅报告型的 COOP 标头。"
 
 #: httplint/field/parsers/cross_origin_opener_policy_report_only.py:24
 msgid ""
@@ -3936,7 +3965,7 @@ msgid ""
 "will be ignored."
 msgstr ""
 "一个响应不应同时包含 `Cross-Origin-Opener-Policy` 和 `Cross-Origin-Opener-Policy-"
-"Report-Only` 头。只读头将被忽略。"
+"Report-Only` 标头。仅报告标头将被忽略。"
 
 #: httplint/field/parsers/cross_origin_resource_policy.py:40
 msgid ""
@@ -3952,10 +3981,12 @@ msgid ""
 "prevents the resource from being read by any cross-origin document \n"
 "in supporting browsers."
 msgstr ""
+"`same-origin` [跨源资源策略](https://fetch.spec.whatwg.org/#cross-origin-"
+"resource-policy-header) 在支持的浏览器中会阻止该资源被任何跨源文档读取。"
 
 #: httplint/field/parsers/cross_origin_resource_policy.py:51
 msgid "This response is available for reading to requests from the same site."
-msgstr "此响应可供同一站点请求阅读。"
+msgstr "此响应可供来自同一站点的请求读取。"
 
 #: httplint/field/parsers/cross_origin_resource_policy.py:52
 msgid ""
@@ -3966,12 +3997,12 @@ msgid ""
 "prevents it from being read by cross-site documents in supporting "
 "browsers."
 msgstr ""
-"同一站点资源政策（`same-site`）[跨源资源策略](https://fetch.spec.whatwg.org/#cross-"
-"origin-resource-policy-header)允许同一站点的文档读取该资源，但阻止跨站点的文档在支持该策略的浏览器中读取该资源。"
+"`same-site` [跨源资源策略](https://fetch.spec.whatwg.org/#cross-origin-"
+"resource-policy-header)允许同一站点的文档读取该资源，但在支持的浏览器中会阻止跨站点的文档读取它。"
 
 #: httplint/field/parsers/cross_origin_resource_policy.py:62
 msgid "This response is available for reading to requests from all origins."
-msgstr "此响应可用于来自所有源的请求读取。"
+msgstr "此响应可供来自所有源的请求读取。"
 
 #: httplint/field/parsers/cross_origin_resource_policy.py:63
 msgid ""
@@ -3982,21 +4013,20 @@ msgid ""
 "regardless of its \n"
 "origin."
 msgstr ""
-"跨源`cross-origin`\n"
-"[跨源资源策略](https://fetch.spec.whatwg.org/#cross-origin-resource-policy-"
-"header)允许支持浏览器的任何文档读取该资源，无论其源。"
+"`cross-origin` [跨源资源策略](https://fetch.spec.whatwg.org/#cross-origin-"
+"resource-policy-header)在支持的浏览器中允许任何文档读取该资源，无论其来自哪个源。"
 
 #: httplint/field/parsers/cross_origin_resource_policy.py:73
 msgid "Cross-Origin-Resource-Policy has an invalid value."
 msgstr "Cross-Origin-Resource-Policy 有一个无效的值。"
 
 #: httplint/field/parsers/cross_origin_resource_policy.py:74
-#, fuzzy, python-format
+#, python-format
 msgid ""
 "`%(value)s` is not a valid in the `Cross-Origin-Resource-Policy` header;\n"
 "it must be one of `same-origin`, `same-site`, or `cross-origin`.\n"
 msgstr ""
-"`%(value)s` 不是一个有效的 Cross-Origin-Resource-Policy 标头值；它必须是 `same-origin"
+"`%(value)s` 不是 `Cross-Origin-Resource-Policy` 标头的有效值；它必须是 `same-origin"
 "`、`same-site` 或 `cross-origin` 之一。\n"
 
 #: httplint/field/parsers/date.py:45
@@ -4014,7 +4044,7 @@ msgstr "HTTP的缓存模型假设服务器和客户端时钟之间有合理的�
 #: httplint/field/parsers/date.py:54
 #, python-format
 msgid "The server's clock is %(clock_skew_string)s."
-msgstr "服务器的时间是 %(clock_skew_string)s。"
+msgstr "服务器的时钟为 %(clock_skew_string)s。"
 
 #: httplint/field/parsers/date.py:55
 msgid ""
@@ -4037,6 +4067,18 @@ msgid ""
 "paper](https://www.usenix.org/legacy/events/usits01/full_papers/cohen/cohen_html/index.html)"
 " for more information. "
 msgstr ""
+"与本地时钟相比，服务器的时钟似乎没有很好地同步。\n"
+"\n"
+"HTTP "
+"的缓存模型假定服务器和客户端的时钟之间存在合理的同步；时钟偏差可能导致本应可缓存的响应被视为不可缓存（尤其是在其新鲜度生命周期很短的情况下）。\n"
+"\n"
+"请让您的服务器管理员同步时钟，例如使用 "
+"[NTP](https://en.wikipedia.org/wiki/Network_Time_Protocol \"Network Time "
+"Protocol\")。\n"
+"\n"
+"明显的时钟偏差也可能是由于缓存响应时没有调整 `Age` "
+"标头造成的；例如在反向代理或内容分发网络中。更多信息请参阅[这篇论文](https://www.usenix.org/legacy/events/usits01/full_papers/cohen/cohen_html/index.html)。"
+" "
 
 #: httplint/field/parsers/date.py:73
 msgid "It appears that the Date header has been changed by an intermediary."
@@ -4060,13 +4102,12 @@ msgid ""
 "\n"
 "for more information."
 msgstr ""
-"似乎这个响应已被反向代理或内容交付网络缓存，因为 `Age` 标头存在，但 `Date` 标头比它所指示的更新。\n"
+"看起来此响应已被反向代理或内容分发网络缓存，因为存在 `Age` 标头，但 `Date` 标头比它所指示的时间更新。\n"
 "\n"
-"一般来说，反向代理应该要么省略 `Age` 标头（如果它们有其他方式来确定响应的最新性），要么保持 `Date` "
-"标头不变（即，作为正常的HTTP缓存）。\n"
+"一般来说，反向代理应该要么省略 `Age` 标头（如果它们有其他方式来确定响应的新鲜程度），要么保持 `Date` 标头不变（即像普通的 HTTP"
+" 缓存那样工作）。\n"
 "\n"
-"查看 "
-"[此论文](https://www.usenix.org/legacy/events/usits01/full_papers/cohen/cohen_html/index.html)获取更多信息。"
+"更多信息请参阅[这篇论文](https://www.usenix.org/legacy/events/usits01/full_papers/cohen/cohen_html/index.html)。"
 
 #: httplint/field/parsers/deprecation.py:45
 msgid "The resource has been deprecated."
@@ -4077,7 +4118,7 @@ msgstr "该资源已被弃用。"
 msgid ""
 "The `Deprecation` header indicates that this resource was deprecated on "
 "%(date)s."
-msgstr "该 `Deprecation` 头表示该资源在 %(date)s 已被弃用。"
+msgstr "该 `Deprecation` 标头表示该资源在 %(date)s 已被弃用。"
 
 #: httplint/field/parsers/deprecation.py:53
 msgid "The resource will be deprecated."
@@ -4088,7 +4129,7 @@ msgstr "该资源将被弃用。"
 msgid ""
 "The `Deprecation` header indicates that this resource will be deprecated "
 "on %(date)s."
-msgstr "该 `Deprecation` 头表示该资源将在 %(date)s 过期。"
+msgstr "该 `Deprecation` 标头表示该资源将在 %(date)s 被弃用。"
 
 #: httplint/field/parsers/deprecation.py:61
 msgid "The Deprecation header value is invalid."
@@ -4101,13 +4142,13 @@ msgid ""
 "editor.org/rfc/rfc8941.html)\n"
 "header must be a Date. Found: %(item_type)s."
 msgstr ""
-"该 `Deprecation` [结构字段](https://www.rfc-"
+"该 `Deprecation` [结构化字段](https://www.rfc-"
 "editor.org/rfc/rfc8941.html)标头必须是一个日期。找到：%(item_type)s。"
 
 #: httplint/field/parsers/expect.py:38
 #, python-format
 msgid "The '%(expectation)s' expectation is not supported."
-msgstr "不支持 %(expectation)s 的期望。"
+msgstr "不支持 '%(expectation)s' 这一期望。"
 
 #: httplint/field/parsers/expect.py:39
 msgid ""
@@ -4117,16 +4158,16 @@ msgstr "HTTP 仅定义了一个期望，`100-continue`。这个期望未被识�
 
 #: httplint/field/parsers/expect.py:46
 msgid "The Expect header is not supported in HTTP/1.0."
-msgstr "HTTP/1.0 不支持 Expect 头。"
+msgstr "HTTP/1.0 不支持 Expect 标头。"
 
 #: httplint/field/parsers/expect.py:47
 msgid "The `Expect` header was added in HTTP/1.1; it has no meaning in HTTP/1.0."
-msgstr "在 HTTP/1.1 中添加了 `Expect` 头；它在 HTTP/1.0 中没有意义。"
+msgstr "`Expect` 标头是在 HTTP/1.1 中添加的；它在 HTTP/1.0 中没有意义。"
 
 #: httplint/field/parsers/if_range.py:57
 #, python-format
 msgid "The %(field_name)s header's entity tag is weak."
-msgstr "该%(field_name)s标头的实体标签是弱的。"
+msgstr "该 %(field_name)s 标头的实体标签是弱标签。"
 
 #: httplint/field/parsers/if_range.py:58
 msgid ""
@@ -4138,6 +4179,9 @@ msgid ""
 "is sent instead of the\n"
 "range requested."
 msgstr ""
+"[RFC 9110](https://www.rfc-editor.org/rfc/rfc9110.html#name-if-range) "
+"指出，客户端不得在 `If-Range` "
+"中发送弱实体标签。由于它所要求的比较是强比较，服务器永远找不到能匹配的弱标签，因此会发送整个表示，而不是所请求的范围。"
 
 #: httplint/field/parsers/last_modified.py:42
 msgid "The Last-Modified time is in the future."
@@ -4169,9 +4213,9 @@ msgid ""
 "\n"
 "This resource last changed %(last_modified_string)s."
 msgstr ""
-"该`Last-Modified`头表示资源最后修改的时间点。它在HTTP中用于验证缓存响应，以及计算缓存中的启发式新鲜度。\n"
+"该 `Last-Modified` 标头表示资源最后一次发生变化的时间点。它在 HTTP 中用于验证缓存的响应，以及计算缓存中的启发式新鲜度。\n"
 "\n"
-"该资源最后修改于%(last_modified_string)s。"
+"该资源最后修改于 %(last_modified_string)s。"
 
 #: httplint/field/parsers/link.py:143
 #, python-format
@@ -4179,7 +4223,7 @@ msgid "This response provides resource hints (%(hints)s)."
 msgstr "这个响应提供资源提示（%(hints)s）。"
 
 #: httplint/field/parsers/link.py:144
-#, fuzzy, python-format
+#, python-format
 msgid ""
 "The `Link` header advertises the following\n"
 "[resource hints](https://www.w3.org/TR/resource-hints/), allowing the "
@@ -4195,15 +4239,13 @@ msgid ""
 "lookup only. Used appropriately, these hints can reduce critical-path "
 "latency."
 msgstr ""
-"该 `Link` 标头通告以下内容：\n"
-"\n"
-"[资源提示](https://www.w3.org/TR/resource-"
-"hints/)，允许客户端在当前响应完全处理之前，提前开始相关资源的工作：\n"
+"`Link` 标头通告了以下[资源提示](https://www.w3.org/TR/resource-"
+"hints/)，使客户端能够在当前响应处理完成之前，就开始处理相关资源：\n"
 "\n"
 "%(detail_lines)s\n"
 "\n"
-"`preload` 触发浏览器获取当前页面所需资源；`preconnect` 提前打开一个连接（DNS + TCP + TLS），指向一个源"
-"；`dns-prefetch` 仅执行 DNS 查询。适当使用这些提示，可以减少关键路径延迟。"
+"`preload` 会触发浏览器获取当前页面所需的资源；`preconnect` 会提前与某个源建立连接（DNS + TCP + TLS"
+"）；`dns-prefetch` 仅执行 DNS 查询。适当使用这些提示，可以降低关键路径延迟。"
 
 #: httplint/field/parsers/link.py:159
 #, python-format
@@ -4218,8 +4260,8 @@ msgid ""
 "(for example, it may have a malformed IP address in its host). Browsers "
 "may ignore this hint."
 msgstr ""
-"该 `Link` 头广告了一个 `%(rel)s` 资源提示，用于 `%(link)s`，但这不是一个有效的 "
-"URI（例如，它可能在其主机中包含一个无效的 IP 地址）。浏览器可能会忽略这个提示。"
+"该 `Link` 标头为 `%(link)s` 通告了一个 `%(rel)s` 资源提示，但该地址不是有效的 "
+"URI（例如，其主机中可能包含格式错误的 IP 地址）。浏览器可能会忽略此提示。"
 
 #: httplint/field/parsers/link.py:168
 #, python-format
@@ -4233,12 +4275,12 @@ msgid ""
 "but its scheme\n"
 "(`%(scheme)s`) is not `http` or `https`. Browsers will ignore this hint."
 msgstr ""
-"该 `Link` 头为 `%(rel)s` 资源提供提示，用于 `%(link)s`，但其方案 (`%(scheme)s`) 不是 `http` "
+"该 `Link` 标头为 `%(link)s` 通告了一个 `%(rel)s` 资源提示，但其方案（`%(scheme)s`）不是 `http` "
 "或 `https`。浏览器将忽略此提示。"
 
 #: httplint/field/parsers/link.py:177
 msgid "The 'rev' parameter on the Link header is deprecated."
-msgstr "在 Link 标头中的 'rev' 参数已过时。"
+msgstr "Link 标头上的 'rev' 参数已弃用。"
 
 #: httplint/field/parsers/link.py:178
 msgid ""
@@ -4250,15 +4292,15 @@ msgid ""
 "\n"
 "Use `rel` and an appropriate relation."
 msgstr ""
-"该 `Link` 头，由 [RFC 8288](https://www.rfc-editor.org/rfc/rfc8288#section-3)"
-" 定义，使用 `rel` 参数来传达链接类型。 `rev` 已被该规范弃用，因为它经常令人困惑。\n"
+"该 `Link` 标头由 [RFC 8288](https://www.rfc-editor.org/rfc/rfc8288#section-3)"
+" 定义，使用 `rel` 参数来表达链接的类型。该规范已弃用 `rev`，因为它经常令人困惑。\n"
 "\n"
 "请使用 `rel` 和适当的关系。"
 
 #: httplint/field/parsers/link.py:189
 #, python-format
 msgid "The 'anchor' parameter on the %(link)s Link header isn't a URI."
-msgstr "在 %(link)s 链接标头中的 '锚' 参数不是 URI。"
+msgstr "%(link)s Link 标头上的 'anchor' 参数不是 URI。"
 
 #: httplint/field/parsers/link.py:190
 #, python-format
@@ -4270,15 +4312,15 @@ msgid ""
 "This parameter can be an absolute or relative URI; however, `%(anchor)s` "
 "is neither."
 msgstr ""
-"该 `Link` 标头，根据 [RFC 8288](https://www.rfc-"
-"editor.org/rfc/rfc8288#section-3) 定义，使用 `anchor` 参数来定义链接的上下文 URI。\n"
+"[RFC 8288](https://www.rfc-editor.org/rfc/rfc8288#section-3) 定义的 `Link` "
+"标头使用 `anchor` 参数来定义链接的上下文 URI。\n"
 "\n"
-"该参数可以是绝对或相对 URI；然而，`%(anchor)s` 既不是。"
+"该参数可以是绝对 URI 或相对 URI；但 `%(anchor)s` 两者都不是。"
 
 #: httplint/field/parsers/link.py:200
 #, python-format
 msgid "The 'type' parameter on the %(link)s Link header isn't a media type."
-msgstr "在 %(link)s 链接标头上的 'type' 参数不是媒体类型。"
+msgstr "%(link)s Link 标头上的 'type' 参数不是媒体类型。"
 
 #: httplint/field/parsers/link.py:201
 #, python-format
@@ -4296,7 +4338,7 @@ msgstr ""
 
 #: httplint/field/parsers/location.py:54
 msgid "This status code doesn't define any meaning for the Location header."
-msgstr "这个状态码未为 Location 头定义任何含义。"
+msgstr "该状态码没有为 Location 标头定义任何含义。"
 
 #: httplint/field/parsers/location.py:55
 msgid ""
@@ -4312,11 +4354,11 @@ msgid ""
 " a URI for the payload of\n"
 "the message that it appears in."
 msgstr ""
-"该 `Location` 头在 HTTP 中用于特定目的；主要用于指示另一个资源的 URI（例如，在重定向时，或当创建新资源时）。\n"
+"`Location` 标头在 HTTP 中用于特定目的；主要用于指示另一个资源的 URI（例如在重定向时，或在创建新资源时）。\n"
 "\n"
-"在其他状态码（如此一个）中，它没有定义的意义，因此使用它不会实现互操作性。\n"
+"在其他状态码（例如此状态码）中，它没有定义的含义，因此任何对它的使用都无法实现互操作。\n"
 "\n"
-"有时 `Location` 会被误认为是 `Content-Location`，后者表示出现在其内的消息负载的 URI。"
+"有时 `Location` 会与 `Content-Location` 混淆，后者表示它所出现的消息的负载的 URI。"
 
 #: httplint/field/parsers/location.py:69
 msgid "The Location header isn't a valid URI."
@@ -4328,11 +4370,11 @@ msgid ""
 "The `Location` header's value, `%(uri)s`, can't be resolved as a URI (for"
 " example, it may have a\n"
 "malformed IP address in its host), so clients won't be able to follow it."
-msgstr "该 `Location` 头值 `%(uri)s` 无法解析为 URI（例如，它可能在其主机中包含错误的 IP 地址），因此客户端将无法遵循它。"
+msgstr "`Location` 标头的值 `%(uri)s` 无法解析为 URI（例如，其主机中可能包含格式错误的 IP 地址），因此客户端将无法跟随它。"
 
 #: httplint/field/parsers/location.py:78
 msgid "The Location header contains a relative URI."
-msgstr "标头 Location 包含一个相对 URI。"
+msgstr "Location 标头包含相对 URI。"
 
 #: httplint/field/parsers/location.py:79
 #, python-format
@@ -4345,30 +4387,30 @@ msgid ""
 "\n"
 "The correct absolute URI is (probably): `%(full_uri)s`"
 msgstr ""
-"`Location` 最初指定要包含一个绝对URI，而不是相对URI。\n"
+"`Location` 最初被规定为包含绝对 URI，而不是相对 URI。\n"
 "\n"
-"它正在被更新中，大多数客户端会绕过这个问题。\n"
+"该规定正在更新，大多数客户端会绕过这个问题。\n"
 "\n"
-"正确的绝对URI是（可能）：`%(full_uri)s`"
+"正确的绝对 URI 可能是：`%(full_uri)s`"
 
 #: httplint/field/parsers/max_forwards.py:14
 msgid "The Max-Forwards header is ignored for this method."
-msgstr "该方法忽略 Max-Forwards 头。"
+msgstr "对于此方法，Max-Forwards 标头会被忽略。"
 
 #: httplint/field/parsers/max_forwards.py:15
 msgid ""
 "The `Max-Forwards` header is only defined for `TRACE` and `OPTIONS` "
 "requests; for other methods, it\n"
 "is likely to be ignored."
-msgstr "该 `Max-Forwards` 头仅定义于 `TRACE` 和 `OPTIONS` 请求；对于其他方法，它很可能被忽略。"
+msgstr "`Max-Forwards` 标头仅为 `TRACE` 和 `OPTIONS` 请求定义；对于其他方法，它很可能被忽略。"
 
 #: httplint/field/parsers/nel.py:182
 msgid "The NEL header has an invalid structure."
-msgstr "NEL 头结构无效。"
+msgstr "NEL 标头的结构无效。"
 
 #: httplint/field/parsers/nel.py:183
 msgid "The `NEL` header should be a list of objects.\n"
-msgstr "该 `NEL` 头应是一个对象列表。\n"
+msgstr "该 `NEL` 标头应是一个对象列表。\n"
 
 #: httplint/field/parsers/nel.py:191
 #, python-format
@@ -4378,7 +4420,7 @@ msgstr "NEL 策略缺少 '%(key)s' 键。"
 #: httplint/field/parsers/nel.py:192
 #, python-format
 msgid "The `%(key)s` key is required in `NEL` policies."
-msgstr "在 `NEL` 策略中需要 `%(key)s` 密钥。"
+msgstr "`NEL` 策略中需要 `%(key)s` 键。"
 
 #: httplint/field/parsers/nel.py:199
 #, python-format
@@ -4398,7 +4440,7 @@ msgstr "NEL 策略对于 '%(key)s' 有一个无效的值。"
 #: httplint/field/parsers/nel.py:208
 #, python-format
 msgid "The `%(key)s` key has an invalid value; %(details)s."
-msgstr "该 `%(key)s` 密钥具有无效值； %(details)s。"
+msgstr "该 `%(key)s` 键的值无效；%(details)s。"
 
 #: httplint/field/parsers/nel.py:215
 msgid "Network Error Logging is configured for this response."
@@ -4418,9 +4460,9 @@ msgid ""
 " to the server."
 msgstr ""
 "该 `NEL` 标头配置[网络错误日志](https://w3c.github.io/network-error-"
-"logging/)，指示浏览器向报告端点(s) [%(endpoints)s] 报告网络层错误（DNS、TCP、TLS 和 HTTP 失败）。\n"
+"logging/)，它会指示浏览器向以下报告端点报告网络层错误（DNS、TCP、TLS 和 HTTP 故障）：%(endpoints)s。\n"
 "\n"
-"这支持了对那些否则对服务器不可见的故障的可观察性。"
+"这使得原本对服务器不可见的故障变得可观测。"
 
 #: httplint/field/parsers/nel.py:228
 #, python-format
@@ -4435,8 +4477,8 @@ msgid ""
 " it in the\n"
 "`Reporting-Endpoints` header or a group in the `Report-To` header."
 msgstr ""
-"该 `report_to` 成员位于 [网络错误日志](https://w3c.github.io/network-error-logging/)"
-" 策略中指定了一个报告端点，但没有匹配的端点在 `Reporting-Endpoints` 头或 `Report-To` 头中的组中引用它。"
+"[网络错误日志](https://w3c.github.io/network-error-logging/)策略中的 `report_to` "
+"成员指定了一个报告端点，但 `Reporting-Endpoints` 标头中的端点和 `Report-To` 标头中的组都没有与之对应。"
 
 #: httplint/field/parsers/nel.py:238
 #, python-format
@@ -4452,8 +4494,9 @@ msgid ""
 "well-formed URL with a secure scheme, so browsers may not deliver reports"
 " to it."
 msgstr ""
-"在[网络错误日志](https://w3c.github.io/network-error-logging/)策略中，`report_to`成员在"
-"`Report-To`标头中指定了一个组，但该组中的任何端点都没有一个包含安全方案的正确URL，因此浏览器可能不会将报告发送到该组。"
+"在[网络错误日志](https://w3c.github.io/network-error-logging/)策略中，`report_to` "
+"成员指定了 `Report-To` 标头中的一个组，但该组的所有端点都没有格式正确且使用安全 URI 方案（如 https）的 "
+"URL，因此浏览器可能不会向其发送报告。"
 
 #: httplint/field/parsers/origin.py:71
 #, python-format
@@ -4469,7 +4512,7 @@ msgstr "该 Origin 标头必须包含一个序列化的源列表（方案、主�
 
 #: httplint/field/parsers/origin.py:80
 msgid "The Origin header contains a port with too many digits."
-msgstr "该 Origin 标头包含一个数字过多的端口。"
+msgstr "该 Origin 标头包含位数过多的端口。"
 
 #: httplint/field/parsers/origin.py:81
 #, python-format
@@ -4480,12 +4523,12 @@ msgid ""
 "The whole `Origin` value\n"
 "is ignored."
 msgstr ""
-"在 `Origin` 头中，端口有超过 %(max_digits)s 个有效数字（前导零不计），这超出了接收者处理的能力。整个 `Origin` "
-"值被忽略。"
+"`Origin` 标头中的端口有超过 %(max_digits)s 位有效数字（前导零不计），这超出了接收方可预期的处理能力。整个 "
+"`Origin` 值都会被忽略。"
 
 #: httplint/field/parsers/origin.py:90
 msgid "The Origin header contains multiple values."
-msgstr "标头 Origin 包含多个值。"
+msgstr "Origin 标头包含多个值。"
 
 #: httplint/field/parsers/origin.py:91
 msgid ""
@@ -4496,13 +4539,13 @@ msgstr "该 `Origin` 标头应仅包含一个值。第一个值之后的所有�
 
 #: httplint/field/parsers/permissions_policy.py:89
 msgid "This response sets a Permissions Policy."
-msgstr "此响应设置了权限政策。"
+msgstr "此响应设置了权限策略。"
 
 #: httplint/field/parsers/permissions_policy.py:90
 msgid ""
 "The `Permissions-Policy` header allows a site to control the use of "
 "browser features."
-msgstr "该 `Permissions-Policy` 头允许一个站点控制浏览器功能的使用。"
+msgstr "该 `Permissions-Policy` 标头允许一个站点控制浏览器功能的使用。"
 
 #: httplint/field/parsers/permissions_policy.py:97
 #, python-format
@@ -4519,20 +4562,18 @@ msgstr "所有源（使用 `*`）都允许使用 `%(feature)s` 功能。这不�
 #: httplint/field/parsers/permissions_policy.py:106
 #, python-format
 msgid "The value for '%(feature)s' should be an Inner List or the token '*'."
-msgstr "%(feature)s 的值应该是一个内部列表或标记 '*'."
+msgstr "'%(feature)s' 的值应该是内部列表或令牌 '*'。"
 
 #: httplint/field/parsers/permissions_policy.py:107
-#, fuzzy, python-format
+#, python-format
 msgid ""
 "The value for the `%(feature)s` feature in `Permissions-Policy` is "
 "invalid. It should be either\n"
 "an Inner List of origins (e.g., `(self \"https://example.com\")`) or the "
 "special token `*`."
 msgstr ""
-"该字符串的翻译如下：\n"
-"\n"
-"`Permissions-Policy` 中的 `%(feature)s` 特性值无效。它应该是源的内部列表（例如，`(self "
-"\"https://example.com\")`）或特殊标记 `*`."
+"`Permissions-Policy` 中 `%(feature)s` 特性的值无效。它应该是源的内部列表（例如 `(self "
+"\"https://example.com\")`），或特殊令牌 `*`。"
 
 #: httplint/field/parsers/permissions_policy.py:115
 #, python-format
@@ -4575,17 +4616,17 @@ msgstr "该项目 `%(item)s` 不是允许列表的有效类型。允许列表应
 
 #: httplint/field/parsers/pragma.py:37
 msgid "The Pragma header is being used in an undefined way."
-msgstr "未定义地使用了 Pragma 标头。"
+msgstr "以未定义的方式使用了 Pragma 标头。"
 
 #: httplint/field/parsers/pragma.py:38
 msgid ""
 "HTTP only defines `Pragma: no-cache`; other uses of this header are "
 "deprecated."
-msgstr "HTTP 仅定义 `Pragma: no-cache`；该头的其他使用已过时。"
+msgstr "HTTP 仅定义了 `Pragma: no-cache`；该标头的其他用法已弃用。"
 
 #: httplint/field/parsers/proxy_status.py:125
 msgid "Information about intermediaries is available."
-msgstr "中介信息可获取。"
+msgstr "有关中间节点的信息可用。"
 
 #: httplint/field/parsers/proxy_status.py:126
 #, python-format
@@ -4613,9 +4654,9 @@ msgid ""
 "requires it to be a String or\n"
 "a Token. This member, `%(value)s`, is %(member_type)s."
 msgstr ""
-"每个在 `Proxy-Status` 列表中的成员标识插入它的中间节点，并且[RFC 9209](https://www.rfc-"
-"editor.org/rfc/rfc9209.html#section-2) 要求它是一个 String 或一个 "
-"Token。这个成员，`%(value)s`，是 %(member_type)s。"
+"`Proxy-Status` 列表中的每个成员都标识插入它的中间节点，并且 [RFC 9209](https://www.rfc-"
+"editor.org/rfc/rfc9209.html#section-2) 要求它是字符串或令牌。这个成员 `%(value)s` 是 "
+"%(member_type)s。"
 
 #: httplint/field/parsers/proxy_status.py:146
 #, python-format
@@ -4632,7 +4673,7 @@ msgstr "该参数 `%(param)s` 未被 Proxy-Status 规范定义。\n"
 #: httplint/field/parsers/proxy_status.py:155
 #, python-format
 msgid "The Proxy-Status header has an unknown value for '%(param)s'."
-msgstr "代理状态头（Proxy-Status）有一个未知值为'%(param)s'。"
+msgstr "Proxy-Status 标头中 '%(param)s' 的值未知。"
 
 #: httplint/field/parsers/range.py:127
 msgid "The Range header is invalid."
@@ -4643,11 +4684,11 @@ msgid ""
 "The values indicated by the `Range` header are not valid. The first "
 "position must be less\n"
 "than or equal to the last position."
-msgstr "由 `Range` 头表示的值无效。第一个位置必须小于或等于最后一个位置。"
+msgstr "`Range` 标头所表示的值无效。第一个位置必须小于或等于最后一个位置。"
 
 #: httplint/field/parsers/range.py:136
 msgid "The Range header value isn't valid."
-msgstr "标头值 Range 不合法。"
+msgstr "Range 标头的值无效。"
 
 #: httplint/field/parsers/range.py:137
 #, python-format
@@ -4671,11 +4712,11 @@ msgid ""
 "The `Referer` header's value, `%(uri)s`, can't be parsed as a URI (for "
 "example, it may have a\n"
 "malformed IP address in its host), so recipients can't make use of it."
-msgstr "该 `Referer` 头值 `%(uri)s` 无法解析为 URI（例如，它可能在其主机中包含错误的 IP 地址），因此接收者无法使用它。"
+msgstr "`Referer` 标头的值 `%(uri)s` 无法解析为 URI（例如，其主机中可能包含格式错误的 IP 地址），因此接收者无法使用它。"
 
 #: httplint/field/parsers/referer.py:80
 msgid "The Referer header is sent from a secure origin to an insecure target."
-msgstr "引用头（Referer）从一个安全源发送到一个不安全的目标。"
+msgstr "Referer 标头从安全源发送到了不安全的目标。"
 
 #: httplint/field/parsers/referer.py:81
 msgid ""
@@ -4687,14 +4728,14 @@ msgid ""
 "editor.org/rfc/rfc9110.html#section-10.1.3)\n"
 "for details."
 msgstr ""
-"HTTP 禁止用户代理在未加密的 HTTP 请求中发送 Referer 头字段，如果引用资源是使用安全协议访问的。\n"
+"如果引用资源是通过安全协议访问的，HTTP 禁止用户代理在不安全的 HTTP 请求中发送 Referer 标头字段。\n"
 "\n"
 "详见 [RFC 9110 第 10.1.3 节](https://www.rfc-"
 "editor.org/rfc/rfc9110.html#section-10.1.3)。"
 
 #: httplint/field/parsers/referer.py:92
 msgid "The Referer header is sent from a secure origin to a different origin."
-msgstr "引用头（Referer）是从一个安全源发送到不同源的。"
+msgstr "Referer 标头从安全源发送到了不同的源。"
 
 #: httplint/field/parsers/referer.py:93
 msgid ""
@@ -4709,8 +4750,8 @@ msgid ""
 "editor.org/rfc/rfc9110.html#section-10.1.3)\n"
 "for details."
 msgstr ""
-"HTTP 禁止用户代理在引用资源使用安全协议且请求目标与引用资源的源不同时发送 Referer 头字段，除非引用资源明确允许发送 Referer。"
-"\n"
+"HTTP 禁止用户代理在引用资源使用安全协议且请求目标与引用资源的源不同时发送 Referer 标头字段，除非引用资源明确允许发送 "
+"Referer。\n"
 "\n"
 "详见 [RFC 9110 第 10.1.3 节](https://www.rfc-"
 "editor.org/rfc/rfc9110.html#section-10.1.3)。"
@@ -4729,8 +4770,8 @@ msgid ""
 "sensitive information in\n"
 "the `Referer` request header."
 msgstr ""
-"该 `Referrer-Policy` 值 `%(policy)s` 防止完整 URL 作为引荐符发送至不安全或跨源目的地，降低在 "
-"`Referer` 请求标头中泄露敏感信息的风险。"
+"`Referrer-Policy` 的值 `%(policy)s` 可防止完整 URL 作为引用页信息发送到安全性较低或跨源的目标地址，从而降低在"
+" `Referer` 请求标头中泄露敏感信息的风险。"
 
 #: httplint/field/parsers/referrer_policy.py:56
 msgid "This response's Referrer-Policy allows unsafe URLs."
@@ -4744,8 +4785,8 @@ msgid ""
 " (HTTP). This can leak\n"
 "sensitive information."
 msgstr ""
-"使用 `unsafe-url` 在 `Referrer-Policy` 意味着完整的 "
-"URL（包括查询参数）将作为引荐信息发送给所有源（包括非安全的（HTTP）源）。这可能泄露敏感信息。"
+"在 `Referrer-Policy` 中使用 `unsafe-url` 意味着完整的 "
+"URL（包括查询参数）将作为引用页信息发送给所有源（包括不安全的（HTTP）源）。这可能泄露敏感信息。"
 
 #: httplint/field/parsers/referrer_policy.py:66
 #, python-format
@@ -4785,7 +4826,7 @@ msgid ""
 "will only use the last\n"
 "valid policy found, which is `%(effective)s`. Earlier values are ignored."
 msgstr ""
-"该 `Referrer-Policy` 头包含多个有效策略。浏览器将仅使用找到的最后一个有效策略，即 "
+"该 `Referrer-Policy` 标头包含多个有效策略。浏览器将仅使用找到的最后一个有效策略，即 "
 "`%(effective)s`。之前的值将被忽略。"
 
 #: httplint/field/parsers/report_to.py:54
@@ -4794,7 +4835,7 @@ msgstr "该 Report-To 标头值结构无效。"
 
 #: httplint/field/parsers/report_to.py:55
 msgid "The `Report-To` header should be a list of objects.\n"
-msgstr "该 `Report-To` 头应是一个对象列表。\n"
+msgstr "该 `Report-To` 标头应是一个对象列表。\n"
 
 #: httplint/field/parsers/report_to.py:63
 #, python-format
@@ -4804,7 +4845,7 @@ msgstr "该 Report-To 标头值缺少 '%(key)s' 键。"
 #: httplint/field/parsers/report_to.py:64
 #, python-format
 msgid "The `%(key)s` key is required in `Report-To` objects."
-msgstr "在 `Report-To` 对象中需要 `%(key)s` 关键字。"
+msgstr "`Report-To` 对象中需要 `%(key)s` 键。"
 
 #: httplint/field/parsers/report_to.py:71
 #, python-format
@@ -4834,9 +4875,7 @@ msgid ""
 "The reporting endpoint `%(name)s` has a URL (`%(url)s`) that can't be "
 "resolved (for example, it may\n"
 "have a malformed IP address in its host). Browsers may ignore it."
-msgstr ""
-"报告端点 `%(name)s` 有一个 URL (`%(url)s`) 无法解析（例如，它可能在其主机中包含无效的 IP "
-"地址）。浏览器可能会忽略它。"
+msgstr "报告端点 `%(name)s` 的 URL（`%(url)s`）无法解析（例如，其主机中可能包含格式错误的 IP 地址）。浏览器可能会忽略它。"
 
 #: httplint/field/parsers/reporting_endpoints.py:73
 #, python-format
@@ -4852,7 +4891,7 @@ msgstr "报告端点`%(name)s`必须是一个字符串URL。找到：`%(value)s`
 
 #: httplint/field/parsers/server.py:64
 msgid "The Server header is long."
-msgstr "标头 Server 很长。"
+msgstr "Server 标头很长。"
 
 #: httplint/field/parsers/server.py:65
 #, python-format
@@ -4932,12 +4971,12 @@ msgid ""
 "by the default path of the request URI; because that URI is unusable, `/`"
 " was used instead."
 msgstr ""
-"从给定给lint器的响应中获取的URI不是有效的，所以无法使用。在`Set-"
-"Cookie`中，如果`Path`属性为空，或者不以`/`开头，将被替换为请求URI的默认路径；因为该URI不可用，因此使用了`/`。"
+"提供给 lint 工具的、获取此响应所用的 URI 无效，因此无法使用。`Set-Cookie` 中的 `Path` 属性如果为空或不以 `/` "
+"开头，会被替换为请求 URI 的默认路径；由于该 URI 不可用，因此改用了 `/`。"
 
 #: httplint/field/parsers/set_cookie.py:446
 msgid "This response has a Set-Cookie header without a cookie-name."
-msgstr "这个响应有一个 Set-Cookie 头，但没有 cookie-name。"
+msgstr "此响应有一个没有 cookie-name 的 Set-Cookie 标头。"
 
 #: httplint/field/parsers/set_cookie.py:447
 msgid ""
@@ -4946,9 +4985,9 @@ msgid ""
 "\n"
 "Browsers will ignore this cookie."
 msgstr ""
-"这个 `Set-Cookie` 头有空名；在 `=` 前必须有一个名。\n"
+"此 `Set-Cookie` 标头的名称为空；`=` 之前必须有名称。\n"
 "\n"
-"浏览器会忽略这个 Cookie。"
+"浏览器会忽略此 Cookie。"
 
 #: httplint/field/parsers/set_cookie.py:456
 #, python-format
@@ -4961,8 +5000,8 @@ msgid ""
 "[RFC6265](https://www.rfc-editor.org/rfc/rfc6265) for details of the "
 "correct format."
 msgstr ""
-"此 `expires` 头中的 `Set-Cookie` 日期无效；请参阅 [RFC6265](https://www.rfc-"
-"editor.org/rfc/rfc6265) 了解正确格式的详细信息。"
+"此 `Set-Cookie` 标头中的 `expires` 日期无效；有关正确格式的详细信息，请参阅 [RFC6265](https://www"
+".rfc-editor.org/rfc/rfc6265)。"
 
 #: httplint/field/parsers/set_cookie.py:465
 #, python-format
@@ -4993,9 +5032,9 @@ msgid ""
 "\n"
 "Browsers may still read it as an ordinary number."
 msgstr ""
-"这个 `max-age` 参数在 `Set-Cookie` 头中包含一个前导零，但 `Set-Cookie` 语法不允许。\n"
+"此 `Set-Cookie` 标头中的 `max-age` 参数带有前导零，而 `Set-Cookie` 语法不允许这样。\n"
 "\n"
-"浏览器可能仍然将其解析为普通数字。"
+"浏览器可能仍会将其读作普通数字。"
 
 #: httplint/field/parsers/set_cookie.py:486
 #, python-format
@@ -5040,7 +5079,7 @@ msgstr ""
 #: httplint/field/parsers/set_cookie.py:510
 #, python-format
 msgid "The %(cookie_name)s cookie has an empty domain."
-msgstr "该%(cookie_name)s Cookie 域为空。"
+msgstr "该 %(cookie_name)s Cookie 的域为空。"
 
 #: httplint/field/parsers/set_cookie.py:511
 msgid ""
@@ -5051,11 +5090,11 @@ msgid ""
 "\n"
 "Browsers will probably ignore it as a result."
 msgstr ""
-"这个`Set-Cookie`标头的`domain`参数为空。\n"
+"这个 `Set-Cookie` 标头的 `domain` 参数为空。\n"
 "\n"
-"请注意，空域名的处理[不互操作](https://chromestatus.com/feature/5674723800252416)。\n"
+"请注意，对空域名的处理[缺乏互操作性](https://chromestatus.com/feature/5674723800252416)。\n"
 "\n"
-"浏览器可能会因此忽略它。"
+"因此，浏览器很可能会忽略它。"
 
 #: httplint/field/parsers/set_cookie.py:523
 #, python-format
@@ -5071,11 +5110,11 @@ msgid ""
 "\n"
 "Browsers will ignore this cookie."
 msgstr ""
-"这个 `Secure` 头字段缺少 `Set-Cookie` 属性。\n"
+"此 `Set-Cookie` 标头缺少 `Secure` 属性。\n"
 "\n"
-"因为 `SameSite` 属性设置为 `None`，因此需要 `Secure` 属性。\n"
+"由于 `SameSite` 属性设置为 `None`，因此必须带有 `Secure` 属性。\n"
 "\n"
-"浏览器将忽略这个 Cookie。"
+"浏览器将忽略此 Cookie。"
 
 #: httplint/field/parsers/set_cookie.py:535
 #, python-format
@@ -5095,15 +5134,15 @@ msgstr ""
 
 #: httplint/field/parsers/set_cookie.py:545
 msgid "The 'Priority' Set-Cookie attribute is deprecated."
-msgstr "“优先级” Set-Cookie 属性已过时。"
+msgstr "'Priority' Set-Cookie 属性已弃用。"
 
 #: httplint/field/parsers/set_cookie.py:546
 msgid "The `Priority` attribute was an experiment, and is no longer supported.\n"
-msgstr "该 `Priority` 属性是一个实验，现在已不再支持。\n"
+msgstr "`Priority` 属性曾是一项实验，现已不再支持。\n"
 
 #: httplint/field/parsers/set_cookie.py:554
 msgid "The 'Version Set-Cookie attribute is deprecated."
-msgstr "“版本 Set-Cookie 属性已过时。"
+msgstr "'Version' Set-Cookie 属性已弃用。"
 
 #: httplint/field/parsers/set_cookie.py:555
 msgid ""
@@ -5117,9 +5156,9 @@ msgid ""
 "issues](https://portswigger.net/research/bypassing-wafs-with-the-phantom-"
 "version-cookie).\n"
 msgstr ""
-"该 `Version` 属性不再是 `Set-Cookie` 规范的一部分，并由浏览器忽略。\n"
+"`Version` 属性已不再是 `Set-Cookie` 规范的一部分，浏览器会忽略它。\n"
 "\n"
-"由于一些软件在存在 Cookie 时仍以不同的方式解释 "
+"由于某些软件在该属性存在时仍会以不同的方式解释 "
 "Cookie，[这可能导致安全问题](https://portswigger.net/research/bypassing-wafs-with-"
 "the-phantom-version-cookie)。\n"
 
@@ -5128,7 +5167,7 @@ msgstr ""
 msgid ""
 "The %(cookie_name)s cookie has an unknown '%(attribute_name)s' attribute "
 "value."
-msgstr "未知的 %(cookie_name)s Cookie 具有 %(attribute_name)s 属性值。"
+msgstr "该 %(cookie_name)s Cookie 的 '%(attribute_name)s' 属性值未知。"
 
 #: httplint/field/parsers/set_cookie.py:569
 #, python-format
@@ -5138,7 +5177,7 @@ msgid ""
 "\n"
 "Browsers will probably ignore it as a result."
 msgstr ""
-"这个 `Set-Cookie` 头有未知的 `%(attribute_name)s` 属性值，`%(attribute_value)s`。\n"
+"此 `Set-Cookie` 标头有一个未知的 `%(attribute_name)s` 属性值，`%(attribute_value)s`。\n"
 "\n"
 "浏览器可能会因此忽略它。"
 
@@ -5164,7 +5203,7 @@ msgstr ""
 #: httplint/field/parsers/set_cookie.py:592
 #, python-format
 msgid "The %(cookie_name)s Set-Cookie header is too large."
-msgstr "该 %(cookie_name)s Set-Cookie 头太大。"
+msgstr "该 %(cookie_name)s Set-Cookie 标头太大。"
 
 #: httplint/field/parsers/set_cookie.py:593
 msgid ""
@@ -5172,7 +5211,7 @@ msgid ""
 "\n"
 "Browsers will ignore this cookie."
 msgstr ""
-"该 `Set-Cookie` 头大于 4096 字节。\n"
+"该 `Set-Cookie` 标头大于 4096 字节。\n"
 "\n"
 "浏览器将忽略此 Cookie。"
 
@@ -5184,12 +5223,12 @@ msgstr "该%(cookie_name)s Set-Cookie 值较大。"
 #: httplint/field/parsers/set_cookie.py:603
 #, python-format
 msgid "This `Set-Cookie` value is %(set_cookie_value_length)s long.\n"
-msgstr "这个值 `Set-Cookie` 长度为 %(set_cookie_value_length)s 个字符。\n"
+msgstr "此 `Set-Cookie` 值长 %(set_cookie_value_length)s。\n"
 
 #: httplint/field/parsers/set_cookie.py:618
 #, python-format
 msgid "The %(cookie_name)s Set-Cookie header has a lifetime that is too long."
-msgstr "该 %(cookie_name)s Set-Cookie 头文件的生命周期过长。"
+msgstr "该 %(cookie_name)s Set-Cookie 标头的生命周期过长。"
 
 #: httplint/field/parsers/set_cookie.py:619
 #, python-format
@@ -5200,14 +5239,14 @@ msgid ""
 "\n"
 "Browsers will cap the lifetime to 400 days."
 msgstr ""
-"该 `Set-Cookie` 标头具有生命周期（Max-Age 或 Expires）为 %(duration)s，大于 400 天。\n"
+"该 `Set-Cookie` 标头的生命周期（Max-Age 或 Expires）为 %(duration)s，超过 400 天。\n"
 "\n"
-"浏览器将将生命周期上限设置为 400 天。"
+"浏览器会将生命周期上限限制为 400 天。"
 
 #: httplint/field/parsers/set_cookie.py:629
 #, python-format
 msgid "The %(cookie_name)s Set-Cookie header requires the Secure attribute."
-msgstr "该 %(cookie_name)s Set-Cookie 头需要包含 Secure 属性。"
+msgstr "该 %(cookie_name)s Set-Cookie 标头需要包含 Secure 属性。"
 
 #: httplint/field/parsers/set_cookie.py:630
 msgid ""
@@ -5217,7 +5256,7 @@ msgid ""
 "\n"
 "Browsers will reject this cookie."
 msgstr ""
-"该 `Set-Cookie` 头带有前缀（例如 `__Secure-` 或 `__Host-`），该前缀需要 `Secure` 属性。\n"
+"该 `Set-Cookie` 标头带有前缀（例如 `__Secure-` 或 `__Host-`），该前缀需要 `Secure` 属性。\n"
 "\n"
 "浏览器将拒绝此 Cookie。"
 
@@ -5226,7 +5265,7 @@ msgstr ""
 msgid ""
 "The %(cookie_name)s Set-Cookie header has a __Host- prefix but sets a "
 "Domain."
-msgstr "该 %(cookie_name)s Set-Cookie 头带有 __Host- 前缀，但设置了 Domain。"
+msgstr "该 %(cookie_name)s Set-Cookie 标头带有 __Host- 前缀，但设置了 Domain。"
 
 #: httplint/field/parsers/set_cookie.py:641
 msgid ""
@@ -5235,7 +5274,7 @@ msgid ""
 "\n"
 "Browsers will reject this cookie."
 msgstr ""
-"该 `Set-Cookie` 头带有 `__Host-` 前缀，但它设置了 `Domain` 属性。\n"
+"该 `Set-Cookie` 标头带有 `__Host-` 前缀，但它设置了 `Domain` 属性。\n"
 "\n"
 "浏览器将拒绝此 Cookie。"
 
@@ -5244,7 +5283,7 @@ msgstr ""
 msgid ""
 "The %(cookie_name)s Set-Cookie header has a __Host- prefix but does not "
 "set Path=/."
-msgstr "该 %(cookie_name)s Set-Cookie 头带有 __Host- 前缀，但并未设置 Path=/."
+msgstr "该 %(cookie_name)s Set-Cookie 标头带有 __Host- 前缀，但没有设置 Path=/。"
 
 #: httplint/field/parsers/set_cookie.py:651
 msgid ""
@@ -5253,7 +5292,7 @@ msgid ""
 "\n"
 "Browsers will reject this cookie."
 msgstr ""
-"该 `Set-Cookie` 头带有 `__Host-` 前缀，但它没有设置 `Path=/`。\n"
+"该 `Set-Cookie` 标头带有 `__Host-` 前缀，但它没有设置 `Path=/`。\n"
 "\n"
 "浏览器将拒绝此 Cookie。"
 
@@ -5262,7 +5301,7 @@ msgstr ""
 msgid ""
 "The %(cookie_name)s Set-Cookie header has duplicate '%(attribute)s' "
 "attributes."
-msgstr "该 %(cookie_name)s Set-Cookie 头具有重复的 %(attribute)s 属性。"
+msgstr "该 %(cookie_name)s Set-Cookie 标头具有重复的 '%(attribute)s' 属性。"
 
 #: httplint/field/parsers/set_cookie.py:661
 #, python-format
@@ -5278,7 +5317,7 @@ msgstr ""
 
 #: httplint/field/parsers/set_cookie.py:670
 msgid "This response sets cookies restricted with Secure, HttpOnly, and SameSite."
-msgstr "此响应设置了受限制的cookie，使用Secure、HttpOnly和SameSite。"
+msgstr "此响应设置了带有 Secure、HttpOnly 和 SameSite 限制的 Cookie。"
 
 #: httplint/field/parsers/set_cookie.py:671
 #, python-format
@@ -5304,7 +5343,7 @@ msgstr ""
 
 #: httplint/field/parsers/set_cookie.py:684
 msgid "This response sets duplicate cookies."
-msgstr "这个响应设置了重复的 cookie。"
+msgstr "此响应设置了重复的 Cookie。"
 
 #: httplint/field/parsers/set_cookie.py:685
 #, python-format
@@ -5315,24 +5354,24 @@ msgid ""
 "Browsers will likely accept all of them, but the order of application\n"
 "may vary or be confusing."
 msgstr ""
-"以下 cookie 在此响应中被设置超过一次：`%(cookie_names)s`。\n"
+"以下 Cookie 在此响应中被设置了多次：`%(cookie_names)s`。\n"
 "\n"
-"浏览器可能会接受所有它们，但应用顺序可能会有所不同或令人困惑。"
+"浏览器很可能会接受所有这些 Cookie，但应用顺序可能会有所不同，或令人困惑。"
 
 #: httplint/field/parsers/speculation_rules.py:48
 msgid "The speculation rule URL is not secure."
-msgstr "猜测规则的URL不安全。"
+msgstr "推测规则的 URL 不安全。"
 
 #: httplint/field/parsers/speculation_rules.py:49
 #, python-format
 msgid ""
 "The speculation rule `%(url)s` uses an insecure URL. Browsers may ignore "
 "it."
-msgstr "该猜测规则 `%(url)s` 使用一个不安全的 URL。浏览器可能忽略它。"
+msgstr "该推测规则 `%(url)s` 使用了不安全的 URL。浏览器可能会忽略它。"
 
 #: httplint/field/parsers/speculation_rules.py:56
 msgid "The speculation rule URL isn't valid."
-msgstr "猜测规则的URL无效。"
+msgstr "推测规则的 URL 无效。"
 
 #: httplint/field/parsers/speculation_rules.py:57
 #, python-format
@@ -5340,11 +5379,11 @@ msgid ""
 "The speculation rule `%(url)s` can't be resolved as a URL (for example, "
 "it may have a malformed IP\n"
 "address in its host). Browsers may ignore it."
-msgstr "猜测规则 `%(url)s` 无法解析为 URL（例如，它可能在其主机中包含无效的 IP 地址）。浏览器可能会忽略它。"
+msgstr "推测规则 `%(url)s` 无法解析为 URL（例如，其主机中可能包含格式错误的 IP 地址）。浏览器可能会忽略它。"
 
 #: httplint/field/parsers/speculation_rules.py:65
 msgid "The speculation rule value is invalid."
-msgstr "猜测规则值无效。"
+msgstr "推测规则的值无效。"
 
 #: httplint/field/parsers/speculation_rules.py:66
 #, python-format
@@ -5355,8 +5394,9 @@ msgid ""
 "each item must be a string URL. Found: `%(value)s` (type "
 "`%(found_type)s`)."
 msgstr ""
-"推测规则是一个[结构化字段](https://www.rfc-editor.org/rfc/rfc8941.html) "
-"的列表，其中每个项目必须是一个字符串URL。找到：`%(value)s` (类型`%(found_type)s`）。"
+"推测规则是由项（Item）组成的[结构化字段](https://www.rfc-"
+"editor.org/rfc/rfc8941.html)列表，其中每一项都必须是字符串 URL。找到：`%(value)s`（类型 "
+"`%(found_type)s`）。"
 
 #: httplint/field/parsers/strict_transport_security.py:212
 msgid "Strict Transport Security (HSTS) is enabled."
@@ -5371,7 +5411,7 @@ msgstr "这个网站启用了HTTP严格传输安全（HSTS），这告诉浏览�
 
 #: httplint/field/parsers/strict_transport_security.py:221
 msgid "This response's Strict Transport Security (HSTS) header is invalid."
-msgstr "此响应的严格传输安全（HSTS）头无效。"
+msgstr "此响应的严格传输安全（HSTS）标头无效。"
 
 #: httplint/field/parsers/strict_transport_security.py:222
 msgid ""
@@ -5382,9 +5422,9 @@ msgid ""
 "However, one or more issues prevent it from being valid. See the child "
 "notes for details."
 msgstr ""
-"这个网站尝试启用HTTP严格传输安全（HSTS），告诉浏览器仅通过安全连接与之通信。\n"
+"该网站尝试启用 HTTP 严格传输安全（HSTS），它会告知浏览器仅通过安全连接与该网站通信。\n"
 "\n"
-"然而，一个或多个问题阻止它成为有效。请参阅子注释以获取详细信息。"
+"然而，有一个或多个问题导致它无效。有关详细信息，请参阅子注释。"
 
 #: httplint/field/parsers/strict_transport_security.py:232
 msgid "There is no max-age directive."
@@ -5394,22 +5434,22 @@ msgstr "没有 max-age 指令。"
 msgid ""
 "The `Strict-Transport-Security` header requires a `max-age` directive to "
 "be valid."
-msgstr "该 `Strict-Transport-Security` 头需要一个 `max-age` 指令才能有效。"
+msgstr "该 `Strict-Transport-Security` 标头需要有 `max-age` 指令才有效。"
 
 #: httplint/field/parsers/strict_transport_security.py:240
 msgid "The max-age is 0."
-msgstr "最大存留时间是0。"
+msgstr "max-age 为 0。"
 
 #: httplint/field/parsers/strict_transport_security.py:241
 msgid ""
 "A `max-age` of 0 tells the browser to expire the `Strict-Transport-"
 "Security` policy immediately,\n"
 "effectively disabling it."
-msgstr "一个 `max-age` 为 0 告诉浏览器立即过期 `Strict-Transport-Security` 策略，有效禁用它。"
+msgstr "`max-age` 为 0 会告知浏览器立即使 `Strict-Transport-Security` 策略过期，从而实际上禁用该策略。"
 
 #: httplint/field/parsers/strict_transport_security.py:249
 msgid "The max-age is less than one year."
-msgstr "最大存留时间小于一年。"
+msgstr "max-age 小于一年。"
 
 #: httplint/field/parsers/strict_transport_security.py:250
 msgid ""
@@ -5426,7 +5466,7 @@ msgid ""
 "The `includeSubDomains` directive indicates that this HSTS policy applies"
 " to this domain as well as\n"
 "all of its subdomains."
-msgstr "该指令`includeSubDomains`表明这一HSTS政策适用于这一域名及其所有子域名。"
+msgstr "`includeSubDomains` 指令表明此 HSTS 策略适用于该域名及其所有子域名。"
 
 #: httplint/field/parsers/strict_transport_security.py:266
 msgid "HSTS doesn't apply to subdomains."
@@ -5449,7 +5489,7 @@ msgstr ""
 
 #: httplint/field/parsers/strict_transport_security.py:279
 msgid "Browser preloading is allowed."
-msgstr "浏览器预加载被允许。"
+msgstr "允许浏览器预加载。"
 
 #: httplint/field/parsers/strict_transport_security.py:280
 msgid ""
@@ -5469,7 +5509,7 @@ msgstr ""
 
 #: httplint/field/parsers/strict_transport_security.py:292
 msgid "Browser preloading is allowed, but this policy isn't suitable for it."
-msgstr "允许浏览器预加载，但这项政策不适合它。"
+msgstr "允许浏览器预加载，但此策略不适合预加载。"
 
 #: httplint/field/parsers/strict_transport_security.py:293
 msgid ""
@@ -5486,7 +5526,7 @@ msgstr ""
 
 #: httplint/field/parsers/strict_transport_security.py:304
 msgid "Browser preloading isn't allowed."
-msgstr "浏览器预加载是不被允许的。"
+msgstr "不允许浏览器预加载。"
 
 #: httplint/field/parsers/strict_transport_security.py:305
 msgid ""
@@ -5503,7 +5543,7 @@ msgstr ""
 
 #: httplint/field/parsers/strict_transport_security.py:316
 msgid "The HSTS header contains a duplicate directive."
-msgstr "HSTS 头包含重复的指令。"
+msgstr "HSTS 标头包含重复的指令。"
 
 #: httplint/field/parsers/strict_transport_security.py:317
 #, python-format
@@ -5522,7 +5562,7 @@ msgid ""
 "The `Strict-Transport-Security` header ends with a semicolon. The grammar"
 " allows this, but some\n"
 "implementations may be confused by it."
-msgstr "该 `Strict-Transport-Security` 头尾以分号结尾。语法允许这样，但某些实现可能会因此感到困惑。"
+msgstr "该 `Strict-Transport-Security` 标头以分号结尾。语法允许这样做，但某些实现可能会因此产生混淆。"
 
 #: httplint/field/parsers/strict_transport_security.py:334
 msgid "The HSTS header is sent over HTTP."
@@ -5534,12 +5574,12 @@ msgid ""
 "regardless of the status\n"
 "code (including a redirect to HTTPS). It should only be sent over HTTPS."
 msgstr ""
-"该 `Strict-Transport-Security` 头在通过 HTTP 发送时会被忽略，无论状态码如何（包括重定向到 "
-"HTTPS）。它仅应通过 HTTPS 发送。"
+"该 `Strict-Transport-Security` 标头在通过 HTTP 发送时会被忽略，无论状态码如何（包括重定向到 "
+"HTTPS）。它应仅通过 HTTPS 发送。"
 
 #: httplint/field/parsers/strict_transport_security.py:343
 msgid "The max-age directive in the HSTS header is invalid."
-msgstr "HSTS 头中的 max-age 指令无效。"
+msgstr "HSTS 标头中的 max-age 指令无效。"
 
 #: httplint/field/parsers/strict_transport_security.py:344
 #, python-format
@@ -5550,14 +5590,14 @@ msgid ""
 "\n"
 "%(max_age)s"
 msgstr ""
-"在 `Strict-Transport-Security` 头中，`max-age` 指令必须是一个非负整数。其值无效：\n"
+"在 `Strict-Transport-Security` 标头中，`max-age` 指令必须是一个非负整数。其值无效：\n"
 "\n"
 "%(max_age)s"
 
 #: httplint/field/parsers/strict_transport_security.py:354
 #, python-format
 msgid "The %(directive)s directive in the HSTS header must not have a value."
-msgstr "HSTS 头中的 %(directive)s 指令不能有值。"
+msgstr "HSTS 标头中的 %(directive)s 指令不得带有值。"
 
 #: httplint/field/parsers/strict_transport_security.py:355
 #, python-format
@@ -5565,22 +5605,22 @@ msgid ""
 "The `%(directive)s` directive in the `Strict-Transport-Security` header "
 "is a valueless\n"
 "directive. It should not have an associated value."
-msgstr "在 `Strict-Transport-Security` 头中，`%(directive)s` 指令是一个无值的指令。它不应该有一个关联值。"
+msgstr "在 `Strict-Transport-Security` 标头中，`%(directive)s` 指令是无值指令，不应带有关联值。"
 
 #: httplint/field/parsers/sunset.py:24
 msgid "The resource has Sunset."
-msgstr "资源有过期时间。"
+msgstr "该资源设置了 Sunset。"
 
 #: httplint/field/parsers/sunset.py:25
 msgid ""
 "The `Sunset` header indicates that this resource has already passed its "
 "sunset date and may become\n"
 "unresponsive."
-msgstr "该 `Sunset` 头表示该资源已过有效期，可能不再响应。"
+msgstr "该 `Sunset` 标头表示该资源已过其 sunset 日期，可能不再响应。"
 
 #: httplint/field/parsers/transfer_encoding.py:73
 msgid "The identity transfer-coding isn't necessary."
-msgstr "身份转移编码不必要。"
+msgstr "identity 传输编码并非必要。"
 
 #: httplint/field/parsers/transfer_encoding.py:74
 msgid ""
@@ -5633,25 +5673,25 @@ msgid ""
 "technically allowed, they may\n"
 "cause interoperability problems. They should be removed."
 msgstr ""
-"HTTP允许在`Transfer-Encoding`头中包含带有可选参数的传输编码，但它没有定义这些参数的含义。\n"
+"HTTP 允许 `Transfer-Encoding` 标头中的传输编码带有可选参数，但没有定义它们的含义。\n"
 "\n"
-"此消息包含具有此类参数的编码；虽然它们在技术上被允许，但它们可能会导致互操作性问题。应删除它们。"
+"此消息包含带有此类参数的编码；虽然它们在技术上是被允许的，但可能会导致互操作性问题。应该删除它们。"
 
 #: httplint/field/parsers/use_as_dictionary.py:78
 #, python-format
 msgid "The %(field_name)s parameter '%(param)s' has an invalid type."
-msgstr "参数 %(field_name)s 的值 '%(param)s' 类型无效。"
+msgstr "%(field_name)s 参数 '%(param)s' 的类型无效。"
 
 #: httplint/field/parsers/use_as_dictionary.py:79
 #, python-format
 msgid ""
 "The `%(field_name)s` parameter `%(param)s` must be a `%(expected)s`. "
 "Found `%(got)s`."
-msgstr "参数 `%(field_name)s` 的 `%(param)s` 必须是 `%(expected)s`。实际为 `%(got)s`。"
+msgstr "`%(field_name)s` 参数 `%(param)s` 必须是 `%(expected)s`。实际为 `%(got)s`。"
 
 #: httplint/field/parsers/use_as_dictionary.py:86
 msgid "The match-dest parameter has an invalid type."
-msgstr "匹配目的参数的类型无效。"
+msgstr "match-dest 参数的类型无效。"
 
 #: httplint/field/parsers/use_as_dictionary.py:87
 msgid "The `match-dest` parameter must be an Inner List of Strings."
@@ -5659,14 +5699,14 @@ msgstr "`match-dest` 参数必须是一个字符串的内部列表。"
 
 #: httplint/field/parsers/use_as_dictionary.py:94
 msgid "The Use-As-Dictionary header does not have a match parameter."
-msgstr "该 Use-As-Dictionary 标头没有匹配参数。"
+msgstr "该 Use-As-Dictionary 标头没有 match 参数。"
 
 #: httplint/field/parsers/use_as_dictionary.py:95
 msgid ""
 "The `match` parameter MUST be included for the dictionary to be "
 "considered valid, so this\n"
 "dictionary will not be used."
-msgstr "该参数 `match` 必须包含以使字典被视为有效，因此这个字典将不会被使用。"
+msgstr "必须包含 `match` 参数，字典才被视为有效，因此不会使用此字典。"
 
 #: httplint/field/parsers/vary.py:45
 msgid "Vary: * effectively makes this response uncacheable."
@@ -5684,7 +5724,6 @@ msgid "Vary: User-Agent can cause cache inefficiency."
 msgstr "Vary: User-Agent 可能导致缓存效率低下。"
 
 #: httplint/field/parsers/vary.py:55
-#, fuzzy
 msgid ""
 "Sending `Vary: User-Agent` requires caches to store a separate copy of "
 "the response for every\n"
@@ -5698,15 +5737,15 @@ msgid ""
 "instead; this will give\n"
 "finer control over caching without sacrificing efficiency."
 msgstr ""
-"发送 `Vary: User-Agent` 需要缓存为每个它们看到的请求头 `User-Agent` 存储一个独立的响应副本。\n"
+"发送 `Vary: User-Agent` 要求缓存为其看到的每一个 `User-Agent` 请求标头分别存储一份响应副本。\n"
 "\n"
-"由于有这么多种 `User-Agent`，这可能会使缓存“膨胀”，包含许多相同内容的副本，或者导致缓存完全放弃存储这些响应。\n"
+"由于 `User-Agent` 的取值多种多样，这可能会使缓存因大量相同内容的副本而“膨胀”，或者导致缓存干脆放弃存储这些响应。\n"
 "\n"
-"考虑为您内容的不同版本使用不同的 URI；这将提供更细致的缓存控制，同时不牺牲效率。"
+"可以考虑为不同版本的内容使用不同的 URI；这样能在不牺牲效率的前提下，对缓存实施更精细的控制。"
 
 #: httplint/field/parsers/vary.py:69
 msgid "Vary: Host is not necessary."
-msgstr "Vary：主机不必要。"
+msgstr "Vary: Host 并非必要。"
 
 #: httplint/field/parsers/vary.py:70
 msgid ""
@@ -5734,7 +5773,7 @@ msgstr ""
 
 #: httplint/field/parsers/vary.py:85
 msgid "Transparent Content Negotiation is not widely supported."
-msgstr "透明的内容谈判并不被广泛支持。"
+msgstr "透明内容协商并未得到广泛支持。"
 
 #: httplint/field/parsers/vary.py:86
 msgid ""
@@ -5745,10 +5784,10 @@ msgid ""
 "\n"
 "Consider removing it."
 msgstr ""
-"该 `Vary: Negotiate` 标头值是不必要的，因为[透明内容谈判](https://www.rfc-"
-"editor.org/rfc/rfc2295.html)并不被广泛支持。\n"
+"该 `Vary: Negotiate` 标头值是不必要的，因为[透明内容协商](https://www.rfc-"
+"editor.org/rfc/rfc2295.html)并未得到广泛支持。\n"
 "\n"
-"考虑删除它。"
+"请考虑移除它。"
 
 #: httplint/field/parsers/vary.py:97
 msgid "The Vary header contains duplicate values."
@@ -5762,9 +5801,9 @@ msgid ""
 "\n"
 "Listing the same header more than once is redundant and can be confusing."
 msgstr ""
-"该 `Vary` 头允许您列出请求部分，有效地改变响应表示。\n"
+"`Vary` 标头允许您列出请求中实际会改变响应表示的部分。\n"
 "\n"
-"列出相同的头多次是多余的，并且可能令人困惑。"
+"多次列出同一标头是多余的，并且可能令人困惑。"
 
 #: httplint/field/parsers/vary.py:108
 #, python-format
@@ -5779,13 +5818,13 @@ msgid ""
 "\n"
 "Varying by too many dimensions makes using this information impractical."
 msgstr ""
-"该 `Vary` 机制允许一个资源描述其响应变化的维度，或变化；每个列出的头是另一个维度。\n"
+"`Vary` 机制允许资源描述其响应所随之变化的维度；每个列出的标头都是一个维度。\n"
 "\n"
-"过多维度的变化使得使用这些信息不切实际。"
+"按过多的维度变化，会使这些信息变得难以使用。"
 
 #: httplint/field/parsers/via.py:37
 msgid "One or more intermediaries are present."
-msgstr "一个或多个中间节点存在。"
+msgstr "存在一个或多个中间节点。"
 
 #: httplint/field/parsers/via.py:38
 msgid ""
@@ -5805,12 +5844,12 @@ msgid ""
 "identify the software being\n"
 "used)."
 msgstr ""
-"该 `Via` 标头表示在用户代理和资源源服务器之间有一个或多个中间节点。\n"
+"该 `Via` 标头表示在用户代理和该资源的源服务器之间有一个或多个中间节点。\n"
 "\n"
-"这可能表明配置了代理，或者服务器在前面使用“反向代理”或 CDN。\n"
+"这可能表明配置了代理，或者服务器前面使用了“反向代理”或 CDN。\n"
 "\n"
-"该字段有三个用空格分隔的组件；首先，中间节点接收的消息的 HTTP "
-"版本，然后是中间节点的身份（通常但不是总是它的主机名），然后可选是一个产品标识符或评论（通常用于识别使用的软件）。"
+"该字段有三个以空格分隔的组成部分；首先是中间节点所接收消息的 HTTP "
+"版本，然后是中间节点的标识（通常但并不总是其主机名），最后是可选的产品标识符或注释（通常用于标识所使用的软件）。"
 
 #: httplint/field/parsers/x_content_type_options.py:27
 msgid "This response instructs browsers not to 'sniff' its media type."
@@ -5829,11 +5868,11 @@ msgid ""
 "-Content-Type-Options)\n"
 "for more information about this header."
 msgstr ""
-"许多网络浏览器会“嗅”响应的媒体类型，以确定它们是HTML、RSS还是另一种格式，无论`Content-Type`标头如何。\n"
+"许多网络浏览器会“嗅探”响应的媒体类型，以判断它们是 HTML、RSS 还是其他格式，而不管 `Content-Type` 标头是怎么声明的。\n"
 "\n"
-"该标头指示浏览器不要这样做，而是始终尊重Content-Type标头。在其他客户端上它可能毫无效果。\n"
+"该标头指示浏览器不要这样做，而是始终遵循 Content-Type 标头。它在其他客户端上可能不会有任何效果。\n"
 "\n"
-"有关该标头的更多信息，请参阅[MDN](https://developer.mozilla.org/en-"
+"有关该标头的更多信息，请参阅 [MDN](https://developer.mozilla.org/en-"
 "US/docs/Web/HTTP/Headers/X-Content-Type-Options)。"
 
 #: httplint/field/parsers/x_content_type_options.py:44
@@ -5851,9 +5890,9 @@ msgid ""
 "-Content-Type-Options)\n"
 "for more information about this header."
 msgstr ""
-"当前此头仅定义一个值，`nosniff`。在此处使用其他值可能不会直接造成问题，但它们也可能毫无作用。\n"
+"目前此标头只定义了一个值，即 `nosniff`。在这里使用其他值不一定会造成问题，但它们很可能也不会有任何效果。\n"
 "\n"
-"有关此头的更多信息，请参阅 [MDN](https://developer.mozilla.org/en-"
+"有关此标头的更多信息，请参阅 [MDN](https://developer.mozilla.org/en-"
 "US/docs/Web/HTTP/Headers/X-Content-Type-Options)。"
 
 #: httplint/field/parsers/x_frame_options.py:56
@@ -5877,6 +5916,15 @@ msgid ""
 "See [MDN](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X"
 "-Frame-Options) for more information.\n"
 msgstr ""
+"`X-Frame-Options` 的 `DENY` 值会阻止此内容在框架内呈现，以防御点击劫持类攻击。\n"
+"\n"
+"请注意，`X-Frame-Options` 已被 `Content-Security-Policy` 的 [`frame-"
+"ancestors`](https://www.w3.org/TR/CSP3/#directive-frame-ancestors) "
+"指令取代，后者提供更细粒度的控制，是现代的等效方案。如果两者同时存在，支持 CSP 的浏览器会使用 `frame-ancestors` "
+"并忽略此标头。\n"
+"\n"
+"更多信息请参阅 [MDN](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X"
+"-Frame-Options)。\n"
 
 #: httplint/field/parsers/x_frame_options.py:73
 msgid ""
@@ -5902,10 +5950,19 @@ msgid ""
 "See [MDN](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X"
 "-Frame-Options) for more information.\n"
 msgstr ""
+"`X-Frame-Options` 的 `SAMEORIGIN` 值会阻止此内容在不同源的框架内呈现，以防御点击劫持类攻击。\n"
+"\n"
+"请注意，`X-Frame-Options` 已被 `Content-Security-Policy` 的 [`frame-"
+"ancestors`](https://www.w3.org/TR/CSP3/#directive-frame-ancestors) "
+"指令取代，后者提供更细粒度的控制，是现代的等效方案。如果两者同时存在，支持 CSP 的浏览器会使用 `frame-ancestors` "
+"并忽略此标头。\n"
+"\n"
+"更多信息请参阅 [MDN](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X"
+"-Frame-Options)。\n"
 
 #: httplint/field/parsers/x_frame_options.py:90
 msgid "The X-Frame-Options header uses the obsolete ALLOW-FROM value."
-msgstr "X-Frame-Options头使用已过时的ALLOW-FROM值。"
+msgstr "X-Frame-Options 标头使用了已过时的 ALLOW-FROM 值。"
 
 #: httplint/field/parsers/x_frame_options.py:91
 msgid ""
@@ -5919,10 +5976,17 @@ msgid ""
 "See [MDN](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X"
 "-Frame-Options) for more information.\n"
 msgstr ""
+"[RFC 7034](https://www.rfc-editor.org/rfc/rfc7034) 为此标头定义了 `ALLOW-FROM` "
+"值，但该值已过时，浏览器可能会忽略它。请使用 `Content-Security-Policy` 的 [`frame-"
+"ancestors`](https://www.w3.org/TR/CSP3/#directive-frame-ancestors) "
+"指令来允许特定源对其进行框架嵌入。\n"
+"\n"
+"更多信息请参阅 [MDN](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X"
+"-Frame-Options)。\n"
 
 #: httplint/field/parsers/x_frame_options.py:104
 msgid "The X-Frame-Options header contains an unknown value."
-msgstr "X-Frame-Options 头包含未知值。"
+msgstr "X-Frame-Options 标头包含未知值。"
 
 #: httplint/field/parsers/x_frame_options.py:107
 msgid ""
@@ -5934,10 +5998,10 @@ msgid ""
 "See [MDN](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X"
 "-Frame-Options) for more information.\n"
 msgstr ""
-"浏览器仅对该头显示两个值，`DENY` 和 `SAMEORIGIN`。在此处使用其他值可能不会导致问题，但它们也不会产生任何效果。\n"
+"浏览器只处理此标头的两个值：`DENY` 和 `SAMEORIGIN`。在这里使用其他值不一定会造成问题，但它们很可能也不会有任何效果。\n"
 "\n"
-"有关更多信息，请参阅 [MDN](https://developer.mozilla.org/en-"
-"US/docs/Web/HTTP/Headers/X-Frame-Options)。\n"
+"更多信息请参阅 [MDN](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X"
+"-Frame-Options)。\n"
 
 #~ msgid "The total size of the headers is very large (%(header_size)s bytes)."
 #~ msgstr "请求头总大小过大（%(header_size)s 字节）。"
