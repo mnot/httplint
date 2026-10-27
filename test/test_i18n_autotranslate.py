@@ -27,6 +27,7 @@ from tools.i18n.autotranslate import (
     drop_added_backticks,
     pick_mark,
     protect,
+    repair_code_spans,
     repair_placeholders,
     Result,
     restore,
@@ -422,8 +423,8 @@ class LinksModeTest(unittest.TestCase):
         self.assertEqual(model.calls[0][0], OLD_PROMPT + "Nothing special here at all.")
 
     def test_translated_span_is_retried_with_the_exact_span(self) -> None:
-        replies = iter(
-            [lambda p: "FR: " + text_of(p).replace("`Content-Type`", "`Tipo`"), faithful]
+        replies = iter(  # two spans for one: not repairable
+            [lambda p: "FR: " + text_of(p).replace("`Content-Type`", "`Tipo` `Tipo`"), faithful]
         )
         result, model = self.run_translate(lambda p: next(replies)(p))
         self.assertEqual(result, Result("FR: " + self.MSGID, 1))
@@ -1091,6 +1092,199 @@ class RepairPlaceholdersTest(unittest.TestCase):
         self.assertIsNone(result.text)
         self.assertEqual(len(model.calls), RETRIES + 1)
         self.assertIn("BAD_VARIABLE", result.error)
+
+
+class RepairCodeSpansTest(unittest.TestCase):
+    """A code span the model changed or unquoted is put back, when that is unambiguous."""
+
+    STATUS = "The `412 (Precondition Failed)` status code means the condition was false."
+    CASES = [
+        (STATUS, "`412 (事前条件の失敗)` ステータスコードは条件が偽だったことを示します。"),
+        ("Set `same-origin` here, which is long.", "ここに `同源` を設定します。"),
+        ("The `Version` attribute is ignored.", "`バージョン`属性は無視されます。"),
+        ("The `201 (Created)` status code.", "`201（作成済み）` ステータスコード。"),
+        ("Do not use `'unsafe-inline'` here.", "ここでは `'安全でないインライン'` を使わないでください。"),
+        ("The `CONNECT` method is odd.", "`接続` メソッドは変です。"),
+        ("Use `(self \"https://example.com\")` here.", "ここでは `(自分 \"https://example.com\")`。"),
+        ("Use ``a `b` c`` here.", "ここでは ``あ `b` c``。"),
+        ("Use `a\nmulti-line span` here.", "ここでは `あ\n複数行` を使う。"),
+    ]
+    QUOTED = [
+        ("「", "」"),
+        ("『", "』"),
+        ("“", "”"),
+        ('"', '"'),
+        ("‘", "’"),
+        ("'", "'"),
+    ]
+
+    def test_changed_content_is_restored_silently(self) -> None:
+        for msgid, text in self.CASES:
+            fixed, put_back = repair_code_spans(msgid, text)
+            self.assertEqual(
+                [m.group(0) for m in autotranslate.CODE_RE.finditer(fixed)],
+                [m.group(0) for m in autotranslate.CODE_RE.finditer(msgid)],
+                msgid,
+            )
+            self.assertEqual(len(put_back), 1, msgid)  # one: no advisory
+            self.assertNotIn(put_back[0], text)
+        self.assertEqual(
+            repair_code_spans(self.STATUS, self.CASES[0][1])[0],
+            "`412 (Precondition Failed)` ステータスコードは条件が偽だったことを示します。",
+        )
+
+    def test_quotes_are_turned_back_into_backticks(self) -> None:
+        msgid = "Use `Link` and `max-age=0` here."
+        for left, right in self.QUOTED:
+            text = f"{left}Link{right} と {left}max-age=0{right} を使う。"
+            self.assertEqual(
+                repair_code_spans(msgid, text), ("`Link` と `max-age=0` を使う。", []), left
+            )
+
+    def test_quote_swap_and_one_changed_span_together(self) -> None:
+        text = "「Link」 と `最大` を使う。"
+        self.assertEqual(
+            repair_code_spans("Use `Link` and `max-age` here.", text),
+            ("`Link` と `max-age` を使う。", ["`max-age`"]),
+        )
+
+    def test_a_valid_span_in_another_place_is_kept(self) -> None:
+        # the spans the model kept are not touched, even if it moved them: one changed span
+        # is still unambiguous
+        msgid = "Use `a` then `b` then `c`."
+        self.assertEqual(
+            repair_code_spans(msgid, "`b` と `a` と `X`。"), ("`b` と `a` と `c`。", ["`c`"])
+        )
+
+    def test_mapping_is_by_order_of_appearance_not_sorted_order(self) -> None:
+        msgid = "Use `zeta` then `alpha`, and `mid`."
+        self.assertEqual(
+            repair_code_spans(msgid, "`ゼータ` と `アルファ`、`mid`。"),
+            ("`zeta` と `alpha`、`mid`。", ["`zeta`", "`alpha`"]),
+        )
+        self.assertEqual(
+            repair_code_spans(msgid, "`mid`、`アルファ` と `ゼータ`。"),
+            ("`mid`、`zeta` と `alpha`。", ["`zeta`", "`alpha`"]),
+        )
+
+    def test_valid_text_is_untouched(self) -> None:
+        for msgid, _ in self.CASES:
+            self.assertEqual(repair_code_spans(msgid, msgid), (msgid, []))
+        text = "`b` と `a`"  # reordered spans are fine
+        self.assertEqual(repair_code_spans("`a` and `b`", text), (text, []))
+        self.assertEqual(repair_code_spans("`a` and `a`", "`a` `a`"), ("`a` `a`", []))
+
+    def test_repair_is_dropped_unless_the_spans_match_exactly(self) -> None:
+        # replacing the span would pair up the backticks differently
+        for text in ("`a`a``", "`a`b``", "`a` ``"):
+            self.assertEqual(repair_code_spans("````", text), (text, []), text)
+
+    def test_count_mismatch_is_not_repaired(self) -> None:
+        for msgid, text in (
+            ("Use `a` and `b`.", "`あ` を使う。"),  # one span lost
+            ("Use `a`.", "`あ` と `b` を使う。"),  # one span added
+            ("Use `a` and `b`.", "「a」 を使う。"),  # one quoted, one lost: still 1 span vs 2
+            ("Use `a` and `a`.", "「a」 を使う。"),  # one candidate for two spans
+        ):
+            self.assertEqual(repair_code_spans(msgid, text), (text, []), text)
+
+    def test_ambiguous_quoted_text_is_not_repaired(self) -> None:
+        for text in ("「X」 と “X” を使う。", "「X」 と 「X」 を使う。"):
+            self.assertEqual(repair_code_spans("Use `X` here.", text), (text, []), text)
+
+    def test_only_exact_quoted_text_counts(self) -> None:
+        for text in ("「x」 を使う。", "「X 」 を使う。", "「XY」 を使う。", "X を使う。"):
+            self.assertEqual(repair_code_spans("Use `X` here.", text), (text, []), text)
+
+    def test_quoted_text_inside_a_code_span_is_not_a_candidate(self) -> None:
+        text = "`「X」` と `Y` を使う。"  # `「X」` is a span of its own, and `X` is lost
+        self.assertEqual(
+            repair_code_spans("Use `X` and `Y`.", text), ("`X` と `Y` を使う。", ["`X`"])
+        )
+
+    def test_quoted_text_inside_another_span_is_not_a_second_candidate(self) -> None:
+        self.assertEqual(
+            repair_code_spans("Use `X` and `Y`.", "「X」 と `Z「X」`。"),
+            ("`X` と `Y`。", ["`Y`"]),
+        )
+
+    def test_msgid_without_backticks_or_with_an_odd_count_is_untouched(self) -> None:
+        for msgid, text in (
+            ("Use the Link field.", "`Link` を使う。"),
+            ("Use the ` mark and `Link`.", "「Link」 を使う。"),
+            ("Use it.", "それを使う。"),
+        ):
+            self.assertEqual(repair_code_spans(msgid, text), (text, []), text)
+
+    def test_spans_with_placeholders_are_left_to_the_placeholder_checks(self) -> None:
+        msgid = "The `%(field_name)s` field is `%(value)s` here."
+        text = "`%(a)s %(b)s` フィールドは `%(value)s`。"
+        self.assertEqual(repair_code_spans(msgid, text), (text, []))
+        self.assertEqual(  # but unquoted ones are put back
+            repair_code_spans(msgid, "「%(field_name)s」 フィールドは `%(value)s`。"),
+            ("`%(field_name)s` フィールドは `%(value)s`。", []),
+        )
+
+    def test_repaired_entry_costs_one_call_and_is_clean(self) -> None:
+        msgid = self.STATUS
+        for mode in (PROTECT_NAMES, PROTECT_LINKS):
+            model = FakeModel(lambda p: text_of(p).replace("412 (Precondition Failed)", "412 (失敗)"))
+            result = translate(ask_for(model), "ja", msgid, mode=mode)
+            self.assertEqual(result, Result(msgid), mode)
+            self.assertEqual(len(model.calls), 1, mode)
+
+    def test_quote_swap_costs_one_call_and_is_clean(self) -> None:
+        msgid = "Use the `same-origin` and `credentialless` values here, which is long."
+        model = FakeModel(
+            lambda p: text_of(p).replace("`same-origin`", "「same-origin」").replace(
+                "`credentialless`", "“credentialless”"
+            )
+        )
+        result = translate(ask_for(model), "ja", msgid)
+        self.assertEqual((result, len(model.calls)), (Result(msgid), 1))
+
+    TWO = "Use the `same-origin` or `same-origin-allow-popups` value here, which is long."
+
+    def test_several_changed_spans_are_fuzzy_after_the_retries(self) -> None:
+        model = FakeModel(
+            lambda p: text_of(p)
+            .replace("`same-origin`", "`同源`")
+            .replace("`same-origin-allow-popups`", "`同源弹出`")
+        )
+        result = translate(ask_for(model), "zh", self.TWO)
+        self.assertEqual(len(model.calls), RETRIES + 1)
+        self.assertTrue(result.fuzzy)
+        self.assertEqual(result.text, self.TWO)
+        self.assertIn("CODE_SPANS_RESTORED", result.error)
+        self.assertIn("Keep `same-origin`, `same-origin-allow-popups` exactly as written", model.calls[1][0])
+
+    def test_swapped_changed_spans_are_not_accepted_silently(self) -> None:
+        reply = "值 `同源弹出` 或 `同源`。"  # the word order swapped the spans
+        model = FakeModel(lambda p: reply)
+        result = translate(ask_for(model), "zh", self.TWO)
+        self.assertEqual(len(model.calls), RETRIES + 1)
+        self.assertTrue(result.fuzzy)  # mapped by position: wrong, but flagged for review
+        self.assertEqual(
+            result.text, "值 `same-origin` 或 `same-origin-allow-popups`。"
+        )
+
+    def test_a_retry_that_keeps_the_spans_is_clean(self) -> None:
+        replies = iter(["`同源弹出` 和 `同源`。", None])
+
+        def reply(prompt: str) -> str:
+            first = next(replies)
+            return first if first is not None else faithful(prompt)
+
+        model = FakeModel(reply)
+        result = translate(ask_for(model), "fr", self.TWO)
+        self.assertEqual(result, Result("FR: " + self.TWO, 1))
+
+    def test_unrepairable_span_is_still_retried_and_left_empty(self) -> None:
+        model = FakeModel(lambda p: text_of(p).replace("`same-origin` or ", ""))
+        result = translate(ask_for(model), "fr", self.TWO)
+        self.assertIsNone(result.text)
+        self.assertEqual(len(model.calls), RETRIES + 1)
+        self.assertIn("CODE_SPAN_CHANGED", result.error)
 
 
 if __name__ == "__main__":
