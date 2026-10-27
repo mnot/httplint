@@ -8,7 +8,7 @@ in the prompt. Entries with low=True are style calls on which the reviews were u
 """
 
 from dataclasses import dataclass
-from typing import Dict, Tuple
+from typing import Dict, Optional, Tuple
 
 
 @dataclass(frozen=True)
@@ -107,4 +107,34 @@ STRENGTH: Dict[str, Tuple[Tuple[str, ...], Tuple[str, ...]]] = {
         ("必须", "(?<!无)须", "不得"),
         ("应该", "应当", "应为", "(?<![响对适反供相])应(?![用答])", "建议", "推荐"),
     ),
+}
+
+# What to tell the model for a normative word in the msgid: per language and key ('should',
+# 'should not', 'must', 'must not'), the wordings to use and the one to avoid (or None).
+# rules.py checks them against STRENGTH at import.
+STRENGTH_HINTS: Dict[str, Dict[str, Tuple[Tuple[str, ...], Optional[str]]]] = {
+    "fr": {
+        "should": (("devrait", "devraient"), "doit"),
+        "should not": (("ne devrait pas",), None),
+        "must": (("doit",), None),
+        "must not": (("ne doit pas",), None),
+    },
+    "es": {
+        "should": (("debería",), None),
+        "should not": (("no debería",), None),
+        "must": (("debe",), None),
+        "must not": (("no debe",), None),
+    },
+    "ja": {
+        "should": (("べきです", "ほうがよいです"), "なければなりません"),
+        "should not": (("べきではありません",), None),
+        "must": (("なければなりません",), None),
+        "must not": (("てはなりません",), None),
+    },
+    "zh": {
+        "should": (("应该", "应当"), None),
+        "should not": (("不应",), None),
+        "must": (("必须",), None),
+        "must not": (("不得",), None),
+    },
 }

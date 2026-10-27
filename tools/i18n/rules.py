@@ -11,7 +11,7 @@ import pkgutil
 import re
 from typing import List, Optional, Tuple
 
-from .glossary import GLOSSARY, STRENGTH, Entry
+from .glossary import GLOSSARY, STRENGTH, STRENGTH_HINTS, Entry
 from .heuristics import _lang_base
 
 MAX_LISTED = 3  # problems named in one message
@@ -211,6 +211,55 @@ def strength(msgid: str, msgstr: str, lang: Optional[str]) -> Optional[str]:
     if must and not should and shouldy and not musty:
         return "msgid says 'must' but the translation says 'should'"
     return None
+
+
+SHOULD_RE = re.compile(r"\bshould\b(?P<neg>\s+not\b)?", re.IGNORECASE)
+MUST_RE = re.compile(r"\bmust\b(?P<neg>\s+not\b)?", re.IGNORECASE)
+HINT_KEYS = ("should", "should not", "must", "must not")
+
+
+def strength_words(msgid: str) -> List[str]:
+    """The HINT_KEYS in msgid, found as strength() finds 'should' and 'must'."""
+    english = prose(msgid)
+    found = {
+        f"{word} not" if m["neg"] else word
+        for word, rx in (("should", SHOULD_RE), ("must", MUST_RE))
+        for m in rx.finditer(english)
+    }
+    return [k for k in HINT_KEYS if k in found]
+
+
+def strength_hint(lang: Optional[str], msgid: str) -> str:
+    """A prompt sentence for the 'should' / 'must' wordings in msgid ('' if none)."""
+    table = STRENGTH_HINTS.get(locale_key(lang))
+    parts = []
+    for key in strength_words(msgid) if table else ():
+        use, avoid = table[key]
+        parts.append(
+            f"'{key}' as {' or '.join(repr(w) for w in use)}"
+            + (f" (never '{avoid}')" if avoid else "")
+        )
+    return f" Strength: translate {'; '.join(parts)}." if parts else ""
+
+
+def strength_hint_problems() -> List[str]:
+    """Hint wordings that strength() would not read as the strength they are for."""
+    problems = []
+    for lang, table in STRENGTH_HINTS.items():
+        musty, shouldy = STRENGTH[lang]
+        for key, (use, avoid) in table.items():
+            own, other = (musty, shouldy) if key.startswith("must") else (shouldy, musty)
+            for word in use:
+                if not _has(own, word) or _has(other, word):
+                    problems.append(f"{lang} '{key}': '{word}' is not read as '{key.split()[0]}'")
+            if avoid and not _has(other, avoid):
+                problems.append(f"{lang} '{key}': avoided '{avoid}' is not the other strength")
+    return problems
+
+
+_HINT_PROBLEMS = strength_hint_problems()
+if _HINT_PROBLEMS:  # a data error in glossary.py
+    raise RuntimeError("; ".join(_HINT_PROBLEMS))
 
 
 ## LEFTOVER_ENGLISH, PUNCTUATION

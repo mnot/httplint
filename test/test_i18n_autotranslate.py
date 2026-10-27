@@ -25,7 +25,9 @@ from tools.i18n.autotranslate import (
     build_parser,
     code_span_rule,
     drop_added_backticks,
+    MARK,
     pick_mark,
+    prompt_text,
     protect,
     repair_code_spans,
     repair_placeholders,
@@ -34,7 +36,10 @@ from tools.i18n.autotranslate import (
     supports_option,
     token_error,
     translate,
+    unwrapped,
+    wrap_names,
 )
+from tools.i18n import glossary, rules
 from tools.i18n.utils import load_catalog, save_catalog
 
 POT = os.path.join(os.path.dirname(__file__), "..", "httplint", "translations", "messages.pot")
@@ -109,7 +114,7 @@ def faithful(prompt: str) -> str:
 
 def masked_reply(msgid: str, reply: str, mode: str) -> str:
     """reply as a model that copies the tokens would write it: protected text -> tokens."""
-    for number, span in enumerate(protect(msgid, mode=mode)[1], 1):
+    for number, span in enumerate(prompt_text(msgid, MARK, mode)[1], 1):
         reply = reply.replace(span, f"@@{number}@@")
     return reply
 
@@ -522,14 +527,12 @@ class LinksModeTest(unittest.TestCase):
         self.assertEqual(len(model.calls), 1)
         self.assertEqual(code_span_rule(msgid, "anything", "ja"), [])
 
-    def test_added_span_in_msgid_with_backticks_is_advisory(self) -> None:
+    def test_added_span_in_msgid_with_backticks_is_unwrapped(self) -> None:
         msgid = "The `Expect` header is missing, and the Vary header too, which is long."
         reply = "L'en-tête `Expect` est absent, et `Vary` aussi."
         result, model = self.run_translate(lambda p: reply, msgid)
-        self.assertEqual(len(model.calls), 3)
-        self.assertTrue(result.fuzzy)
-        self.assertEqual(result.text, reply)
-        self.assertIn("you added `Vary`", result.error)
+        self.assertEqual(result, Result("L'en-tête `Expect` est absent, et Vary aussi."))
+        self.assertEqual(len(model.calls), 1)
 
     def test_odd_characters_in_spans(self) -> None:
         msgid = (
@@ -647,13 +650,13 @@ class DropAddedBackticksTest(unittest.TestCase):
             result = translate(ask_for(model), "fr", msgid, mode=mode)
             if mode == PROTECT_ALL:  # `all` masks the span; the added one is rejected
                 self.assertIsNone(result.text)
-            else:
-                self.assertTrue(result.fuzzy)
+                self.assertEqual(len(model.calls), RETRIES + 1)
+                self.assertIn("added", result.error.lower())
+            else:  # kept as written; repair_code_spans removes the added span's backticks
                 self.assertEqual(
-                    result.text, "L'en-tête `Content-Type` est invalide, et `Vary` aussi."
+                    result, Result("L'en-tête `Content-Type` est invalide, et Vary aussi.")
                 )
-            self.assertEqual(len(model.calls), RETRIES + 1)
-            self.assertIn("added", result.error.lower())
+                self.assertEqual(len(model.calls), 1)
 
     def test_function(self) -> None:
         self.assertEqual(drop_added_backticks("a b", "`a` ``b`"), "a b")
@@ -894,13 +897,13 @@ class NamesModeTest(unittest.TestCase):
                 self.assertEqual(result, Result(msgid), (mode, msgid))
 
     def test_model_sees_no_names_and_one_token_sentence(self) -> None:
+        # a msgid with backticks keeps its names masked
         model = FakeModel(faithful)
-        result = translate(ask_for(model), "fr", "Content-Length is wrong.")
-        self.assertEqual(result, Result("FR: Content-Length is wrong."))
+        result = translate(ask_for(model), "fr", "Use `x`: Content-Length is wrong.")
+        self.assertEqual(result, Result("FR: Use `x`: Content-Length is wrong."))
         prompt = model.calls[0][0]
-        self.assertEqual(text_of(prompt), "@@1@@ is wrong.")
+        self.assertEqual(text_of(prompt), "Use `x`: @@1@@ is wrong.")
         self.assertEqual(prompt.count("Tokens like"), 1)
-        self.assertNotIn("backticks", prompt)  # nothing visible to copy
 
     def test_visible_sentence_when_code_spans_remain(self) -> None:
         model = FakeModel(faithful)
@@ -916,13 +919,13 @@ class NamesModeTest(unittest.TestCase):
             return first if first is not None else faithful(prompt)
 
         model = FakeModel(reply)
-        result = translate(ask_for(model), "fr", "Content-Length is wrong.")
-        self.assertEqual(result, Result("FR: Content-Length is wrong.", 1))
+        result = translate(ask_for(model), "fr", "Use `x`: Content-Length is wrong.")
+        self.assertEqual(result, Result("FR: Use `x`: Content-Length is wrong.", 1))
         self.assertIn("rejected: missing @@1@@", model.calls[1][0])
 
     def test_dropped_token_everywhere_is_left_empty(self) -> None:
         model = FakeModel(lambda p: "Elle est fausse.")
-        result = translate(ask_for(model), "fr", "Content-Length is wrong.")
+        result = translate(ask_for(model), "fr", "Use `x`: Content-Length is wrong.")
         self.assertEqual(len(model.calls), RETRIES + 1)
         self.assertIsNone(result.text)
         self.assertFalse(result.fuzzy)
@@ -1327,6 +1330,280 @@ class RepairCodeSpansTest(unittest.TestCase):
         self.assertIsNone(result.text)
         self.assertEqual(len(model.calls), RETRIES + 1)
         self.assertIn("CODE_SPAN_CHANGED", result.error)
+
+
+class WrapNamesTest(unittest.TestCase):
+    """--protect names: a msgid without backticks gets its names wrapped in them, not masked."""
+
+    def prompt_text(self, msgid: str, mode: str = PROTECT_NAMES) -> Tuple[str, List[str]]:
+        return prompt_text(msgid, MARK, mode)
+
+    def test_summary_prompt_has_the_backticked_name_and_no_token_for_it(self) -> None:
+        msgid = "The Age header's value is very large."
+        model = FakeModel(lambda p: "FR: " + text_of(p))
+        result = translate(ask_for(model), "ja", msgid)
+        prompt = model.calls[0][0]
+        self.assertEqual(text_of(prompt), "The `Age` header's value is very large.")
+        self.assertNotIn("@@", prompt)
+        self.assertNotIn("Tokens like", prompt)
+        self.assertIn("Copy text in backticks", prompt)
+        self.assertEqual(result, Result("FR: " + msgid))  # no backtick left
+        self.assertNotIn("`", result.text or "")
+
+    def test_a_reply_that_loses_the_name_is_retried_then_left_empty(self) -> None:
+        model = FakeModel(lambda p: "Faux.")
+        result = translate(ask_for(model), "fr", "Content-Length is wrong.")
+        self.assertEqual(len(model.calls), RETRIES + 1)
+        self.assertIsNone(result.text)
+        self.assertIn("FIELD_NAME_CHANGED", result.error)
+
+    def test_names_inside_link_text_links_stay_masked(self) -> None:
+        self.assertEqual(
+            self.prompt_text("See [the Content-Length header](https://e.org/Content-Length)."),
+            ("See [the `Content-Length` header]@@1@@.", ["(https://e.org/Content-Length)"]),
+        )
+        self.assertEqual(
+            self.prompt_text("Content-Length: see https://e.org/x."),
+            ("`Content-Length`: see @@1@@.", ["https://e.org/x"]),
+        )
+
+    def test_two_names(self) -> None:
+        self.assertEqual(
+            self.prompt_text("Content-Length and Transfer-Encoding should not be present."),
+            ("`Content-Length` and `Transfer-Encoding` should not be present.", []),
+        )
+
+    def test_names_next_to_punctuation(self) -> None:
+        self.assertEqual(
+            self.prompt_text("Cache-Control: max-age and Expires. (Vary: User-Agent)"),
+            ("`Cache-Control`: max-age and Expires. (Vary: `User-Agent`)", []),
+        )
+        self.assertEqual(
+            self.prompt_text("(Content-Length), Content-Length-Foo and Content-Length.")[0],
+            "(`Content-Length`), Content-Length-Foo and `Content-Length`.",
+        )
+
+    def test_coding_names(self) -> None:
+        self.assertEqual(
+            self.prompt_text("The gzip and compress codings; Brotli.")[0],
+            "The `gzip` and compress codings; `Brotli`.",
+        )
+
+    def test_placeholders_are_not_wrapped(self) -> None:
+        self.assertEqual(
+            self.prompt_text("The Link header: %(Link)s.")[0], "The `Link` header: %(Link)s."
+        )
+
+    def test_ordinary_words_are_not_wrapped(self) -> None:
+        for text in ("Follow the link and check the date.", "The link header and the date field."):
+            self.assertEqual(self.prompt_text(text), (text, []), text)
+        self.assertEqual(
+            self.prompt_text("The Date header and a link.")[0], "The `Date` header and a link."
+        )
+
+    def test_msgid_with_backticks_keeps_its_names_masked(self) -> None:
+        for msgid in (
+            "The `Content-Type` field is wrong: Content-Length too.",
+            "Use `x`: Content-Length is wrong.",
+        ):
+            self.assertEqual(self.prompt_text(msgid), protect(msgid, MARK, PROTECT_NAMES), msgid)
+            self.assertIn("@@1@@", self.prompt_text(msgid)[0])
+
+    def test_links_and_all_modes_are_unchanged(self) -> None:
+        msgid = "The Age header is large: https://e.org/x."
+        for mode in (PROTECT_LINKS, PROTECT_ALL):
+            self.assertEqual(self.prompt_text(msgid, mode), protect(msgid, MARK, mode))
+
+    def test_nothing_to_wrap(self) -> None:
+        self.assertEqual(wrap_names("Nothing here."), "Nothing here.")
+
+    def test_every_msgid_round_trips_in_every_mode(self) -> None:
+        msgids = pot_msgids()
+        self.assertGreater(len(msgids), 500)
+        wrapped = 0
+        for mode in PROTECT_MODES:
+            for msgid in msgids:
+                masked, spans = self.prompt_text(msgid, mode)
+                back = drop_added_backticks(msgid, restore(masked, spans, pick_mark(msgid)))
+                self.assertEqual(back.strip(), msgid.strip(), (mode, msgid))
+                wrapped += mode == PROTECT_NAMES and "`" not in msgid and "`" in masked
+        self.assertGreater(wrapped, 50)
+
+    def test_echo_model_gives_back_the_msgid_in_every_mode(self) -> None:
+        for mode in PROTECT_MODES:
+            for msgid in pot_msgids():
+                for lang in ("fr", "ja"):
+                    result = translate(text_of, lang, msgid, mode=mode)
+                    self.assertEqual(result, Result(msgid), (mode, lang, msgid))
+
+
+class StrengthHintTest(unittest.TestCase):
+    """A per-language line on 'should' and 'must' goes into the prompt."""
+
+    def prompt(self, lang: str, msgid: str) -> str:
+        model = FakeModel(lambda p: "x")
+        translate(ask_for(model), lang, msgid)
+        return model.calls[0][0]
+
+    def test_words_found_as_the_strength_rule_reads_them(self) -> None:
+        for msgid, found in (
+            ("A server should reply.", ["should"]),
+            ("A server SHOULD NOT reply, and must not.", ["should not", "must not"]),
+            ("It must be, and should be.", ["should", "must"]),
+            ("It should not be, but should.", ["should", "should not"]),
+            ("Use `should` and `must` or https://e.org/should %(must)s.", []),
+            ("It shouldn't; mustard.", []),
+            ("Nothing.", []),
+        ):
+            self.assertEqual(rules.strength_words(msgid), found, msgid)
+
+    def test_hint_once_for_the_words_that_occur(self) -> None:
+        msgid = "A server should not send this, but must send that."
+        hints = {
+            "fr": "'should not' as 'ne devrait pas'; 'must' as 'doit'",
+            "es": "'should not' as 'no debería'; 'must' as 'debe'",
+            "ja": "'should not' as 'べきではありません'; 'must' as 'なければなりません'",
+            "zh": "'should not' as '不应'; 'must' as '必须'",
+        }
+        for lang, line in hints.items():
+            prompt = self.prompt(lang, msgid)
+            self.assertEqual(prompt.count("Strength:"), 1, lang)
+            self.assertIn(f" Strength: translate {line}.", prompt)
+        self.assertIn(
+            "'should' as 'devrait' or 'devraient' (never 'doit')",
+            self.prompt("fr", "A server should reply."),
+        )
+        self.assertIn(
+            "'should' as 'べきです' or 'ほうがよいです' (never 'なければなりません')",
+            self.prompt("ja", "A server should reply."),
+        )
+
+    def test_hint_follows_the_terminology_sentence(self) -> None:
+        prompt = self.prompt("fr", "The header should be present.")
+        self.assertRegex(prompt, r"Terminology: [^.]*\. Strength: translate")
+
+    def test_no_hint_for_other_languages(self) -> None:
+        for lang in ("de", "zh_TW", "zh-TW", "pt_BR", "en"):
+            self.assertNotIn("Strength", self.prompt(lang, "A server should or must reply."), lang)
+        self.assertIn("Strength", self.prompt("zh_CN", "A server must reply."))
+        self.assertIn("Strength", self.prompt("fr_CA", "A server must reply."))
+
+    def test_prompts_without_the_words_are_unchanged(self) -> None:
+        checked = 0
+        for msgid in pot_msgids():
+            if rules.strength_words(msgid):
+                continue
+            for lang in ("fr", "ja"):
+                model = FakeModel(lambda p: "x")
+                translate(ask_for(model), lang, msgid)
+                mark = pick_mark(msgid)
+                masked, spans = prompt_text(msgid, mark, DEFAULT_PROTECT)
+                visible = bool(autotranslate.VISIBLE_RE.search(masked))
+                expected = autotranslate.build_prompt(
+                    lang,
+                    masked,
+                    bool(spans),
+                    None,
+                    mark,
+                    visible,
+                    visible and "%%" in masked,
+                    rules.glossary_hint(lang, msgid),
+                )
+                self.assertEqual(model.calls[0][0], expected, (lang, msgid))
+                checked += 1
+        self.assertGreater(checked, 500)
+        self.assertEqual(self.prompt("fr", "Nothing here."), OLD_PROMPT + "Nothing here.")
+
+    def test_hint_words_agree_with_the_glossary(self) -> None:
+        self.assertEqual(rules.strength_hint_problems(), [])
+        self.assertEqual(set(glossary.STRENGTH_HINTS), set(glossary.STRENGTH))
+        for table in glossary.STRENGTH_HINTS.values():
+            self.assertEqual(set(table), set(rules.HINT_KEYS))
+
+    def test_a_hint_word_the_rule_does_not_know_is_reported(self) -> None:
+        wrong = {"fr": {**glossary.STRENGTH_HINTS["fr"], "must": (("devrait",), None)}}
+        with mock.patch.object(rules, "STRENGTH_HINTS", wrong):
+            problems = rules.strength_hint_problems()
+        self.assertEqual(len(problems), 1)
+        self.assertIn("'devrait' is not read as 'must'", problems[0])
+
+    def test_the_wording_asked_for_passes_the_strength_rule(self) -> None:
+        msgid = "A server should reply."
+        self.assertIsNone(rules.strength(msgid, "Un serveur devrait répondre.", "fr"))
+        self.assertIsNotNone(rules.strength(msgid, "Un serveur doit répondre.", "fr"))
+
+
+class UnwrapAddedSpansTest(unittest.TestCase):
+    """Spans the model added around words are unwrapped when the msgid's spans are all there."""
+
+    def test_spanish_cabecera(self) -> None:
+        msgid = "The `Link` header is invalid, which is long enough."
+        text = "La `cabecera` `Link` no es válida, lo que es bastante largo."
+        self.assertEqual(
+            repair_code_spans(msgid, text),
+            ("La cabecera `Link` no es válida, lo que es bastante largo.", []),
+        )
+
+    def test_japanese_header_and_location(self) -> None:
+        msgid = "The `Location` header is invalid here."
+        for text, fixed in (
+            ("`ヘッダー` `Location` は無効です。", "ヘッダー `Location` は無効です。"),
+            ("`Location` ヘッダーは `無効` です。", "`Location` ヘッダーは 無効 です。"),
+        ):
+            self.assertEqual(repair_code_spans(msgid, text), (fixed, []), text)
+        msgid = "The `Location` header is invalid, as `Link`."
+        text = "`ヘッダー` `Location` は `Link` と `Location` は無効です。"
+        self.assertEqual(repair_code_spans(msgid, text), (text, []))  # `Location` twice
+
+    def test_several_added_spans_all_go(self) -> None:
+        self.assertEqual(
+            repair_code_spans("Use `a` here.", "`x` usa `a` y `z`."), ("x usa `a` y z.", [])
+        )
+
+    def test_unwrapped(self) -> None:
+        for span, inner in (
+            ("`a`", "a"),
+            ("``a `b` c``", "a `b` c"),
+            ("`` a ``", "a"),
+            ("` `", " "),
+        ):
+            self.assertEqual(unwrapped(span), inner, span)
+
+    def test_not_unwrapped_when_a_span_is_lacking(self) -> None:
+        for msgid, text in (
+            ("Use `a` and `b`.", "`a` `x` `y`"),  # `b` is lost: hard failure, not ours
+            ("Use `a` and `b`.", "`a` `x` `y` `z`"),
+        ):
+            self.assertEqual(repair_code_spans(msgid, text), (text, []), text)
+
+    def test_not_unwrapped_when_the_extra_span_repeats_one(self) -> None:
+        for text in ("Usa `a` `a` `a` aquí.", "Usa `a` y `a` aquí."):
+            self.assertEqual(repair_code_spans("Use `a` here.", text), (text, []), text)
+
+    def test_not_unwrapped_with_an_odd_backtick_count_in_the_msgid(self) -> None:
+        text = "`a` y `b`"
+        self.assertEqual(repair_code_spans("Use ` and `a`.", text), (text, []))
+
+    def test_not_unwrapped_when_an_inner_backtick_would_be_left_stray(self) -> None:
+        text = "`a` y ``b ` c``"
+        self.assertEqual(repair_code_spans("Use `a` here.", text), (text, []))
+
+    def test_translate_is_clean_in_one_call(self) -> None:
+        msgid = "The `Foo` header is invalid, which is long enough."
+        reply = "La `cabecera` `Foo` no es válida, lo que es bastante largo."
+        model = FakeModel(lambda p: reply)
+        result = translate(ask_for(model), "es", msgid)
+        self.assertEqual(
+            result, Result("La cabecera `Foo` no es válida, lo que es bastante largo.")
+        )
+        self.assertEqual(len(model.calls), 1)
+
+    def test_repeated_span_stays_advisory(self) -> None:
+        model = FakeModel(lambda p: "Usa `a` y `a` aquí, lo bastante largo.")
+        result = translate(ask_for(model), "es", "Use `a` here, which is long enough.")
+        self.assertTrue(result.fuzzy)
+        self.assertIn("CODE_SPAN_ADDED you added `a`", result.error)
+        self.assertEqual(len(model.calls), RETRIES + 1)
 
 
 if __name__ == "__main__":
