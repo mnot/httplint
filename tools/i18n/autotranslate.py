@@ -196,6 +196,100 @@ def renamed_problem(names: List[str]) -> str:
     )
 
 
+# Quote pairs a model may use in place of backticks
+QUOTE_PAIRS = (
+    ("「", "」"),
+    ("『", "』"),
+    ("“", "”"),
+    ("„", "“"),
+    ("«", "»"),
+    ("«\u00a0", "\u00a0»"),
+    ("« ", " »"),
+    ('"', '"'),
+    ("‘", "’"),
+    ("'", "'"),
+)
+
+
+def code_spans(text: str) -> List["re.Match[str]"]:
+    return list(CODE_RE.finditer(text))
+
+
+def requote(text: str, span: str, count: int) -> str:
+    """
+    Put backticks back on a code span the model quoted instead (「T」, “T”, 'T', ...), when
+    exactly count quoted occurrences of its text are outside code spans.
+    """
+    ticks = len(span) - len(span.lstrip("`"))
+    inner = span[ticks:-ticks]
+    if not inner.strip():
+        return text
+    code = [(m.start(), m.end()) for m in code_spans(text)]
+    found = sorted(
+        {
+            (m.start(), m.end())
+            for left, right in QUOTE_PAIRS
+            for m in re.finditer(re.escape(left + inner + right), text)
+            if not any(m.start() < end and start < m.end() for start, end in code)
+        }
+    )
+    if len(found) != count:  # ambiguous; overlapping ones are caught by repair_code_spans
+        return text
+    for start, end in reversed(found):
+        text = text[:start] + span + text[end:]
+    return text
+
+
+def repair_code_spans(msgid: str, text: str) -> Tuple[str, List[str]]:
+    """
+    Undo code spans the model damaged. A span it quoted instead of backticking is backticked
+    again (when unambiguous). Then, if the spans are as many as msgid's, each span that
+    msgid does not have is replaced by one that text lacks, in order of appearance. The
+    repair is dropped unless the spans then equal msgid's exactly. Returns the text and the
+    spans put back by position; with several, the mapping is only a guess from the order
+    (the language may reorder them).
+    """
+    if msgid.count("`") % 2:  # code_span_rule gives no verdict
+        return text, []
+    want = [m.group(0) for m in code_spans(msgid)]
+    if not want or Counter(m.group(0) for m in code_spans(text)) == Counter(want):
+        return text, []
+    fixed = text
+    for span, count in (Counter(want) - Counter(m.group(0) for m in code_spans(text))).items():
+        fixed = requote(fixed, span, count)
+    got = code_spans(fixed)
+    if len(got) != len(want):  # cheap early exit; the final check would catch it
+        return text, []
+    unwanted, kept = [], Counter(want)
+    for match in got:
+        if kept[match.group(0)]:
+            kept[match.group(0)] -= 1
+        else:
+            unwanted.append(match)
+    lacking, have = [], Counter(m.group(0) for m in got)
+    for span in want:
+        if have[span]:
+            have[span] -= 1
+        else:
+            lacking.append(span)
+    if any(PLACEHOLDER_RE.search(span) for span in lacking):  # placeholders: BAD_VARIABLE's
+        return text, []
+    for match, span in reversed(list(zip(unwanted, lacking))):
+        fixed = fixed[: match.start()] + span + fixed[match.end() :]
+    if Counter(m.group(0) for m in code_spans(fixed)) != Counter(want):
+        return text, []
+    return fixed, lacking
+
+
+def restored_problem(spans: List[str]) -> str:
+    """The advisory problem for several code spans put back by position (see above)."""
+    listed = ", ".join(named(s) for s in spans[:MAX_LISTED])
+    return (
+        f"CODE_SPANS_RESTORED code spans were restored by position; check the order. "
+        f"Keep {listed} exactly as written"
+    )
+
+
 def shorten(text: str) -> str:
     """One line of at most MAX_ERROR characters (errors can echo model output)."""
     parts, pos = [], 0
@@ -357,12 +451,17 @@ def translate(
         if error:
             continue
         repaired, renamed = repair_placeholders(msgid, restore(raw, spans, mark))
+        repaired, put_back = repair_code_spans(msgid, repaired)
         text = match_whitespace(msgid, repaired, lang)
         problems = [
             p for rule in (RULES if rules is None else rules) for p in rule(msgid, text, lang)
         ]
         if len(renamed) > 1:  # one rename is unambiguous; several are mapped by order only
             problems.append(renamed_problem(renamed))
+        # likewise for code spans, and a restored span whose text is also in the reply bare
+        # may not be the model's rewrite of it
+        if len(set(put_back)) > 1 or any(text_kept(span, repaired) for span in put_back):
+            problems.append(restored_problem(put_back))
         if not problems:
             return Result(text, attempt)
         hard = [p for p in problems if p.startswith(HARD_PREFIXES)]
