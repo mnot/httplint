@@ -243,7 +243,7 @@ def strength_hint(lang: Optional[str], msgid: str) -> str:
 
 
 def strength_hint_problems() -> List[str]:
-    """Hint wordings that strength() would not read as the strength they are for."""
+    """Hint wordings that strength() would not read as the strength they are for (tested)."""
     problems = []
     for lang, table in STRENGTH_HINTS.items():
         musty, shouldy = STRENGTH[lang]
@@ -255,11 +255,6 @@ def strength_hint_problems() -> List[str]:
             if avoid and not _has(other, avoid):
                 problems.append(f"{lang} '{key}': avoided '{avoid}' is not the other strength")
     return problems
-
-
-_HINT_PROBLEMS = strength_hint_problems()
-if _HINT_PROBLEMS:  # a data error in glossary.py
-    raise RuntimeError("; ".join(_HINT_PROBLEMS))
 
 
 ## LEFTOVER_ENGLISH, PUNCTUATION

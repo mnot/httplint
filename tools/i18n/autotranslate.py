@@ -133,13 +133,12 @@ def protect(text: str, mark: str = MARK, mode: str = DEFAULT_PROTECT) -> Tuple[s
 
 
 def wrap_names(text: str) -> str:
-    """text with every field or coding name (see name_spans) in backticks."""
+    """text with every field or coding name (see name_spans) in backticks; mask links first."""
     out: List[str] = []
     pos = 0
-    for start, end in sorted(name_spans(text), key=lambda s: (s[0], s[0] - s[1])):
-        if start >= pos:  # not inside a name already wrapped
-            out.append(f"{text[pos:start]}`{text[start:end]}`")
-            pos = end
+    for start, end in sorted(name_spans(text)):  # name_spans don't overlap
+        out.append(f"{text[pos:start]}`{text[start:end]}`")
+        pos = end
     out.append(text[pos:])
     return "".join(out)
 
@@ -152,7 +151,8 @@ def prompt_text(msgid: str, mark: str, mode: str) -> Tuple[str, List[str]]:
     backticks can't be told from the reply's added ones, so it keeps its names masked.
     """
     if mode == PROTECT_NAMES and "`" not in msgid:
-        return protect(wrap_names(msgid), mark, PROTECT_LINKS)
+        masked, spans = protect(msgid, mark, PROTECT_LINKS)  # links first: no names inside them
+        return wrap_names(masked), spans
     return protect(msgid, mark, mode)
 
 
@@ -281,13 +281,33 @@ def unwrapped(span: str) -> str:
     return inner[1:-1] if inner.startswith(" ") and inner.endswith(" ") and inner.strip() else inner
 
 
+MAX_UNWRAP_WORDS = 3  # longer extra spans may be text the model added: left for review
+MAX_UNWRAP_CHARS = 30  # also covers ja and zh, which have no spaces to count
+
+
+def unwrap_all(unwanted: List["re.Match[str]"], want: List[str]) -> Optional[List[str]]:
+    """
+    What the extra spans become with their backticks removed; None if they can't be: one
+    repeats a span of msgid (unclear which copy is the model's), is long (see above), or
+    has a backtick inside (it would be left stray).
+    """
+    words = [unwrapped(m.group(0)) for m in unwanted]
+    if any(m.group(0) in want for m in unwanted):
+        return None
+    if any(
+        "`" in w or len(w.split()) > MAX_UNWRAP_WORDS or len(w) > MAX_UNWRAP_CHARS for w in words
+    ):
+        return None
+    return words
+
+
 def repair_code_spans(msgid: str, text: str) -> Tuple[str, List[str]]:
     """
     Undo code spans the model damaged. A span it quoted instead of backticking is backticked
     again (when unambiguous). Then, if the spans are as many as msgid's, each span that
     msgid does not have is replaced by one that text lacks, in order of appearance. If text
     has more spans and lacks none, the extra ones lose their backticks (the model backticked
-    a word: 'the `cabecera` header'), unless one repeats a span of msgid. The repair is
+    a word: 'the `cabecera` header'; see unwrap_all for the limits). The repair is
     dropped unless the spans then equal msgid's exactly. Returns the text and the spans put
     back by position; with several, the mapping is only a guess from the order (the
     language may reorder them).
@@ -316,14 +336,13 @@ def repair_code_spans(msgid: str, text: str) -> Tuple[str, List[str]]:
         else:
             lacking.append(span)
     if len(got) > len(want):
-        replacements = [unwrapped(m.group(0)) for m in unwanted]
-        # a repeated span is unclear; an inner backtick would be left stray
-        if any(m.group(0) in want for m in unwanted) or "`" in "".join(replacements):
-            return text, []
+        replacements = unwrap_all(unwanted, want)
     elif any(PLACEHOLDER_RE.search(span) for span in lacking):  # placeholders: BAD_VARIABLE's
-        return text, []
+        replacements = None
     else:
         replacements = lacking
+    if replacements is None:
+        return text, []
     for match, span in reversed(list(zip(unwanted, replacements))):
         fixed = fixed[: match.start()] + span + fixed[match.end() :]
     if Counter(m.group(0) for m in code_spans(fixed)) != Counter(want):

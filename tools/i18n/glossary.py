@@ -111,7 +111,7 @@ STRENGTH: Dict[str, Tuple[Tuple[str, ...], Tuple[str, ...]]] = {
 
 # What to tell the model for a normative word in the msgid: per language and key ('should',
 # 'should not', 'must', 'must not'), the wordings to use and the one to avoid (or None).
-# rules.py checks them against STRENGTH at import.
+# A test checks them against STRENGTH.
 STRENGTH_HINTS: Dict[str, Dict[str, Tuple[Tuple[str, ...], Optional[str]]]] = {
     "fr": {
         "should": (("devrait", "devraient"), "doit"),

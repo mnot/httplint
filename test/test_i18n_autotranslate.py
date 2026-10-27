@@ -40,6 +40,8 @@ from tools.i18n.autotranslate import (
     wrap_names,
 )
 from tools.i18n import glossary, rules
+from tools.i18n.autotranslate import name_spans
+from tools.i18n.rules import field_names
 from tools.i18n.utils import load_catalog, save_catalog
 
 POT = os.path.join(os.path.dirname(__file__), "..", "httplint", "translations", "messages.pot")
@@ -640,7 +642,7 @@ class DropAddedBackticksTest(unittest.TestCase):
         )
         self.assertEqual(result.text, reply)
 
-    def test_msgid_with_backticks_is_untouched(self) -> None:
+    def test_msgid_with_backticks_keeps_names_masked_and_the_added_span_is_unwrapped(self) -> None:
         msgid = "The `Content-Type` header isn't valid, and Vary is long enough."
         for mode in PROTECT_MODES:
             reply = masked_reply(
@@ -1414,6 +1416,35 @@ class WrapNamesTest(unittest.TestCase):
         for mode in (PROTECT_LINKS, PROTECT_ALL):
             self.assertEqual(self.prompt_text(msgid, mode), protect(msgid, MARK, mode))
 
+    def test_urls_with_placeholders_are_masked_whole(self) -> None:
+        for msgid, text in (
+            (
+                "See https://e.org/%(a)s?Date=1 and the Date header.",
+                "See @@1@@ and the `Date` header.",
+            ),
+            ("Go to https://e.org/Age/%(a)s/gzip now.", "Go to @@1@@ now."),
+            ("See https://e.org/%(path)s/Age for details.", "See @@1@@ for details."),
+            ("See (https://e.org/%(a)s/Vary).", "See (@@1@@)."),
+            ("See https://e.org/%(path)s/Age-x and Age header.", "See @@1@@ and `Age` header."),
+        ):
+            masked, spans = self.prompt_text(msgid)
+            self.assertEqual(masked, text, msgid)
+            self.assertEqual(len(spans), 1, msgid)
+            self.assertEqual(spans, protect(msgid, MARK, PROTECT_LINKS)[1], msgid)
+            self.assertEqual(masked.count("`") % 2, 0)
+
+    def test_names_do_not_overlap(self) -> None:
+        for name in field_names():
+            text = f"The {name} header, {name}: {name}-x, ({name})."
+            spans = name_spans(text)
+            self.assertEqual(spans, sorted(spans), name)
+            for (_, end), (start, _) in zip(spans, spans[1:]):
+                self.assertLessEqual(end, start, name)
+        for msgid in pot_msgids():
+            spans = name_spans(msgid)
+            for (_, end), (start, _) in zip(sorted(spans), sorted(spans)[1:]):
+                self.assertLessEqual(end, start, msgid)
+
     def test_nothing_to_wrap(self) -> None:
         self.assertEqual(wrap_names("Nothing here."), "Nothing here.")
 
@@ -1477,6 +1508,42 @@ class StrengthHintTest(unittest.TestCase):
             "'should' as 'べきです' or 'ほうがよいです' (never 'なければなりません')",
             self.prompt("ja", "A server should reply."),
         )
+
+    HINT_WORDS = {
+        "fr": {
+            "should": "'should' as 'devrait' or 'devraient' (never 'doit')",
+            "should not": "'should not' as 'ne devrait pas'",
+            "must": "'must' as 'doit'",
+            "must not": "'must not' as 'ne doit pas'",
+        },
+        "es": {
+            "should": "'should' as 'debería'",
+            "should not": "'should not' as 'no debería'",
+            "must": "'must' as 'debe'",
+            "must not": "'must not' as 'no debe'",
+        },
+        "ja": {
+            "should": "'should' as 'べきです' or 'ほうがよいです' (never 'なければなりません')",
+            "should not": "'should not' as 'べきではありません'",
+            "must": "'must' as 'なければなりません'",
+            "must not": "'must not' as 'てはなりません'",
+        },
+        "zh": {
+            "should": "'should' as '应该' or '应当'",
+            "should not": "'should not' as '不应'",
+            "must": "'must' as '必须'",
+            "must not": "'must not' as '不得'",
+        },
+    }
+
+    def test_every_hint_word_is_pinned(self) -> None:
+        for lang, keys in self.HINT_WORDS.items():
+            for key, line in keys.items():
+                self.assertEqual(
+                    rules.strength_hint(lang, f"A server {key} reply."),
+                    f" Strength: translate {line}.",
+                    (lang, key),
+                )
 
     def test_hint_follows_the_terminology_sentence(self) -> None:
         prompt = self.prompt("fr", "The header should be present.")
@@ -1568,6 +1635,31 @@ class UnwrapAddedSpansTest(unittest.TestCase):
             ("` `", " "),
         ):
             self.assertEqual(unwrapped(span), inner, span)
+
+    def test_unwrap_limit_is_three_words_and_thirty_characters(self) -> None:
+        msgid = "Use `a` here."
+        for extra, ok in (
+            ("one two three", True),
+            ("one two three four", False),
+            ("x" * 30, True),
+            ("x" * 31, False),
+            ("あ" * 30, True),  # no spaces: the character limit applies
+            ("あ" * 31, False),
+            ("lo cual es bastante largo", False),
+        ):
+            text = f"`a` y `{extra}`."
+            expected = (f"`a` y {extra}.", []) if ok else (text, [])
+            self.assertEqual(repair_code_spans(msgid, text), expected, extra)
+
+    def test_an_added_sentence_stays_advisory(self) -> None:
+        msgid = "The `Link` header is invalid, which is long enough here."
+        reply = "La cabecera `Link` no es válida, bastante largo. `Nota: este texto lo añadió el modelo.`"
+        model = FakeModel(lambda p: reply)
+        result = translate(ask_for(model), "es", msgid, mode=PROTECT_LINKS)
+        self.assertTrue(result.fuzzy)
+        self.assertEqual(result.text, reply)
+        self.assertIn("CODE_SPAN_ADDED", result.error)
+        self.assertEqual(len(model.calls), RETRIES + 1)
 
     def test_not_unwrapped_when_a_span_is_lacking(self) -> None:
         for msgid, text in (
