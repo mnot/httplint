@@ -197,7 +197,18 @@ def renamed_problem(names: List[str]) -> str:
 
 
 # Quote pairs a model may use in place of backticks
-QUOTE_PAIRS = (("「", "」"), ("『", "』"), ("“", "”"), ('"', '"'), ("‘", "’"), ("'", "'"))
+QUOTE_PAIRS = (
+    ("「", "」"),
+    ("『", "』"),
+    ("“", "”"),
+    ("„", "“"),
+    ("«", "»"),
+    ("«\u00a0", "\u00a0»"),
+    ("« ", " »"),
+    ('"', '"'),
+    ("‘", "’"),
+    ("'", "'"),
+)
 
 
 def code_spans(text: str) -> List["re.Match[str]"]:
@@ -222,7 +233,7 @@ def requote(text: str, span: str, count: int) -> str:
             if not any(m.start() < end and start < m.end() for start, end in code)
         }
     )
-    if len(found) != count or any(a[1] > b[0] for a, b in zip(found, found[1:])):
+    if len(found) != count:  # ambiguous; overlapping ones are caught by repair_code_spans
         return text
     for start, end in reversed(found):
         text = text[:start] + span + text[end:]
@@ -247,7 +258,7 @@ def repair_code_spans(msgid: str, text: str) -> Tuple[str, List[str]]:
     for span, count in (Counter(want) - Counter(m.group(0) for m in code_spans(text))).items():
         fixed = requote(fixed, span, count)
     got = code_spans(fixed)
-    if len(got) != len(want):
+    if len(got) != len(want):  # cheap early exit; the final check would catch it
         return text, []
     unwanted, kept = [], Counter(want)
     for match in got:
@@ -447,7 +458,9 @@ def translate(
         ]
         if len(renamed) > 1:  # one rename is unambiguous; several are mapped by order only
             problems.append(renamed_problem(renamed))
-        if len(put_back) > 1:  # likewise for code spans
+        # likewise for code spans, and a restored span whose text is also in the reply bare
+        # may not be the model's rewrite of it
+        if len(set(put_back)) > 1 or any(text_kept(span, repaired) for span in put_back):
             problems.append(restored_problem(put_back))
         if not problems:
             return Result(text, attempt)

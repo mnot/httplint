@@ -422,7 +422,7 @@ class LinksModeTest(unittest.TestCase):
         _, model = self.run_translate(faithful, "Nothing special here at all.")
         self.assertEqual(model.calls[0][0], OLD_PROMPT + "Nothing special here at all.")
 
-    def test_translated_span_is_retried_with_the_exact_span(self) -> None:
+    def test_unrepairable_span_is_retried_with_the_exact_span(self) -> None:
         replies = iter(  # two spans for one: not repairable
             [lambda p: "FR: " + text_of(p).replace("`Content-Type`", "`Tipo` `Tipo`"), faithful]
         )
@@ -1103,9 +1103,12 @@ class RepairCodeSpansTest(unittest.TestCase):
         ("Set `same-origin` here, which is long.", "ここに `同源` を設定します。"),
         ("The `Version` attribute is ignored.", "`バージョン`属性は無視されます。"),
         ("The `201 (Created)` status code.", "`201（作成済み）` ステータスコード。"),
-        ("Do not use `'unsafe-inline'` here.", "ここでは `'安全でないインライン'` を使わないでください。"),
+        (
+            "Do not use `'unsafe-inline'` here.",
+            "ここでは `'安全でないインライン'` を使わないでください。",
+        ),
         ("The `CONNECT` method is odd.", "`接続` メソッドは変です。"),
-        ("Use `(self \"https://example.com\")` here.", "ここでは `(自分 \"https://example.com\")`。"),
+        ('Use `(self "https://example.com")` here.', 'ここでは `(自分 "https://example.com")`。'),
         ("Use ``a `b` c`` here.", "ここでは ``あ `b` c``。"),
         ("Use `a\nmulti-line span` here.", "ここでは `あ\n複数行` を使う。"),
     ]
@@ -1116,6 +1119,10 @@ class RepairCodeSpansTest(unittest.TestCase):
         ('"', '"'),
         ("‘", "’"),
         ("'", "'"),
+        ("«", "»"),
+        ("« ", " »"),
+        ("«\u00a0", "\u00a0»"),
+        ("„", "“"),
     ]
 
     def test_changed_content_is_restored_silently(self) -> None:
@@ -1208,6 +1215,39 @@ class RepairCodeSpansTest(unittest.TestCase):
             ("`X` と `Y`。", ["`Y`"]),
         )
 
+    def test_quoted_candidate_twice_with_a_second_lacking_span_is_not_repaired(self) -> None:
+        # two quoted X for one lost `X` is ambiguous; it must not be used to fill in `Z`
+        text = "「X」 と 「X」 を使う。"
+        self.assertEqual(repair_code_spans("Use `X` and `Z`.", text), (text, []))
+
+    def test_overlapping_quotes_are_not_repaired(self) -> None:
+        text = "'a'a' を使う。"
+        self.assertEqual(repair_code_spans("Use `a` and `a`.", text), (text, []))
+
+    def test_changed_span_whose_text_is_also_in_the_reply_is_fuzzy(self) -> None:
+        msgid = "Use `a` (see) and `b`, which is long enough to measure."
+        reply = "`a` (`参照`) と b、測れる長さです。"
+        model = FakeModel(lambda p: reply)
+        result = translate(ask_for(model), "ja", msgid)
+        self.assertEqual(len(model.calls), RETRIES + 1)
+        self.assertTrue(result.fuzzy)
+        self.assertEqual(result.text, "`a` (`b`) と b、測れる長さです。")
+        self.assertIn("CODE_SPANS_RESTORED", result.error)
+
+    def test_identical_lacking_spans_are_not_a_guess(self) -> None:
+        msgid = (  # the ETag-list `*` note: three identical spans
+            "The `*` in the `%(field_name)s` field matches any current representation, so it is\n"
+            "only valid on its own: the field's value is either `*` or a list of entity tags\n"
+            "([RFC 9110, Section 13.1.1](https://www.rfc-editor.org/rfc/rfc9110.html#name-if-match)"
+            " and\n[Section 13.1.2](https://www.rfc-editor.org/rfc/rfc9110.html#name-if-none-match))."
+            "\n\nRecipients may handle a list that includes both in different ways; send either "
+            "`*` or the\nentity tags."
+        )
+        self.assertEqual(msgid.count("`*`"), 3)
+        model = FakeModel(lambda p: text_of(p).replace("`*`", "`星`"))
+        result = translate(ask_for(model), "ja", msgid)
+        self.assertEqual((result, len(model.calls)), (Result(msgid), 1))
+
     def test_msgid_without_backticks_or_with_an_odd_count_is_untouched(self) -> None:
         for msgid, text in (
             ("Use the Link field.", "`Link` を使う。"),
@@ -1228,7 +1268,9 @@ class RepairCodeSpansTest(unittest.TestCase):
     def test_repaired_entry_costs_one_call_and_is_clean(self) -> None:
         msgid = self.STATUS
         for mode in (PROTECT_NAMES, PROTECT_LINKS):
-            model = FakeModel(lambda p: text_of(p).replace("412 (Precondition Failed)", "412 (失敗)"))
+            model = FakeModel(
+                lambda p: text_of(p).replace("412 (Precondition Failed)", "412 (失敗)")
+            )
             result = translate(ask_for(model), "ja", msgid, mode=mode)
             self.assertEqual(result, Result(msgid), mode)
             self.assertEqual(len(model.calls), 1, mode)
@@ -1236,9 +1278,9 @@ class RepairCodeSpansTest(unittest.TestCase):
     def test_quote_swap_costs_one_call_and_is_clean(self) -> None:
         msgid = "Use the `same-origin` and `credentialless` values here, which is long."
         model = FakeModel(
-            lambda p: text_of(p).replace("`same-origin`", "「same-origin」").replace(
-                "`credentialless`", "“credentialless”"
-            )
+            lambda p: text_of(p)
+            .replace("`same-origin`", "「same-origin」")
+            .replace("`credentialless`", "“credentialless”")
         )
         result = translate(ask_for(model), "ja", msgid)
         self.assertEqual((result, len(model.calls)), (Result(msgid), 1))
@@ -1256,7 +1298,9 @@ class RepairCodeSpansTest(unittest.TestCase):
         self.assertTrue(result.fuzzy)
         self.assertEqual(result.text, self.TWO)
         self.assertIn("CODE_SPANS_RESTORED", result.error)
-        self.assertIn("Keep `same-origin`, `same-origin-allow-popups` exactly as written", model.calls[1][0])
+        self.assertIn(
+            "Keep `same-origin`, `same-origin-allow-popups` exactly as written", model.calls[1][0]
+        )
 
     def test_swapped_changed_spans_are_not_accepted_silently(self) -> None:
         reply = "值 `同源弹出` 或 `同源`。"  # the word order swapped the spans
@@ -1264,9 +1308,7 @@ class RepairCodeSpansTest(unittest.TestCase):
         result = translate(ask_for(model), "zh", self.TWO)
         self.assertEqual(len(model.calls), RETRIES + 1)
         self.assertTrue(result.fuzzy)  # mapped by position: wrong, but flagged for review
-        self.assertEqual(
-            result.text, "值 `same-origin` 或 `same-origin-allow-popups`。"
-        )
+        self.assertEqual(result.text, "值 `same-origin` 或 `same-origin-allow-popups`。")
 
     def test_a_retry_that_keeps_the_spans_is_clean(self) -> None:
         replies = iter(["`同源弹出` 和 `同源`。", None])
