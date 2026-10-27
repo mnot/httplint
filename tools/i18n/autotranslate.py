@@ -7,15 +7,25 @@ from dataclasses import dataclass
 from typing import Any, Callable, List, Optional, Tuple
 
 from .check import CatalogChecker
-from .rules import MAX_LISTED, OPAQUE_RE, collapse_cjk_breaks, glossary_hint, name_pattern, names_in
+from .rules import (
+    MAX_LISTED,
+    OPAQUE_RE,
+    collapse_cjk_breaks,
+    glossary_hint,
+    name_pattern,
+    names_in,
+    strength_hint,
+)
 from .utils import load_catalog, save_catalog, find_po_files, get_lang_from_path
 
 DEFAULT_MODEL = "mlx-community/aya-expanse-8b-4bit"
 DEFAULT_TEMPERATURE = 0.2
 RETRIES = 2
 
-# --protect modes. "names": links and known field and coding names are masked; code spans
-# and placeholders stay visible and are checked after translation. "links": only URLs and
+# --protect modes. "names": links are masked; known field and coding names are masked too,
+# except in a msgid without backticks, where they are wrapped in backticks instead (models
+# drop a name token from a short sentence, but copy a name in backticks); code spans and
+# placeholders stay visible and are checked after translation. "links": only URLs and
 # Markdown link targets are masked. "all": everything is masked ("all" dropped tokens in 5%
 # of ja entries). Models translate or transliterate a name left in view (FIELD_NAME_CHANGED).
 PROTECT_NAMES = "names"
@@ -120,6 +130,30 @@ def protect(text: str, mark: str = MARK, mode: str = DEFAULT_PROTECT) -> Tuple[s
         pos = end
     out.append(text[pos:])
     return "".join(out), spans
+
+
+def wrap_names(text: str) -> str:
+    """text with every field or coding name (see name_spans) in backticks; mask links first."""
+    out: List[str] = []
+    pos = 0
+    for start, end in sorted(name_spans(text)):  # name_spans don't overlap
+        out.append(f"{text[pos:start]}`{text[start:end]}`")
+        pos = end
+    out.append(text[pos:])
+    return "".join(out)
+
+
+def prompt_text(msgid: str, mark: str, mode: str) -> Tuple[str, List[str]]:
+    """
+    The text the model sees, and the spans its tokens stand for. As protect(), but in names
+    mode a msgid without backticks gets its names wrapped in backticks instead of masked;
+    translate() strips every backtick from the reply (drop_added_backticks). A msgid with
+    backticks can't be told from the reply's added ones, so it keeps its names masked.
+    """
+    if mode == PROTECT_NAMES and "`" not in msgid:
+        masked, spans = protect(msgid, mark, PROTECT_LINKS)  # links first: no names inside them
+        return wrap_names(masked), spans
+    return protect(msgid, mark, mode)
 
 
 def token_error(
@@ -240,14 +274,43 @@ def requote(text: str, span: str, count: int) -> str:
     return text
 
 
+def unwrapped(span: str) -> str:
+    """span without its backticks (and the one space CommonMark strips inside them)."""
+    ticks = len(span) - len(span.lstrip("`"))
+    inner = span[ticks:-ticks]
+    return inner[1:-1] if inner.startswith(" ") and inner.endswith(" ") and inner.strip() else inner
+
+
+MAX_UNWRAP_WORDS = 3  # longer extra spans may be text the model added: left for review
+MAX_UNWRAP_CHARS = 30  # also covers ja and zh, which have no spaces to count
+
+
+def unwrap_all(unwanted: List["re.Match[str]"], want: List[str]) -> Optional[List[str]]:
+    """
+    What the extra spans become with their backticks removed; None if they can't be: one
+    repeats a span of msgid (unclear which copy is the model's), is long (see above), or
+    has a backtick inside (it would be left stray).
+    """
+    words = [unwrapped(m.group(0)) for m in unwanted]
+    if any(m.group(0) in want for m in unwanted):
+        return None
+    if any(
+        "`" in w or len(w.split()) > MAX_UNWRAP_WORDS or len(w) > MAX_UNWRAP_CHARS for w in words
+    ):
+        return None
+    return words
+
+
 def repair_code_spans(msgid: str, text: str) -> Tuple[str, List[str]]:
     """
     Undo code spans the model damaged. A span it quoted instead of backticking is backticked
     again (when unambiguous). Then, if the spans are as many as msgid's, each span that
-    msgid does not have is replaced by one that text lacks, in order of appearance. The
-    repair is dropped unless the spans then equal msgid's exactly. Returns the text and the
-    spans put back by position; with several, the mapping is only a guess from the order
-    (the language may reorder them).
+    msgid does not have is replaced by one that text lacks, in order of appearance. If text
+    has more spans and lacks none, the extra ones lose their backticks (the model backticked
+    a word: 'the `cabecera` header'; see unwrap_all for the limits). The repair is
+    dropped unless the spans then equal msgid's exactly. Returns the text and the spans put
+    back by position; with several, the mapping is only a guess from the order (the
+    language may reorder them).
     """
     if msgid.count("`") % 2:  # code_span_rule gives no verdict
         return text, []
@@ -258,7 +321,7 @@ def repair_code_spans(msgid: str, text: str) -> Tuple[str, List[str]]:
     for span, count in (Counter(want) - Counter(m.group(0) for m in code_spans(text))).items():
         fixed = requote(fixed, span, count)
     got = code_spans(fixed)
-    if len(got) != len(want):  # cheap early exit; the final check would catch it
+    if len(got) < len(want):  # cheap early exit; the final check would catch it
         return text, []
     unwanted, kept = [], Counter(want)
     for match in got:
@@ -272,9 +335,15 @@ def repair_code_spans(msgid: str, text: str) -> Tuple[str, List[str]]:
             have[span] -= 1
         else:
             lacking.append(span)
-    if any(PLACEHOLDER_RE.search(span) for span in lacking):  # placeholders: BAD_VARIABLE's
+    if len(got) > len(want):
+        replacements = unwrap_all(unwanted, want)
+    elif any(PLACEHOLDER_RE.search(span) for span in lacking):  # placeholders: BAD_VARIABLE's
+        replacements = None
+    else:
+        replacements = lacking
+    if replacements is None:
         return text, []
-    for match, span in reversed(list(zip(unwanted, lacking))):
+    for match, span in reversed(list(zip(unwanted, replacements))):
         fixed = fixed[: match.start()] + span + fixed[match.end() :]
     if Counter(m.group(0) for m in code_spans(fixed)) != Counter(want):
         return text, []
@@ -429,10 +498,10 @@ def translate(
     its text is returned with fuzzy set; any other failure returns no text.
     """
     mark = pick_mark(msgid)
-    masked, spans = protect(msgid, mark, mode)
+    masked, spans = prompt_text(msgid, mark, mode)
     visible = mode != PROTECT_ALL and bool(VISIBLE_RE.search(masked))
     percent = visible and "%%" in masked
-    hint = glossary_hint(lang, msgid)
+    hint = glossary_hint(lang, msgid) + strength_hint(lang, msgid)
     error = ""
     candidate: Optional[str] = None
     advisory = False
@@ -613,7 +682,8 @@ def build_parser() -> argparse.ArgumentParser:
         choices=PROTECT_MODES,
         default=DEFAULT_PROTECT,
         help="Text hidden from the model: 'names' (URLs, link targets, field and coding "
-        "names), 'links' (URLs and link targets only) or 'all' (everything, code spans and "
+        "names; names in a text without backticks are wrapped in backticks instead), "
+        "'links' (URLs and link targets only) or 'all' (everything, code spans and "
         "placeholders too; it dropped tokens in 5%% of ja entries). Code spans and "
         "placeholders left visible are verified afterwards (default: %(default)s)",
     )
